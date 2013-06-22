@@ -1,0 +1,32 @@
+
+#define MY_UUID { %(uuId)s }
+#define WATCH_NAME "%(watchName)s"
+
+// The number of subdivisions around the face for each kind of hand.
+#define NUM_STEPS_HOUR %(numStepsHour)s
+#define NUM_STEPS_MINUTE %(numStepsMinute)s
+#define NUM_STEPS_SECOND %(numStepsSecond)s
+
+#if %(compileDebugging)s
+  // The following definition is meant for debugging only.  It enables
+  // a quick hack to make minutes fly by like seconds, so you can
+  // easily see the hands in several different orientations around the
+  // face.
+  #define FAST_TIME 1
+#endif
+
+#if %(showDayCard)s
+  #define SHOW_DAY_CARD 1
+  #define DAY_CARD_X %(dayCardX)s
+  #define DAY_CARD_Y %(dayCardY)s
+#endif
+
+#if %(showDateCard)s
+  #define SHOW_DATE_CARD 1
+  #define DATE_CARD_X %(dateCardX)s
+  #define DATE_CARD_Y %(dateCardY)s
+#endif
+
+#if %(showSecondHand)s
+  #define SHOW_SECOND_HAND 1
+#endif

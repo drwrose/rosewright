@@ -1,0 +1,7 @@
+
+{"friendlyVersion": "VERSION",
+ "versionDefName": "APP_RESOURCES",
+ "media": [
+%(generatedMedia)s
+  ]
+}
