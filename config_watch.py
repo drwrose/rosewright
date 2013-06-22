@@ -43,13 +43,13 @@ Options:
 def usage(code, msg = ''):
     watchStyles = watches.keys()
     watchStyles.sort()
-    watchStyles = ' '.join(styles)
+    watchStyles = ' '.join(watchStyles)
     handStyles = hands.keys()
     handStyles.sort()
-    handStyles = ' '.join(styles)
+    handStyles = ' '.join(handStyles)
     faceStyles = faces.keys()
     faceStyles.sort()
-    faceStyles = ' '.join(styles)
+    faceStyles = ' '.join(faceStyles)
     print >> sys.stderr, help % {
         'watchStyles' : watchStyles,
         'handStyles' : handStyles,
