@@ -14,10 +14,10 @@ font = face.loadFont('effloresce.otf', 0.12)
 face.drawCircularLabels(face.romanLabels, 0.95, font, align = 'i')
 
 face.pasteImage((0, -0.2), 'pebble_label.png', (13, 4), None)
-face.pasteImage((0.47, 0.47), 'corner_trim.png', (29, 29), None)
-face.pasteImage((-0.47, 0.47), 'corner_trim.png', (29, 29), None, rotate = 90)
-face.pasteImage((-0.47, -0.47), 'corner_trim.png', (29, 29), None, rotate = 180)
-face.pasteImage((0.47, -0.47), 'corner_trim.png', (29, 29), None, rotate = 270)
+face.pasteImage((0.47, 0.53), 'corner_trim.png', (29, 29), None)
+face.pasteImage((-0.47, 0.53), 'corner_trim.png', (29, 29), None, rotate = 90)
+face.pasteImage((-0.47, -0.53), 'corner_trim.png', (29, 29), None, rotate = 180)
+face.pasteImage((0.47, -0.53), 'corner_trim.png', (29, 29), None, rotate = 270)
 
 face.save('a_face.png')
 

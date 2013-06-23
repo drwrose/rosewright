@@ -288,7 +288,6 @@ class FaceMaker:
         units. """
 
         im = PIL.Image.open(filename)
-        print im.mode
         if im.mode.endswith('A'):
             im = im.convert('LA')
         else:
