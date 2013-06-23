@@ -62,11 +62,16 @@ def usage(code, msg = ''):
     print >> sys.stderr, msg
     sys.exit(code)
 
+
+# The default center for placing hands on the watch face, if not
+# otherwise specified in the centers tables below.
+centerX, centerY = 144 / 2, 168 / 2
+
 # Table of watch styles.  A watch style is a combination of a hand
 # style and face style, and a unique identifier.  For each style,
 # specify the following:
 #
-#    name, handStyle, faceStyle, uuid
+#    name, handStyle, faceStyle, uuid, centers
 #
 #  Where:
 #
@@ -74,11 +79,19 @@ def usage(code, msg = ''):
 #   handStyle - the default hand style for this watch.
 #   faceStyle - the default face style for this watch.
 #   uuid      - the UUID to assign to this watch.
+#   centers   - a list of [(hand, x, y)] to indicate the position for
+#               each kind of watch hand.  If the list is empty or a
+#               hand is omitted, the default is the center.  This also
+#               defines the stacking order of the hands--any
+#               explicitly listed hands are drawn in the order
+#               specified, followed by all of the implicit hands in
+#               the usual order.
 #
 watches = {
-    'a' : ('Rosewright A', 'a', 'a', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC5]),
-    'b' : ('Rosewright B', 'b', 'b', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC6]),
-    'c' : ('Rosewright C', 'c', 'c', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC7]),
+    'a' : ('Rosewright A', 'a', 'a', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC5], []),
+    'b' : ('Rosewright B', 'b', 'b', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC6], []),
+    'c' : ('Rosewright C', 'c', 'c', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC7], []),
+    'c1' : ('Rosewright C Chronograph', 'c1', 'c1', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC7], [('chrono_minute', 115, 84), ('second', 29, 84)]),
     }
     
 
@@ -125,6 +138,12 @@ hands = {
            ('minute', 'c_minute_hand.png', 't%', False, (38, 584), 0.14),
            ('second', 'c_second_hand.png', 'w', False, (41, 671), 0.14),
            ],
+    'c1' : [('hour', 'c_hour_hand.png', 't%', False, (59, 434), 0.14),
+            ('minute', 'c_minute_hand.png', 't%', False, (38, 584), 0.14),
+            ('second', 'c_chrono1_hand.png', 'w', False, (32, 193), 0.14),
+            ('chrono_minute', 'c_chrono2_hand.png', 'w', False, (37, 195), 0.14),
+            ('chrono_second', 'c_second_hand.png', 'w', False, (41, 671), 0.14),
+            ],
     }
 
 # Table of face styles.  For each style, specify the following:
@@ -142,9 +161,13 @@ faces = {
     'a' : ('a_face.png', None, None),
     'b' : ('b_face.png', (52, 109), (92, 109)),
     'c' : ('c_face.png', None, None),
+    'c1' : ('c1_face.png', None, None),
     }
 
 showSecondHand = False
+makeChronograph = False
+showChronoMinuteHand = False
+showChronoSecondHand = False
 dayCard = None
 dateCard = None
 
@@ -155,6 +178,8 @@ numSteps = {
     'hour' : 48,
     'minute' : 60,
     'second' : 60,
+    'chrono_minute' : 30,
+    'chrono_second' : 60,
     }
 
 # The threshold level for dropping to 1-bit images.
@@ -243,6 +268,12 @@ def makeHands(generatedTable):
         if hand == 'second':
             global showSecondHand
             showSecondHand = True
+        elif hand == 'chrono_minute':
+            global showChronoMinuteHand
+            showChronoMinuteHand = True
+        elif hand == 'chrono_second':
+            global showChronoSecondHand
+            showChronoSecondHand = True
             
         print >> generatedTable, "struct HandTable %s_hand_table[] = {" % (hand)
 
@@ -457,12 +488,37 @@ def configWatch():
     configIn = open('%s/generated_config.h.in' % (srcDir), 'r').read()
     config = open('%s/generated_config.h' % (srcDir), 'w')
 
+    # Map the centers list into a dictionary of points for x and y.
+    cxd = dict(map(lambda (hand, x, y): (hand, x), centers))
+    cyd = dict(map(lambda (hand, x, y): (hand, y), centers))
+
+    # Get the stacking orders of the hands too.
+    implicitStackingOrder = ['hour', 'minute', 'second', 'chrono_minute', 'chrono_second']
+    explicitStackingOrder = []
+    for hand, x, y in centers:
+        implicitStackingOrder.remove(hand)
+        explicitStackingOrder.append(hand)
+    stackingOrder = map(lambda hand: 'STACKING_ORDER_%s' % (hand.upper()), explicitStackingOrder + implicitStackingOrder)
+    stackingOrder.append('STACKING_ORDER_DONE')
+    
     print >> config, configIn % {
         'uuId' : ', '.join(map(lambda v: '0x%02x' % v, uuid)),
         'watchName' : watchName,
         'numStepsHour' : numSteps['hour'],
         'numStepsMinute' : numSteps['minute'],
         'numStepsSecond' : numSteps['second'],
+        'numStepsChronoMinute' : numSteps['chrono_minute'],
+        'numStepsChronoSecond' : numSteps['chrono_second'],
+        'hourHandX' : cxd.get('hour', centerX),
+        'hourHandY' : cyd.get('hour', centerY),
+        'minuteHandX' : cxd.get('minute', centerX),
+        'minuteHandY' : cyd.get('minute', centerY),
+        'secondHandX' : cxd.get('second', centerX),
+        'secondHandY' : cyd.get('second', centerY),
+        'chronoMinuteHandX' : cxd.get('chrono_minute', centerX),
+        'chronoMinuteHandY' : cyd.get('chrono_minute', centerY),
+        'chronoSecondHandX' : cxd.get('chrono_second', centerX),
+        'chronoSecondHandY' : cyd.get('chrono_second', centerY),
         'compileDebugging' : int(compileDebugging),
         'showDayCard' : int(bool(dayCard)),
         'showDateCard' : int(bool(dateCard)),
@@ -471,6 +527,10 @@ def configWatch():
         'dateCardX' : dateCard and dateCard[0],
         'dateCardY' : dateCard and dateCard[1],
         'showSecondHand' : int(showSecondHand),
+        'makeChronograph' : int(makeChronograph),
+        'showChronoMinuteHand' : int(showChronoMinuteHand),
+        'showChronoSecondHand' : int(showChronoSecondHand),
+        'stackingOrder' : ', '.join(stackingOrder),
         }
 
 
@@ -515,12 +575,15 @@ if not watchStyle:
     print >> sys.stderr, "You must specify a desired watch style."
     sys.exit(1)
 
-watchName, defaultHandStyle, defaultFaceStyle, uuid = watches[watchStyle]
+watchName, defaultHandStyle, defaultFaceStyle, uuid, centers = watches[watchStyle]
 
 if not handStyle:
     handStyle = defaultHandStyle
 if not faceStyle:
     faceStyle = defaultFaceStyle
+
+if 'chrono_second' in hands[handStyle]:
+    makeChronograph = True
 
 targetFilename, dayCard, dateCard = faces[faceStyle]
 

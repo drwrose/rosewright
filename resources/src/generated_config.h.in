@@ -6,6 +6,20 @@
 #define NUM_STEPS_HOUR %(numStepsHour)s
 #define NUM_STEPS_MINUTE %(numStepsMinute)s
 #define NUM_STEPS_SECOND %(numStepsSecond)s
+#define NUM_STEPS_CHRONO_MINUTE %(numStepsChronoMinute)s
+#define NUM_STEPS_CHRONO_SECOND %(numStepsChronoSecond)s
+
+// The location of the hands on the face.
+#define HOUR_HAND_X %(hourHandX)s
+#define HOUR_HAND_Y %(hourHandY)s
+
+#define MINUTE_HAND_X %(minuteHandX)s
+#define MINUTE_HAND_Y %(minuteHandY)s
+
+// The order in which the hands are layered on top of each other.
+int stacking_order[] = {
+  %(stackingOrder)s
+};
 
 #if %(compileDebugging)s
   // The following definition is meant for debugging only.  It enables
@@ -29,4 +43,23 @@
 
 #if %(showSecondHand)s
   #define SHOW_SECOND_HAND 1
+  #define SECOND_HAND_X %(secondHandX)s
+  #define SECOND_HAND_Y %(secondHandY)s
 #endif
+
+#if %(makeChronograph)s
+  #define MAKE_CHRONOGRAPH 1
+#endif
+
+#if %(showChronoMinuteHand)s
+  #define SHOW_CHRONO_MINUTE_HAND 1
+  #define CHRONO_MINUTE_HAND_X %(chronoMinuteHandX)s
+  #define CHRONO_MINUTE_HAND_Y %(chronoMinuteHandY)s
+#endif
+
+#if %(showChronoSecondHand)s
+  #define SHOW_CHRONO_SECOND_HAND 1
+  #define CHRONO_SECOND_HAND_X %(chronoSecondHandX)s
+  #define CHRONO_SECOND_HAND_Y %(chronoSecondHandY)s
+#endif
+

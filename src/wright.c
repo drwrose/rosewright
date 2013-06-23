@@ -2,8 +2,8 @@
 #include "pebble_app.h"
 #include "pebble_fonts.h"
 
-#include "../resources/src/generated_config.h"
 #include "hand_table.h"
+#include "../resources/src/generated_config.h"
 #include "../resources/src/generated_table.c"
 
 
@@ -13,12 +13,10 @@ PBL_APP_INFO(MY_UUID,
              DEFAULT_MENU_ICON,
              APP_INFO_WATCH_FACE);
 
+#define SECONDS_PER_DAY 86400
+
 #define SCREEN_WIDTH 144
 #define SCREEN_HEIGHT 168
-
-// The center of rotation of the hands.
-#define HANDS_CX (SCREEN_WIDTH / 2)
-#define HANDS_CY (SCREEN_HEIGHT / 2)
 
 Window window;
 
@@ -27,6 +25,8 @@ BmpContainer clock_face_container;
 Layer hour_layer;
 Layer minute_layer;
 Layer second_layer;
+Layer chrono_minute_layer;
+Layer chrono_second_layer;
 
 Layer day_layer;  // day of the week (abbr)
 Layer date_layer; // numeric date of the month
@@ -37,11 +37,18 @@ struct HandPlacement {
   int hour_hand_index;
   int minute_hand_index;
   int second_hand_index;
+  int chrono_minute_hand_index;
+  int chrono_second_hand_index;
   int day_index;
   int date_value;
 };
 
 struct HandPlacement current_placement;
+
+int chrono_running = 0;       // the chronograph has been started
+int chrono_lap_paused = 0;    // the "lap" button has been pressed
+int chrono_start_seconds = 0; // consulted if chrono_running && !chrono_lap_paused
+int chrono_hold_seconds = 0;  // consulted if !chrono_running || chrono_lap_paused
 
 // Determines the specific hand bitmaps that should be displayed based
 // on the current time.
@@ -73,6 +80,29 @@ void compute_hands(struct HandPlacement *placement) {
 #ifdef SHOW_DATE_CARD
   placement->date_value = time.tm_mday;
 #endif  // SHOW_DATE_CARD
+
+#ifdef MAKE_CHRONOGRAPH
+  {
+    int chrono_seconds;
+    if (chrono_started && !chrono_paused) {
+      // The chronograph is running.  Show the active elapsed time.
+      chrono_seconds = (seconds - chrono_start_seconds + SECONDS_PER_DAY) % SECONDS_PER_DAY;
+    } else {
+      // The chronograph is paused.  Show the time it is paused on.
+      chrono_seconds = chrono_hold_seconds;
+    }
+
+#ifdef SHOW_CHRONO_MINUTE_HAND
+    // The chronograph minute hand rolls completely around in 30
+    // minutes (not 60).
+    placement->chrono_minute_hand_index = ((NUM_STEPS_CHRONO_MINUTE * chrono_seconds) / 1800) % NUM_STEPS_CHRONO_MINUTE;
+#endif  // SHOW_CHRONO_MINUTE_HAND
+
+#ifdef SHOW_CHRONO_SECOND_HAND
+    placement->chrono_second_hand_index = ((NUM_STEPS_CHRONO_SECOND * chrono_seconds) / 60) % NUM_STEPS_CHRONO_SECOND;
+#endif  // SHOW_CHRONO_SECOND_HAND
+  }
+#endif  // MAKE_CHRONOGRAPH
 }
 
 
@@ -148,7 +178,7 @@ void flip_bitmap_y(BmpContainer *image, int *cy) {
   int stride = image->bmp.row_size_bytes; // multiple of 4.
   uint8_t *data = image->bmp.addr;
 
-#if 0
+#if 1
   /* This is the slightly slower flip, that requires less RAM on the
      stack. */
   uint8_t buffer[stride]; // gcc lets us do this.
@@ -178,7 +208,7 @@ void flip_bitmap_y(BmpContainer *image, int *cy) {
 }
 
 // Draws a given hand on the face.
-void draw_hand(struct HandTable *hand, GContext *ctx) {
+void draw_hand(struct HandTable *hand, int place_x, int place_y, GContext *ctx) {
   int cx, cy;
   cx = hand->cx;
   cy = hand->cy;
@@ -205,9 +235,9 @@ void draw_hand(struct HandTable *hand, GContext *ctx) {
     // will automatically tile.
     GRect destination = layer_get_frame(&image.layer.layer);
     
-    // Place the hand's center point at HANDS_CX, HANDS_CY.
-    destination.origin.x = HANDS_CX - cx;
-    destination.origin.y = HANDS_CY - cy;
+    // Place the hand's center point at place_x, place_y.
+    destination.origin.x = place_x - cx;
+    destination.origin.y = place_y - cy;
     
     // Specify a compositing mode to make the hands overlay on top of
     // each other, instead of the background parts of the bitmaps
@@ -247,8 +277,8 @@ void draw_hand(struct HandTable *hand, GContext *ctx) {
     
     GRect destination = layer_get_frame(&image.layer.layer);
     
-    destination.origin.x = HANDS_CX - cx;
-    destination.origin.y = HANDS_CY - cy;
+    destination.origin.x = place_x - cx;
+    destination.origin.y = place_y - cy;
 
     graphics_context_set_compositing_mode(ctx, GCompOpOr);
     graphics_draw_bitmap_in_rect(ctx, &mask.bmp, destination);
@@ -264,22 +294,43 @@ void draw_hand(struct HandTable *hand, GContext *ctx) {
 void hour_layer_update_callback(Layer *me, GContext* ctx) {
   (void)me;
 
-  draw_hand(&hour_hand_table[current_placement.hour_hand_index], ctx);
+  draw_hand(&hour_hand_table[current_placement.hour_hand_index], 
+            HOUR_HAND_X, HOUR_HAND_Y, ctx);
 }
 
 void minute_layer_update_callback(Layer *me, GContext* ctx) {
   (void)me;
 
-  draw_hand(&minute_hand_table[current_placement.minute_hand_index], ctx);
+  draw_hand(&minute_hand_table[current_placement.minute_hand_index],
+            MINUTE_HAND_X, MINUTE_HAND_Y, ctx);
 }
 
 #ifdef SHOW_SECOND_HAND
 void second_layer_update_callback(Layer *me, GContext* ctx) {
   (void)me;
 
-  draw_hand(&second_hand_table[current_placement.second_hand_index], ctx);
+  draw_hand(&second_hand_table[current_placement.second_hand_index], 
+            SECOND_HAND_X, SECOND_HAND_Y, ctx);
 }
 #endif  // SHOW_SECOND_HAND
+
+#ifdef SHOW_CHRONO_MINUTE_HAND
+void chrono_minute_layer_update_callback(Layer *me, GContext* ctx) {
+  (void)me;
+
+  draw_hand(&chrono_minute_hand_table[current_placement.chrono_minute_hand_index],
+            CHRONO_MINUTE_HAND_X, CHRONO_MINUTE_HAND_Y, ctx);
+}
+#endif  // SHOW_CHRONO_MINUTE_HAND
+
+#ifdef SHOW_CHRONO_SECOND_HAND
+void chrono_second_layer_update_callback(Layer *me, GContext* ctx) {
+  (void)me;
+
+  draw_hand(&chrono_second_hand_table[current_placement.chrono_second_hand_index],
+            CHRONO_SECOND_HAND_X, CHRONO_SECOND_HAND_Y, ctx);
+}
+#endif  // SHOW_CHRONO_SECOND_HAND
 
 void draw_card(Layer *me, GContext* ctx, const char *text) {
   GFont font;
@@ -332,6 +383,23 @@ void handle_tick(AppContextRef ctx, PebbleTickEvent *t) {
   }
 #endif  // SHOW_SECOND_HAND
 
+#ifdef MAKE_CHRONOGRAPH
+
+#ifdef SHOW_CHRONO_MINUTE_HAND
+  if (new_placement.chrono_minute_hand_index != current_placement.chrono_minute_hand_index) {
+    current_placement.chrono_minute_hand_index = new_placement.chrono_minute_hand_index;
+    layer_mark_dirty(&chrono_minute_layer);
+  }
+#endif  // SHOW_CHRONO_MINUTE_HAND
+
+#ifdef SHOW_CHRONO_SECOND_HAND
+  if (new_placement.chrono_second_hand_index != current_placement.chrono_second_hand_index) {
+    current_placement.chrono_second_hand_index = new_placement.chrono_second_hand_index;
+    layer_mark_dirty(&chrono_second_layer);
+  }
+#endif  // SHOW_CHRONO_SECOND_HAND
+#endif  // MAKE_CHRONOGRAPH
+
 #ifdef SHOW_DAY_CARD
   if (new_placement.day_index != current_placement.day_index) {
     current_placement.day_index = new_placement.day_index;
@@ -348,6 +416,7 @@ void handle_tick(AppContextRef ctx, PebbleTickEvent *t) {
 }
 
 void handle_init(AppContextRef ctx) {
+  int i;
   (void)ctx;
 
   window_init(&window, WATCH_NAME);
@@ -372,19 +441,47 @@ void handle_init(AppContextRef ctx) {
   layer_add_child(&window.layer, &date_layer);
 #endif  // SHOW_DATE_CARD
 
-  layer_init(&hour_layer, window.layer.frame);
-  hour_layer.update_proc = &hour_layer_update_callback;
-  layer_add_child(&window.layer, &hour_layer);
+  // Init all of the hands, taking care to arrange them in the correct
+  // stacking order.
+  for (i = 0; stacking_order[i] != STACKING_ORDER_DONE; ++i) {
+    switch (stacking_order[i]) {
+    case STACKING_ORDER_HOUR:
+      layer_init(&hour_layer, window.layer.frame);
+      hour_layer.update_proc = &hour_layer_update_callback;
+      layer_add_child(&window.layer, &hour_layer);
+      break;
 
-  layer_init(&minute_layer, window.layer.frame);
-  minute_layer.update_proc = &minute_layer_update_callback;
-  layer_add_child(&window.layer, &minute_layer);
+    case STACKING_ORDER_MINUTE:
+      layer_init(&minute_layer, window.layer.frame);
+      minute_layer.update_proc = &minute_layer_update_callback;
+      layer_add_child(&window.layer, &minute_layer);
+      break;
 
+    case STACKING_ORDER_SECOND:
 #ifdef SHOW_SECOND_HAND
-  layer_init(&second_layer, window.layer.frame);
-  second_layer.update_proc = &second_layer_update_callback;
-  layer_add_child(&window.layer, &second_layer);
+      layer_init(&second_layer, window.layer.frame);
+      second_layer.update_proc = &second_layer_update_callback;
+      layer_add_child(&window.layer, &second_layer);
 #endif  // SHOW_SECOND_HAND
+      break;
+
+    case STACKING_ORDER_CHRONO_MINUTE:
+#ifdef SHOW_CHRONO_MINUTE_HAND
+      layer_init(&chrono_minute_layer, window.layer.frame);
+      chrono_minute_layer.update_proc = &chrono_minute_layer_update_callback;
+      layer_add_child(&window.layer, &chrono_minute_layer);
+#endif  // SHOW_CHRONO_MINUTE_HAND
+      break;
+
+    case STACKING_ORDER_CHRONO_SECOND:
+#ifdef SHOW_CHRONO_SECOND_HAND
+      layer_init(&chrono_second_layer, window.layer.frame);
+      chrono_second_layer.update_proc = &chrono_second_layer_update_callback;
+      layer_add_child(&window.layer, &chrono_second_layer);
+#endif  // SHOW_CHRONO_SECOND_HAND
+      break;
+    }
+  }
 }
 
 
