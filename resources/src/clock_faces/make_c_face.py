@@ -4,9 +4,6 @@
 
 import FaceMaker
 
-# Set true to generate c1_face.png, without the chrono dials baked in.
-forChronograph = True
-
 face = FaceMaker.FaceMaker(zoom = 1.25, bg = 0, fg = 255) #, upscale = 2, format = 'L')
 
 rings = [0.2933, 0.3600, 0.4273, 0.4920, 0.6500, 0.6713, 0.7047, 0.7180, 0.8027, 0.8173]
@@ -41,12 +38,8 @@ def drawChrono(c, smallTicks, bigTicks, labels, handFilename, handPivot):
     font = face.loadFont('Multicolore.otf', 0.038)
     face.drawCircularLabels(labels, 0.2200, font, center = c, align = 'i')
 
-    if not forChronograph:
-        # If the dials won't be functional, paint them in.
-        face.pasteImage(c, '../clock_hands/%s' % (handFilename), handPivot, 1500)
-    else:
-        # If they will be functional, we want to know where to place them.
-        print handFilename, face.p2s(*c)
+    # Tell the developer where to place the chrono dials.
+    print handFilename, face.p2s(*c)
     
 # Draw the little chonograph dials.
 drawChrono((-0.2033, 0.0), 60, 12,
@@ -58,9 +51,6 @@ drawChrono((0.2033, 0.0), 30, 0,
             (240, '20'), (300, '25'), (0, '30')],
            'c_chrono2_hand.png', (37, 195))
 
-if not forChronograph:
-    face.save('c_face.png')
-else:
-    face.save('c1_face.png')
+face.save('c_face.png')
 print "handScale = %s" % (face.pixelScaleToHandScale(1500))
 

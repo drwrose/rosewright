@@ -90,8 +90,7 @@ centerX, centerY = 144 / 2, 168 / 2
 watches = {
     'a' : ('Rosewright A', 'a', 'a', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC5], []),
     'b' : ('Rosewright B', 'b', 'b', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC6], []),
-    'c' : ('Rosewright C', 'c', 'c', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC7], []),
-    'c1' : ('Rosewright C Chronograph', 'c1', 'c1', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC7], [('chrono_minute', 115, 84), ('second', 29, 84)]),
+    'c' : ('Rosewright C', 'c', 'c', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC7], [('chrono_minute', 115, 84), ('second', 29, 84)]),
     }
     
 
@@ -136,14 +135,10 @@ hands = {
            ],
     'c' : [('hour', 'c_hour_hand.png', 't%', False, (59, 434), 0.14),
            ('minute', 'c_minute_hand.png', 't%', False, (38, 584), 0.14),
-           ('second', 'c_second_hand.png', 'w', False, (41, 671), 0.14),
+           ('second', 'c_chrono1_hand.png', 'w', False, (32, 193), 0.14),
+           ('chrono_minute', 'c_chrono2_hand.png', 'w', False, (37, 195), 0.14),
+           ('chrono_second', 'c_second_hand.png', 'w', False, (41, 671), 0.14),
            ],
-    'c1' : [('hour', 'c_hour_hand.png', 't%', False, (59, 434), 0.14),
-            ('minute', 'c_minute_hand.png', 't%', False, (38, 584), 0.14),
-            ('second', 'c_chrono1_hand.png', 'w', False, (32, 193), 0.14),
-            ('chrono_minute', 'c_chrono2_hand.png', 'w', False, (37, 195), 0.14),
-            ('chrono_second', 'c_second_hand.png', 'w', False, (41, 671), 0.14),
-            ],
     }
 
 # Table of face styles.  For each style, specify the following:
@@ -161,7 +156,6 @@ faces = {
     'a' : ('a_face.png', None, None),
     'b' : ('b_face.png', (52, 109), (92, 109)),
     'c' : ('c_face.png', None, None),
-    'c1' : ('c1_face.png', None, None),
     }
 
 showSecondHand = False
