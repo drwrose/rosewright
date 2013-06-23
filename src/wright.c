@@ -9,9 +9,14 @@
 
 PBL_APP_INFO(MY_UUID,
              WATCH_NAME, "drwrose",
-             1, 0, /* App version */
+             1, 1, /* App version */
              DEFAULT_MENU_ICON,
-             APP_INFO_WATCH_FACE);
+#ifdef MAKE_CHRONOGRAPH
+             APP_INFO_STANDARD_APP
+#else
+             APP_INFO_WATCH_FACE
+#endif
+             );
 
 #define SECONDS_PER_DAY 86400
 
@@ -45,20 +50,27 @@ struct HandPlacement {
 
 struct HandPlacement current_placement;
 
-int chrono_running = 0;       // the chronograph has been started
-int chrono_lap_paused = 0;    // the "lap" button has been pressed
+int chrono_running = false;       // the chronograph has been started
+int chrono_lap_paused = false;    // the "lap" button has been pressed
 int chrono_start_seconds = 0; // consulted if chrono_running && !chrono_lap_paused
 int chrono_hold_seconds = 0;  // consulted if !chrono_running || chrono_lap_paused
+
+// Returns the time-of-day in seconds.
+int get_time_seconds() {
+  int seconds;
+  PblTm time;
+
+  get_time(&time);
+  seconds = (time.tm_hour * 60 + time.tm_min) * 60 + time.tm_sec;
+  return seconds;
+}
 
 // Determines the specific hand bitmaps that should be displayed based
 // on the current time.
 void compute_hands(struct HandPlacement *placement) {
   int seconds;
-  PblTm time;
 
-  get_time(&time);
-
-  seconds = (time.tm_hour * 60 + time.tm_min) * 60 + time.tm_sec;
+  seconds = get_time_seconds();
 
 #ifdef FAST_TIME
   time.tm_wday = seconds % 7;
@@ -84,7 +96,7 @@ void compute_hands(struct HandPlacement *placement) {
 #ifdef MAKE_CHRONOGRAPH
   {
     int chrono_seconds;
-    if (chrono_started && !chrono_paused) {
+    if (chrono_running && !chrono_lap_paused) {
       // The chronograph is running.  Show the active elapsed time.
       chrono_seconds = (seconds - chrono_start_seconds + SECONDS_PER_DAY) % SECONDS_PER_DAY;
     } else {
@@ -415,11 +427,90 @@ void handle_tick(AppContextRef ctx, PebbleTickEvent *t) {
 #endif  // SHOW_DATE_CARD
 }
 
+void chrono_start_stop_handler(ClickRecognizerRef recognizer, Window *window) {
+  int seconds;
+
+  seconds = get_time_seconds();
+
+  // The start/stop button was pressed.
+  if (chrono_running) {
+    // If the chronograph is currently running, this means to stop (or
+    // pause).
+    chrono_hold_seconds = seconds - chrono_start_seconds;
+    chrono_running = false;
+  } else {
+    // If the chronograph is not currently running, this means to
+    // start, from the currently showing Chronograph time.
+    chrono_start_seconds = seconds - chrono_hold_seconds;
+    chrono_running = true;
+  }
+}
+
+void chrono_lap_button() {
+  int seconds;
+
+  if (chrono_lap_paused) {
+    // If we were already paused, this resumes the motion, jumping
+    // ahead to the currently elapsed time.
+    chrono_lap_paused = false;
+  } else {
+    // If we were not already paused, this pauses the hands here (but
+    // does not stop the timer).
+    seconds = get_time_seconds();
+    chrono_hold_seconds = seconds - chrono_start_seconds;
+    chrono_lap_paused = true;
+  }
+}
+
+void chrono_reset_button() {
+  // Resets the chronometer to 0 time.
+  chrono_running = false;
+  chrono_lap_paused = false;
+  chrono_start_seconds = 0;
+  chrono_hold_seconds = 0;
+}
+
+void chrono_lap_handler(ClickRecognizerRef recognizer, Window *window) {
+  // The lap/reset button was pressed (briefly).
+
+  // We only do anything here if the chronograph is currently running.
+  if (chrono_running) {
+    chrono_lap_button();
+  }
+}
+
+void chrono_lap_or_reset_handler(ClickRecognizerRef recognizer, Window *window) {
+  // The lap/reset button was pressed (long press).
+
+  // This means a lap if the chronograph is running, and a reset if it
+  // is not.
+  if (chrono_running) {
+    chrono_lap_button();
+  } else {
+    chrono_reset_button();
+  }
+}
+
+void click_config_provider(ClickConfig **config, Window *window) {
+  // single click / repeat-on-hold config:
+  config[BUTTON_ID_UP]->click.handler = (ClickHandler)chrono_start_stop_handler;
+  config[BUTTON_ID_UP]->click.repeat_interval_ms = 1000; // "hold-to-repeat" gets overridden if there's a long click handler configured!
+
+  config[BUTTON_ID_DOWN]->click.handler = (ClickHandler)chrono_lap_handler;
+  config[BUTTON_ID_DOWN]->click.repeat_interval_ms = 1000;
+
+  // long click config:
+  config[BUTTON_ID_DOWN]->long_click.handler = (ClickHandler)chrono_lap_or_reset_handler;
+  config[BUTTON_ID_DOWN]->long_click.delay_ms = 700;
+}
+
+
 void handle_init(AppContextRef ctx) {
   int i;
   (void)ctx;
 
   window_init(&window, WATCH_NAME);
+  window_set_fullscreen(&window, true);
   window_stack_push(&window, true /* Animated */);
 
   compute_hands(&current_placement);
@@ -482,6 +573,10 @@ void handle_init(AppContextRef ctx) {
       break;
     }
   }
+
+#ifdef MAKE_CHRONOGRAPH
+ window_set_click_config_provider(&window, (ClickConfigProvider)click_config_provider);
+#endif  // MAKE_CHRONOGRAPH
 }
 
 

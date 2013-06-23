@@ -29,6 +29,12 @@ Options:
         Overrides the face style.  The following styles are available:
           %(faceStyles)s
 
+    -c
+        Enable chronograph mode (if the selected hand style includes
+        chrono hands).  This builds the watch as a standard app,
+        instead of as a watch face, to activate the chronograph
+        buttons.
+
     -i
         Invert the hand color, for instance to apply a set of watch
         hands meant for a white face onto a black face.
@@ -90,7 +96,7 @@ centerX, centerY = 144 / 2, 168 / 2
 watches = {
     'a' : ('Rosewright A', 'a', 'a', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC5], []),
     'b' : ('Rosewright B', 'b', 'b', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC6], []),
-    'c' : ('Rosewright C', 'c', 'c', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC7], [('chrono_minute', 115, 84), ('second', 29, 84)]),
+    'c' : ('Rosewright Chronograph', 'c', 'c', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC7], [('chrono_minute', 115, 84), ('second', 29, 84)]),
     }
     
 
@@ -158,8 +164,8 @@ faces = {
     'c' : ('c_face.png', None, None),
     }
 
-showSecondHand = False
 makeChronograph = False
+showSecondHand = False
 showChronoMinuteHand = False
 showChronoSecondHand = False
 dayCard = None
@@ -521,7 +527,7 @@ def configWatch():
         'dateCardX' : dateCard and dateCard[0],
         'dateCardY' : dateCard and dateCard[1],
         'showSecondHand' : int(showSecondHand),
-        'makeChronograph' : int(makeChronograph),
+        'makeChronograph' : int(makeChronograph and showChronoSecondHand),
         'showChronoMinuteHand' : int(showChronoMinuteHand),
         'showChronoSecondHand' : int(showChronoSecondHand),
         'stackingOrder' : ', '.join(stackingOrder),
@@ -530,7 +536,7 @@ def configWatch():
 
 # Main.
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:idl:h')
+    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:cidl:h')
 except getopt.error, msg:
     usage(1, msg)
 
@@ -556,6 +562,8 @@ for opt, arg in opts:
         if faceStyle not in faces:
             print >> sys.stderr, "Unknown face style '%s'." % (arg)
             sys.exit(1)
+    elif opt == '-c':
+        makeChronograph = True
     elif opt == '-i':
         invertHands = True
     elif opt == '-d':
@@ -575,9 +583,6 @@ if not handStyle:
     handStyle = defaultHandStyle
 if not faceStyle:
     faceStyle = defaultFaceStyle
-
-if 'chrono_second' in hands[handStyle]:
-    makeChronograph = True
 
 targetFilename, dayCard, dateCard = faces[faceStyle]
 
