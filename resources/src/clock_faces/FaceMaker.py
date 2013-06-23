@@ -1,6 +1,7 @@
 import PIL.Image
 import PIL.ImageFont
 import PIL.ImageDraw
+import PIL.ImageChops
 import math
 import sys
 
@@ -150,9 +151,16 @@ class FaceMaker:
                        self.s2d(p[pi + 1] + self.cropOrigin[1]) - self.origin[1] * self.zoom]
         return result
 
-    def getScale(self, s):
-        """ Converts a scale into screen units without rounding, for external purposes. """
-        return s * self.zoom * self.maxTargetSize / self.upscale
+    def pixelScaleToHandScale(self, s):
+        """ Converts a scale into screen units without rounding, for
+        computing the hand scale in config_watch.py. """
+        
+        return (self.zoom * self.maxTargetSize / self.upscale) / s
+
+    def handScaleToPixelScale(self, s):
+        """ Inverse operation of pixelScaleToHandScale(). """
+
+        return (self.zoom * self.maxTargetSize / self.upscale) / s
 
     def p2s(self, *p):
         """ Scales the floating-point point (or list of points) into a
@@ -169,6 +177,11 @@ class FaceMaker:
         """ Draws a filled circle into the buffer. """
         r = diameter / 2.0
         self.draw.ellipse(self.p2b(center[0] - r, center[1] - r, center[0] + r, center[1] + r), fill = 255)
+
+    def clearCircle(self, diameter, center = (0, 0)):
+        """ Clears a circle in the buffer. """
+        r = diameter / 2.0
+        self.draw.ellipse(self.p2b(center[0] - r, center[1] - r, center[0] + r, center[1] + r), fill = 0)
 
     def drawRing(self, diameter,  width = 0.003, center = (0, 0)):
         """ Draws a filled circle with a thin or thick ring into the
@@ -275,7 +288,14 @@ class FaceMaker:
         units. """
 
         im = PIL.Image.open(filename)
-        im = im.convert('LA')
+        print im.mode
+        if im.mode.endswith('A'):
+            im = im.convert('LA')
+        else:
+            im = im.convert('L')
+            im = PIL.ImageChops.invert(im)
+            black = PIL.Image.new('L', im.size, 0)
+            im = PIL.Image.merge('LA', (black, im))
 
         if rotate:
             # Center the source image on its pivot, and pad it with transparent.
@@ -284,7 +304,6 @@ class FaceMaker:
             center = (size[0] / 2, size[1] / 2)
             large = PIL.Image.new('LA', size, 0)
             large.paste(im, (center[0] - pivot[0], center[1] - pivot[1]))
-            pivot = center
             r = (-rotate) % 360
             if r == 0:
                 pass
@@ -296,6 +315,7 @@ class FaceMaker:
                 im = large.transpose(PIL.Image.ROTATE_270)
             else:
                 im = large.rotate(r, PIL.Image.BICUBIC, True)
+            pivot = (im.size[0] / 2, im.size[1] / 2)
 
         if pixelScale is None:
             p = self.p2s(*p)
@@ -311,8 +331,6 @@ class FaceMaker:
             p = self.p2b(*p)
             im = im.resize(size, PIL.Image.ANTIALIAS)
             color, mask = im.split()
-            print (p[0] - pivot[0], p[1] - pivot[1])
-            print self.buffer.size
             color.paste(255, (0, 0, color.size[0], color.size[1]))
             self.buffer.paste(color, (p[0] - pivot[0], p[1] - pivot[1]), mask)
 

@@ -29,6 +29,10 @@ Options:
         Overrides the face style.  The following styles are available:
           %(faceStyles)s
 
+    -i
+        Invert the hand color, for instance to apply a set of watch
+        hands meant for a white face onto a black face.
+
     -d
         Compile for debugging.  Specifically this enables "fast time",
         so the hands move quickly about the face of the watch.
@@ -167,9 +171,15 @@ def parseColorMode(colorMode):
     dither = False
     blackToken, whiteToken = 'b', 'w'
 
+    inverted = False
     if colorMode[0] == '-':
-        invertColors = True
+        inverted = True
         colorMode = colorMode[1:]
+    if invertHands:
+        inverted = not inverted
+
+    if inverted:
+        invertColors = True
         blackToken, whiteToken = 'w', 'b'
 
     if colorMode[0] == blackToken:
@@ -466,13 +476,14 @@ def configWatch():
 
 # Main.
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:dl:h')
+    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:idl:h')
 except getopt.error, msg:
     usage(1, msg)
 
 watchStyle = None
 handStyle = None
 faceStyle = None
+invertHands = False
 compileDebugging = False
 localeName = ''
 for opt, arg in opts:
@@ -491,6 +502,8 @@ for opt, arg in opts:
         if faceStyle not in faces:
             print >> sys.stderr, "Unknown face style '%s'." % (arg)
             sys.exit(1)
+    elif opt == '-i':
+        invertHands = True
     elif opt == '-d':
         compileDebugging = True
     elif opt == '-l':

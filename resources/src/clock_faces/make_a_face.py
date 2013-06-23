@@ -21,3 +21,11 @@ face.pasteImage((0.47, -0.47), 'corner_trim.png', (29, 29), None, rotate = 270)
 
 face.save('a_face.png')
 
+if False:
+    # Add the hands for illustrative purposes.
+    pixelScale = face.handScaleToPixelScale(0.12)
+    face.pasteImage((0, 0), '../clock_hands/a_hour_hand.png', (78, 410), pixelScale, rotate = 255)
+    face.pasteImage((0, 0), '../clock_hands/a_minute_hand.png', (37, 557), pixelScale, rotate = 168)
+    face.save('a_face_sample.png')
+    
+

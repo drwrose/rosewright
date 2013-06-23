@@ -29,7 +29,7 @@ face.drawTicks(200, rings[9], 0.8200, width = 0.002)
 face.drawTicks(20, rings[9], 0.8400, width = 0.002)
 
 def drawChrono(c, smallTicks, bigTicks, labels, handFilename, handPivot):
-    face.fillCircle(0.2720, color = 0, center = c)
+    face.clearCircle(0.2720, center = c)
     face.drawRing(0.2520, center = c)
     face.drawRing(0.2293, center = c)
     face.drawTicks(smallTicks, 0.2293, 0.2520, width = 0.001, center = c)
@@ -52,5 +52,5 @@ if True:
                'c_chrono2_hand.png', (37, 195))
 
 face.save('c_face.png')
-print "handScale = %s" % (face.getScale(1.0/1500))
+print "handScale = %s" % (face.pixelScaleToHandScale(1500))
 
