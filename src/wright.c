@@ -56,27 +56,28 @@ int chrono_start_seconds = 0; // consulted if chrono_running && !chrono_lap_paus
 int chrono_hold_seconds = 0;  // consulted if !chrono_running || chrono_lap_paused
 
 // Returns the time-of-day in seconds.
-int get_time_seconds() {
+int get_time_seconds(PblTm *time) {
   int seconds;
-  PblTm time;
 
-  get_time(&time);
-  seconds = (time.tm_hour * 60 + time.tm_min) * 60 + time.tm_sec;
+  get_time(time);
+  seconds = (time->tm_hour * 60 + time->tm_min) * 60 + time->tm_sec;
+
+#ifdef FAST_TIME
+  time->tm_wday = seconds % 7;
+  time->tm_mday = (seconds % 31) + 1;
+  seconds *= 67;
+#endif  // FAST_TIME
+
   return seconds;
 }
 
 // Determines the specific hand bitmaps that should be displayed based
 // on the current time.
 void compute_hands(struct HandPlacement *placement) {
+  PblTm time;
   int seconds;
 
-  seconds = get_time_seconds();
-
-#ifdef FAST_TIME
-  time.tm_wday = seconds % 7;
-  time.tm_mday = (seconds % 31) + 1;
-  seconds *= 67;
-#endif  // FAST_TIME
+  seconds = get_time_seconds(&time);
 
   placement->hour_hand_index = ((NUM_STEPS_HOUR * seconds) / (3600 * 12)) % NUM_STEPS_HOUR;
   placement->minute_hand_index = ((NUM_STEPS_MINUTE * seconds) / 3600) % NUM_STEPS_MINUTE;
@@ -321,8 +322,22 @@ void minute_layer_update_callback(Layer *me, GContext* ctx) {
 void second_layer_update_callback(Layer *me, GContext* ctx) {
   (void)me;
 
+#ifdef BITMAP_SECOND_HAND
   draw_hand(&second_hand_table[current_placement.second_hand_index], 
             SECOND_HAND_X, SECOND_HAND_Y, ctx);
+#else
+  // If we don't have a bitmap, just draw a line.
+  GPoint secondHand;
+  GPoint center = { SECOND_HAND_X, SECOND_HAND_Y };
+  int32_t secondHandLength = 76;
+
+  int32_t second_angle = TRIG_MAX_ANGLE * current_placement.second_hand_index / 60;
+  secondHand.y = (-cos_lookup(second_angle) * secondHandLength / TRIG_MAX_RATIO) + center.y;
+  secondHand.x = (sin_lookup(second_angle) * secondHandLength / TRIG_MAX_RATIO) + center.x;
+
+  graphics_context_set_stroke_color(ctx, GColorBlack);
+  graphics_draw_line(ctx, center, secondHand);
+#endif  // BITMAP_SECOND_HAND
 }
 #endif  // SHOW_SECOND_HAND
 
@@ -428,9 +443,10 @@ void handle_tick(AppContextRef ctx, PebbleTickEvent *t) {
 }
 
 void chrono_start_stop_handler(ClickRecognizerRef recognizer, Window *window) {
+  PblTm time;
   int seconds;
 
-  seconds = get_time_seconds();
+  seconds = get_time_seconds(&time);
 
   // The start/stop button was pressed.
   if (chrono_running) {
@@ -456,7 +472,8 @@ void chrono_lap_button() {
   } else {
     // If we were not already paused, this pauses the hands here (but
     // does not stop the timer).
-    seconds = get_time_seconds();
+    PblTm time;
+    seconds = get_time_seconds(&time);
     chrono_hold_seconds = seconds - chrono_start_seconds;
     chrono_lap_paused = true;
   }

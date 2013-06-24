@@ -29,6 +29,10 @@ Options:
         Overrides the face style.  The following styles are available:
           %(faceStyles)s
 
+    -S
+        Force a second hand as a single line, even if the selected
+        hand style doesn't normally have a second hand.
+
     -c
         Enable chronograph mode (if the selected hand style includes
         chrono hands).  This builds the watch as a standard app,
@@ -166,6 +170,7 @@ faces = {
 
 makeChronograph = False
 showSecondHand = False
+bitmapSecondHand = False
 showChronoMinuteHand = False
 showChronoSecondHand = False
 dayCard = None
@@ -268,6 +273,8 @@ def makeHands(generatedTable):
         if hand == 'second':
             global showSecondHand
             showSecondHand = True
+            global bitmapSecondHand
+            bitmapSecondHand = True
         elif hand == 'chrono_minute':
             global showChronoMinuteHand
             showChronoMinuteHand = True
@@ -527,6 +534,7 @@ def configWatch():
         'dateCardX' : dateCard and dateCard[0],
         'dateCardY' : dateCard and dateCard[1],
         'showSecondHand' : int(showSecondHand),
+        'bitmapSecondHand' : int(bitmapSecondHand),
         'makeChronograph' : int(makeChronograph and showChronoSecondHand),
         'showChronoMinuteHand' : int(showChronoMinuteHand),
         'showChronoSecondHand' : int(showChronoSecondHand),
@@ -536,7 +544,7 @@ def configWatch():
 
 # Main.
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:cidl:h')
+    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:Scidl:h')
 except getopt.error, msg:
     usage(1, msg)
 
@@ -562,6 +570,8 @@ for opt, arg in opts:
         if faceStyle not in faces:
             print >> sys.stderr, "Unknown face style '%s'." % (arg)
             sys.exit(1)
+    elif opt == '-S':
+        showSecondHand = True
     elif opt == '-c':
         makeChronograph = True
     elif opt == '-i':
