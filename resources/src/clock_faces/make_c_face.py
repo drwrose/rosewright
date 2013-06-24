@@ -13,6 +13,9 @@ for diameter in rings:
     face.drawRing(diameter, width = 0.003)
 rings.reverse()
 
+face.fillCircle(0.048)
+face.clearCircle(0.010)
+
 # The main clock ticks.
 ticks = range(0, 360, 30)[:]
 ticks.remove(0)
@@ -32,6 +35,8 @@ def drawChrono(c, smallTicks, bigTicks, labels, handFilename, handPivot):
     face.clearCircle(0.2720, center = c)
     face.drawRing(0.2520, center = c)
     face.drawRing(0.2293, center = c)
+    face.fillCircle(0.048, center = c)
+    face.clearCircle(0.010, center = c)
     face.drawTicks(smallTicks, 0.2293, 0.2520, width = 0.001, center = c)
     face.drawTicks(bigTicks, 0.2000, 0.2293, width = 0.002, center = c)
 

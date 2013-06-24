@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import PIL.Image
+import PIL.ImageChops
 import sys
 import os
 import getopt
@@ -30,8 +31,7 @@ Options:
           %(faceStyles)s
 
     -S
-        Force a second hand as a single line, even if the selected
-        hand style doesn't normally have a second hand.
+        Suppress the second hand if it is defined.
 
     -c
         Enable chronograph mode (if the selected hand style includes
@@ -105,11 +105,15 @@ watches = {
     
 
 # Table of hand styles.  For each style, specify the following for
-# each hand type:
+# each hand type.  Bitmapped hands will have bitmapParams defined and
+# vectorParams None; vector hands will have vectorParams defined and
+# bitmapParams None.  It is legal to have both bitmapParams and
+# vectorParams defined for a given hand.
 #
-#    hand, filename, colorMode, asymmetric, pivot, scale
+#    hand, bitmapParams, vectorParams
 #
-#  Where:
+#  For bitmapParams:
+#     (filename, colorMode, asymmetric, pivot, scale)
 #
 #   hand - the hand type being defined.
 #   filename - the png image that defines this hand, pointing upward.
@@ -135,19 +139,38 @@ watches = {
 #       hand in its image.
 #   scale - a scale factor for reducing the hand to its final size.
 #
+#  For vectorParams:
+#     [(fillType, points), (fillType, points), ...]
+#
+#   fillType - Specify the type of the drawing:
+#       'b'  - black unfilled stroke
+#       'w'  - white unfilled stroke
+#       'bb' - black stroke filled with black
+#       'bw' - black stroke filled with white
+#       'wb' - white stroke filled with black
+#       'ww' - white stroke filled with white
+#   points - a list of points in the vector.  Draw the hand in the
+#       vertical position, from the pivot at (0, 0).
+#
 
 hands = {
-    'a' : [('hour', 'a_hour_hand.png', 'b', False, (78, 410), 0.12),
-           ('minute', 'a_minute_hand.png', 'b', True, (37, 557), 0.12),
+    'a' : [('hour', ('a_hour_hand.png', 'b', False, (78, 410), 0.12), None),
+           ('minute', ('a_minute_hand.png', 'b', True, (37, 557), 0.12), None),
            ],
-    'b' : [('hour', 'b_hour_hand.png', 'b', False, (33, 211), 0.27),
-           ('minute', 'b_minute_hand.png', 'b', False, (24, 280), 0.27),
+    'b' : [('hour', ('b_hour_hand.png', 'b', False, (33, 211), 0.27), None),
+           ('minute', ('b_minute_hand.png', 'b', False, (24, 280), 0.27), None),
+           ('second', None, [('b', [(0, -5), (0, 75)])]),
            ],
-    'c' : [('hour', 'c_hour_hand.png', 't%', False, (59, 434), 0.14),
-           ('minute', 'c_minute_hand.png', 't%', False, (38, 584), 0.14),
-           ('second', 'c_chrono1_hand.png', 'w', False, (32, 193), 0.14),
-           ('chrono_minute', 'c_chrono2_hand.png', 'w', False, (37, 195), 0.14),
-           ('chrono_second', 'c_second_hand.png', 'w', False, (41, 671), 0.14),
+    'c' : [('hour', ('c_hour_hand.png', 't%', False, (59, 434), 0.14), None),
+           ('minute', ('c_minute_hand.png', 't%', False, (38, 584), 0.14), None),
+           ('second', ('c_chrono1_hand.png', 'w', False, (32, -27), 0.14), 
+            [('w', [(0, -2), (0, -26)]),
+             ]),
+           ('chrono_minute', ('c_chrono2_hand.png', 'w', False, (37, 195), 0.14), None),
+           #('chrono_minute', None, [('ww', [(0, -4), (-1, -6), (-2, -9), (-2, -14), (-0, -26), (2, -14), (2, -9), (1, -6)]),]),
+           ('chrono_second', ('c_second_hand.png', 'w', False, (41, -29), 0.14),
+            [('w', [(0, -4), (0, -88)]),
+             ]),
            ],
     }
 
@@ -170,7 +193,7 @@ faces = {
 
 makeChronograph = False
 showSecondHand = False
-bitmapSecondHand = False
+suppressSecondHand = False
 showChronoMinuteHand = False
 showChronoSecondHand = False
 dayCard = None
@@ -189,6 +212,7 @@ numSteps = {
 
 # The threshold level for dropping to 1-bit images.
 threshold = 127
+thresholdMap = [0] * (256 - threshold) + [255] * (threshold)
 
 # Attempt to determine the directory in which we're operating.
 rootDir = os.path.dirname(__file__) or '.'
@@ -247,13 +271,34 @@ def makeFaces():
         }
 
     return resourceStr
-    
 
+def makeVectorHands(generatedTable, hand, groupList):
+    resourceStr = ''
 
-def makeHands(generatedTable):
-    """ Generates the required resources and tables for the indicated
-    hand style.  Returns resourceStr. """
+    colorMap = {
+        'b' : 'GColorBlack',
+        'w' : 'GColorWhite',
+        '' : 'GColorClear',
+        }
+
+    print >> generatedTable, "#define VECTOR_%s_HAND 1" % (hand.upper())
+    print >> generatedTable, "struct VectorHandTable %s_hand_vector_table = {" % (hand)
+
+    print >> generatedTable, "  %s, (struct VectorHandGroup[]){" % (len(groupList))
+    for fillType, points in groupList:
+        stroke = colorMap[fillType[0]]
+        fill = colorMap[fillType[1:2]]
+        print >> generatedTable, "  { %s, %s, { %s, (GPoint[]){" % (stroke, fill, len(points))
+        for px, py in points:
+            print >> generatedTable, "    { %s, %s }," % (px, py)
+        print >> generatedTable, "  } } },"
     
+    print >> generatedTable, "  }"
+    print >> generatedTable, "};"
+
+    return resourceStr
+
+def makeBitmapHands(generatedTable, hand, sourceFilename, colorMode, asymmetric, pivot, scale):
     resourceStr = ''
 
     resourceEntry = """
@@ -264,17 +309,197 @@ def makeHands(generatedTable):
     },"""    
 
     handTableEntry = """  { RESOURCE_ID_%(symbolName)s, RESOURCE_ID_%(symbolMaskName)s, %(cx)s, %(cy)s, %(flip_x)s, %(flip_y)s, %(paintBlack)s },"""
+    
+    print >> generatedTable, "#define BITMAP_%s_HAND 1" % (hand.upper())
+    print >> generatedTable, "struct BitmapHandTableRow %s_hand_bitmap_table[] = {" % (hand)
 
-    thresholdMap = [0] * (256 - threshold) + [255] * (threshold)
-    invertMap = range(256)[:]
-    invertMap.reverse()
+    source = PIL.Image.open('%s/clock_hands/%s' % (srcDir, sourceFilename))
 
-    for hand, sourceFilename, colorMode, asymmetric, pivot, scale in hands[handStyle]:
+    paintBlack, useTransparency, invertColors, dither = parseColorMode(colorMode)
+
+    if useTransparency or source.mode.endswith('A'):
+        source, sourceMask = source.convert('LA').split()
+    else:
+        source = source.convert('L')
+        sourceMask = None
+
+    # We must do the below operations with white as the foreground
+    # color and black as the background color, because the
+    # rotate() operation always fills with black, and getbbox() is
+    # always based on black.  Also, the Pebble library likes to
+    # use white as the foreground color too.  So, invert the image
+    # if necessary to make white the foreground color.
+    if invertColors:
+        source = PIL.ImageChops.invert(source)
+
+    # The mask already uses black as the background color, no need
+    # to invert that.
+
+    if sourceMask:
+        # Ensure that the source image is black anywhere the mask
+        # is black (sometimes there is junk in the original png
+        # image outside of the alpha channel coverage that the
+        # artist didn't even know about).
+        black = PIL.Image.new('L', source.size, 0)
+        source = PIL.Image.composite(source, black, sourceMask)
+
+    # Center the source image on its pivot, and pad it with black.
+    border = (pivot[0], pivot[1], source.size[0] - pivot[0], source.size[1] - pivot[1])
+    size = (max(border[0], border[2]) * 2, max(border[1], border[3]) * 2)
+    center = (size[0] / 2, size[1] / 2)
+    large = PIL.Image.new('L', size, 0)
+    large.paste(source, (center[0] - pivot[0], center[1] - pivot[1]))
+
+    if useTransparency:
+        largeMask = PIL.Image.new('L', size, 0)
+        largeMask.paste(sourceMask, (center[0] - pivot[0], center[1] - pivot[1]))
+
+    handMap = {}
+    resourceMap = {}
+    for i in range(numSteps[hand]):
+        flip_x = False
+        flip_y = False
+        angle = i * 360.0 / numSteps[hand]
+
+        # Check for quadrant symmetry, an easy resource-memory
+        # optimization.  Instead of generating bitmaps for all 360
+        # degrees of the hand, we may be able to generate the
+        # first quadrant only (or the first half only) and quickly
+        # flip it into the remaining quadrants.
+        if not asymmetric:
+            # If the hand is symmetric, we can treat the x and y
+            # flips independently, and this means we really only
+            # need a single quadrant.
+
+            if angle > 90:
+                # If we're outside of the first quadrant, maybe we can
+                # just flip a first-quadrant hand into the appropriate
+                # quadrant, and save a bit of resource memory.
+                i2 = i
+                if angle > 180:
+                    # If we're in the right half of the circle, flip
+                    # over from the left.
+                    i = (numSteps[hand] - i)
+                    flip_x = True
+                    angle = i * 360.0 / numSteps[hand]
+
+                if angle > 90 and angle < 270:
+                    # If we're in the bottom half of the circle, flip
+                    # over from the top.
+                    i = (numSteps[hand] / 2 - i) % numSteps[hand]
+                    flip_y = True
+                    angle = i * 360.0 / numSteps[hand]
+        else:
+            # If the hand is asymmetric, then it's important not
+            # to flip it an odd number of times.  But we can still
+            # apply both flips at once (which is really a
+            # 180-degree rotation), and this means we only need to
+            # generate the right half, and rotate into the left.
+            if angle >= 180:
+                i -= (numSteps[hand] / 2)
+                flip_x = True
+                flip_y = True
+                angle = i * 360.0 / numSteps[hand]
+
+        symbolName = '%s_%s' % (hand.upper(), i)
+        symbolMaskName = symbolName
+        if useTransparency:
+            symbolMaskName = '%s_%s_mask' % (hand.upper(), i)
+
+        # Now we are ready to continue.  We might have decided to
+        # flip this image from another image i, but we still need
+        # to scale and rotate the source image now, if for no
+        # other reason than to compute cx, cy.
+
+        p = large.rotate(-angle, PIL.Image.BICUBIC, True)
+        scaledSize = (int(p.size[0] * scale + 0.5), int(p.size[1] * scale + 0.5))
+        p = p.resize(scaledSize, PIL.Image.ANTIALIAS)
+        if not dither:
+            p = p.point(thresholdMap)
+        p = p.convert('1')
+
+        cx, cy = p.size[0] / 2, p.size[1] / 2
+        cropbox = p.getbbox()
+        if useTransparency:
+            pm = largeMask.rotate(-angle, PIL.Image.BICUBIC, True)
+            pm = pm.resize(scaledSize, PIL.Image.ANTIALIAS)
+            pm = pm.point(thresholdMap)
+            pm = pm.convert('1')
+            # In the useTransparency case, it's important to take
+            # the crop from the alpha mask, not from the color.
+            cropbox = pm.getbbox() 
+            pm = pm.crop(cropbox)
+        p = p.crop(cropbox)
+
+        cx, cy = cx - cropbox[0], cy - cropbox[1]
+
+        if not flip_x and not flip_y:
+            # If this is not a flipped image, actually write it out.
+
+            # We also require our images to be an even multiple of
+            # 8 pixels wide, to make it easier to reverse the bits
+            # horizontally.  This doesn't consume any extra
+            # memory, however.
+            w = 8 * ((p.size[0] + 7) / 8)
+            if w != p.size[0]:
+                p1 = PIL.Image.new('1', (w, p.size[1]), 0)
+                p1.paste(p, (0, 0))
+                p = p1
+                if useTransparency:
+                    p1 = PIL.Image.new('1', (w, p.size[1]), 0)
+                    p1.paste(pm, (0, 0))
+                    pm = p1
+
+            # It's nice to show a hole in the center pivot.
+            if cx >= 0 and cx < p.size[0] and cy >= 0 and cy < p.size[1]:
+                p.putpixel((cx, cy), 0)
+                if useTransparency:
+                    pm.putpixel((cx, cy), 0)
+
+            targetFilename = 'flat_%s_%s_%s.png' % (handStyle, hand, i)
+            print targetFilename
+
+            p.save('%s/clock_hands/%s' % (srcDir, targetFilename))
+            resourceStr += resourceEntry % {
+                'defName' : symbolName,
+                'targetFilename' : targetFilename,
+                }
+
+            if useTransparency:
+                targetMaskFilename = 'flat_%s_%s_%s_mask.png' % (handStyle, hand, i)
+                print targetMaskFilename
+
+                pm.save('%s/clock_hands/%s' % (srcDir, targetMaskFilename))
+                resourceStr += resourceEntry % {
+                    'defName' : symbolMaskName,
+                    'targetFilename' : targetMaskFilename,
+                    }
+
+        print >> generatedTable, handTableEntry % {
+            'index' : i,
+            'symbolName' : symbolName,
+            'symbolMaskName' : symbolMaskName,
+            'cx' : cx,
+            'cy' : cy,
+            'flip_x' : int(flip_x),
+            'flip_y' : int(flip_y),
+            'paintBlack' : int(paintBlack),
+            }
+
+    print >> generatedTable, "};\n"
+
+    return resourceStr
+
+def makeHands(generatedTable):
+    """ Generates the required resources and tables for the indicated
+    hand style.  Returns resourceStr. """
+    
+    resourceStr = ''
+
+    for hand, bitmapParams, vectorParams in hands[handStyle]:
         if hand == 'second':
             global showSecondHand
             showSecondHand = True
-            global bitmapSecondHand
-            bitmapSecondHand = True
         elif hand == 'chrono_minute':
             global showChronoMinuteHand
             showChronoMinuteHand = True
@@ -282,182 +507,11 @@ def makeHands(generatedTable):
             global showChronoSecondHand
             showChronoSecondHand = True
             
-        print >> generatedTable, "struct HandTable %s_hand_table[] = {" % (hand)
+        if bitmapParams:
+            resourceStr += makeBitmapHands(generatedTable, hand, *bitmapParams)
+        if vectorParams:
+            resourceStr += makeVectorHands(generatedTable, hand, vectorParams)
 
-        source = PIL.Image.open('%s/clock_hands/%s' % (srcDir, sourceFilename))
-
-        paintBlack, useTransparency, invertColors, dither = parseColorMode(colorMode)
-
-        if useTransparency or source.mode.endswith('A'):
-            source, sourceMask = source.convert('LA').split()
-        else:
-            source = source.convert('L')
-            sourceMask = None
-
-        # We must do the below operations with white as the foreground
-        # color and black as the background color, because the
-        # rotate() operation always fills with black, and getbbox() is
-        # always based on black.  Also, the Pebble library likes to
-        # use white as the foreground color too.  So, invert the image
-        # if necessary to make white the foreground color.
-        if invertColors:
-            source = source.point(invertMap)
-
-        # The mask already uses black as the background color, no need
-        # to invert that.
-
-        if sourceMask:
-            # Ensure that the source image is black anywhere the mask
-            # is black (sometimes there is junk in the original png
-            # image outside of the alpha channel coverage that the
-            # artist didn't even know about).
-            black = PIL.Image.new('L', source.size, 0)
-            source = PIL.Image.composite(source, black, sourceMask)
-        
-        # Center the source image on its pivot, and pad it with black.
-        border = (pivot[0], pivot[1], source.size[0] - pivot[0], source.size[1] - pivot[1])
-        size = (max(border[0], border[2]) * 2, max(border[1], border[3]) * 2)
-        center = (size[0] / 2, size[1] / 2)
-        large = PIL.Image.new('L', size, 0)
-        large.paste(source, (center[0] - pivot[0], center[1] - pivot[1]))
-
-        if useTransparency:
-            largeMask = PIL.Image.new('L', size, 0)
-            largeMask.paste(sourceMask, (center[0] - pivot[0], center[1] - pivot[1]))
-
-        handMap = {}
-        resourceMap = {}
-        for i in range(numSteps[hand]):
-            flip_x = False
-            flip_y = False
-            angle = i * 360.0 / numSteps[hand]
-
-            # Check for quadrant symmetry, an easy resource-memory
-            # optimization.  Instead of generating bitmaps for all 360
-            # degrees of the hand, we may be able to generate the
-            # first quadrant only (or the first half only) and quickly
-            # flip it into the remaining quadrants.
-            if not asymmetric:
-                # If the hand is symmetric, we can treat the x and y
-                # flips independently, and this means we really only
-                # need a single quadrant.
-
-                if angle > 90:
-                    # If we're outside of the first quadrant, maybe we can
-                    # just flip a first-quadrant hand into the appropriate
-                    # quadrant, and save a bit of resource memory.
-                    i2 = i
-                    if angle > 180:
-                        # If we're in the right half of the circle, flip
-                        # over from the left.
-                        i = (numSteps[hand] - i)
-                        flip_x = True
-                        angle = i * 360.0 / numSteps[hand]
-
-                    if angle > 90 and angle < 270:
-                        # If we're in the bottom half of the circle, flip
-                        # over from the top.
-                        i = (numSteps[hand] / 2 - i) % numSteps[hand]
-                        flip_y = True
-                        angle = i * 360.0 / numSteps[hand]
-            else:
-                # If the hand is asymmetric, then it's important not
-                # to flip it an odd number of times.  But we can still
-                # apply both flips at once (which is really a
-                # 180-degree rotation), and this means we only need to
-                # generate the right half, and rotate into the left.
-                if angle >= 180:
-                    i -= (numSteps[hand] / 2)
-                    flip_x = True
-                    flip_y = True
-                    angle = i * 360.0 / numSteps[hand]
-
-            symbolName = '%s_%s' % (hand.upper(), i)
-            symbolMaskName = symbolName
-            if useTransparency:
-                symbolMaskName = '%s_%s_mask' % (hand.upper(), i)
-
-            # Now we are ready to continue.  We might have decided to
-            # flip this image from another image i, but we still need
-            # to scale and rotate the source image now, if for no
-            # other reason than to compute cx, cy.
-
-            p = large.rotate(-angle, PIL.Image.BICUBIC, True)
-            scaledSize = (int(p.size[0] * scale + 0.5), int(p.size[1] * scale + 0.5))
-            p = p.resize(scaledSize, PIL.Image.ANTIALIAS)
-            if not dither:
-                p = p.point(thresholdMap)
-            p = p.convert('1')
-
-            cx, cy = p.size[0] / 2, p.size[1] / 2
-            cropbox = p.getbbox()
-            if useTransparency:
-                pm = largeMask.rotate(-angle, PIL.Image.BICUBIC, True)
-                pm = pm.resize(scaledSize, PIL.Image.ANTIALIAS)
-                pm = pm.point(thresholdMap)
-                pm = pm.convert('1')
-                # In the useTransparency case, it's important to take
-                # the crop from the alpha mask, not from the color.
-                cropbox = pm.getbbox() 
-                pm = pm.crop(cropbox)
-            p = p.crop(cropbox)
-            
-            cx, cy = cx - cropbox[0], cy - cropbox[1]
-
-            if not flip_x and not flip_y:
-                # If this is not a flipped image, actually write it out.
-
-                # We also require our images to be an even multiple of
-                # 8 pixels wide, to make it easier to reverse the bits
-                # horizontally.  This doesn't consume any extra
-                # memory, however.
-                w = 8 * ((p.size[0] + 7) / 8)
-                if w != p.size[0]:
-                    p1 = PIL.Image.new('1', (w, p.size[1]), 0)
-                    p1.paste(p, (0, 0))
-                    p = p1
-                    if useTransparency:
-                        p1 = PIL.Image.new('1', (w, p.size[1]), 0)
-                        p1.paste(pm, (0, 0))
-                        pm = p1
-
-                # It's nice to show a hole in the center pivot.
-                if cx >= 0 and cx < p.size[0] and cx >= 0 and cy < p.size[1]:
-                    p.putpixel((cx, cy), 0)
-                    if useTransparency:
-                        pm.putpixel((cx, cy), 0)
- 
-                targetFilename = 'flat_%s_%s_%s.png' % (handStyle, hand, i)
-                print targetFilename
-
-                p.save('%s/clock_hands/%s' % (srcDir, targetFilename))
-                resourceStr += resourceEntry % {
-                    'defName' : symbolName,
-                    'targetFilename' : targetFilename,
-                    }
-
-                if useTransparency:
-                    targetMaskFilename = 'flat_%s_%s_%s_mask.png' % (handStyle, hand, i)
-                    print targetMaskFilename
-
-                    pm.save('%s/clock_hands/%s' % (srcDir, targetMaskFilename))
-                    resourceStr += resourceEntry % {
-                        'defName' : symbolMaskName,
-                        'targetFilename' : targetMaskFilename,
-                        }
-                
-            print >> generatedTable, handTableEntry % {
-                'index' : i,
-                'symbolName' : symbolName,
-                'symbolMaskName' : symbolMaskName,
-                'cx' : cx,
-                'cy' : cy,
-                'flip_x' : int(flip_x),
-                'flip_y' : int(flip_y),
-                'paintBlack' : int(paintBlack),
-                }
-
-        print >> generatedTable, "};\n"
     return resourceStr
 
 def makeDates(generatedTable):
@@ -533,8 +587,7 @@ def configWatch():
         'dayCardY' : dayCard and dayCard[1],
         'dateCardX' : dateCard and dateCard[0],
         'dateCardY' : dateCard and dateCard[1],
-        'showSecondHand' : int(showSecondHand),
-        'bitmapSecondHand' : int(bitmapSecondHand),
+        'showSecondHand' : int(showSecondHand and not suppressSecondHand),
         'makeChronograph' : int(makeChronograph and showChronoSecondHand),
         'showChronoMinuteHand' : int(showChronoMinuteHand),
         'showChronoSecondHand' : int(showChronoSecondHand),
@@ -571,7 +624,7 @@ for opt, arg in opts:
             print >> sys.stderr, "Unknown face style '%s'." % (arg)
             sys.exit(1)
     elif opt == '-S':
-        showSecondHand = True
+        suppressSecondHand = True
     elif opt == '-c':
         makeChronograph = True
     elif opt == '-i':

@@ -230,7 +230,10 @@ class FaceMaker:
         fontHeight is given in face units, and is scaled to the target
         pixels. """
         h = self.d2s(fontHeight)
-        font = PIL.ImageFont.truetype(filename, h)
+        try:
+            font = PIL.ImageFont.truetype(filename, h)
+        except ImportError:
+            font = None
         return font
 
     def drawLabel(self, p, text, font, align = 'cc'):
@@ -240,6 +243,8 @@ class FaceMaker:
         The text is drawn directly into the target screen, rather than
         into the offscreen buffer, in an attempt to minimize scaling
         artifacts. """
+        if not font:
+            return
 
         sp = self.p2s(*p)
         w, h = self.tdraw.textsize(text, font = font)
@@ -268,6 +273,8 @@ class FaceMaker:
         The text is drawn directly into the target screen, rather than
         into the offscreen buffer, in an attempt to minimize scaling
         artifacts. """
+        if not font:
+            return
 
         for angle, text in labels:
             w, h = self.tdraw.textsize(text, font = font)

@@ -220,8 +220,35 @@ void flip_bitmap_y(BmpContainer *image, int *cy) {
   }
 }
 
-// Draws a given hand on the face.
-void draw_hand(struct HandTable *hand, int place_x, int place_y, GContext *ctx) {
+// Draws a given hand on the face, using the vector structures.
+void draw_vector_hand(struct VectorHandTable *hand, int hand_index, int num_steps,
+                      int place_x, int place_y, GContext *ctx) {
+  GPoint center = { place_x, place_y };
+  int32_t angle = TRIG_MAX_ANGLE * hand_index / num_steps;
+  int gi;
+
+  for (gi = 0; gi < hand->num_groups; ++gi) {
+    struct VectorHandGroup *group = &hand->group[gi];
+
+    GPath path;
+    gpath_init(&path, &group->path_info);
+
+    gpath_rotate_to(&path, angle);
+    gpath_move_to(&path, center);
+
+    if (group->fill != GColorClear) {
+      graphics_context_set_fill_color(ctx, group->fill);
+      gpath_draw_filled(ctx, &path);
+    }
+    if (group->outline != GColorClear) {
+      graphics_context_set_stroke_color(ctx, group->outline);
+      gpath_draw_outline(ctx, &path);
+    }
+  }
+}
+
+// Draws a given hand on the face, using the bitmap structures.
+void draw_bitmap_hand(struct BitmapHandTableRow *hand, int place_x, int place_y, GContext *ctx) {
   int cx, cy;
   cx = hand->cx;
   cy = hand->cy;
@@ -307,37 +334,44 @@ void draw_hand(struct HandTable *hand, int place_x, int place_y, GContext *ctx) 
 void hour_layer_update_callback(Layer *me, GContext* ctx) {
   (void)me;
 
-  draw_hand(&hour_hand_table[current_placement.hour_hand_index], 
-            HOUR_HAND_X, HOUR_HAND_Y, ctx);
+#ifdef VECTOR_HOUR_HAND
+  draw_vector_hand(&hour_hand_vector_table, current_placement.hour_hand_index,
+                   NUM_STEPS_HOUR, HOUR_HAND_X, HOUR_HAND_Y, ctx);
+#endif
+
+#ifdef BITMAP_HOUR_HAND
+  draw_bitmap_hand(&hour_hand_bitmap_table[current_placement.hour_hand_index],
+                   HOUR_HAND_X, HOUR_HAND_Y, ctx);
+#endif
 }
 
 void minute_layer_update_callback(Layer *me, GContext* ctx) {
   (void)me;
 
-  draw_hand(&minute_hand_table[current_placement.minute_hand_index],
-            MINUTE_HAND_X, MINUTE_HAND_Y, ctx);
+#ifdef VECTOR_MINUTE_HAND
+  draw_vector_hand(&minute_hand_vector_table, current_placement.minute_hand_index,
+                   NUM_STEPS_MINUTE, MINUTE_HAND_X, MINUTE_HAND_Y, ctx);
+#endif
+
+#ifdef BITMAP_MINUTE_HAND
+  draw_bitmap_hand(&minute_hand_bitmap_table[current_placement.minute_hand_index],
+                   MINUTE_HAND_X, MINUTE_HAND_Y, ctx);
+#endif
 }
 
 #ifdef SHOW_SECOND_HAND
 void second_layer_update_callback(Layer *me, GContext* ctx) {
   (void)me;
 
+#ifdef VECTOR_SECOND_HAND
+  draw_vector_hand(&second_hand_vector_table, current_placement.second_hand_index,
+                   NUM_STEPS_SECOND, SECOND_HAND_X, SECOND_HAND_Y, ctx);
+#endif
+
 #ifdef BITMAP_SECOND_HAND
-  draw_hand(&second_hand_table[current_placement.second_hand_index], 
-            SECOND_HAND_X, SECOND_HAND_Y, ctx);
-#else
-  // If we don't have a bitmap, just draw a line.
-  GPoint secondHand;
-  GPoint center = { SECOND_HAND_X, SECOND_HAND_Y };
-  int32_t secondHandLength = 76;
-
-  int32_t second_angle = TRIG_MAX_ANGLE * current_placement.second_hand_index / 60;
-  secondHand.y = (-cos_lookup(second_angle) * secondHandLength / TRIG_MAX_RATIO) + center.y;
-  secondHand.x = (sin_lookup(second_angle) * secondHandLength / TRIG_MAX_RATIO) + center.x;
-
-  graphics_context_set_stroke_color(ctx, GColorBlack);
-  graphics_draw_line(ctx, center, secondHand);
-#endif  // BITMAP_SECOND_HAND
+  draw_bitmap_hand(&second_hand_bitmap_table[current_placement.second_hand_index],
+                   SECOND_HAND_X, SECOND_HAND_Y, ctx);
+#endif
 }
 #endif  // SHOW_SECOND_HAND
 
@@ -345,8 +379,15 @@ void second_layer_update_callback(Layer *me, GContext* ctx) {
 void chrono_minute_layer_update_callback(Layer *me, GContext* ctx) {
   (void)me;
 
-  draw_hand(&chrono_minute_hand_table[current_placement.chrono_minute_hand_index],
-            CHRONO_MINUTE_HAND_X, CHRONO_MINUTE_HAND_Y, ctx);
+#ifdef VECTOR_CHRONO_MINUTE_HAND
+  draw_vector_hand(&chrono_minute_hand_vector_table, current_placement.chrono_minute_hand_index,
+                   NUM_STEPS_CHRONO_MINUTE, CHRONO_MINUTE_HAND_X, CHRONO_MINUTE_HAND_Y, ctx);
+#endif
+
+#ifdef BITMAP_CHRONO_MINUTE_HAND
+  draw_bitmap_hand(&chrono_minute_hand_bitmap_table[current_placement.chrono_minute_hand_index],
+                   CHRONO_MINUTE_HAND_X, CHRONO_MINUTE_HAND_Y, ctx);
+#endif
 }
 #endif  // SHOW_CHRONO_MINUTE_HAND
 
@@ -354,8 +395,15 @@ void chrono_minute_layer_update_callback(Layer *me, GContext* ctx) {
 void chrono_second_layer_update_callback(Layer *me, GContext* ctx) {
   (void)me;
 
-  draw_hand(&chrono_second_hand_table[current_placement.chrono_second_hand_index],
-            CHRONO_SECOND_HAND_X, CHRONO_SECOND_HAND_Y, ctx);
+#ifdef VECTOR_CHRONO_SECOND_HAND
+  draw_vector_hand(&chrono_second_hand_vector_table, current_placement.chrono_second_hand_index,
+                   NUM_STEPS_CHRONO_SECOND, CHRONO_SECOND_HAND_X, CHRONO_SECOND_HAND_Y, ctx);
+#endif
+
+#ifdef BITMAP_CHRONO_SECOND_HAND
+  draw_bitmap_hand(&chrono_second_hand_bitmap_table[current_placement.chrono_second_hand_index],
+                   CHRONO_SECOND_HAND_X, CHRONO_SECOND_HAND_Y, ctx);
+#endif
 }
 #endif  // SHOW_CHRONO_SECOND_HAND
 

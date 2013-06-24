@@ -1,7 +1,7 @@
 #ifndef HAND_TABLE_H
 #define HAND_TABLE_H
 
-struct HandTable {
+struct BitmapHandTableRow {
   int image_id;
   int mask_id;
   int cx;
@@ -11,7 +11,21 @@ struct HandTable {
   int paint_black;
 };
 
+
+
+struct VectorHandGroup {
+  enum GColor outline;
+  enum GColor fill;
+  GPathInfo path_info;
+};
+
+struct VectorHandTable {
+  int num_groups;
+  struct VectorHandGroup *group;
+};
+
 // These symbols are used to define the stacking order for hands.
+
 #define STACKING_ORDER_HOUR 1
 #define STACKING_ORDER_MINUTE 2
 #define STACKING_ORDER_SECOND 3
