@@ -10,7 +10,7 @@
 PBL_APP_INFO(MY_UUID,
              WATCH_NAME, "drwrose",
              1, 1, /* App version */
-             DEFAULT_MENU_ICON,
+             RESOURCE_ID_ROSE_ICON,
 #ifdef MAKE_CHRONOGRAPH
              APP_INFO_STANDARD_APP
 #else
@@ -49,6 +49,12 @@ struct HandPlacement {
 };
 
 struct HandPlacement current_placement;
+
+static const uint32_t tap_segments[] = { 50 };
+VibePattern tap = {
+  tap_segments,
+  1,
+};
 
 int chrono_running = false;       // the chronograph has been started
 int chrono_lap_paused = false;    // the "lap" button has been pressed
@@ -502,11 +508,13 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, Window *window) {
     // pause).
     chrono_hold_seconds = seconds - chrono_start_seconds;
     chrono_running = false;
+    vibes_enqueue_custom_pattern(tap);
   } else {
     // If the chronograph is not currently running, this means to
     // start, from the currently showing Chronograph time.
     chrono_start_seconds = seconds - chrono_hold_seconds;
     chrono_running = true;
+    vibes_enqueue_custom_pattern(tap);
   }
 }
 
@@ -517,6 +525,7 @@ void chrono_lap_button() {
     // If we were already paused, this resumes the motion, jumping
     // ahead to the currently elapsed time.
     chrono_lap_paused = false;
+    vibes_enqueue_custom_pattern(tap);
   } else {
     // If we were not already paused, this pauses the hands here (but
     // does not stop the timer).
@@ -524,6 +533,7 @@ void chrono_lap_button() {
     seconds = get_time_seconds(&time);
     chrono_hold_seconds = seconds - chrono_start_seconds;
     chrono_lap_paused = true;
+    vibes_enqueue_custom_pattern(tap);
   }
 }
 
@@ -533,6 +543,7 @@ void chrono_reset_button() {
   chrono_lap_paused = false;
   chrono_start_seconds = 0;
   chrono_hold_seconds = 0;
+  vibes_double_pulse();
 }
 
 void chrono_lap_handler(ClickRecognizerRef recognizer, Window *window) {
@@ -559,7 +570,7 @@ void chrono_lap_or_reset_handler(ClickRecognizerRef recognizer, Window *window) 
 void click_config_provider(ClickConfig **config, Window *window) {
   // single click / repeat-on-hold config:
   config[BUTTON_ID_UP]->click.handler = (ClickHandler)chrono_start_stop_handler;
-  config[BUTTON_ID_UP]->click.repeat_interval_ms = 1000; // "hold-to-repeat" gets overridden if there's a long click handler configured!
+  //config[BUTTON_ID_UP]->click.repeat_interval_ms = 1000; // "hold-to-repeat" gets overridden if there's a long click handler configured!
 
   config[BUTTON_ID_DOWN]->click.handler = (ClickHandler)chrono_lap_handler;
   config[BUTTON_ID_DOWN]->click.repeat_interval_ms = 1000;
