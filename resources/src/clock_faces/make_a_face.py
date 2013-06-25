@@ -19,6 +19,10 @@ face.pasteImage((-0.47, 0.53), 'corner_trim.png', (29, 29), None, rotate = 90)
 face.pasteImage((-0.47, -0.53), 'corner_trim.png', (29, 29), None, rotate = 180)
 face.pasteImage((0.47, -0.53), 'corner_trim.png', (29, 29), None, rotate = 270)
 
+cx, cy = 0.220, -0.010
+face.pasteImage((cx, cy), 'date_card.png', (15, 8), None)
+print "date card = %s" % (face.p2s(cx, cy))
+
 face.save('a_face.png')
 
 if False:
