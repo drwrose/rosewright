@@ -33,6 +33,9 @@ Options:
     -S
         Suppress the second hand if it is defined.
 
+    -b
+        Enable a quick buzz at the top of the hour.
+
     -c
         Enable chronograph mode (if the selected hand style includes
         chrono hands).  This builds the watch as a standard app,
@@ -198,6 +201,7 @@ faces = {
 makeChronograph = False
 showSecondHand = False
 suppressSecondHand = False
+enableHourBuzzer = False
 showChronoMinuteHand = False
 showChronoSecondHand = False
 dayCard = None
@@ -590,6 +594,7 @@ def configWatch():
         'dateCardX' : dateCard and dateCard[0],
         'dateCardY' : dateCard and dateCard[1],
         'showSecondHand' : int(showSecondHand and not suppressSecondHand),
+        'enableHourBuzzer' : int(enableHourBuzzer),
         'makeChronograph' : int(makeChronograph and showChronoSecondHand),
         'showChronoMinuteHand' : int(showChronoMinuteHand),
         'showChronoSecondHand' : int(showChronoSecondHand),
@@ -599,7 +604,7 @@ def configWatch():
 
 # Main.
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:Scidl:h')
+    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:bScidl:h')
 except getopt.error, msg:
     usage(1, msg)
 
@@ -627,6 +632,8 @@ for opt, arg in opts:
             sys.exit(1)
     elif opt == '-S':
         suppressSecondHand = True
+    elif opt == '-b':
+        enableHourBuzzer = True
     elif opt == '-c':
         makeChronograph = True
     elif opt == '-i':

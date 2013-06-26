@@ -9,7 +9,7 @@
 
 PBL_APP_INFO(MY_UUID,
              WATCH_NAME, "drwrose",
-             1, 3, /* App version */
+             1, 4, /* App version */
              RESOURCE_ID_ROSE_ICON,
 #ifdef MAKE_CHRONOGRAPH
              APP_INFO_STANDARD_APP
@@ -46,6 +46,10 @@ struct HandPlacement {
   int chrono_second_hand_index;
   int day_index;
   int date_value;
+
+  // Not really a hand placement, but this is used to keep track of
+  // whether we have buzzed for the top of the hour or not.
+  int hour_buzzer;
 };
 
 struct HandPlacement current_placement;
@@ -61,11 +65,10 @@ int chrono_lap_paused = false;    // the "lap" button has been pressed
 int chrono_start_seconds = 0; // consulted if chrono_running && !chrono_lap_paused
 int chrono_hold_seconds = 0;  // consulted if !chrono_running || chrono_lap_paused
 
-// Returns the time-of-day in seconds.
+// Returns the time-of-day in seconds, given a PblTm structure already filled.
 int get_time_seconds(PblTm *time) {
   int seconds;
 
-  get_time(time);
   seconds = (time->tm_hour * 60 + time->tm_min) * 60 + time->tm_sec;
 
 #ifdef FAST_TIME
@@ -79,11 +82,10 @@ int get_time_seconds(PblTm *time) {
 
 // Determines the specific hand bitmaps that should be displayed based
 // on the current time.
-void compute_hands(struct HandPlacement *placement) {
-  PblTm time;
+void compute_hands(PblTm *time, struct HandPlacement *placement) {
   int seconds;
 
-  seconds = get_time_seconds(&time);
+  seconds = get_time_seconds(time);
 
   placement->hour_hand_index = ((NUM_STEPS_HOUR * seconds) / (3600 * 12)) % NUM_STEPS_HOUR;
   placement->minute_hand_index = ((NUM_STEPS_MINUTE * seconds) / 3600) % NUM_STEPS_MINUTE;
@@ -93,12 +95,16 @@ void compute_hands(struct HandPlacement *placement) {
 #endif  // SHOW_SECOND_HAND
 
 #ifdef SHOW_DAY_CARD
-  placement->day_index = time.tm_wday;
+  placement->day_index = time->tm_wday;
 #endif  // SHOW_DAY_CARD
 
 #ifdef SHOW_DATE_CARD
-  placement->date_value = time.tm_mday;
+  placement->date_value = time->tm_mday;
 #endif  // SHOW_DATE_CARD
+
+#ifdef ENABLE_HOUR_BUZZER
+  placement->hour_buzzer = (seconds / 3600) % 24;
+#endif
 
 #ifdef MAKE_CHRONOGRAPH
   {
@@ -440,10 +446,10 @@ void date_layer_update_callback(Layer *me, GContext* ctx) {
   draw_card(me, ctx, quick_itoa(current_placement.date_value));
 }
 
-void update_hands() {
+void update_hands(PblTm *time) {
   struct HandPlacement new_placement;
 
-  compute_hands(&new_placement);
+  compute_hands(time, &new_placement);
   if (new_placement.hour_hand_index != current_placement.hour_hand_index) {
     current_placement.hour_hand_index = new_placement.hour_hand_index;
     layer_mark_dirty(&hour_layer);
@@ -460,6 +466,13 @@ void update_hands() {
     layer_mark_dirty(&second_layer);
   }
 #endif  // SHOW_SECOND_HAND
+
+#ifdef ENABLE_HOUR_BUZZER
+  if (new_placement.hour_buzzer != current_placement.hour_buzzer) {
+    current_placement.hour_buzzer = new_placement.hour_buzzer;
+    vibes_short_pulse();
+  }
+#endif
 
 #ifdef MAKE_CHRONOGRAPH
 
@@ -495,10 +508,9 @@ void update_hands() {
 
 // Compute new hand positions once a minute (or once a second).
 void handle_tick(AppContextRef ctx, PebbleTickEvent *t) {
-  (void)t;
   (void)ctx;
 
-  update_hands();
+  update_hands(t->tick_time);
 }
 
 // Forward references.
@@ -509,6 +521,7 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, Window *window) {
   PblTm time;
   int seconds;
 
+  get_time(&time);
   seconds = get_time_seconds(&time);
 
   // The start/stop button was pressed.
@@ -519,7 +532,7 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, Window *window) {
     chrono_running = false;
     chrono_lap_paused = false;
     vibes_enqueue_custom_pattern(tap);
-    update_hands();
+    update_hands(&time);
 
     // We change the click config provider according to the chrono run
     // state.  When the chrono is stopped, we listen for a different
@@ -531,41 +544,46 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, Window *window) {
     chrono_start_seconds = seconds - chrono_hold_seconds;
     chrono_running = true;
     vibes_enqueue_custom_pattern(tap);
-    update_hands();
+    update_hands(&time);
 
     window_set_click_config_provider(window, (ClickConfigProvider)started_click_config_provider);
   }
 }
 
 void chrono_lap_button() {
+  PblTm time;
   int seconds;
+
+  get_time(&time);
 
   if (chrono_lap_paused) {
     // If we were already paused, this resumes the motion, jumping
     // ahead to the currently elapsed time.
     chrono_lap_paused = false;
     vibes_enqueue_custom_pattern(tap);
-    update_hands();
+    update_hands(&time);
   } else {
     // If we were not already paused, this pauses the hands here (but
     // does not stop the timer).
-    PblTm time;
     seconds = get_time_seconds(&time);
     chrono_hold_seconds = seconds - chrono_start_seconds;
     chrono_lap_paused = true;
     vibes_enqueue_custom_pattern(tap);
-    update_hands();
+    update_hands(&time);
   }
 }
 
 void chrono_reset_button() {
   // Resets the chronometer to 0 time.
+  PblTm time;
+
+  get_time(&time);
   chrono_running = false;
   chrono_lap_paused = false;
   chrono_start_seconds = 0;
   chrono_hold_seconds = 0;
   vibes_double_pulse();
-  update_hands();
+  update_hands(&time);
 }
 
 void chrono_lap_handler(ClickRecognizerRef recognizer, Window *window) {
@@ -619,6 +637,7 @@ void started_click_config_provider(ClickConfig **config, Window *window) {
 }
 
 void handle_init(AppContextRef ctx) {
+  PblTm time;
   int i;
   (void)ctx;
 
@@ -626,7 +645,8 @@ void handle_init(AppContextRef ctx) {
   window_set_fullscreen(&window, true);
   window_stack_push(&window, true /* Animated */);
 
-  compute_hands(&current_placement);
+  get_time(&time);
+  compute_hands(&time, &current_placement);
 
   resource_init_current_app(&APP_RESOURCES);
 

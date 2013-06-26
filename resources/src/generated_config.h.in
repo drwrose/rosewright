@@ -47,6 +47,10 @@ int stacking_order[] = {
   #define SECOND_HAND_Y %(secondHandY)s
 #endif
 
+#if %(enableHourBuzzer)s
+  #define ENABLE_HOUR_BUZZER 1
+#endif
+
 #if %(makeChronograph)s
   #define MAKE_CHRONOGRAPH 1
 #endif
