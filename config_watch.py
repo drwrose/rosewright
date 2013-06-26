@@ -81,7 +81,7 @@ centerX, centerY = 144 / 2, 168 / 2
 # style and face style, and a unique identifier.  For each style,
 # specify the following:
 #
-#    name, handStyle, faceStyle, uuid, centers
+#    name, handStyle, faceStyle, uuid
 #
 #  Where:
 #
@@ -89,18 +89,11 @@ centerX, centerY = 144 / 2, 168 / 2
 #   handStyle - the default hand style for this watch.
 #   faceStyle - the default face style for this watch.
 #   uuid      - the UUID to assign to this watch.
-#   centers   - a list of [(hand, x, y)] to indicate the position for
-#               each kind of watch hand.  If the list is empty or a
-#               hand is omitted, the default is the center.  This also
-#               defines the stacking order of the hands--any
-#               explicitly listed hands are drawn in the order
-#               specified, followed by all of the implicit hands in
-#               the usual order.
 #
 watches = {
-    'a' : ('Rosewright A', 'a', 'a', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC5], []),
-    'b' : ('Rosewright B', 'b', 'b', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC6], []),
-    'c' : ('Rosewright Chronograph', 'c', 'c', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC7], [('chrono_minute', 115, 84), ('second', 29, 84)]),
+    'a' : ('Rosewright A', 'a', 'a', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC5]),
+    'b' : ('Rosewright B', 'b', 'b', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC6]),
+    'c' : ('Rosewright Chronograph', 'c', 'c', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC7]),
     }
     
 
@@ -180,19 +173,26 @@ hands = {
 
 # Table of face styles.  For each style, specify the following:
 #
-#    filename, dayCard, dateCard
+#    filename, dayCard, dateCard, centers
 #
 #  Where:
 #
-#   filename     - the background image for the face.
-#   dayCard      - the (x, y) position of the "day of week" card, or None.
-#   dateCard     - the (x, y) position of the "date of month" card, or None.
+#   filename  - the background image for the face.
+#   dayCard   - the (x, y) position of the "day of week" card, or None.
+#   dateCard  - the (x, y) position of the "date of month" card, or None.
+#   centers   - a list of [(hand, x, y)] to indicate the position for
+#               each kind of watch hand.  If the list is empty or a
+#               hand is omitted, the default is the center.  This also
+#               defines the stacking order of the hands--any
+#               explicitly listed hands are drawn in the order
+#               specified, followed by all of the implicit hands in
+#               the usual order.
 #
 
 faces = {
-    'a' : ('a_face.png', None, (106, 82)),
-    'b' : ('b_face.png', (52, 109), (92, 109)),
-    'c' : ('c_face.png', None, None),
+    'a' : ('a_face.png', None, (106, 82), []),
+    'b' : ('b_face.png', (52, 109), (92, 109), []),
+    'c' : ('c_face.png', None, None, [('chrono_minute', 115, 84), ('second', 29, 84)]),
     }
 
 makeChronograph = False
@@ -268,7 +268,7 @@ def makeFaces():
     "type": "png"
     },"""    
 
-    targetFilename, dayCard, dateCard = faces[faceStyle]
+    targetFilename, dayCard, dateCard, centers = faces[faceStyle]
 
     resourceStr += resourceEntry % {
         'targetFilename' : targetFilename,
@@ -358,8 +358,6 @@ def makeBitmapHands(generatedTable, hand, sourceFilename, colorMode, asymmetric,
         largeMask = PIL.Image.new('L', size, 0)
         largeMask.paste(sourceMask, (center[0] - pivot[0], center[1] - pivot[1]))
 
-    handMap = {}
-    resourceMap = {}
     for i in range(numSteps[hand]):
         flip_x = False
         flip_y = False
@@ -644,14 +642,14 @@ if not watchStyle:
     print >> sys.stderr, "You must specify a desired watch style."
     sys.exit(1)
 
-watchName, defaultHandStyle, defaultFaceStyle, uuid, centers = watches[watchStyle]
+watchName, defaultHandStyle, defaultFaceStyle, uuid = watches[watchStyle]
 
 if not handStyle:
     handStyle = defaultHandStyle
 if not faceStyle:
     faceStyle = defaultFaceStyle
 
-targetFilename, dayCard, dateCard = faces[faceStyle]
+targetFilename, dayCard, dateCard, centers = faces[faceStyle]
 
 locale.setlocale(locale.LC_ALL, localeName)
 
