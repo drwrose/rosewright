@@ -29,7 +29,7 @@ face.save('b_face.png')
 
 print "date cards = %s" % (face.p2s(-cx, cy, cx, cy))
 
-if True: #False:
+if False:
     # Add the hands for illustrative purposes.
     pixelScale = face.handScaleToPixelScale(0.27)
     face.pasteImage((0, 0), '../clock_hands/b_hour_hand.png', (33, 211), pixelScale, rotate = 255)

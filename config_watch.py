@@ -156,11 +156,11 @@ watches = {
 hands = {
     'a' : [('hour', ('a_hour_hand.png', 'b', False, (78, 410), 0.12), None),
            ('minute', ('a_minute_hand.png', 'b', True, (37, 557), 0.12), None),
-           ('second', None, [('b', [(0, -5), (0, -70)])]),
+           ('second', ('a_second_hand.png', 'b', False, (37, -28), 0.12),
+            [('b', [(0, -5), (0, -70)])]),
            ],
     'b' : [('hour', ('b_hour_hand.png', 'b', False, (33, 211), 0.27), None),
            ('minute', ('b_minute_hand.png', 'b', False, (24, 280), 0.27), None),
-           #('second', None, [('b', [(0, -5), (0, -75)])]),
            ('second', ('b_second_hand.png', 'b', False, (33, -23), 0.27),
             [('b', [(0, -5), (0, -75)]),
              ]),
@@ -455,10 +455,10 @@ def makeBitmapHands(generatedTable, hand, sourceFilename, colorMode, asymmetric,
                     pm = p1
 
             # It's nice to show a hole in the center pivot.
-            if cx >= 0 and cx < p.size[0] and cy >= 0 and cy < p.size[1]:
-                p.putpixel((cx, cy), 0)
-                if useTransparency:
-                    pm.putpixel((cx, cy), 0)
+            ## if cx >= 0 and cx < p.size[0] and cy >= 0 and cy < p.size[1]:
+            ##     p.putpixel((cx, cy), 0)
+            ##     if useTransparency:
+            ##         pm.putpixel((cx, cy), 0)
 
             targetFilename = 'flat_%s_%s_%s.png' % (handStyle, hand, i)
             print targetFilename
