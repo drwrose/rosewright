@@ -440,11 +440,8 @@ void date_layer_update_callback(Layer *me, GContext* ctx) {
   draw_card(me, ctx, quick_itoa(current_placement.date_value));
 }
 
-// Compute new hand positions once a minute.
-void handle_tick(AppContextRef ctx, PebbleTickEvent *t) {
+void update_hands() {
   struct HandPlacement new_placement;
-  (void)t;
-  (void)ctx;
 
   compute_hands(&new_placement);
   if (new_placement.hour_hand_index != current_placement.hour_hand_index) {
@@ -496,6 +493,18 @@ void handle_tick(AppContextRef ctx, PebbleTickEvent *t) {
 #endif  // SHOW_DATE_CARD
 }
 
+// Compute new hand positions once a minute (or once a second).
+void handle_tick(AppContextRef ctx, PebbleTickEvent *t) {
+  (void)t;
+  (void)ctx;
+
+  update_hands();
+}
+
+// Forward references.
+void stopped_click_config_provider(ClickConfig **config, Window *window);
+void started_click_config_provider(ClickConfig **config, Window *window);
+
 void chrono_start_stop_handler(ClickRecognizerRef recognizer, Window *window) {
   PblTm time;
   int seconds;
@@ -508,13 +517,23 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, Window *window) {
     // pause).
     chrono_hold_seconds = seconds - chrono_start_seconds;
     chrono_running = false;
+    chrono_lap_paused = false;
     vibes_enqueue_custom_pattern(tap);
+    update_hands();
+
+    // We change the click config provider according to the chrono run
+    // state.  When the chrono is stopped, we listen for a different
+    // set of buttons than when it is started.
+    window_set_click_config_provider(window, (ClickConfigProvider)stopped_click_config_provider);
   } else {
     // If the chronograph is not currently running, this means to
     // start, from the currently showing Chronograph time.
     chrono_start_seconds = seconds - chrono_hold_seconds;
     chrono_running = true;
     vibes_enqueue_custom_pattern(tap);
+    update_hands();
+
+    window_set_click_config_provider(window, (ClickConfigProvider)started_click_config_provider);
   }
 }
 
@@ -526,6 +545,7 @@ void chrono_lap_button() {
     // ahead to the currently elapsed time.
     chrono_lap_paused = false;
     vibes_enqueue_custom_pattern(tap);
+    update_hands();
   } else {
     // If we were not already paused, this pauses the hands here (but
     // does not stop the timer).
@@ -534,6 +554,7 @@ void chrono_lap_button() {
     chrono_hold_seconds = seconds - chrono_start_seconds;
     chrono_lap_paused = true;
     vibes_enqueue_custom_pattern(tap);
+    update_hands();
   }
 }
 
@@ -544,6 +565,7 @@ void chrono_reset_button() {
   chrono_start_seconds = 0;
   chrono_hold_seconds = 0;
   vibes_double_pulse();
+  update_hands();
 }
 
 void chrono_lap_handler(ClickRecognizerRef recognizer, Window *window) {
@@ -567,19 +589,34 @@ void chrono_lap_or_reset_handler(ClickRecognizerRef recognizer, Window *window) 
   }
 }
 
-void click_config_provider(ClickConfig **config, Window *window) {
-  // single click / repeat-on-hold config:
+// Enable the set of buttons active while the chrono is stopped.
+void stopped_click_config_provider(ClickConfig **config, Window *window) {
+  // single click config:
   config[BUTTON_ID_UP]->click.handler = (ClickHandler)chrono_start_stop_handler;
-  //config[BUTTON_ID_UP]->click.repeat_interval_ms = 1000; // "hold-to-repeat" gets overridden if there's a long click handler configured!
 
-  config[BUTTON_ID_DOWN]->click.handler = (ClickHandler)chrono_lap_handler;
-  config[BUTTON_ID_DOWN]->click.repeat_interval_ms = 1000;
+  config[BUTTON_ID_DOWN]->click.handler = NULL;
 
   // long click config:
   config[BUTTON_ID_DOWN]->long_click.handler = (ClickHandler)chrono_lap_or_reset_handler;
   config[BUTTON_ID_DOWN]->long_click.delay_ms = 700;
 }
 
+// Enable the set of buttons active while the chrono is running.
+void started_click_config_provider(ClickConfig **config, Window *window) {
+  // single click config:
+  config[BUTTON_ID_UP]->click.handler = (ClickHandler)chrono_start_stop_handler;
+
+  config[BUTTON_ID_DOWN]->click.handler = (ClickHandler)chrono_lap_handler;
+
+  // It's important to disable the lock_click handler while the chrono
+  // is running, so that the normal click handler (above) can be
+  // immediately responsive.  If we leave the long_click handler
+  // active, then the underlying SDK has to wait the full 700 ms to
+  // differentiate a long_click from a click, which makes the lap
+  // response sluggish.
+  config[BUTTON_ID_DOWN]->long_click.handler = NULL;
+  config[BUTTON_ID_DOWN]->long_click.delay_ms = 0;
+}
 
 void handle_init(AppContextRef ctx) {
   int i;
@@ -651,7 +688,7 @@ void handle_init(AppContextRef ctx) {
   }
 
 #ifdef MAKE_CHRONOGRAPH
- window_set_click_config_provider(&window, (ClickConfigProvider)click_config_provider);
+ window_set_click_config_provider(&window, (ClickConfigProvider)stopped_click_config_provider);
 #endif  // MAKE_CHRONOGRAPH
 }
 
