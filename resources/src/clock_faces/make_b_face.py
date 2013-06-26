@@ -11,6 +11,8 @@ face.drawRing(1.1, width = 0.05)
 face.setFg(0)
 face.drawRing(1.1)
 face.drawRing(1.0)
+face.drawRing(0.093, width = 0.028)
+
 face.drawTicks(60, 0.95, 1.0, width = 0.003)
 face.drawTicks(12, 0.95, 1.0, width = 0.009)
 
@@ -27,7 +29,7 @@ face.save('b_face.png')
 
 print "date cards = %s" % (face.p2s(-cx, cy, cx, cy))
 
-if False:
+if True: #False:
     # Add the hands for illustrative purposes.
     pixelScale = face.handScaleToPixelScale(0.27)
     face.pasteImage((0, 0), '../clock_hands/b_hour_hand.png', (33, 211), pixelScale, rotate = 255)

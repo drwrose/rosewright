@@ -9,7 +9,7 @@
 
 PBL_APP_INFO(MY_UUID,
              WATCH_NAME, "drwrose",
-             1, 2, /* App version */
+             1, 3, /* App version */
              RESOURCE_ID_ROSE_ICON,
 #ifdef MAKE_CHRONOGRAPH
              APP_INFO_STANDARD_APP
