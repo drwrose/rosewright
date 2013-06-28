@@ -98,6 +98,13 @@ class FaceMaker:
                     else:
                         self.fullFg.putpixel((xi, yi), 0)
 
+    def fill(self, color):
+        """ Fills the entire face with the current foreground color.
+        Requires a flush."""
+        
+        self.flush()
+        self.target.paste(self.fullFg, (0, 0))
+        
     def flush(self):
         """ Copies the recently-drawn buffer to the target and clears
         the buffer for more drawing. """
@@ -224,6 +231,23 @@ class FaceMaker:
             p1 = self.computePolar(angle, r1, center = center)
             p2 = self.computePolar(angle, r2, center = center)
             self.drawLine(p1 + p2, width = width)
+
+    def drawCircularSpots(self, ticks, ring, center = (0, 0), spotDiameter = 0.01, width = 0.003):
+        """ Draws spots (actually, rings as in drawRing) in a circle,
+        similar to drawTicks().  """
+
+        if not ticks:
+            return
+
+        r = ring / 2.0
+
+        if isinstance(ticks, type(0)):
+            # If we're given a number of ticks, make it a list.
+            ticks = map(lambda t: t * 360.0 / ticks, range(ticks))
+
+        for angle in ticks:
+            p = self.computePolar(angle, r, center = center)
+            self.drawRing(spotDiameter, width = width, center = p)
 
     def loadFont(self, filename, fontHeight):
         """ Loads and returns a font suitable for rendering.  The

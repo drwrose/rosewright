@@ -172,6 +172,10 @@ hands = {
             [('w', [(0, -4), (0, -88)]),
              ]),
            ],
+    'd' : [('hour', ('d_hour_hand.png', 'b', False, (28, 193), 0.27), None),
+           ('minute', ('d_minute_hand.png', 'b', False, (27, 267), 0.27), None),
+           ('second', ('d_second_hand.png', 'b', False, (14, 269), 0.27), None),
+           ],
     }
 
 # Table of face styles.  For each style, specify the following:
