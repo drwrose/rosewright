@@ -87,18 +87,19 @@ class FaceMaker:
         self.flush()
         self.fg = fg
 
-        self.fullFg = PIL.Image.new(self.format, self.targetSize, self.fg)
+        self.fullFg = PIL.Image.new('L', self.targetSize, self.fg)
+        self.fullFg = self.fullFg.convert('1')
 
-        if fg == 128:
-            # Special case.
-            for yi in range(self.fullFg.size[1]):
-                for xi in range(self.fullFg.size[0]):
-                    if (xi ^ yi) & 1:
-                        self.fullFg.putpixel((xi, yi), 255)
-                    else:
-                        self.fullFg.putpixel((xi, yi), 0)
+        ## if fg == 128:
+        ##     # Special case.
+        ##     for yi in range(self.fullFg.size[1]):
+        ##         for xi in range(self.fullFg.size[0]):
+        ##             if (xi ^ yi) & 1:
+        ##                 self.fullFg.putpixel((xi, yi), 255)
+        ##             else:
+        ##                 self.fullFg.putpixel((xi, yi), 0)
 
-    def fill(self, color):
+    def fill(self):
         """ Fills the entire face with the current foreground color.
         Requires a flush."""
         
@@ -181,7 +182,7 @@ class FaceMaker:
 
 
     def fillCircle(self, diameter, center = (0, 0)):
-        """ Draws a filled circle into the buffer. """
+        """ Draws a filled circle into the buffer.  Same as drawRing with width = None. """
         r = diameter / 2.0
         self.draw.ellipse(self.p2b(center[0] - r, center[1] - r, center[0] + r, center[1] + r), fill = 255)
 
@@ -197,14 +198,16 @@ class FaceMaker:
         
         r = diameter / 2.0
         outer = self.p2b(center[0] - r, center[1] - r, center[0] + r, center[1] + r)
-        r -= width
-        inner = self.p2b(center[0] - r, center[1] - r, center[0] + r, center[1] + r)
-        # Make sure the ring has at least one pixel.
-        inner = [max(inner[0], outer[0] + 1), max(inner[1], outer[1] + 1),
-                 min(inner[2], outer[2] - 1), min(inner[3], outer[3] - 1)]
-        
         self.draw.ellipse(outer, fill = 255)
-        self.draw.ellipse(inner, fill = 0)
+
+        if width is not None:
+            r -= width
+            inner = self.p2b(center[0] - r, center[1] - r, center[0] + r, center[1] + r)
+            # Make sure the ring has at least one pixel.
+            inner = [max(inner[0], outer[0] + 1), max(inner[1], outer[1] + 1),
+                     min(inner[2], outer[2] - 1), min(inner[3], outer[3] - 1)]
+
+            self.draw.ellipse(inner, fill = 0)
 
     def drawLine(self, points, width = 0.003):
         """ Draws a line into the buffer in buffer coordinates. """

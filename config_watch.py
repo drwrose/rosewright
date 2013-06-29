@@ -97,6 +97,7 @@ watches = {
     'a' : ('Rosewright A', 'a', 'a', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC5]),
     'b' : ('Rosewright B', 'b', 'b', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC6]),
     'c' : ('Rosewright Chronograph', 'c', 'c', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC7]),
+    'd' : ('Rosewright D', 'd', 'd', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC8]),
     }
     
 
@@ -172,9 +173,12 @@ hands = {
             [('w', [(0, -4), (0, -88)]),
              ]),
            ],
-    'd' : [('hour', ('d_hour_hand.png', 'b', False, (28, 193), 0.27), None),
-           ('minute', ('d_minute_hand.png', 'b', False, (27, 267), 0.27), None),
-           ('second', ('d_second_hand.png', 'b', False, (14, 269), 0.27), None),
+    'd' : [('hour', ('d_hour_hand.png', 't', False, (24, 193), 0.24), None),
+           ('minute', ('d_minute_hand.png', 't', False, (27, 267), 0.24), None),
+           ('second', ('d_second_hand.png', 'b', False, (14, -8), 0.24),
+            [('b', [(0, -3), (0, -64)]),
+             ]),
+            
            ],
     }
 
@@ -200,6 +204,7 @@ faces = {
     'a' : ('a_face.png', None, (106, 82), []),
     'b' : ('b_face.png', (52, 109), (92, 109), []),
     'c' : ('c_face.png', None, None, [('chrono_minute', 115, 84), ('second', 29, 84)]),
+    'd' : ('d_face.png', None, None, []),
     }
 
 makeChronograph = False
