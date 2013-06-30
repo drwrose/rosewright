@@ -1,3 +1,5 @@
+.DS_Store
+*~
 
 # Ignore waf build tool generated files
 .waf*
