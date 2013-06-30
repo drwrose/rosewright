@@ -203,7 +203,7 @@ faces = {
     'a' : ('a_face.png', None, (106, 82, False), []),
     'b' : ('b_face.png', (52, 109, False), (92, 109, False), []),
     'c' : ('c_face.png', None, None, [('chrono_minute', 115, 84), ('second', 29, 84)]),
-    'd' : ('d_face.png', (53, 107, False), (91, 107, False), []),
+    'd' : ('d_face.png', (53, 107, True), (91, 107, True), []),
     }
 
 makeChronograph = False

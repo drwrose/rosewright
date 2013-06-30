@@ -35,8 +35,8 @@ font = face.loadFont('Multicolore.otf', 0.13)
 face.drawCircularLabels(face.standardLabels, 0.86, font, align = 'i')
 
 cx, cy = 0.120, 0.15
-face.pasteImage((-cx, cy), 'date_card_white.png', (15, 8), None)
-face.pasteImage((cx, cy), 'date_card_white.png', (15, 8), None)
+face.pasteImage((-cx, cy), 'date_card_black.png', (15, 8), None)
+face.pasteImage((cx, cy), 'date_card_black.png', (15, 8), None)
 
 face.save('d_face.png')
 print "handScale = %s" % (face.pixelScaleToHandScale(634))
