@@ -25,3 +25,11 @@ mv build/rosewright.pbw build/rosewright_c1.pbw
 python config_watch.py -sc -c || exit
 ./waf build || exit
 mv build/rosewright.pbw build/rosewright_c2.pbw
+
+python config_watch.py -sd -S || exit
+./waf build || exit
+mv build/rosewright.pbw build/rosewright_d.pbw
+
+python config_watch.py -sd || exit
+./waf build || exit
+mv build/rosewright.pbw build/rosewright_ds.pbw

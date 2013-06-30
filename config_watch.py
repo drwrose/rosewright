@@ -512,6 +512,8 @@ def makeHands(generatedTable):
 
     for hand, bitmapParams, vectorParams in hands[handStyle]:
         if hand == 'second':
+            if suppressSecondHand:
+                continue
             global showSecondHand
             showSecondHand = True
         elif hand == 'chrono_minute':
