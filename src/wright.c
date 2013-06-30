@@ -419,7 +419,7 @@ void chrono_second_layer_update_callback(Layer *me, GContext* ctx) {
 }
 #endif  // SHOW_CHRONO_SECOND_HAND
 
-void draw_card(Layer *me, GContext* ctx, const char *text) {
+void draw_card(Layer *me, GContext* ctx, const char *text, bool on_black) {
   GFont font;
   GRect box;
 
@@ -427,9 +427,11 @@ void draw_card(Layer *me, GContext* ctx, const char *text) {
   box = layer_get_frame(me);
   box.origin.x = 0;
   box.origin.y = 0;
-  graphics_context_set_text_color(ctx, GColorBlack);
-  graphics_context_set_stroke_color(ctx, GColorBlack);
-  //  graphics_draw_round_rect(ctx, box, 0);
+  if (on_black) {
+    graphics_context_set_text_color(ctx, GColorWhite);
+  } else {
+    graphics_context_set_text_color(ctx, GColorBlack);
+  }
 
   box.origin.y -= 3;  // Determined empirically.
 
@@ -438,13 +440,17 @@ void draw_card(Layer *me, GContext* ctx, const char *text) {
                      NULL);
 }
 
+#ifdef SHOW_DAY_CARD
 void day_layer_update_callback(Layer *me, GContext* ctx) {
-  draw_card(me, ctx, weekday_names[current_placement.day_index]);
+  draw_card(me, ctx, weekday_names[current_placement.day_index], DAY_CARD_ON_BLACK);
 }
+#endif  // SHOW_DAY_CARD
 
+#ifdef SHOW_DATE_CARD
 void date_layer_update_callback(Layer *me, GContext* ctx) {
-  draw_card(me, ctx, quick_itoa(current_placement.date_value));
+  draw_card(me, ctx, quick_itoa(current_placement.date_value), DATE_CARD_ON_BLACK);
 }
+#endif  // SHOW_DATE_CARD
 
 void update_hands(PblTm *time) {
   struct HandPlacement new_placement;

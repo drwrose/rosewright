@@ -178,7 +178,6 @@ hands = {
            ('second', ('d_second_hand.png', 'b', False, (14, -8), 0.24),
             [('b', [(0, -3), (0, -64)]),
              ]),
-            
            ],
     }
 
@@ -189,8 +188,8 @@ hands = {
 #  Where:
 #
 #   filename  - the background image for the face.
-#   dayCard   - the (x, y) position of the "day of week" card, or None.
-#   dateCard  - the (x, y) position of the "date of month" card, or None.
+#   dayCard   - the (x, y, b) position and color of the "day of week" card, or None.
+#   dateCard  - the (x, y, b) position and color of the "date of month" card, or None.
 #   centers   - a list of [(hand, x, y)] to indicate the position for
 #               each kind of watch hand.  If the list is empty or a
 #               hand is omitted, the default is the center.  This also
@@ -201,10 +200,10 @@ hands = {
 #
 
 faces = {
-    'a' : ('a_face.png', None, (106, 82), []),
-    'b' : ('b_face.png', (52, 109), (92, 109), []),
+    'a' : ('a_face.png', None, (106, 82, False), []),
+    'b' : ('b_face.png', (52, 109, False), (92, 109, False), []),
     'c' : ('c_face.png', None, None, [('chrono_minute', 115, 84), ('second', 29, 84)]),
-    'd' : ('d_face.png', None, None, []),
+    'd' : ('d_face.png', (53, 107, False), (91, 107, False), []),
     }
 
 makeChronograph = False
@@ -600,8 +599,10 @@ def configWatch():
         'showDateCard' : int(bool(dateCard)),
         'dayCardX' : dayCard and dayCard[0],
         'dayCardY' : dayCard and dayCard[1],
+        'dayCardOnBlack' : int(bool(dayCard and dayCard[2])),
         'dateCardX' : dateCard and dateCard[0],
         'dateCardY' : dateCard and dateCard[1],
+        'dateCardOnBlack' : int(bool(dateCard and dateCard[2])),
         'showSecondHand' : int(showSecondHand and not suppressSecondHand),
         'enableHourBuzzer' : int(enableHourBuzzer),
         'makeChronograph' : int(makeChronograph and showChronoSecondHand),
