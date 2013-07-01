@@ -210,7 +210,7 @@ faces = {
     'a' : ('a_face.png', None, (106, 82, 'b'), []),
     'b' : ('b_face.png', (52, 109, 'b'), (92, 109, 'b'), []),
     'c' : ('c_face.png', None, None, [('chrono_minute', 115, 84), ('second', 29, 84)]),
-    'd' : ('d_face.png', (53, 107, True), (91, 107, 'w'), []),
+    'd' : ('d_face.png', (53, 107, 'w'), (91, 107, 'w'), []),
     'e' : ('e_face.png', None, (123, 82, 'B'), []),
     }
 
