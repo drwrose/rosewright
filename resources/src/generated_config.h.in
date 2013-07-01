@@ -34,6 +34,7 @@ int stacking_order[] = {
   #define DAY_CARD_X %(dayCardX)s
   #define DAY_CARD_Y %(dayCardY)s
   #define DAY_CARD_ON_BLACK %(dayCardOnBlack)s
+  #define DAY_CARD_BOLD %(dayCardBold)s
 #endif
 
 #if %(showDateCard)s
@@ -41,6 +42,7 @@ int stacking_order[] = {
   #define DATE_CARD_X %(dateCardX)s
   #define DATE_CARD_Y %(dateCardY)s
   #define DATE_CARD_ON_BLACK %(dateCardOnBlack)s
+  #define DATE_CARD_BOLD %(dateCardBold)s
 #endif
 
 #if %(showSecondHand)s

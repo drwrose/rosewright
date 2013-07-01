@@ -419,11 +419,15 @@ void chrono_second_layer_update_callback(Layer *me, GContext* ctx) {
 }
 #endif  // SHOW_CHRONO_SECOND_HAND
 
-void draw_card(Layer *me, GContext* ctx, const char *text, bool on_black) {
+void draw_card(Layer *me, GContext* ctx, const char *text, bool on_black, bool bold) {
   GFont font;
   GRect box;
 
-  font = fonts_get_system_font(FONT_KEY_GOTHIC_18);
+  if (bold) {
+    font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+  } else {
+    font = fonts_get_system_font(FONT_KEY_GOTHIC_18);
+  }
   box = layer_get_frame(me);
   box.origin.x = 0;
   box.origin.y = 0;
@@ -442,13 +446,13 @@ void draw_card(Layer *me, GContext* ctx, const char *text, bool on_black) {
 
 #ifdef SHOW_DAY_CARD
 void day_layer_update_callback(Layer *me, GContext* ctx) {
-  draw_card(me, ctx, weekday_names[current_placement.day_index], DAY_CARD_ON_BLACK);
+  draw_card(me, ctx, weekday_names[current_placement.day_index], DAY_CARD_ON_BLACK, DAY_CARD_BOLD);
 }
 #endif  // SHOW_DAY_CARD
 
 #ifdef SHOW_DATE_CARD
 void date_layer_update_callback(Layer *me, GContext* ctx) {
-  draw_card(me, ctx, quick_itoa(current_placement.date_value), DATE_CARD_ON_BLACK);
+  draw_card(me, ctx, quick_itoa(current_placement.date_value), DATE_CARD_ON_BLACK, DATE_CARD_BOLD);
 }
 #endif  // SHOW_DATE_CARD
 

@@ -98,6 +98,7 @@ watches = {
     'b' : ('Rosewright B', 'b', 'b', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC6]),
     'c' : ('Rosewright Chronograph', 'c', 'c', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC7]),
     'd' : ('Rosewright D', 'd', 'd', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC8]),
+    'e' : ('Rosewright E', 'e', 'e', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC9]),
     }
     
 
@@ -179,6 +180,12 @@ hands = {
             [('b', [(0, -3), (0, -64)]),
              ]),
            ],
+    'e' : [('hour', ('e_hour_hand.png', 't%', False, (28, 99), 0.53), None),
+           ('minute', ('e_minute_hand.png', 't%', False, (22, 142), 0.53), None),
+           ('second', ('d_second_hand.png', 'b', False, (14, -8), 0.24),
+            [('b', [(0, -3), (0, -63)]),
+             ]),
+           ],
     }
 
 # Table of face styles.  For each style, specify the following:
@@ -188,8 +195,8 @@ hands = {
 #  Where:
 #
 #   filename  - the background image for the face.
-#   dayCard   - the (x, y, b) position and color of the "day of week" card, or None.
-#   dateCard  - the (x, y, b) position and color of the "date of month" card, or None.
+#   dayCard   - the (x, y, c) position and color of the "day of week" card, or None.
+#   dateCard  - the (x, y, c) position and color of the "date of month" card, or None.
 #   centers   - a list of [(hand, x, y)] to indicate the position for
 #               each kind of watch hand.  If the list is empty or a
 #               hand is omitted, the default is the center.  This also
@@ -200,10 +207,11 @@ hands = {
 #
 
 faces = {
-    'a' : ('a_face.png', None, (106, 82, False), []),
-    'b' : ('b_face.png', (52, 109, False), (92, 109, False), []),
+    'a' : ('a_face.png', None, (106, 82, 'b'), []),
+    'b' : ('b_face.png', (52, 109, 'b'), (92, 109, 'b'), []),
     'c' : ('c_face.png', None, None, [('chrono_minute', 115, 84), ('second', 29, 84)]),
-    'd' : ('d_face.png', (53, 107, True), (91, 107, True), []),
+    'd' : ('d_face.png', (53, 107, True), (91, 107, 'w'), []),
+    'e' : ('e_face.png', None, (123, 82, 'B'), []),
     }
 
 makeChronograph = False
@@ -601,10 +609,12 @@ def configWatch():
         'showDateCard' : int(bool(dateCard)),
         'dayCardX' : dayCard and dayCard[0],
         'dayCardY' : dayCard and dayCard[1],
-        'dayCardOnBlack' : int(bool(dayCard and dayCard[2])),
+        'dayCardOnBlack' : int(bool(dayCard and (dayCard[2].lower() == 'w'))),
+        'dayCardBold' : int(bool(dayCard and (dayCard[2] in 'WB'))),
         'dateCardX' : dateCard and dateCard[0],
         'dateCardY' : dateCard and dateCard[1],
-        'dateCardOnBlack' : int(bool(dateCard and dateCard[2])),
+        'dateCardOnBlack' : int(bool(dateCard and (dateCard[2].lower() == 'w'))),
+        'dateCardBold' : int(bool(dateCard and (dateCard[2] in 'WB'))),
         'showSecondHand' : int(showSecondHand and not suppressSecondHand),
         'enableHourBuzzer' : int(enableHourBuzzer),
         'makeChronograph' : int(makeChronograph and showChronoSecondHand),
