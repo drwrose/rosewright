@@ -41,3 +41,7 @@ mv build/rosewright.pbw build/rosewright_e.pbw
 python config_watch.py -se || exit
 ./waf build || exit
 mv build/rosewright.pbw build/rosewright_es.pbw
+
+python config_watch.py -se -b || exit
+./waf build || exit
+mv build/rosewright.pbw build/rosewright_esb.pbw
