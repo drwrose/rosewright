@@ -8,6 +8,9 @@ import sys
 def round(f):
     return int(f + 0.5)
 
+threshold = 127
+thresholdMap = [0] * (256 - threshold) + [255] * (threshold)
+
 class FaceMaker:
 
     """ This class serves to collect several useful functions for
@@ -106,7 +109,7 @@ class FaceMaker:
         self.flush()
         self.target.paste(self.fullFg, (0, 0))
         
-    def flush(self):
+    def flush(self, dither = True):
         """ Copies the recently-drawn buffer to the target and clears
         the buffer for more drawing. """
 
@@ -115,6 +118,8 @@ class FaceMaker:
                     self.cropOrigin[1],
                     self.cropOrigin[0] + self.targetSize[0],
                     self.cropOrigin[1] + self.targetSize[1]))
+        if not dither:
+            b = b.point(thresholdMap)
         b = b.convert(self.format)
         self.target.paste(self.fullFg, (0, 0), b)
         
@@ -131,6 +136,10 @@ class FaceMaker:
     def d2b(self, d):
         """ Scales the floating-point delta value into a buffer delta. """
         return round(d * self.zoom * self.maxSize)
+
+    def b2d(self, s):
+        """ Scales buffer delta into face coordinates. """
+        return float(s) / (self.zoom * self.maxSize)
 
     def p2b(self, *p):
         """ Scales the floating-point point (or list of points) into a
@@ -252,11 +261,14 @@ class FaceMaker:
             p = self.computePolar(angle, r, center = center)
             self.drawRing(spotDiameter, width = width, center = p)
 
-    def loadFont(self, filename, fontHeight):
+    def loadFont(self, filename, fontHeight, directDraw = True):
         """ Loads and returns a font suitable for rendering.  The
         fontHeight is given in face units, and is scaled to the target
         pixels. """
-        h = self.d2s(fontHeight)
+        if directDraw:
+            h = self.d2s(fontHeight)
+        else:
+            h = self.d2b(fontHeight)
         try:
             font = PIL.ImageFont.truetype(filename, h)
         except ImportError:
@@ -288,7 +300,7 @@ class FaceMaker:
 
         self.tdraw.text(sp, text, fill = self.fg, font = font)
             
-    def drawCircularLabels(self, labels, diameter, font, center = (0, 0), align = 'c'):
+    def drawCircularLabels(self, labels, diameter, font, center = (0, 0), align = 'c', rotate = False, scale = None, directDraw = True):
         """ Draws text in a circle.  labels is a list of (angle,
         text).
 
@@ -297,23 +309,87 @@ class FaceMaker:
         the label just inside the ring, and 'o' to place it just
         outside.
  
-        The text is drawn directly into the target screen, rather than
-        into the offscreen buffer, in an attempt to minimize scaling
-        artifacts. """
+        If directDraw is True, then the text is drawn directly into
+        the target screen, rather than into the offscreen buffer, in
+        an attempt to minimize scaling artifacts. """
+
         if not font:
             return
 
         for angle, text in labels:
             w, h = self.tdraw.textsize(text, font = font)
-            tr = self.s2d(max(w, h) / 2.0)  # text radius
+            tr = max(w, h) / 2.0  # text radius
+            if directDraw:
+                tr = self.s2d(tr)
+            else:
+                tr = self.b2d(tr)
             r = diameter / 2.0
             if align == 'i':
                 r -= tr
             elif align == 'o':
                 r += tr
             p = self.computePolar(angle, r, center = center)
-            sp = self.p2s(*p)
-            self.tdraw.text((sp[0] - w / 2, sp[1] - h / 2), text, fill = self.fg, font = font)
+
+            if directDraw and not rotate:
+                # Just paste the text directly into the buffer, for
+                # minimal aliasing.
+                sp = self.p2s(*p)
+                self.tdraw.text((sp[0] - w / 2, sp[1] - h / 2), text, fill = self.fg, font = font)
+
+            elif directDraw and rotate:
+                # Support directDraw with rotate.
+                sp = self.p2s(*p)
+
+                b = PIL.Image.new(self.format, (w, h), 0)
+                bdraw = PIL.ImageDraw.Draw(b)
+                bdraw.text((0, 0), text, fill = 255, font = font)
+                b = self.__rotateImage(b, angle)
+
+                w, h = b.size
+
+                # We need to expand it to full size to allow the
+                # indirect pasting via fullFg.
+                f = PIL.Image.new(self.format, self.targetSize, 0)
+                f.paste(b, (sp[0] - w / 2, sp[1] - h / 2))
+                self.target.paste(self.fullFg, (0, 0), f)
+
+            else:
+                # Paste the text into a temporary buffer, rotate it
+                # and/or scale it, then paste it into the target buffer.
+                sp = self.p2b(*p)
+
+                b = PIL.Image.new('L', (w, h), 0)
+                bdraw = PIL.ImageDraw.Draw(b)
+                bdraw.text((0, 0), text, fill = 255, font = font)
+                if scale:
+                    w, h = b.size
+                    ws, hs = (int(w * scale[0] + 0.5), int(h * scale[1] + 0.5))
+                    b = b.resize((ws, hs), PIL.Image.ANTIALIAS)
+                if rotate:
+                    b = self.__rotateImage(b, angle)
+
+                w, h = b.size
+                self.buffer.paste(b, (sp[0] - w / 2, sp[1] - h / 2))
+
+                # We need to expand it to full size to allow the
+                # indirect pasting via fullFg.
+                ## f = PIL.Image.new(self.format, self.targetSize, 0)
+                ## f.paste(b, (sp[0] - w / 2, sp[1] - h / 2))
+                ## self.target.paste(self.fullFg, (0, 0), f)
+
+    def __rotateImage(self, im, angle):
+        r = (-angle) % 360
+        if r == 0:
+            pass
+        elif r == 90:
+            im = im.transpose(PIL.Image.ROTATE_90)
+        elif r == 180:
+            im = im.transpose(PIL.Image.ROTATE_180)
+        elif r == 270:
+            im = im.transpose(PIL.Image.ROTATE_270)
+        else:
+            im = im.rotate(r, PIL.Image.BICUBIC, True)
+        return im
 
     def pasteImage(self, p, filename, pivot, pixelScale, rotate = 0):
         """ pixelScale is the pixels per unit, or None to paste
@@ -337,17 +413,7 @@ class FaceMaker:
             center = (size[0] / 2, size[1] / 2)
             large = PIL.Image.new('LA', size, 0)
             large.paste(im, (center[0] - pivot[0], center[1] - pivot[1]))
-            r = (-rotate) % 360
-            if r == 0:
-                pass
-            elif r == 90:
-                im = large.transpose(PIL.Image.ROTATE_90)
-            elif r == 180:
-                im = large.transpose(PIL.Image.ROTATE_180)
-            elif r == 270:
-                im = large.transpose(PIL.Image.ROTATE_270)
-            else:
-                im = large.rotate(r, PIL.Image.BICUBIC, True)
+            im = self.__rotateImage(large, rotate)
             pivot = (im.size[0] / 2, im.size[1] / 2)
 
         if pixelScale is None:
