@@ -23,7 +23,7 @@ ticks.remove(180)
 face.drawTicks(ticks, rings[3], rings[4], width = 0.01)
 
 font = face.loadFont('Multicolore.otf', 0.08)
-face.drawCircularLabels([(0, '12'), (180, '6')], 0.5800, font)
+face.drawCircularLabels([(0, '12')], 0.5800, font)
 
 face.drawTicks(60, rings[5], rings[6], width = 0.002)
 face.drawTicks(60, rings[7], rings[8], width = 0.002)
@@ -54,6 +54,10 @@ drawChrono((-0.2033, 0.0), 60, 12,
 drawChrono((0.2033, 0.0), 30, 0,
            [(60, '5'), (120, '10'), (180, '15'),
             (240, '20'), (300, '25'), (0, '30')],
+           'c_chrono2_hand.png', (37, 195))
+drawChrono((0, 0.2033), 0, 10,
+           [(72, '2'), (144, '4'), (216, '6'),
+            (288, '8'), (0, '0')],
            'c_chrono2_hand.png', (37, 195))
 
 face.save('c_face.png')

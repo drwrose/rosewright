@@ -9,7 +9,7 @@
 
 PBL_APP_INFO(MY_UUID,
              WATCH_NAME, "drwrose",
-             1, 5, /* App version */
+             1, 6, /* App version */
              RESOURCE_ID_ROSE_ICON,
 #ifdef MAKE_CHRONOGRAPH
              APP_INFO_STANDARD_APP
@@ -19,6 +19,7 @@ PBL_APP_INFO(MY_UUID,
              );
 
 #define SECONDS_PER_DAY 86400
+#define MS_PER_DAY (SECONDS_PER_DAY * 1000)
 
 #define SCREEN_WIDTH 144
 #define SCREEN_HEIGHT 168
@@ -32,6 +33,7 @@ Layer minute_layer;
 Layer second_layer;
 Layer chrono_minute_layer;
 Layer chrono_second_layer;
+Layer chrono_tenth_layer;
 
 Layer day_layer;  // day of the week (abbr)
 Layer date_layer; // numeric date of the month
@@ -44,6 +46,7 @@ struct HandPlacement {
   int second_hand_index;
   int chrono_minute_hand_index;
   int chrono_second_hand_index;
+  int chrono_tenth_hand_index;
   int day_index;
   int date_value;
 
@@ -62,70 +65,92 @@ VibePattern tap = {
 
 int chrono_running = false;       // the chronograph has been started
 int chrono_lap_paused = false;    // the "lap" button has been pressed
-int chrono_start_seconds = 0; // consulted if chrono_running && !chrono_lap_paused
-int chrono_hold_seconds = 0;  // consulted if !chrono_running || chrono_lap_paused
+int chrono_start_ms = 0; // consulted if chrono_running && !chrono_lap_paused
+int chrono_hold_ms = 0;  // consulted if !chrono_running || chrono_lap_paused
 
-// Returns the time-of-day in seconds, given a PblTm structure already filled.
-int get_time_seconds(PblTm *time) {
-  int seconds;
+// Returns the number of milliseconds since midnight.
+int get_time_ms(PblTm *time) {
+  time_t s;
+  uint16_t ms;
+  int result;
 
-  seconds = (time->tm_hour * 60 + time->tm_min) * 60 + time->tm_sec;
+  time_ms(&s, &ms);
+
+  result = (s % SECONDS_PER_DAY) * 1000 + ms;
 
 #ifdef FAST_TIME
-  time->tm_wday = seconds % 7;
-  time->tm_mday = (seconds % 31) + 1;
-  seconds *= 67;
+  if (time != NULL) {
+    time->tm_wday = s % 7;
+    time->tm_mday = (s % 31) + 1;
+  }
+  result *= 67;
 #endif  // FAST_TIME
 
-  return seconds;
+  return result;
 }
 
 // Determines the specific hand bitmaps that should be displayed based
 // on the current time.
 void compute_hands(PblTm *time, struct HandPlacement *placement) {
-  int seconds;
+  int ms;
 
-  seconds = get_time_seconds(time);
+  ms = get_time_ms(time);
 
-  placement->hour_hand_index = ((NUM_STEPS_HOUR * seconds) / (3600 * 12)) % NUM_STEPS_HOUR;
-  placement->minute_hand_index = ((NUM_STEPS_MINUTE * seconds) / 3600) % NUM_STEPS_MINUTE;
+  placement->hour_hand_index = ((NUM_STEPS_HOUR * ms) / (3600 * 12 * 1000)) % NUM_STEPS_HOUR;
+  placement->minute_hand_index = ((NUM_STEPS_MINUTE * ms) / (3600 * 1000)) % NUM_STEPS_MINUTE;
 
 #ifdef SHOW_SECOND_HAND
-  placement->second_hand_index = ((NUM_STEPS_SECOND * seconds) / 60) % NUM_STEPS_SECOND;
+  placement->second_hand_index = ((NUM_STEPS_SECOND * ms) / (60 * 1000)) % NUM_STEPS_SECOND;
 #endif  // SHOW_SECOND_HAND
 
 #ifdef SHOW_DAY_CARD
-  placement->day_index = time->tm_wday;
+  if (time != NULL) {
+    placement->day_index = time->tm_wday;
+  }
 #endif  // SHOW_DAY_CARD
 
 #ifdef SHOW_DATE_CARD
-  placement->date_value = time->tm_mday;
+  if (time != NULL) {
+    placement->date_value = time->tm_mday;
+  }
 #endif  // SHOW_DATE_CARD
 
 #ifdef ENABLE_HOUR_BUZZER
-  placement->hour_buzzer = (seconds / 3600) % 24;
+  placement->hour_buzzer = (ms / (3600 * 1000)) % 24;
 #endif
 
 #ifdef MAKE_CHRONOGRAPH
   {
-    int chrono_seconds;
+    int chrono_ms;
     if (chrono_running && !chrono_lap_paused) {
       // The chronograph is running.  Show the active elapsed time.
-      chrono_seconds = (seconds - chrono_start_seconds + SECONDS_PER_DAY) % SECONDS_PER_DAY;
+      chrono_ms = (ms - chrono_start_ms + MS_PER_DAY) % MS_PER_DAY;
     } else {
       // The chronograph is paused.  Show the time it is paused on.
-      chrono_seconds = chrono_hold_seconds;
+      chrono_ms = chrono_hold_ms;
     }
 
 #ifdef SHOW_CHRONO_MINUTE_HAND
     // The chronograph minute hand rolls completely around in 30
     // minutes (not 60).
-    placement->chrono_minute_hand_index = ((NUM_STEPS_CHRONO_MINUTE * chrono_seconds) / 1800) % NUM_STEPS_CHRONO_MINUTE;
+    placement->chrono_minute_hand_index = ((NUM_STEPS_CHRONO_MINUTE * chrono_ms) / (1800 * 1000)) % NUM_STEPS_CHRONO_MINUTE;
 #endif  // SHOW_CHRONO_MINUTE_HAND
 
 #ifdef SHOW_CHRONO_SECOND_HAND
-    placement->chrono_second_hand_index = ((NUM_STEPS_CHRONO_SECOND * chrono_seconds) / 60) % NUM_STEPS_CHRONO_SECOND;
+    placement->chrono_second_hand_index = ((NUM_STEPS_CHRONO_SECOND * chrono_ms) / (60 * 1000)) % NUM_STEPS_CHRONO_SECOND;
 #endif  // SHOW_CHRONO_SECOND_HAND
+
+#ifdef SHOW_CHRONO_TENTH_HAND
+    if (chrono_running && !chrono_lap_paused) {
+      // We don't actually show the tenths time while the chrono is running.
+      placement->chrono_tenth_hand_index = 0;
+    } else {
+      // We show the tenths time when the chrono is stopped or showing
+      // the lap time.
+      placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * chrono_ms) / (100)) % NUM_STEPS_CHRONO_TENTH;
+    }
+#endif  // SHOW_CHRONO_TENTH_HAND
+
   }
 #endif  // MAKE_CHRONOGRAPH
 }
@@ -419,6 +444,22 @@ void chrono_second_layer_update_callback(Layer *me, GContext* ctx) {
 }
 #endif  // SHOW_CHRONO_SECOND_HAND
 
+#ifdef SHOW_CHRONO_TENTH_HAND
+void chrono_tenth_layer_update_callback(Layer *me, GContext* ctx) {
+  (void)me;
+
+#ifdef VECTOR_CHRONO_TENTH_HAND
+  draw_vector_hand(&chrono_tenth_hand_vector_table, current_placement.chrono_tenth_hand_index,
+                   NUM_STEPS_CHRONO_TENTH, CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, ctx);
+#endif
+
+#ifdef BITMAP_CHRONO_TENTH_HAND
+  draw_bitmap_hand(&chrono_tenth_hand_bitmap_table[current_placement.chrono_tenth_hand_index],
+                   CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, ctx);
+#endif
+}
+#endif  // SHOW_CHRONO_TENTH_HAND
+
 void draw_card(Layer *me, GContext* ctx, const char *text, bool on_black, bool bold) {
   GFont font;
   GRect box;
@@ -499,6 +540,14 @@ void update_hands(PblTm *time) {
     layer_mark_dirty(&chrono_second_layer);
   }
 #endif  // SHOW_CHRONO_SECOND_HAND
+
+#ifdef SHOW_CHRONO_TENTH_HAND
+  if (new_placement.chrono_tenth_hand_index != current_placement.chrono_tenth_hand_index) {
+    current_placement.chrono_tenth_hand_index = new_placement.chrono_tenth_hand_index;
+    layer_mark_dirty(&chrono_tenth_layer);
+  }
+#endif  // SHOW_CHRONO_TENTH_HAND
+
 #endif  // MAKE_CHRONOGRAPH
 
 #ifdef SHOW_DAY_CARD
@@ -528,21 +577,19 @@ void stopped_click_config_provider(ClickConfig **config, Window *window);
 void started_click_config_provider(ClickConfig **config, Window *window);
 
 void chrono_start_stop_handler(ClickRecognizerRef recognizer, Window *window) {
-  PblTm time;
-  int seconds;
-
-  get_time(&time);
-  seconds = get_time_seconds(&time);
+  int ms;
+ 
+  ms = get_time_ms(NULL);
 
   // The start/stop button was pressed.
   if (chrono_running) {
     // If the chronograph is currently running, this means to stop (or
     // pause).
-    chrono_hold_seconds = seconds - chrono_start_seconds;
+    chrono_hold_ms = ms - chrono_start_ms;
     chrono_running = false;
     chrono_lap_paused = false;
     vibes_enqueue_custom_pattern(tap);
-    update_hands(&time);
+    update_hands(NULL);
 
     // We change the click config provider according to the chrono run
     // state.  When the chrono is stopped, we listen for a different
@@ -551,35 +598,33 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, Window *window) {
   } else {
     // If the chronograph is not currently running, this means to
     // start, from the currently showing Chronograph time.
-    chrono_start_seconds = seconds - chrono_hold_seconds;
+    chrono_start_ms = ms - chrono_hold_ms;
     chrono_running = true;
     vibes_enqueue_custom_pattern(tap);
-    update_hands(&time);
+    update_hands(NULL);
 
     window_set_click_config_provider(window, (ClickConfigProvider)started_click_config_provider);
   }
 }
 
 void chrono_lap_button() {
-  PblTm time;
-  int seconds;
-
-  get_time(&time);
+  int ms;
+ 
+  ms = get_time_ms(NULL);
 
   if (chrono_lap_paused) {
     // If we were already paused, this resumes the motion, jumping
     // ahead to the currently elapsed time.
     chrono_lap_paused = false;
     vibes_enqueue_custom_pattern(tap);
-    update_hands(&time);
+    update_hands(NULL);
   } else {
     // If we were not already paused, this pauses the hands here (but
     // does not stop the timer).
-    seconds = get_time_seconds(&time);
-    chrono_hold_seconds = seconds - chrono_start_seconds;
+    chrono_hold_ms = ms - chrono_start_ms;
     chrono_lap_paused = true;
     vibes_enqueue_custom_pattern(tap);
-    update_hands(&time);
+    update_hands(NULL);
   }
 }
 
@@ -590,8 +635,8 @@ void chrono_reset_button() {
   get_time(&time);
   chrono_running = false;
   chrono_lap_paused = false;
-  chrono_start_seconds = 0;
-  chrono_hold_seconds = 0;
+  chrono_start_ms = 0;
+  chrono_hold_ms = 0;
   vibes_double_pulse();
   update_hands(&time);
 }
@@ -713,6 +758,14 @@ void handle_init(AppContextRef ctx) {
       chrono_second_layer.update_proc = &chrono_second_layer_update_callback;
       layer_add_child(&window.layer, &chrono_second_layer);
 #endif  // SHOW_CHRONO_SECOND_HAND
+      break;
+
+    case STACKING_ORDER_CHRONO_TENTH:
+#ifdef SHOW_CHRONO_TENTH_HAND
+      layer_init(&chrono_tenth_layer, window.layer.frame);
+      chrono_tenth_layer.update_proc = &chrono_tenth_layer_update_callback;
+      layer_add_child(&window.layer, &chrono_tenth_layer);
+#endif  // SHOW_CHRONO_TENTH_HAND
       break;
     }
   }

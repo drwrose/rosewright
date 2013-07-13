@@ -8,6 +8,7 @@
 #define NUM_STEPS_SECOND %(numStepsSecond)s
 #define NUM_STEPS_CHRONO_MINUTE %(numStepsChronoMinute)s
 #define NUM_STEPS_CHRONO_SECOND %(numStepsChronoSecond)s
+#define NUM_STEPS_CHRONO_TENTH %(numStepsChronoTenth)s
 
 // The location of the hands on the face.
 #define HOUR_HAND_X %(hourHandX)s
@@ -71,3 +72,8 @@ int stacking_order[] = {
   #define CHRONO_SECOND_HAND_Y %(chronoSecondHandY)s
 #endif
 
+#if %(showChronoTenthHand)s
+  #define SHOW_CHRONO_TENTH_HAND 1
+  #define CHRONO_TENTH_HAND_X %(chronoTenthHandX)s
+  #define CHRONO_TENTH_HAND_Y %(chronoTenthHandY)s
+#endif

@@ -169,10 +169,10 @@ hands = {
             [('w', [(0, -2), (0, -26)]),
              ]),
            ('chrono_minute', ('c_chrono2_hand.png', 'w', False, (37, 195), 0.14), None),
-           #('chrono_minute', None, [('ww', [(0, -4), (-1, -6), (-2, -9), (-2, -14), (-0, -26), (2, -14), (2, -9), (1, -6)]),]),
            ('chrono_second', ('c_second_hand.png', 'w', False, (41, -29), 0.14),
             [('w', [(0, -4), (0, -88)]),
              ]),
+           ('chrono_tenth', ('c_chrono2_hand.png', 'w', False, (37, 195), 0.14), None),
            ],
     'd' : [('hour', ('d_hour_hand.png', 't', False, (24, 193), 0.24), None),
            ('minute', ('d_minute_hand.png', 't', False, (27, 267), 0.24), None),
@@ -209,7 +209,7 @@ hands = {
 faces = {
     'a' : ('a_face.png', None, (106, 82, 'b'), []),
     'b' : ('b_face.png', (52, 109, 'b'), (92, 109, 'b'), []),
-    'c' : ('c_face.png', None, None, [('chrono_minute', 115, 84), ('second', 29, 84)]),
+    'c' : ('c_face.png', None, None, [('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)]),
     'd' : ('d_face.png', (53, 107, 'w'), (91, 107, 'w'), []),
     'e' : ('e_face.png', None, (123, 82, 'B'), []),
     }
@@ -220,6 +220,7 @@ suppressSecondHand = False
 enableHourBuzzer = False
 showChronoMinuteHand = False
 showChronoSecondHand = False
+showChronoTenthHand = False
 dayCard = None
 dateCard = None
 
@@ -232,6 +233,7 @@ numSteps = {
     'second' : 60,
     'chrono_minute' : 30,
     'chrono_second' : 60,
+    'chrono_tenth' : 10,
     }
 
 # The threshold level for dropping to 1-bit images.
@@ -530,6 +532,9 @@ def makeHands(generatedTable):
         elif hand == 'chrono_second':
             global showChronoSecondHand
             showChronoSecondHand = True
+        elif hand == 'chrono_tenth':
+            global showChronoTenthHand
+            showChronoTenthHand = True
             
         if bitmapParams:
             resourceStr += makeBitmapHands(generatedTable, hand, *bitmapParams)
@@ -578,7 +583,7 @@ def configWatch():
     cyd = dict(map(lambda (hand, x, y): (hand, y), centers))
 
     # Get the stacking orders of the hands too.
-    implicitStackingOrder = ['hour', 'minute', 'second', 'chrono_minute', 'chrono_second']
+    implicitStackingOrder = ['hour', 'minute', 'second', 'chrono_minute', 'chrono_second', 'chrono_tenth']
     explicitStackingOrder = []
     for hand, x, y in centers:
         implicitStackingOrder.remove(hand)
@@ -594,6 +599,7 @@ def configWatch():
         'numStepsSecond' : numSteps['second'],
         'numStepsChronoMinute' : numSteps['chrono_minute'],
         'numStepsChronoSecond' : numSteps['chrono_second'],
+        'numStepsChronoTenth' : numSteps['chrono_tenth'],
         'hourHandX' : cxd.get('hour', centerX),
         'hourHandY' : cyd.get('hour', centerY),
         'minuteHandX' : cxd.get('minute', centerX),
@@ -604,6 +610,8 @@ def configWatch():
         'chronoMinuteHandY' : cyd.get('chrono_minute', centerY),
         'chronoSecondHandX' : cxd.get('chrono_second', centerX),
         'chronoSecondHandY' : cyd.get('chrono_second', centerY),
+        'chronoTenthHandX' : cxd.get('chrono_tenth', centerX),
+        'chronoTenthHandY' : cyd.get('chrono_tenth', centerY),
         'compileDebugging' : int(compileDebugging),
         'showDayCard' : int(bool(dayCard)),
         'showDateCard' : int(bool(dateCard)),
@@ -620,6 +628,7 @@ def configWatch():
         'makeChronograph' : int(makeChronograph and showChronoSecondHand),
         'showChronoMinuteHand' : int(showChronoMinuteHand),
         'showChronoSecondHand' : int(showChronoSecondHand),
+        'showChronoTenthHand' : int(showChronoTenthHand),
         'stackingOrder' : ', '.join(stackingOrder),
         }
 
