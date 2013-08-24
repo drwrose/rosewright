@@ -2,6 +2,10 @@ python config_watch.py -sa -S || exit
 ./waf build || exit
 mv build/rosewright.pbw build/rosewright_a.pbw
 
+python config_watch.py -sa -F au -S || exit
+./waf build || exit
+mv build/rosewright.pbw build/rosewright_au.pbw
+
 python config_watch.py -sa || exit
 ./waf build || exit
 mv build/rosewright.pbw build/rosewright_as.pbw
