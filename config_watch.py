@@ -84,14 +84,14 @@ centerX, centerY = 144 / 2, 168 / 2
 # style and face style, and a unique identifier.  For each style,
 # specify the following:
 #
-#    name, handStyle, faceStyle, uuid
+#    name, handStyle, faceStyle, uuId
 #
 #  Where:
 #
 #   name      - the full name for this watch.
 #   handStyle - the default hand style for this watch.
 #   faceStyle - the default face style for this watch.
-#   uuid      - the UUID to assign to this watch.
+#   uuId      - the UUID to assign to this watch.
 #
 watches = {
     'a' : ('Rosewright A', 'a', 'a', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC5]),
@@ -243,7 +243,10 @@ thresholdMap = [0] * (256 - threshold) + [255] * (threshold)
 
 # Attempt to determine the directory in which we're operating.
 rootDir = os.path.dirname(__file__) or '.'
-srcDir = os.path.join(rootDir, 'resources/src')
+resourcesDir = os.path.join(rootDir, 'resources')
+
+def formatUuId(uuId):
+    return '%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x' % tuple(uuId)
 
 def parseColorMode(colorMode):
     paintBlack = False
@@ -286,9 +289,9 @@ def makeFaces():
     
     resourceEntry = """
     {
-    "defName": "CLOCK_FACE",
-    "file": "clock_faces/%(targetFilename)s",
-    "type": "png"
+      "name": "CLOCK_FACE",
+      "file": "clock_faces/%(targetFilename)s",
+      "type": "png"
     },"""    
 
     targetFilename, dayCard, dateCard, centers = faces[faceStyle]
@@ -330,9 +333,9 @@ def makeBitmapHands(generatedTable, hand, sourceFilename, colorMode, asymmetric,
 
     resourceEntry = """
     {
-    "defName": "%(defName)s",
-    "file": "clock_hands/%(targetFilename)s",
-    "type": "png"
+      "name": "%(defName)s",
+      "file": "clock_hands/%(targetFilename)s",
+      "type": "png"
     },"""    
 
     handTableEntry = """  { RESOURCE_ID_%(symbolName)s, RESOURCE_ID_%(symbolMaskName)s, %(cx)s, %(cy)s, %(flip_x)s, %(flip_y)s, %(paintBlack)s },"""
@@ -340,7 +343,7 @@ def makeBitmapHands(generatedTable, hand, sourceFilename, colorMode, asymmetric,
     print >> generatedTable, "#define BITMAP_%s_HAND 1" % (hand.upper())
     print >> generatedTable, "struct BitmapHandTableRow %s_hand_bitmap_table[] = {" % (hand)
 
-    source = PIL.Image.open('%s/clock_hands/%s' % (srcDir, sourceFilename))
+    source = PIL.Image.open('%s/clock_hands/%s' % (resourcesDir, sourceFilename))
 
     paintBlack, useTransparency, invertColors, dither = parseColorMode(colorMode)
 
@@ -484,7 +487,7 @@ def makeBitmapHands(generatedTable, hand, sourceFilename, colorMode, asymmetric,
             targetFilename = 'flat_%s_%s_%s.png' % (handStyle, hand, i)
             print targetFilename
 
-            p.save('%s/clock_hands/%s' % (srcDir, targetFilename))
+            p.save('%s/clock_hands/%s' % (resourcesDir, targetFilename))
             resourceStr += resourceEntry % {
                 'defName' : symbolName,
                 'targetFilename' : targetFilename,
@@ -494,7 +497,7 @@ def makeBitmapHands(generatedTable, hand, sourceFilename, colorMode, asymmetric,
                 targetMaskFilename = 'flat_%s_%s_%s_mask.png' % (handStyle, hand, i)
                 print targetMaskFilename
 
-                pm.save('%s/clock_hands/%s' % (srcDir, targetMaskFilename))
+                pm.save('%s/clock_hands/%s' % (resourcesDir, targetMaskFilename))
                 resourceStr += resourceEntry % {
                     'defName' : symbolMaskName,
                     'targetFilename' : targetMaskFilename,
@@ -560,7 +563,7 @@ def makeDates(generatedTable):
     print >> generatedTable, "};\n"
         
 def configWatch():
-    generatedTable = open('%s/generated_table.c' % (srcDir), 'w')
+    generatedTable = open('%s/generated_table.c' % (resourcesDir), 'w')
 
     resourceStr = ''
     resourceStr += makeFaces()
@@ -568,16 +571,18 @@ def configWatch():
 
     makeDates(generatedTable)
 
-    resourceIn = open('%s/resource_map.json.in' % (srcDir), 'r').read()
-    resource = open('%s/resource_map.json' % (srcDir), 'w')
+    resourceIn = open('%s/appinfo.json.in' % (rootDir), 'r').read()
+    resource = open('%s/appinfo.json' % (rootDir), 'w')
 
     print >> resource, resourceIn % {
+        'uuId' : formatUuId(uuId),
+        'watchName' : watchName,
         'generatedMedia' : resourceStr[:-1],
         }
 
 
-    configIn = open('%s/generated_config.h.in' % (srcDir), 'r').read()
-    config = open('%s/generated_config.h' % (srcDir), 'w')
+    configIn = open('%s/generated_config.h.in' % (resourcesDir), 'r').read()
+    config = open('%s/generated_config.h' % (resourcesDir), 'w')
 
     # Map the centers list into a dictionary of points for x and y.
     cxd = dict(map(lambda (hand, x, y): (hand, x), centers))
@@ -593,8 +598,6 @@ def configWatch():
     stackingOrder.append('STACKING_ORDER_DONE')
     
     print >> config, configIn % {
-        'uuId' : ', '.join(map(lambda v: '0x%02x' % v, uuid)),
-        'watchName' : watchName,
         'numStepsHour' : numSteps['hour'],
         'numStepsMinute' : numSteps['minute'],
         'numStepsSecond' : numSteps['second'],
@@ -681,7 +684,7 @@ if not watchStyle:
     print >> sys.stderr, "You must specify a desired watch style."
     sys.exit(1)
 
-watchName, defaultHandStyle, defaultFaceStyle, uuid = watches[watchStyle]
+watchName, defaultHandStyle, defaultFaceStyle, uuId = watches[watchStyle]
 
 if not handStyle:
     handStyle = defaultHandStyle

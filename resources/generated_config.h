@@ -1,7 +1,4 @@
 
-#define MY_UUID { 0xa4, 0x9c, 0x82, 0xfd, 0x83, 0x0e, 0x48, 0xb4, 0xa8, 0x2e, 0x9c, 0xf8, 0xda, 0x77, 0xf4, 0xc5 }
-#define WATCH_NAME "Rosewright A"
-
 // The number of subdivisions around the face for each kind of hand.
 #define NUM_STEPS_HOUR 48
 #define NUM_STEPS_MINUTE 60
@@ -30,29 +27,29 @@ int stacking_order[] = {
   #define FAST_TIME 1
 #endif
 
-#if 0
+#if 1
   #define SHOW_DAY_CARD 1
-  #define DAY_CARD_X None
-  #define DAY_CARD_Y None
+  #define DAY_CARD_X 52
+  #define DAY_CARD_Y 109
   #define DAY_CARD_ON_BLACK 0
   #define DAY_CARD_BOLD 0
 #endif
 
 #if 1
   #define SHOW_DATE_CARD 1
-  #define DATE_CARD_X 106
-  #define DATE_CARD_Y 82
+  #define DATE_CARD_X 92
+  #define DATE_CARD_Y 109
   #define DATE_CARD_ON_BLACK 0
-  #define DATE_CARD_BOLD 1
+  #define DATE_CARD_BOLD 0
 #endif
 
-#if 0
+#if 1
   #define SHOW_SECOND_HAND 1
   #define SECOND_HAND_X 72
   #define SECOND_HAND_Y 84
 #endif
 
-#if 0
+#if 1
   #define ENABLE_HOUR_BUZZER 1
 #endif
 

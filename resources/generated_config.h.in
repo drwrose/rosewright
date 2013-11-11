@@ -1,7 +1,4 @@
 
-#define MY_UUID { %(uuId)s }
-#define WATCH_NAME "%(watchName)s"
-
 // The number of subdivisions around the face for each kind of hand.
 #define NUM_STEPS_HOUR %(numStepsHour)s
 #define NUM_STEPS_MINUTE %(numStepsMinute)s
