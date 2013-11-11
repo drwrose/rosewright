@@ -1,23 +1,8 @@
-#include "pebble_os.h"
-#include "pebble_app.h"
-#include "pebble_fonts.h"
+#include <pebble.h>
 
 #include "hand_table.h"
-#include "../resources/src/generated_config.h"
-#include "../resources/src/generated_table.c"
-
-/*
-PBL_APP_INFO(MY_UUID,
-             WATCH_NAME, "drwrose",
-             1, 7, /* App version */
-             RESOURCE_ID_ROSE_ICON,
-#ifdef MAKE_CHRONOGRAPH
-             APP_INFO_STANDARD_APP
-#else
-             APP_INFO_WATCH_FACE
-#endif
-             );
-*/
+#include "../resources/generated_config.h"
+#include "../resources/generated_table.c"
 
 #define SECONDS_PER_DAY 86400
 #define MS_PER_DAY (SECONDS_PER_DAY * 1000)
@@ -25,7 +10,7 @@ PBL_APP_INFO(MY_UUID,
 #define SCREEN_WIDTH 144
 #define SCREEN_HEIGHT 168
 
-Window window;
+Window *window;
 
 GBitmap *clock_face_bitmap;
 BitmapLayer *clock_face_layer;
@@ -268,20 +253,21 @@ void draw_vector_hand(struct VectorHandTable *hand, int hand_index, int num_step
   for (gi = 0; gi < hand->num_groups; ++gi) {
     struct VectorHandGroup *group = &hand->group[gi];
 
-    GPath path;
-    gpath_init(&path, &group->path_info);
+    GPath *path = gpath_create(&group->path_info);
 
-    gpath_rotate_to(&path, angle);
-    gpath_move_to(&path, center);
+    gpath_rotate_to(path, angle);
+    gpath_move_to(path, center);
 
     if (group->fill != GColorClear) {
       graphics_context_set_fill_color(ctx, group->fill);
-      gpath_draw_filled(ctx, &path);
+      gpath_draw_filled(ctx, path);
     }
     if (group->outline != GColorClear) {
       graphics_context_set_stroke_color(ctx, group->outline);
-      gpath_draw_outline(ctx, &path);
+      gpath_draw_outline(ctx, path);
     }
+
+    gpath_destroy(path);
   }
 }
 
@@ -293,25 +279,25 @@ void draw_bitmap_hand(struct BitmapHandTableRow *hand, int place_x, int place_y,
 
   if (hand->mask_id == hand->image_id) {
     // The hand does not have a mask.  Draw the hand on top of the scene.
-    BmpContainer image;
-    bmp_init_container(hand->image_id, &image);
+    GBitmap *image;
+    image = gbitmap_create_with_resource(hand->image_id);
     
     if (hand->flip_x) {
       // To minimize wasteful resource usage, if the hand is symmetric
       // we can store only the bitmaps for the right half of the clock
       // face, and flip them for the left half.
-      flip_bitmap_x(&image, &cx);
+      flip_bitmap_x(image, &cx);
     }
     
     if (hand->flip_y) {
       // We can also do this vertically.
-      flip_bitmap_y(&image, &cy);
+      flip_bitmap_y(image, &cy);
     }
     
     // We make sure the dimensions of the GRect to draw into
     // are equal to the size of the bitmap--otherwise the image
     // will automatically tile.
-    GRect destination = layer_get_frame(&image.layer.layer);
+    GRect destination = image->bounds;
     
     // Place the hand's center point at place_x, place_y.
     destination.origin.x = place_x - cx;
@@ -329,47 +315,47 @@ void draw_bitmap_hand(struct BitmapHandTableRow *hand, int place_x, int place_y,
       graphics_context_set_compositing_mode(ctx, GCompOpOr);
     }
       
-    graphics_draw_bitmap_in_rect(ctx, &image.bmp, destination);
+    graphics_draw_bitmap_in_rect(ctx, image, destination);
     
-    bmp_deinit_container(&image);
+    gbitmap_destroy(image);
 
   } else {
     // The hand has a mask, so use it to draw the hand opaquely.
-    BmpContainer image, mask;
-    bmp_init_container(hand->image_id, &image);
-    bmp_init_container(hand->mask_id, &mask);
+    GBitmap *image, *mask;
+    image = gbitmap_create_with_resource(hand->image_id);
+    mask = gbitmap_create_with_resource(hand->mask_id);
     
     if (hand->flip_x) {
       // To minimize wasteful resource usage, if the hand is symmetric
       // we can store only the bitmaps for the right half of the clock
       // face, and flip them for the left half.
-      flip_bitmap_x(&image, &cx);
-      flip_bitmap_x(&mask, NULL);
+      flip_bitmap_x(image, &cx);
+      flip_bitmap_x(mask, NULL);
     }
     
     if (hand->flip_y) {
       // We can also do this vertically.
-      flip_bitmap_y(&image, &cy);
-      flip_bitmap_y(&mask, NULL);
+      flip_bitmap_y(image, &cy);
+      flip_bitmap_y(mask, NULL);
     }
     
-    GRect destination = layer_get_frame(&image.layer.layer);
+    GRect destination = image->bounds;
     
     destination.origin.x = place_x - cx;
     destination.origin.y = place_y - cy;
 
     graphics_context_set_compositing_mode(ctx, GCompOpOr);
-    graphics_draw_bitmap_in_rect(ctx, &mask.bmp, destination);
+    graphics_draw_bitmap_in_rect(ctx, mask, destination);
     
     graphics_context_set_compositing_mode(ctx, GCompOpClear);
-    graphics_draw_bitmap_in_rect(ctx, &image.bmp, destination);
+    graphics_draw_bitmap_in_rect(ctx, image, destination);
     
-    bmp_deinit_container(&image);
-    bmp_deinit_container(&mask);
+    gbitmap_destroy(image);
+    gbitmap_destroy(mask);
   }
 }
   
-void hour_layer_update_callback(Layer *me, GContext* ctx) {
+void hour_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
 
 #ifdef VECTOR_HOUR_HAND
@@ -383,7 +369,7 @@ void hour_layer_update_callback(Layer *me, GContext* ctx) {
 #endif
 }
 
-void minute_layer_update_callback(Layer *me, GContext* ctx) {
+void minute_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
 
 #ifdef VECTOR_MINUTE_HAND
@@ -398,7 +384,7 @@ void minute_layer_update_callback(Layer *me, GContext* ctx) {
 }
 
 #ifdef SHOW_SECOND_HAND
-void second_layer_update_callback(Layer *me, GContext* ctx) {
+void second_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
 
 #ifdef VECTOR_SECOND_HAND
@@ -414,7 +400,7 @@ void second_layer_update_callback(Layer *me, GContext* ctx) {
 #endif  // SHOW_SECOND_HAND
 
 #ifdef SHOW_CHRONO_MINUTE_HAND
-void chrono_minute_layer_update_callback(Layer *me, GContext* ctx) {
+void chrono_minute_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
 
 #ifdef VECTOR_CHRONO_MINUTE_HAND
@@ -430,7 +416,7 @@ void chrono_minute_layer_update_callback(Layer *me, GContext* ctx) {
 #endif  // SHOW_CHRONO_MINUTE_HAND
 
 #ifdef SHOW_CHRONO_SECOND_HAND
-void chrono_second_layer_update_callback(Layer *me, GContext* ctx) {
+void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
 
 #ifdef VECTOR_CHRONO_SECOND_HAND
@@ -446,7 +432,7 @@ void chrono_second_layer_update_callback(Layer *me, GContext* ctx) {
 #endif  // SHOW_CHRONO_SECOND_HAND
 
 #ifdef SHOW_CHRONO_TENTH_HAND
-void chrono_tenth_layer_update_callback(Layer *me, GContext* ctx) {
+void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
 
 #ifdef VECTOR_CHRONO_TENTH_HAND
@@ -461,7 +447,7 @@ void chrono_tenth_layer_update_callback(Layer *me, GContext* ctx) {
 }
 #endif  // SHOW_CHRONO_TENTH_HAND
 
-void draw_card(Layer *me, GContext* ctx, const char *text, bool on_black, bool bold) {
+void draw_card(Layer *me, GContext *ctx, const char *text, bool on_black, bool bold) {
   GFont font;
   GRect box;
 
@@ -481,19 +467,19 @@ void draw_card(Layer *me, GContext* ctx, const char *text, bool on_black, bool b
 
   box.origin.y -= 3;  // Determined empirically.
 
-  graphics_text_draw(ctx, text, font, box,
+  graphics_draw_text(ctx, text, font, box,
                      GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
                      NULL);
 }
 
 #ifdef SHOW_DAY_CARD
-void day_layer_update_callback(Layer *me, GContext* ctx) {
+void day_layer_update_callback(Layer *me, GContext *ctx) {
   draw_card(me, ctx, weekday_names[current_placement.day_index], DAY_CARD_ON_BLACK, DAY_CARD_BOLD);
 }
 #endif  // SHOW_DAY_CARD
 
 #ifdef SHOW_DATE_CARD
-void date_layer_update_callback(Layer *me, GContext* ctx) {
+void date_layer_update_callback(Layer *me, GContext *ctx) {
   draw_card(me, ctx, quick_itoa(current_placement.date_value), DATE_CARD_ON_BLACK, DATE_CARD_BOLD);
 }
 #endif  // SHOW_DATE_CARD
@@ -504,18 +490,18 @@ void update_hands(struct tm *time) {
   compute_hands(time, &new_placement);
   if (new_placement.hour_hand_index != current_placement.hour_hand_index) {
     current_placement.hour_hand_index = new_placement.hour_hand_index;
-    layer_mark_dirty(&hour_layer);
+    layer_mark_dirty(hour_layer);
   }
 
   if (new_placement.minute_hand_index != current_placement.minute_hand_index) {
     current_placement.minute_hand_index = new_placement.minute_hand_index;
-    layer_mark_dirty(&minute_layer);
+    layer_mark_dirty(minute_layer);
   }
 
 #ifdef SHOW_SECOND_HAND
   if (new_placement.second_hand_index != current_placement.second_hand_index) {
     current_placement.second_hand_index = new_placement.second_hand_index;
-    layer_mark_dirty(&second_layer);
+    layer_mark_dirty(second_layer);
   }
 #endif  // SHOW_SECOND_HAND
 
@@ -531,21 +517,21 @@ void update_hands(struct tm *time) {
 #ifdef SHOW_CHRONO_MINUTE_HAND
   if (new_placement.chrono_minute_hand_index != current_placement.chrono_minute_hand_index) {
     current_placement.chrono_minute_hand_index = new_placement.chrono_minute_hand_index;
-    layer_mark_dirty(&chrono_minute_layer);
+    layer_mark_dirty(chrono_minute_layer);
   }
 #endif  // SHOW_CHRONO_MINUTE_HAND
 
 #ifdef SHOW_CHRONO_SECOND_HAND
   if (new_placement.chrono_second_hand_index != current_placement.chrono_second_hand_index) {
     current_placement.chrono_second_hand_index = new_placement.chrono_second_hand_index;
-    layer_mark_dirty(&chrono_second_layer);
+    layer_mark_dirty(chrono_second_layer);
   }
 #endif  // SHOW_CHRONO_SECOND_HAND
 
 #ifdef SHOW_CHRONO_TENTH_HAND
   if (new_placement.chrono_tenth_hand_index != current_placement.chrono_tenth_hand_index) {
     current_placement.chrono_tenth_hand_index = new_placement.chrono_tenth_hand_index;
-    layer_mark_dirty(&chrono_tenth_layer);
+    layer_mark_dirty(chrono_tenth_layer);
   }
 #endif  // SHOW_CHRONO_TENTH_HAND
 
@@ -554,14 +540,14 @@ void update_hands(struct tm *time) {
 #ifdef SHOW_DAY_CARD
   if (new_placement.day_index != current_placement.day_index) {
     current_placement.day_index = new_placement.day_index;
-    layer_mark_dirty(&day_layer);
+    layer_mark_dirty(day_layer);
   }
 #endif  // SHOW_DAY_CARD
 
 #ifdef SHOW_DATE_CARD
   if (new_placement.date_value != current_placement.date_value) {
     current_placement.date_value = new_placement.date_value;
-    layer_mark_dirty(&date_layer);
+    layer_mark_dirty(date_layer);
   }
 #endif  // SHOW_DATE_CARD
 }
@@ -572,13 +558,12 @@ void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 }
 
 // Forward references.
-void stopped_click_config_provider(ClickConfig **config, Window *window);
-void started_click_config_provider(ClickConfig **config, Window *window);
+void stopped_click_config_provider(void *context);
+void started_click_config_provider(void *context);
 
-void chrono_start_stop_handler(ClickRecognizerRef recognizer, Window *window) {
-  int ms;
- 
-  ms = get_time_ms(NULL);
+void chrono_start_stop_handler(ClickRecognizerRef recognizer, void *context) {
+  Window *window = (Window *)context;
+  int ms = get_time_ms(NULL);
 
   // The start/stop button was pressed.
   if (chrono_running) {
@@ -593,7 +578,7 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, Window *window) {
     // We change the click config provider according to the chrono run
     // state.  When the chrono is stopped, we listen for a different
     // set of buttons than when it is started.
-    window_set_click_config_provider(window, (ClickConfigProvider)stopped_click_config_provider);
+    window_set_click_config_provider(window, &stopped_click_config_provider);
   } else {
     // If the chronograph is not currently running, this means to
     // start, from the currently showing Chronograph time.
@@ -602,7 +587,7 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, Window *window) {
     vibes_enqueue_custom_pattern(tap);
     update_hands(NULL);
 
-    window_set_click_config_provider(window, (ClickConfigProvider)started_click_config_provider);
+    window_set_click_config_provider(window, &started_click_config_provider);
   }
 }
 
@@ -630,19 +615,19 @@ void chrono_lap_button() {
 void chrono_reset_button() {
   // Resets the chronometer to 0 time.
   time_t now;
-  struct tm *time;
+  struct tm *this_time;
 
   now = time(NULL);
-  time = localtime(&now);
+  this_time = localtime(&now);
   chrono_running = false;
   chrono_lap_paused = false;
   chrono_start_ms = 0;
   chrono_hold_ms = 0;
   vibes_double_pulse();
-  update_hands(&time);
+  update_hands(this_time);
 }
 
-void chrono_lap_handler(ClickRecognizerRef recognizer, Window *window) {
+void chrono_lap_handler(ClickRecognizerRef recognizer, void *context) {
   // The lap/reset button was pressed (briefly).
 
   // We only do anything here if the chronograph is currently running.
@@ -651,7 +636,7 @@ void chrono_lap_handler(ClickRecognizerRef recognizer, Window *window) {
   }
 }
 
-void chrono_lap_or_reset_handler(ClickRecognizerRef recognizer, Window *window) {
+void chrono_lap_or_reset_handler(ClickRecognizerRef recognizer, void *context) {
   // The lap/reset button was pressed (long press).
 
   // This means a lap if the chronograph is running, and a reset if it
@@ -664,23 +649,20 @@ void chrono_lap_or_reset_handler(ClickRecognizerRef recognizer, Window *window) 
 }
 
 // Enable the set of buttons active while the chrono is stopped.
-void stopped_click_config_provider(ClickConfig **config, Window *window) {
+void stopped_click_config_provider(void *context) {
   // single click config:
-  config[BUTTON_ID_UP]->click.handler = (ClickHandler)chrono_start_stop_handler;
-
-  config[BUTTON_ID_DOWN]->click.handler = NULL;
+  window_single_click_subscribe(BUTTON_ID_UP, &chrono_start_stop_handler);
+  window_single_click_subscribe(BUTTON_ID_DOWN, NULL);
 
   // long click config:
-  config[BUTTON_ID_DOWN]->long_click.handler = (ClickHandler)chrono_lap_or_reset_handler;
-  config[BUTTON_ID_DOWN]->long_click.delay_ms = 700;
+  window_long_click_subscribe(BUTTON_ID_DOWN, 700, &chrono_lap_or_reset_handler, NULL);
 }
 
 // Enable the set of buttons active while the chrono is running.
-void started_click_config_provider(ClickConfig **config, Window *window) {
+void started_click_config_provider(void *context) {
   // single click config:
-  config[BUTTON_ID_UP]->click.handler = (ClickHandler)chrono_start_stop_handler;
-
-  config[BUTTON_ID_DOWN]->click.handler = (ClickHandler)chrono_lap_handler;
+  window_single_click_subscribe(BUTTON_ID_UP, &chrono_start_stop_handler);
+  window_single_click_subscribe(BUTTON_ID_DOWN, &chrono_lap_handler);
 
   // It's important to disable the lock_click handler while the chrono
   // is running, so that the normal click handler (above) can be
@@ -688,8 +670,7 @@ void started_click_config_provider(ClickConfig **config, Window *window) {
   // active, then the underlying SDK has to wait the full 700 ms to
   // differentiate a long_click from a click, which makes the lap
   // response sluggish.
-  config[BUTTON_ID_DOWN]->long_click.handler = NULL;
-  config[BUTTON_ID_DOWN]->long_click.delay_ms = 0;
+  window_long_click_subscribe(BUTTON_ID_DOWN, 0, NULL, NULL);
 }
 
 void handle_init() {
@@ -699,8 +680,8 @@ void handle_init() {
   int i;
 
   window = window_create();
-  window_set_fullscreen(&window, true);
-  window_stack_push(&window, true /* Animated */);
+  window_set_fullscreen(window, true);
+  window_stack_push(window, true /* Animated */);
 
   now = time(NULL);
   startup_time = localtime(&now);
@@ -712,7 +693,7 @@ void handle_init() {
   clock_face_bitmap = gbitmap_create_with_resource(RESOURCE_ID_CLOCK_FACE);
   clock_face_layer = bitmap_layer_create(window_frame);
   bitmap_layer_set_bitmap(clock_face_layer, clock_face_bitmap);
-  layer_add_child(window_layer, clock_face_layer);
+  layer_add_child(window_layer, bitmap_layer_get_layer(clock_face_layer));
 
 #ifdef SHOW_DAY_CARD
   day_layer = layer_create(GRect(DAY_CARD_X - 15, DAY_CARD_Y - 8, 31, 19));
@@ -777,21 +758,22 @@ void handle_init() {
   }
 
 #ifdef MAKE_CHRONOGRAPH
- window_set_click_config_provider(window, (ClickConfigProvider)stopped_click_config_provider);
+ window_set_click_config_provider(window, &stopped_click_config_provider);
 #endif  // MAKE_CHRONOGRAPH
 
 #if defined(FAST_TIME) || defined(SHOW_SECOND_HAND)
-  tick_timer_service_subscribe(SECOND_UNIT, handle_tick);
+  tick_timer_service_subscribe(SECOND_UNIT, &handle_tick);
 #else
-  tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
+  tick_timer_service_subscribe(MINUTE_UNIT, &handle_tick);
 #endif
-
 }
 
 
 void handle_deinit() {
-  layer_destroy(clock_face_layer);
-  gitmap_destroy(clock_face_bitmap);
+  tick_timer_service_unsubscribe();
+
+  bitmap_layer_destroy(clock_face_layer);
+  gbitmap_destroy(clock_face_bitmap);
 
 #ifdef SHOW_DAY_CARD
   layer_destroy(day_layer);
@@ -816,24 +798,6 @@ void handle_deinit() {
 
   window_destroy(window);
 }
-
-/*
-void pbl_main(void *params) {
-  PebbleAppHandlers handlers = {
-    .init_handler = &handle_init,
-    .deinit_handler = &handle_deinit,
-    .tick_info = {
-      .tick_handler = &handle_tick,
-#if defined(FAST_TIME) || defined(SHOW_SECOND_HAND)
-      .tick_units = SECOND_UNIT
-#else
-      .tick_units = MINUTE_UNIT
-#endif
-    }
-  };
-  app_event_loop(params, &handlers);
-}
-*/
 
 int main(void) {
   handle_init();
