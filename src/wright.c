@@ -6,7 +6,7 @@
 #include "../resources/src/generated_config.h"
 #include "../resources/src/generated_table.c"
 
-
+/*
 PBL_APP_INFO(MY_UUID,
              WATCH_NAME, "drwrose",
              1, 7, /* App version */
@@ -17,6 +17,7 @@ PBL_APP_INFO(MY_UUID,
              APP_INFO_WATCH_FACE
 #endif
              );
+*/
 
 #define SECONDS_PER_DAY 86400
 #define MS_PER_DAY (SECONDS_PER_DAY * 1000)
@@ -26,17 +27,18 @@ PBL_APP_INFO(MY_UUID,
 
 Window window;
 
-BmpContainer clock_face_container;
+GBitmap *clock_face_bitmap;
+BitmapLayer *clock_face_layer;
 
-Layer hour_layer;
-Layer minute_layer;
-Layer second_layer;
-Layer chrono_minute_layer;
-Layer chrono_second_layer;
-Layer chrono_tenth_layer;
+Layer *hour_layer;
+Layer *minute_layer;
+Layer *second_layer;
+Layer *chrono_minute_layer;
+Layer *chrono_second_layer;
+Layer *chrono_tenth_layer;
 
-Layer day_layer;  // day of the week (abbr)
-Layer date_layer; // numeric date of the month
+Layer *day_layer;  // day of the week (abbr)
+Layer *date_layer; // numeric date of the month
 
 // This structure keeps track of the things that change on the visible
 // watch face and their current state.
@@ -69,13 +71,12 @@ int chrono_start_ms = 0; // consulted if chrono_running && !chrono_lap_paused
 int chrono_hold_ms = 0;  // consulted if !chrono_running || chrono_lap_paused
 
 // Returns the number of milliseconds since midnight.
-int get_time_ms(PblTm *time) {
+int get_time_ms(struct tm *time) {
   time_t s;
   uint16_t ms;
   int result;
 
   time_ms(&s, &ms);
-
   result = (s % SECONDS_PER_DAY) * 1000 + ms;
 
 #ifdef FAST_TIME
@@ -91,7 +92,7 @@ int get_time_ms(PblTm *time) {
 
 // Determines the specific hand bitmaps that should be displayed based
 // on the current time.
-void compute_hands(PblTm *time, struct HandPlacement *placement) {
+void compute_hands(struct tm *time, struct HandPlacement *placement) {
   int ms;
 
   ms = get_time_ms(time);
@@ -198,14 +199,14 @@ uint8_t reverse_bits(uint8_t b) {
   return ((b * 0x0802LU & 0x22110LU) | (b * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16; 
 }
 
-// Horizontally flips the indicated BmpContainer in-place.  Requires
+// Horizontally flips the indicated GBitmap in-place.  Requires
 // that the width be a multiple of 8 pixels.
-void flip_bitmap_x(BmpContainer *image, int *cx) {
-  int height = image->bmp.bounds.size.h;
-  int width = image->bmp.bounds.size.w;  // multiple of 8, by our convention.
+void flip_bitmap_x(GBitmap *image, int *cx) {
+  int height = image->bounds.size.h;
+  int width = image->bounds.size.w;  // multiple of 8, by our convention.
   int width_bytes = width / 8;
-  int stride = image->bmp.row_size_bytes; // multiple of 4, by Pebble.
-  uint8_t *data = image->bmp.addr;
+  int stride = image->row_size_bytes; // multiple of 4, by Pebble.
+  uint8_t *data = image->addr;
 
   for (int y = 0; y < height; ++y) {
     uint8_t *row = data + y * stride;
@@ -222,11 +223,11 @@ void flip_bitmap_x(BmpContainer *image, int *cx) {
   }
 }
 
-// Vertically flips the indicated BmpContainer in-place.
-void flip_bitmap_y(BmpContainer *image, int *cy) {
-  int height = image->bmp.bounds.size.h;
-  int stride = image->bmp.row_size_bytes; // multiple of 4.
-  uint8_t *data = image->bmp.addr;
+// Vertically flips the indicated GBitmap in-place.
+void flip_bitmap_y(GBitmap *image, int *cy) {
+  int height = image->bounds.size.h;
+  int stride = image->row_size_bytes; // multiple of 4.
+  uint8_t *data = image->addr;
 
 #if 1
   /* This is the slightly slower flip, that requires less RAM on the
@@ -497,7 +498,7 @@ void date_layer_update_callback(Layer *me, GContext* ctx) {
 }
 #endif  // SHOW_DATE_CARD
 
-void update_hands(PblTm *time) {
+void update_hands(struct tm *time) {
   struct HandPlacement new_placement;
 
   compute_hands(time, &new_placement);
@@ -566,10 +567,8 @@ void update_hands(PblTm *time) {
 }
 
 // Compute new hand positions once a minute (or once a second).
-void handle_tick(AppContextRef ctx, PebbleTickEvent *t) {
-  (void)ctx;
-
-  update_hands(t->tick_time);
+void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
+  update_hands(tick_time);
 }
 
 // Forward references.
@@ -630,9 +629,11 @@ void chrono_lap_button() {
 
 void chrono_reset_button() {
   // Resets the chronometer to 0 time.
-  PblTm time;
+  time_t now;
+  struct tm *time;
 
-  get_time(&time);
+  now = time(NULL);
+  time = localtime(&now);
   chrono_running = false;
   chrono_lap_paused = false;
   chrono_start_ms = 0;
@@ -691,33 +692,38 @@ void started_click_config_provider(ClickConfig **config, Window *window) {
   config[BUTTON_ID_DOWN]->long_click.delay_ms = 0;
 }
 
-void handle_init(AppContextRef ctx) {
-  PblTm time;
-  int i;
-  (void)ctx;
+void handle_init() {
+  time_t now;
+  struct tm *startup_time;
 
-  window_init(&window, WATCH_NAME);
+  int i;
+
+  window = window_create();
   window_set_fullscreen(&window, true);
   window_stack_push(&window, true /* Animated */);
 
-  get_time(&time);
-  compute_hands(&time, &current_placement);
+  now = time(NULL);
+  startup_time = localtime(&now);
+  compute_hands(startup_time, &current_placement);
 
-  resource_init_current_app(&APP_RESOURCES);
+  Layer *window_layer = window_get_root_layer(window);
+  GRect window_frame = layer_get_frame(window_layer);
 
-  bmp_init_container(RESOURCE_ID_CLOCK_FACE, &clock_face_container);
-  layer_add_child(&window.layer, &clock_face_container.layer.layer);
+  clock_face_bitmap = gbitmap_create_with_resource(RESOURCE_ID_CLOCK_FACE);
+  clock_face_layer = bitmap_layer_create(window_frame);
+  bitmap_layer_set_bitmap(clock_face_layer, clock_face_bitmap);
+  layer_add_child(window_layer, clock_face_layer);
 
 #ifdef SHOW_DAY_CARD
-  layer_init(&day_layer, GRect(DAY_CARD_X - 15, DAY_CARD_Y - 8, 31, 19));
-  day_layer.update_proc = &day_layer_update_callback;
-  layer_add_child(&window.layer, &day_layer);
+  day_layer = layer_create(GRect(DAY_CARD_X - 15, DAY_CARD_Y - 8, 31, 19));
+  layer_set_update_proc(day_layer, &day_layer_update_callback);
+  layer_add_child(window_layer, day_layer);
 #endif  // SHOW_DAY_CARD
 
 #ifdef SHOW_DATE_CARD
-  layer_init(&date_layer, GRect(DATE_CARD_X - 15, DATE_CARD_Y - 8, 31, 19));
-  date_layer.update_proc = &date_layer_update_callback;
-  layer_add_child(&window.layer, &date_layer);
+  date_layer = layer_create(GRect(DATE_CARD_X - 15, DATE_CARD_Y - 8, 31, 19));
+  layer_set_update_proc(date_layer, &date_layer_update_callback);
+  layer_add_child(window_layer, date_layer);
 #endif  // SHOW_DATE_CARD
 
   // Init all of the hands, taking care to arrange them in the correct
@@ -725,67 +731,93 @@ void handle_init(AppContextRef ctx) {
   for (i = 0; stacking_order[i] != STACKING_ORDER_DONE; ++i) {
     switch (stacking_order[i]) {
     case STACKING_ORDER_HOUR:
-      layer_init(&hour_layer, window.layer.frame);
-      hour_layer.update_proc = &hour_layer_update_callback;
-      layer_add_child(&window.layer, &hour_layer);
+      hour_layer = layer_create(window_frame);
+      layer_set_update_proc(hour_layer, &hour_layer_update_callback);
+      layer_add_child(window_layer, hour_layer);
       break;
 
     case STACKING_ORDER_MINUTE:
-      layer_init(&minute_layer, window.layer.frame);
-      minute_layer.update_proc = &minute_layer_update_callback;
-      layer_add_child(&window.layer, &minute_layer);
+      minute_layer = layer_create(window_frame);
+      layer_set_update_proc(minute_layer, &minute_layer_update_callback);
+      layer_add_child(window_layer, minute_layer);
       break;
 
     case STACKING_ORDER_SECOND:
 #ifdef SHOW_SECOND_HAND
-      layer_init(&second_layer, window.layer.frame);
-      second_layer.update_proc = &second_layer_update_callback;
-      layer_add_child(&window.layer, &second_layer);
+      second_layer = layer_create(window_frame);
+      layer_set_update_proc(second_layer, &second_layer_update_callback);
+      layer_add_child(window_layer, second_layer);
 #endif  // SHOW_SECOND_HAND
       break;
 
     case STACKING_ORDER_CHRONO_MINUTE:
 #ifdef SHOW_CHRONO_MINUTE_HAND
-      layer_init(&chrono_minute_layer, window.layer.frame);
-      chrono_minute_layer.update_proc = &chrono_minute_layer_update_callback;
-      layer_add_child(&window.layer, &chrono_minute_layer);
+      chrono_minute_layer = layer_create(window_frame);
+      layer_set_update_proc(chrono_minute_layer, &chrono_minute_layer_update_callback);
+      layer_add_child(window_layer, chrono_minute_layer);
 #endif  // SHOW_CHRONO_MINUTE_HAND
       break;
 
     case STACKING_ORDER_CHRONO_SECOND:
 #ifdef SHOW_CHRONO_SECOND_HAND
-      layer_init(&chrono_second_layer, window.layer.frame);
-      chrono_second_layer.update_proc = &chrono_second_layer_update_callback;
-      layer_add_child(&window.layer, &chrono_second_layer);
+      chrono_second_layer = layer_create(window_frame);
+      layer_set_update_proc(chrono_second_layer, &chrono_second_layer_update_callback);
+      layer_add_child(window_layer, chrono_second_layer);
 #endif  // SHOW_CHRONO_SECOND_HAND
       break;
 
     case STACKING_ORDER_CHRONO_TENTH:
 #ifdef SHOW_CHRONO_TENTH_HAND
-      layer_init(&chrono_tenth_layer, window.layer.frame);
-      chrono_tenth_layer.update_proc = &chrono_tenth_layer_update_callback;
-      layer_add_child(&window.layer, &chrono_tenth_layer);
+      chrono_tenth_layer = layer_create(window_frame);
+      layer_set_update_proc(chrono_tenth_layer, &chrono_tenth_layer_update_callback);
+      layer_add_child(window_layer, chrono_tenth_layer);
 #endif  // SHOW_CHRONO_TENTH_HAND
       break;
     }
   }
 
 #ifdef MAKE_CHRONOGRAPH
- window_set_click_config_provider(&window, (ClickConfigProvider)stopped_click_config_provider);
+ window_set_click_config_provider(window, (ClickConfigProvider)stopped_click_config_provider);
 #endif  // MAKE_CHRONOGRAPH
+
+#if defined(FAST_TIME) || defined(SHOW_SECOND_HAND)
+  tick_timer_service_subscribe(SECOND_UNIT, handle_tick);
+#else
+  tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
+#endif
+
 }
 
 
-void handle_deinit(AppContextRef ctx) {
-  (void)ctx;
+void handle_deinit() {
+  layer_destroy(clock_face_layer);
+  gitmap_destroy(clock_face_bitmap);
 
-  bmp_deinit_container(&clock_face_container);
+#ifdef SHOW_DAY_CARD
+  layer_destroy(day_layer);
+#endif
+#ifdef SHOW_DATE_CARD
+  layer_destroy(date_layer);
+#endif
+  layer_destroy(minute_layer);
+  layer_destroy(hour_layer);
+#ifdef SHOW_SECOND_HAND
+  layer_destroy(second_layer);
+#endif
+#ifdef SHOW_CHRONO_MINUTE_HAND
+  layer_destroy(chrono_minute_layer);
+#endif
+#ifdef SHOW_CHRONO_SECOND_HAND
+  layer_destroy(chrono_second_layer);
+#endif
+#ifdef SHOW_CHRONO_TENTH_HAND
+  layer_destroy(chrono_tenth_layer);
+#endif
 
-  // Is this needed?  Official Pebble examples don't seem to do it.
-  //  text_layer_deinit(&date_layer);
+  window_destroy(window);
 }
 
-
+/*
 void pbl_main(void *params) {
   PebbleAppHandlers handlers = {
     .init_handler = &handle_init,
@@ -800,4 +832,11 @@ void pbl_main(void *params) {
     }
   };
   app_event_loop(params, &handlers);
+}
+*/
+
+int main(void) {
+  handle_init();
+  app_event_loop();
+  handle_deinit();
 }
