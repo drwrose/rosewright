@@ -16,7 +16,7 @@
 
 // The order in which the hands are layered on top of each other.
 int stacking_order[] = {
-  STACKING_ORDER_HOUR, STACKING_ORDER_MINUTE, STACKING_ORDER_SECOND, STACKING_ORDER_CHRONO_MINUTE, STACKING_ORDER_CHRONO_SECOND, STACKING_ORDER_CHRONO_TENTH, STACKING_ORDER_DONE
+  STACKING_ORDER_CHRONO_MINUTE, STACKING_ORDER_CHRONO_TENTH, STACKING_ORDER_SECOND, STACKING_ORDER_HOUR, STACKING_ORDER_MINUTE, STACKING_ORDER_CHRONO_SECOND, STACKING_ORDER_DONE
 };
 
 #if 0
@@ -27,29 +27,29 @@ int stacking_order[] = {
   #define FAST_TIME 1
 #endif
 
-#if 1
+#if 0
   #define SHOW_DAY_CARD 1
-  #define DAY_CARD_X 52
-  #define DAY_CARD_Y 109
+  #define DAY_CARD_X None
+  #define DAY_CARD_Y None
   #define DAY_CARD_ON_BLACK 0
   #define DAY_CARD_BOLD 0
 #endif
 
-#if 1
+#if 0
   #define SHOW_DATE_CARD 1
-  #define DATE_CARD_X 92
-  #define DATE_CARD_Y 109
+  #define DATE_CARD_X None
+  #define DATE_CARD_Y None
   #define DATE_CARD_ON_BLACK 0
   #define DATE_CARD_BOLD 0
 #endif
 
 #if 1
   #define SHOW_SECOND_HAND 1
-  #define SECOND_HAND_X 72
+  #define SECOND_HAND_X 29
   #define SECOND_HAND_Y 84
 #endif
 
-#if 1
+#if 0
   #define ENABLE_HOUR_BUZZER 1
 #endif
 
@@ -57,21 +57,21 @@ int stacking_order[] = {
   #define MAKE_CHRONOGRAPH 1
 #endif
 
-#if 0
+#if 1
   #define SHOW_CHRONO_MINUTE_HAND 1
-  #define CHRONO_MINUTE_HAND_X 72
+  #define CHRONO_MINUTE_HAND_X 115
   #define CHRONO_MINUTE_HAND_Y 84
 #endif
 
-#if 0
+#if 1
   #define SHOW_CHRONO_SECOND_HAND 1
   #define CHRONO_SECOND_HAND_X 72
   #define CHRONO_SECOND_HAND_Y 84
 #endif
 
-#if 0
+#if 1
   #define SHOW_CHRONO_TENTH_HAND 1
   #define CHRONO_TENTH_HAND_X 72
-  #define CHRONO_TENTH_HAND_Y 84
+  #define CHRONO_TENTH_HAND_Y 126
 #endif
 

@@ -1,7 +1,7 @@
 {
-  "uuid": "a49c82fd-830e-48b4-a82e-9cf8da77f4c6",
-  "shortName": "Rosewright B",
-  "longName": "Rosewright B",
+  "uuid": "a49c82fd-830e-48b4-a82e-9cf8da77f4c7",
+  "shortName": "Rosewright Chronograph",
+  "longName": "Rosewright Chronograph",
   "companyName": "drwrose",
   "versionCode": 1,
   "versionLabel": "1.7.0",
@@ -20,232 +20,512 @@
 
     {
       "name": "CLOCK_FACE",
-      "file": "clock_faces/b_face.png",
+      "file": "clock_faces/c_face.png",
       "type": "png"
     },
     {
       "name": "HOUR_0",
-      "file": "clock_hands/flat_b_hour_0.png",
+      "file": "clock_hands/flat_c_hour_0.png",
+      "type": "png"
+    },
+    {
+      "name": "HOUR_0_mask",
+      "file": "clock_hands/flat_c_hour_0_mask.png",
       "type": "png"
     },
     {
       "name": "HOUR_1",
-      "file": "clock_hands/flat_b_hour_1.png",
+      "file": "clock_hands/flat_c_hour_1.png",
+      "type": "png"
+    },
+    {
+      "name": "HOUR_1_mask",
+      "file": "clock_hands/flat_c_hour_1_mask.png",
       "type": "png"
     },
     {
       "name": "HOUR_2",
-      "file": "clock_hands/flat_b_hour_2.png",
+      "file": "clock_hands/flat_c_hour_2.png",
+      "type": "png"
+    },
+    {
+      "name": "HOUR_2_mask",
+      "file": "clock_hands/flat_c_hour_2_mask.png",
       "type": "png"
     },
     {
       "name": "HOUR_3",
-      "file": "clock_hands/flat_b_hour_3.png",
+      "file": "clock_hands/flat_c_hour_3.png",
+      "type": "png"
+    },
+    {
+      "name": "HOUR_3_mask",
+      "file": "clock_hands/flat_c_hour_3_mask.png",
       "type": "png"
     },
     {
       "name": "HOUR_4",
-      "file": "clock_hands/flat_b_hour_4.png",
+      "file": "clock_hands/flat_c_hour_4.png",
+      "type": "png"
+    },
+    {
+      "name": "HOUR_4_mask",
+      "file": "clock_hands/flat_c_hour_4_mask.png",
       "type": "png"
     },
     {
       "name": "HOUR_5",
-      "file": "clock_hands/flat_b_hour_5.png",
+      "file": "clock_hands/flat_c_hour_5.png",
+      "type": "png"
+    },
+    {
+      "name": "HOUR_5_mask",
+      "file": "clock_hands/flat_c_hour_5_mask.png",
       "type": "png"
     },
     {
       "name": "HOUR_6",
-      "file": "clock_hands/flat_b_hour_6.png",
+      "file": "clock_hands/flat_c_hour_6.png",
+      "type": "png"
+    },
+    {
+      "name": "HOUR_6_mask",
+      "file": "clock_hands/flat_c_hour_6_mask.png",
       "type": "png"
     },
     {
       "name": "HOUR_7",
-      "file": "clock_hands/flat_b_hour_7.png",
+      "file": "clock_hands/flat_c_hour_7.png",
+      "type": "png"
+    },
+    {
+      "name": "HOUR_7_mask",
+      "file": "clock_hands/flat_c_hour_7_mask.png",
       "type": "png"
     },
     {
       "name": "HOUR_8",
-      "file": "clock_hands/flat_b_hour_8.png",
+      "file": "clock_hands/flat_c_hour_8.png",
+      "type": "png"
+    },
+    {
+      "name": "HOUR_8_mask",
+      "file": "clock_hands/flat_c_hour_8_mask.png",
       "type": "png"
     },
     {
       "name": "HOUR_9",
-      "file": "clock_hands/flat_b_hour_9.png",
+      "file": "clock_hands/flat_c_hour_9.png",
+      "type": "png"
+    },
+    {
+      "name": "HOUR_9_mask",
+      "file": "clock_hands/flat_c_hour_9_mask.png",
       "type": "png"
     },
     {
       "name": "HOUR_10",
-      "file": "clock_hands/flat_b_hour_10.png",
+      "file": "clock_hands/flat_c_hour_10.png",
+      "type": "png"
+    },
+    {
+      "name": "HOUR_10_mask",
+      "file": "clock_hands/flat_c_hour_10_mask.png",
       "type": "png"
     },
     {
       "name": "HOUR_11",
-      "file": "clock_hands/flat_b_hour_11.png",
+      "file": "clock_hands/flat_c_hour_11.png",
+      "type": "png"
+    },
+    {
+      "name": "HOUR_11_mask",
+      "file": "clock_hands/flat_c_hour_11_mask.png",
       "type": "png"
     },
     {
       "name": "HOUR_12",
-      "file": "clock_hands/flat_b_hour_12.png",
+      "file": "clock_hands/flat_c_hour_12.png",
+      "type": "png"
+    },
+    {
+      "name": "HOUR_12_mask",
+      "file": "clock_hands/flat_c_hour_12_mask.png",
       "type": "png"
     },
     {
       "name": "MINUTE_0",
-      "file": "clock_hands/flat_b_minute_0.png",
+      "file": "clock_hands/flat_c_minute_0.png",
+      "type": "png"
+    },
+    {
+      "name": "MINUTE_0_mask",
+      "file": "clock_hands/flat_c_minute_0_mask.png",
       "type": "png"
     },
     {
       "name": "MINUTE_1",
-      "file": "clock_hands/flat_b_minute_1.png",
+      "file": "clock_hands/flat_c_minute_1.png",
+      "type": "png"
+    },
+    {
+      "name": "MINUTE_1_mask",
+      "file": "clock_hands/flat_c_minute_1_mask.png",
       "type": "png"
     },
     {
       "name": "MINUTE_2",
-      "file": "clock_hands/flat_b_minute_2.png",
+      "file": "clock_hands/flat_c_minute_2.png",
+      "type": "png"
+    },
+    {
+      "name": "MINUTE_2_mask",
+      "file": "clock_hands/flat_c_minute_2_mask.png",
       "type": "png"
     },
     {
       "name": "MINUTE_3",
-      "file": "clock_hands/flat_b_minute_3.png",
+      "file": "clock_hands/flat_c_minute_3.png",
+      "type": "png"
+    },
+    {
+      "name": "MINUTE_3_mask",
+      "file": "clock_hands/flat_c_minute_3_mask.png",
       "type": "png"
     },
     {
       "name": "MINUTE_4",
-      "file": "clock_hands/flat_b_minute_4.png",
+      "file": "clock_hands/flat_c_minute_4.png",
+      "type": "png"
+    },
+    {
+      "name": "MINUTE_4_mask",
+      "file": "clock_hands/flat_c_minute_4_mask.png",
       "type": "png"
     },
     {
       "name": "MINUTE_5",
-      "file": "clock_hands/flat_b_minute_5.png",
+      "file": "clock_hands/flat_c_minute_5.png",
+      "type": "png"
+    },
+    {
+      "name": "MINUTE_5_mask",
+      "file": "clock_hands/flat_c_minute_5_mask.png",
       "type": "png"
     },
     {
       "name": "MINUTE_6",
-      "file": "clock_hands/flat_b_minute_6.png",
+      "file": "clock_hands/flat_c_minute_6.png",
+      "type": "png"
+    },
+    {
+      "name": "MINUTE_6_mask",
+      "file": "clock_hands/flat_c_minute_6_mask.png",
       "type": "png"
     },
     {
       "name": "MINUTE_7",
-      "file": "clock_hands/flat_b_minute_7.png",
+      "file": "clock_hands/flat_c_minute_7.png",
+      "type": "png"
+    },
+    {
+      "name": "MINUTE_7_mask",
+      "file": "clock_hands/flat_c_minute_7_mask.png",
       "type": "png"
     },
     {
       "name": "MINUTE_8",
-      "file": "clock_hands/flat_b_minute_8.png",
+      "file": "clock_hands/flat_c_minute_8.png",
+      "type": "png"
+    },
+    {
+      "name": "MINUTE_8_mask",
+      "file": "clock_hands/flat_c_minute_8_mask.png",
       "type": "png"
     },
     {
       "name": "MINUTE_9",
-      "file": "clock_hands/flat_b_minute_9.png",
+      "file": "clock_hands/flat_c_minute_9.png",
+      "type": "png"
+    },
+    {
+      "name": "MINUTE_9_mask",
+      "file": "clock_hands/flat_c_minute_9_mask.png",
       "type": "png"
     },
     {
       "name": "MINUTE_10",
-      "file": "clock_hands/flat_b_minute_10.png",
+      "file": "clock_hands/flat_c_minute_10.png",
+      "type": "png"
+    },
+    {
+      "name": "MINUTE_10_mask",
+      "file": "clock_hands/flat_c_minute_10_mask.png",
       "type": "png"
     },
     {
       "name": "MINUTE_11",
-      "file": "clock_hands/flat_b_minute_11.png",
+      "file": "clock_hands/flat_c_minute_11.png",
+      "type": "png"
+    },
+    {
+      "name": "MINUTE_11_mask",
+      "file": "clock_hands/flat_c_minute_11_mask.png",
       "type": "png"
     },
     {
       "name": "MINUTE_12",
-      "file": "clock_hands/flat_b_minute_12.png",
+      "file": "clock_hands/flat_c_minute_12.png",
+      "type": "png"
+    },
+    {
+      "name": "MINUTE_12_mask",
+      "file": "clock_hands/flat_c_minute_12_mask.png",
       "type": "png"
     },
     {
       "name": "MINUTE_13",
-      "file": "clock_hands/flat_b_minute_13.png",
+      "file": "clock_hands/flat_c_minute_13.png",
+      "type": "png"
+    },
+    {
+      "name": "MINUTE_13_mask",
+      "file": "clock_hands/flat_c_minute_13_mask.png",
       "type": "png"
     },
     {
       "name": "MINUTE_14",
-      "file": "clock_hands/flat_b_minute_14.png",
+      "file": "clock_hands/flat_c_minute_14.png",
+      "type": "png"
+    },
+    {
+      "name": "MINUTE_14_mask",
+      "file": "clock_hands/flat_c_minute_14_mask.png",
       "type": "png"
     },
     {
       "name": "MINUTE_15",
-      "file": "clock_hands/flat_b_minute_15.png",
+      "file": "clock_hands/flat_c_minute_15.png",
+      "type": "png"
+    },
+    {
+      "name": "MINUTE_15_mask",
+      "file": "clock_hands/flat_c_minute_15_mask.png",
       "type": "png"
     },
     {
       "name": "SECOND_0",
-      "file": "clock_hands/flat_b_second_0.png",
+      "file": "clock_hands/flat_c_second_0.png",
       "type": "png"
     },
     {
       "name": "SECOND_1",
-      "file": "clock_hands/flat_b_second_1.png",
+      "file": "clock_hands/flat_c_second_1.png",
       "type": "png"
     },
     {
       "name": "SECOND_2",
-      "file": "clock_hands/flat_b_second_2.png",
+      "file": "clock_hands/flat_c_second_2.png",
       "type": "png"
     },
     {
       "name": "SECOND_3",
-      "file": "clock_hands/flat_b_second_3.png",
+      "file": "clock_hands/flat_c_second_3.png",
       "type": "png"
     },
     {
       "name": "SECOND_4",
-      "file": "clock_hands/flat_b_second_4.png",
+      "file": "clock_hands/flat_c_second_4.png",
       "type": "png"
     },
     {
       "name": "SECOND_5",
-      "file": "clock_hands/flat_b_second_5.png",
+      "file": "clock_hands/flat_c_second_5.png",
       "type": "png"
     },
     {
       "name": "SECOND_6",
-      "file": "clock_hands/flat_b_second_6.png",
+      "file": "clock_hands/flat_c_second_6.png",
       "type": "png"
     },
     {
       "name": "SECOND_7",
-      "file": "clock_hands/flat_b_second_7.png",
+      "file": "clock_hands/flat_c_second_7.png",
       "type": "png"
     },
     {
       "name": "SECOND_8",
-      "file": "clock_hands/flat_b_second_8.png",
+      "file": "clock_hands/flat_c_second_8.png",
       "type": "png"
     },
     {
       "name": "SECOND_9",
-      "file": "clock_hands/flat_b_second_9.png",
+      "file": "clock_hands/flat_c_second_9.png",
       "type": "png"
     },
     {
       "name": "SECOND_10",
-      "file": "clock_hands/flat_b_second_10.png",
+      "file": "clock_hands/flat_c_second_10.png",
       "type": "png"
     },
     {
       "name": "SECOND_11",
-      "file": "clock_hands/flat_b_second_11.png",
+      "file": "clock_hands/flat_c_second_11.png",
       "type": "png"
     },
     {
       "name": "SECOND_12",
-      "file": "clock_hands/flat_b_second_12.png",
+      "file": "clock_hands/flat_c_second_12.png",
       "type": "png"
     },
     {
       "name": "SECOND_13",
-      "file": "clock_hands/flat_b_second_13.png",
+      "file": "clock_hands/flat_c_second_13.png",
       "type": "png"
     },
     {
       "name": "SECOND_14",
-      "file": "clock_hands/flat_b_second_14.png",
+      "file": "clock_hands/flat_c_second_14.png",
       "type": "png"
     },
     {
       "name": "SECOND_15",
-      "file": "clock_hands/flat_b_second_15.png",
+      "file": "clock_hands/flat_c_second_15.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_MINUTE_0",
+      "file": "clock_hands/flat_c_chrono_minute_0.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_MINUTE_1",
+      "file": "clock_hands/flat_c_chrono_minute_1.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_MINUTE_2",
+      "file": "clock_hands/flat_c_chrono_minute_2.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_MINUTE_3",
+      "file": "clock_hands/flat_c_chrono_minute_3.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_MINUTE_4",
+      "file": "clock_hands/flat_c_chrono_minute_4.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_MINUTE_5",
+      "file": "clock_hands/flat_c_chrono_minute_5.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_MINUTE_6",
+      "file": "clock_hands/flat_c_chrono_minute_6.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_MINUTE_7",
+      "file": "clock_hands/flat_c_chrono_minute_7.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_SECOND_0",
+      "file": "clock_hands/flat_c_chrono_second_0.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_SECOND_1",
+      "file": "clock_hands/flat_c_chrono_second_1.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_SECOND_2",
+      "file": "clock_hands/flat_c_chrono_second_2.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_SECOND_3",
+      "file": "clock_hands/flat_c_chrono_second_3.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_SECOND_4",
+      "file": "clock_hands/flat_c_chrono_second_4.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_SECOND_5",
+      "file": "clock_hands/flat_c_chrono_second_5.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_SECOND_6",
+      "file": "clock_hands/flat_c_chrono_second_6.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_SECOND_7",
+      "file": "clock_hands/flat_c_chrono_second_7.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_SECOND_8",
+      "file": "clock_hands/flat_c_chrono_second_8.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_SECOND_9",
+      "file": "clock_hands/flat_c_chrono_second_9.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_SECOND_10",
+      "file": "clock_hands/flat_c_chrono_second_10.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_SECOND_11",
+      "file": "clock_hands/flat_c_chrono_second_11.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_SECOND_12",
+      "file": "clock_hands/flat_c_chrono_second_12.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_SECOND_13",
+      "file": "clock_hands/flat_c_chrono_second_13.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_SECOND_14",
+      "file": "clock_hands/flat_c_chrono_second_14.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_SECOND_15",
+      "file": "clock_hands/flat_c_chrono_second_15.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_TENTH_0",
+      "file": "clock_hands/flat_c_chrono_tenth_0.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_TENTH_1",
+      "file": "clock_hands/flat_c_chrono_tenth_1.png",
+      "type": "png"
+    },
+    {
+      "name": "CHRONO_TENTH_2",
+      "file": "clock_hands/flat_c_chrono_tenth_2.png",
       "type": "png"
     }
     ]

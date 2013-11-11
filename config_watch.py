@@ -574,9 +574,14 @@ def configWatch():
     resourceIn = open('%s/appinfo.json.in' % (rootDir), 'r').read()
     resource = open('%s/appinfo.json' % (rootDir), 'w')
 
+    watchface = 'true'
+    if makeChronograph and showChronoSecondHand:
+        watchface = 'false'
+    
     print >> resource, resourceIn % {
         'uuId' : formatUuId(uuId),
         'watchName' : watchName,
+        'watchface' : watchface,
         'generatedMedia' : resourceStr[:-1],
         }
 
