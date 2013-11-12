@@ -1,0 +1,23 @@
+{
+  "uuid": "%(uuId)s",
+  "shortName": "%(watchName)s",
+  "longName": "%(watchName)s",
+  "companyName": "drwrose",
+  "versionCode": 1,
+  "versionLabel": "1.7.0",
+  "watchapp": {
+    "watchface": %(watchface)s
+  },
+  "appKeys": {},
+  "resources": {
+  "media": [
+    {
+      "menuIcon": true,
+      "name": "ROSE_ICON",
+      "file": "rose_icon.png",
+      "type": "png"
+    },
+%(generatedMedia)s
+    ]
+  }
+}
