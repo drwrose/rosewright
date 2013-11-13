@@ -7,6 +7,9 @@
 #define SHOW_BATTERY_GAUGE 1
 //#define BATTERY_GAUGE_ON_BLACK 1
 
+#define SHOW_BLUETOOTH 1
+//#define BLUETOOTH_ON_BLACK 1
+
 #define SECONDS_PER_DAY 86400
 #define MS_PER_DAY (SECONDS_PER_DAY * 1000)
 
@@ -21,6 +24,10 @@ BitmapLayer *clock_face_layer;
 GBitmap *battery_gauge_empty_bitmap;
 GBitmap *battery_gauge_charging_bitmap;
 Layer *battery_gauge_layer;
+
+GBitmap *bluetooth_disconnected_bitmap;
+GBitmap *bluetooth_connected_bitmap;
+Layer *bluetooth_layer;
 
 Layer *hour_layer;
 Layer *minute_layer;
@@ -507,6 +514,28 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
 }
 #endif  // SHOW_BATTERY_GAUGE
 
+#ifdef SHOW_BLUETOOTH
+void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
+  GRect box;
+
+  box = layer_get_frame(me);
+  box.origin.x = 0;
+  box.origin.y = 0;
+
+#ifdef BLUETOOTH_ON_BLACK
+  graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
+#else
+  graphics_context_set_compositing_mode(ctx, GCompOpAssign);
+#endif  // BLUETOOTH_ON_BLACK
+
+  if (bluetooth_connection_service_peek()) {
+    graphics_draw_bitmap_in_rect(ctx, bluetooth_connected_bitmap, box);
+  } else {
+    graphics_draw_bitmap_in_rect(ctx, bluetooth_disconnected_bitmap, box);
+  }
+}
+#endif  // SHOW_BLUETOOTH
+
 #ifdef SHOW_DAY_CARD
 void day_layer_update_callback(Layer *me, GContext *ctx) {
   draw_card(me, ctx, weekday_names[current_placement.day_index], DAY_CARD_ON_BLACK, DAY_CARD_BOLD);
@@ -598,6 +627,13 @@ void handle_battery(BatteryChargeState charge_state) {
   layer_mark_dirty(battery_gauge_layer);
 }
 #endif  // SHOW_BATTERY_GAUGE
+
+#ifdef SHOW_BLUETOOTH
+// Update the battery guage.
+void handle_bluetooth(bool connected) {
+  layer_mark_dirty(bluetooth_layer);
+}
+#endif  // SHOW_BLUETOOTH
 
 // Forward references.
 void stopped_click_config_provider(void *context);
@@ -746,6 +782,15 @@ void handle_init() {
   battery_state_service_subscribe(&handle_battery);
 #endif  // SHOW_BATTERY_GAUGE
 
+#ifdef SHOW_BLUETOOTH
+  bluetooth_disconnected_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BLUETOOTH_DISCONNECTED);
+  bluetooth_connected_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BLUETOOTH_CONNECTED);
+  bluetooth_layer = layer_create(GRect(0, 0, 16, 16));
+  layer_set_update_proc(bluetooth_layer, &bluetooth_layer_update_callback);
+  layer_add_child(window_layer, bluetooth_layer);
+  bluetooth_connection_service_subscribe(&handle_bluetooth);
+#endif  // SHOW_BLUETOOTH
+
 #ifdef SHOW_DAY_CARD
   day_layer = layer_create(GRect(DAY_CARD_X - 15, DAY_CARD_Y - 8, 31, 19));
   layer_set_update_proc(day_layer, &day_layer_update_callback);
@@ -831,6 +876,13 @@ void handle_deinit() {
   layer_destroy(battery_gauge_layer);
   gbitmap_destroy(battery_gauge_empty_bitmap);
   gbitmap_destroy(battery_gauge_charging_bitmap);
+#endif
+
+#ifdef SHOW_BLUETOOTH
+  bluetooth_connection_service_unsubscribe();
+  layer_destroy(bluetooth_layer);
+  gbitmap_destroy(bluetooth_disconnected_bitmap);
+  gbitmap_destroy(bluetooth_connected_bitmap);
 #endif
 
 #ifdef SHOW_DAY_CARD

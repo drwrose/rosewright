@@ -27,6 +27,16 @@
       "file": "battery_gauge_charging.png",
       "type": "png"
     },
+    {
+      "name": "BLUETOOTH_DISCONNECTED",
+      "file": "bluetooth_disconnected.png",
+      "type": "png"
+    },
+    {
+      "name": "BLUETOOTH_CONNECTED",
+      "file": "bluetooth_connected.png",
+      "type": "png"
+    },
 %(generatedMedia)s
     ]
   }
