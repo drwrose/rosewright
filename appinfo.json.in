@@ -17,6 +17,16 @@
       "file": "rose_icon.png",
       "type": "png"
     },
+    {
+      "name": "BATTERY_GAUGE_EMPTY",
+      "file": "battery_gauge_empty.png",
+      "type": "png"
+    },
+    {
+      "name": "BATTERY_GAUGE_CHARGING",
+      "file": "battery_gauge_charging.png",
+      "type": "png"
+    },
 %(generatedMedia)s
     ]
   }

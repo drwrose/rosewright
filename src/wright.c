@@ -4,6 +4,9 @@
 #include "../resources/generated_config.h"
 #include "../resources/generated_table.c"
 
+#define SHOW_BATTERY_GAUGE 1
+//#define BATTERY_GAUGE_ON_BLACK 1
+
 #define SECONDS_PER_DAY 86400
 #define MS_PER_DAY (SECONDS_PER_DAY * 1000)
 
@@ -14,6 +17,10 @@ Window *window;
 
 GBitmap *clock_face_bitmap;
 BitmapLayer *clock_face_layer;
+
+GBitmap *battery_gauge_empty_bitmap;
+GBitmap *battery_gauge_charging_bitmap;
+Layer *battery_gauge_layer;
 
 Layer *hour_layer;
 Layer *minute_layer;
@@ -472,6 +479,34 @@ void draw_card(Layer *me, GContext *ctx, const char *text, bool on_black, bool b
                      NULL);
 }
 
+#ifdef SHOW_BATTERY_GAUGE
+void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
+  GRect box;
+
+  box = layer_get_frame(me);
+  box.origin.x = 0;
+  box.origin.y = 0;
+
+  BatteryChargeState charge_state = battery_state_service_peek();
+
+#ifdef BATTERY_GAUGE_ON_BLACK
+  graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
+  graphics_context_set_fill_color(ctx, GColorWhite);
+#else
+  graphics_context_set_compositing_mode(ctx, GCompOpAssign);
+  graphics_context_set_fill_color(ctx, GColorBlack);
+#endif  // BATTERY_GAUGE_ON_BLACK
+
+  if (charge_state.is_charging) {
+    graphics_draw_bitmap_in_rect(ctx, battery_gauge_charging_bitmap, box);
+  } else {
+    graphics_draw_bitmap_in_rect(ctx, battery_gauge_empty_bitmap, box);
+    int bar_width = (charge_state.charge_percent * 11 + 50) / 100;
+    graphics_fill_rect(ctx, GRect(5, 6, bar_width, 4), 0, GCornerNone);
+  }
+}
+#endif  // SHOW_BATTERY_GAUGE
+
 #ifdef SHOW_DAY_CARD
 void day_layer_update_callback(Layer *me, GContext *ctx) {
   draw_card(me, ctx, weekday_names[current_placement.day_index], DAY_CARD_ON_BLACK, DAY_CARD_BOLD);
@@ -556,6 +591,13 @@ void update_hands(struct tm *time) {
 void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
   update_hands(tick_time);
 }
+
+#ifdef SHOW_BATTERY_GAUGE
+// Update the battery guage.
+void handle_battery(BatteryChargeState charge_state) {
+  layer_mark_dirty(battery_gauge_layer);
+}
+#endif  // SHOW_BATTERY_GAUGE
 
 // Forward references.
 void stopped_click_config_provider(void *context);
@@ -695,6 +737,15 @@ void handle_init() {
   bitmap_layer_set_bitmap(clock_face_layer, clock_face_bitmap);
   layer_add_child(window_layer, bitmap_layer_get_layer(clock_face_layer));
 
+#ifdef SHOW_BATTERY_GAUGE
+  battery_gauge_empty_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BATTERY_GAUGE_EMPTY);
+  battery_gauge_charging_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BATTERY_GAUGE_CHARGING);
+  battery_gauge_layer = layer_create(GRect(123, 0, 22, 16));
+  layer_set_update_proc(battery_gauge_layer, &battery_gauge_layer_update_callback);
+  layer_add_child(window_layer, battery_gauge_layer);
+  battery_state_service_subscribe(&handle_battery);
+#endif  // SHOW_BATTERY_GAUGE
+
 #ifdef SHOW_DAY_CARD
   day_layer = layer_create(GRect(DAY_CARD_X - 15, DAY_CARD_Y - 8, 31, 19));
   layer_set_update_proc(day_layer, &day_layer_update_callback);
@@ -774,6 +825,13 @@ void handle_deinit() {
 
   bitmap_layer_destroy(clock_face_layer);
   gbitmap_destroy(clock_face_bitmap);
+
+#ifdef SHOW_BATTERY_GAUGE
+  battery_state_service_unsubscribe();
+  layer_destroy(battery_gauge_layer);
+  gbitmap_destroy(battery_gauge_empty_bitmap);
+  gbitmap_destroy(battery_gauge_charging_bitmap);
+#endif
 
 #ifdef SHOW_DAY_CARD
   layer_destroy(day_layer);
