@@ -4,12 +4,6 @@
 #include "../resources/generated_config.h"
 #include "../resources/generated_table.c"
 
-#define SHOW_BATTERY_GAUGE 1
-//#define BATTERY_GAUGE_ON_BLACK 1
-
-#define SHOW_BLUETOOTH 1
-//#define BLUETOOTH_ON_BLACK 1
-
 #define SECONDS_PER_DAY 86400
 #define MS_PER_DAY (SECONDS_PER_DAY * 1000)
 
@@ -496,7 +490,7 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
 
   BatteryChargeState charge_state = battery_state_service_peek();
 
-#ifdef BATTERY_GAUGE_ON_BLACK
+#if BATTERY_GAUGE_ON_BLACK
   graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
   graphics_context_set_fill_color(ctx, GColorWhite);
 #else
@@ -506,6 +500,12 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
 
   if (charge_state.is_charging) {
     graphics_draw_bitmap_in_rect(ctx, battery_gauge_charging_bitmap, box);
+#if !SHOW_BATTERY_GAUGE_ALWAYS
+  } else if (!charge_state.is_plugged || charge_state.charge_percent > 20) {
+    // Unless SHOW_BATTERY_GAUGE_ALWAYS is configured true (e.g. with
+    // -I to config_watch.py), then we don't bother showing the
+    // battery gauge when it's in a normal condition.
+#endif  // SHOW_BATTERY_GAUGE_ALWAYS
   } else {
     graphics_draw_bitmap_in_rect(ctx, battery_gauge_empty_bitmap, box);
     int bar_width = (charge_state.charge_percent * 11 + 50) / 100;
@@ -522,14 +522,18 @@ void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
   box.origin.x = 0;
   box.origin.y = 0;
 
-#ifdef BLUETOOTH_ON_BLACK
+#if BLUETOOTH_ON_BLACK
   graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
 #else
   graphics_context_set_compositing_mode(ctx, GCompOpAssign);
 #endif  // BLUETOOTH_ON_BLACK
 
   if (bluetooth_connection_service_peek()) {
+#if SHOW_BLUETOOTH_ALWAYS
+    // We only draw the "connected" bitmap if SHOW_BLUETOOTH_ALWAYS is
+    // configured true (e.g. with -I to config_watch.py).
     graphics_draw_bitmap_in_rect(ctx, bluetooth_connected_bitmap, box);
+#endif  // SHOW_BLUETOOTH_ALWAYS
   } else {
     graphics_draw_bitmap_in_rect(ctx, bluetooth_disconnected_bitmap, box);
   }
@@ -776,7 +780,7 @@ void handle_init() {
 #ifdef SHOW_BATTERY_GAUGE
   battery_gauge_empty_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BATTERY_GAUGE_EMPTY);
   battery_gauge_charging_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BATTERY_GAUGE_CHARGING);
-  battery_gauge_layer = layer_create(GRect(123, 0, 22, 16));
+  battery_gauge_layer = layer_create(GRect(BATTERY_GAUGE_X, BATTERY_GAUGE_Y, 22, 16));
   layer_set_update_proc(battery_gauge_layer, &battery_gauge_layer_update_callback);
   layer_add_child(window_layer, battery_gauge_layer);
   battery_state_service_subscribe(&handle_battery);
@@ -785,7 +789,7 @@ void handle_init() {
 #ifdef SHOW_BLUETOOTH
   bluetooth_disconnected_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BLUETOOTH_DISCONNECTED);
   bluetooth_connected_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BLUETOOTH_CONNECTED);
-  bluetooth_layer = layer_create(GRect(0, 0, 16, 16));
+  bluetooth_layer = layer_create(GRect(BLUETOOTH_X, BLUETOOTH_Y, 16, 16));
   layer_set_update_proc(bluetooth_layer, &bluetooth_layer_update_callback);
   layer_add_child(window_layer, bluetooth_layer);
   bluetooth_connection_service_subscribe(&handle_bluetooth);

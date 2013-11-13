@@ -29,12 +29,16 @@ Options:
     -F style
         Overrides the face style.  The following styles are available:
           %(faceStyles)s
-
+          
     -S
         Suppress the second hand if it is defined.
 
     -b
         Enable a quick buzz at the top of the hour.
+
+    -I
+        Keep bluetooth and battery indicators visible all the time,
+        instead of only when needed.
 
     -c
         Enable chronograph mode (if the selected hand style includes
@@ -190,13 +194,11 @@ hands = {
 
 # Table of face styles.  For each style, specify the following:
 #
-#    filename, dayCard, dateCard, centers
-#
-#  Where:
-#
 #   filename  - the background image for the face.
 #   dayCard   - the (x, y, c) position and color of the "day of week" card, or None.
 #   dateCard  - the (x, y, c) position and color of the "date of month" card, or None.
+#   battery   - the (x, y, c) position and color of the battery gauge, or None.
+#   bluetooth - the (x, y, c) position and color of the bluetooth indicator, or None.
 #   centers   - a list of [(hand, x, y)] to indicate the position for
 #               each kind of watch hand.  If the list is empty or a
 #               hand is omitted, the default is the center.  This also
@@ -207,23 +209,58 @@ hands = {
 #
 
 faces = {
-    'a' : ('a_face.png', None, (106, 82, 'B'), []),
-    'au' : ('a_face_unrotated.png', None, (106, 82, 'B'), []),
-    'b' : ('b_face.png', (52, 109, 'b'), (92, 109, 'b'), []),
-    'c' : ('c_face.png', None, None, [('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)]),
-    'd' : ('d_face.png', (53, 107, 'w'), (91, 107, 'w'), []),
-    'e' : ('e_face.png', None, (123, 82, 'B'), []),
+    'a' : {
+        'filename': 'a_face.png', 
+        'dateCard': (106, 82, 'B'), 
+        'bluetooth' : (52, 114, 'b'),
+        'battery' : (75, 114, 'b'),
+        },
+    'au' : {
+        'filename': 'a_face_unrotated.png', 
+        'dateCard' : (106, 82, 'B'), 
+        'bluetooth' : (64, 97, 'b'),
+        'battery' : (61, 116, 'b'),
+        },
+    'b' : {
+        'filename' : 'b_face.png', 
+        'dayCard' : (52, 109, 'b'), 
+        'dateCard' : (92, 109, 'b'), 
+        'bluetooth' : (0, 0, 'b'),
+        'battery' : (123, 0, 'b'),
+        },
+    'c' : {
+        'filename' : 'c_face.png', 
+        'centers' : [('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)],
+        'bluetooth' : (0, 0, 'w'),
+        'battery' : (123, 0, 'w'),
+        },
+    'd' : {
+        'filename' : 'd_face.png', 
+        'dayCard' : (53, 107, 'w'), 
+        'dateCard' : (91, 107, 'w'), 
+        'bluetooth' : (0, 0, 'w'),
+        'battery' : (123, 0, 'w'),
+        },
+    'e' : {
+        'filename' : 'e_face.png',
+        'dateCard' : (123, 82, 'B'), 
+        'bluetooth' : (0, 0, 'b'),
+        'battery' : (123, 0, 'w'),
+        },
     }
 
 makeChronograph = False
 showSecondHand = False
 suppressSecondHand = False
 enableHourBuzzer = False
+indicatorsAlways = False
 showChronoMinuteHand = False
 showChronoSecondHand = False
 showChronoTenthHand = False
 dayCard = None
 dateCard = None
+bluetooth = None
+battery = None
 
 # The number of subdivisions around the face for each kind of hand.
 # Increase these numbers to show finer movement; decrease them to save
@@ -294,7 +331,8 @@ def makeFaces():
       "type": "png"
     },"""    
 
-    targetFilename, dayCard, dateCard, centers = faces[faceStyle]
+    fd = faces[faceStyle]
+    targetFilename = fd.get('filename')
 
     resourceStr += resourceEntry % {
         'targetFilename' : targetFilename,
@@ -577,7 +615,7 @@ def configWatch():
     watchface = 'true'
     if makeChronograph and showChronoSecondHand:
         watchface = 'false'
-    
+
     print >> resource, resourceIn % {
         'uuId' : formatUuId(uuId),
         'watchName' : watchName,
@@ -624,6 +662,10 @@ def configWatch():
         'compileDebugging' : int(compileDebugging),
         'showDayCard' : int(bool(dayCard)),
         'showDateCard' : int(bool(dateCard)),
+        'showBluetooth' : int(bool(bluetooth)),
+        'showBluetoothAlways' : int(bool(bluetooth and indicatorsAlways)),
+        'showBatteryGauge' : int(bool(battery)),
+        'showBatteryGaugeAlways' : int(bool(battery and indicatorsAlways)),
         'dayCardX' : dayCard and dayCard[0],
         'dayCardY' : dayCard and dayCard[1],
         'dayCardOnBlack' : int(bool(dayCard and (dayCard[2].lower() == 'w'))),
@@ -632,6 +674,12 @@ def configWatch():
         'dateCardY' : dateCard and dateCard[1],
         'dateCardOnBlack' : int(bool(dateCard and (dateCard[2].lower() == 'w'))),
         'dateCardBold' : int(bool(dateCard and (dateCard[2] in 'WB'))),
+        'bluetoothX' : bluetooth and bluetooth[0],
+        'bluetoothY' : bluetooth and bluetooth[1],
+        'bluetoothOnBlack' : int(bool(bluetooth and (bluetooth[2].lower() == 'w'))),
+        'batteryGaugeX' : battery and battery[0],
+        'batteryGaugeY' : battery and battery[1],
+        'batteryGaugeOnBlack' : int(bool(battery and (battery[2].lower() == 'w'))),
         'showSecondHand' : int(showSecondHand and not suppressSecondHand),
         'enableHourBuzzer' : int(enableHourBuzzer),
         'makeChronograph' : int(makeChronograph and showChronoSecondHand),
@@ -644,7 +692,7 @@ def configWatch():
 
 # Main.
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:bScidl:h')
+    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:SbIcidl:h')
 except getopt.error, msg:
     usage(1, msg)
 
@@ -674,6 +722,8 @@ for opt, arg in opts:
         suppressSecondHand = True
     elif opt == '-b':
         enableHourBuzzer = True
+    elif opt == '-I':
+        indicatorsAlways = True
     elif opt == '-c':
         makeChronograph = True
     elif opt == '-i':
@@ -696,7 +746,13 @@ if not handStyle:
 if not faceStyle:
     faceStyle = defaultFaceStyle
 
-targetFilename, dayCard, dateCard, centers = faces[faceStyle]
+fd = faces[faceStyle]
+targetFilename = fd.get('filename')
+dayCard = fd.get('dayCard', None)
+dateCard = fd.get('dateCard', None)
+bluetooth = fd.get('bluetooth', None)
+battery = fd.get('battery', None)
+centers = fd.get('centers', [])
 
 locale.setlocale(locale.LC_ALL, localeName)
 

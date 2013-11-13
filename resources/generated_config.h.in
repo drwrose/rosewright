@@ -42,6 +42,22 @@ int stacking_order[] = {
   #define DATE_CARD_ON_BLACK %(dateCardOnBlack)s
   #define DATE_CARD_BOLD %(dateCardBold)s
 #endif
+ 
+#if %(showBluetooth)s
+  #define SHOW_BLUETOOTH 1
+  #define SHOW_BLUETOOTH_ALWAYS %(showBluetoothAlways)s
+  #define BLUETOOTH_X %(bluetoothX)s
+  #define BLUETOOTH_Y %(bluetoothY)s
+  #define BLUETOOTH_ON_BLACK %(bluetoothOnBlack)s
+#endif
+ 
+#if %(showBatteryGauge)s
+  #define SHOW_BATTERY_GAUGE 1
+  #define SHOW_BATTERY_GAUGE_ALWAYS %(showBatteryGaugeAlways)s
+  #define BATTERY_GAUGE_X %(batteryGaugeX)s
+  #define BATTERY_GAUGE_Y %(batteryGaugeY)s
+  #define BATTERY_GAUGE_ON_BLACK %(batteryGaugeOnBlack)s
+#endif
 
 #if %(showSecondHand)s
   #define SHOW_SECOND_HAND 1
