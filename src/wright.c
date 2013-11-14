@@ -491,17 +491,17 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
   BatteryChargeState charge_state = battery_state_service_peek();
 
 #if BATTERY_GAUGE_ON_BLACK
-  graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
+  graphics_context_set_compositing_mode(ctx, GCompOpSet);
   graphics_context_set_fill_color(ctx, GColorWhite);
 #else
-  graphics_context_set_compositing_mode(ctx, GCompOpAssign);
+  graphics_context_set_compositing_mode(ctx, GCompOpAnd);
   graphics_context_set_fill_color(ctx, GColorBlack);
 #endif  // BATTERY_GAUGE_ON_BLACK
 
   if (charge_state.is_charging) {
     graphics_draw_bitmap_in_rect(ctx, battery_gauge_charging_bitmap, box);
 #if !SHOW_BATTERY_GAUGE_ALWAYS
-  } else if (!charge_state.is_plugged || charge_state.charge_percent > 20) {
+  } else if (!charge_state.is_plugged && charge_state.charge_percent >= 20) {
     // Unless SHOW_BATTERY_GAUGE_ALWAYS is configured true (e.g. with
     // -I to config_watch.py), then we don't bother showing the
     // battery gauge when it's in a normal condition.
@@ -523,9 +523,9 @@ void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
   box.origin.y = 0;
 
 #if BLUETOOTH_ON_BLACK
-  graphics_context_set_compositing_mode(ctx, GCompOpAssignInverted);
+  graphics_context_set_compositing_mode(ctx, GCompOpSet);
 #else
-  graphics_context_set_compositing_mode(ctx, GCompOpAssign);
+  graphics_context_set_compositing_mode(ctx, GCompOpAnd);
 #endif  // BLUETOOTH_ON_BLACK
 
   if (bluetooth_connection_service_peek()) {
@@ -789,7 +789,7 @@ void handle_init() {
 #ifdef SHOW_BLUETOOTH
   bluetooth_disconnected_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BLUETOOTH_DISCONNECTED);
   bluetooth_connected_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BLUETOOTH_CONNECTED);
-  bluetooth_layer = layer_create(GRect(BLUETOOTH_X, BLUETOOTH_Y, 16, 16));
+  bluetooth_layer = layer_create(GRect(BLUETOOTH_X, BLUETOOTH_Y, 18, 18));
   layer_set_update_proc(bluetooth_layer, &bluetooth_layer_update_callback);
   layer_add_child(window_layer, bluetooth_layer);
   bluetooth_connection_service_subscribe(&handle_bluetooth);

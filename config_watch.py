@@ -212,14 +212,14 @@ faces = {
     'a' : {
         'filename': 'a_face.png', 
         'dateCard': (106, 82, 'B'), 
-        'bluetooth' : (52, 114, 'b'),
+        'bluetooth' : (51, 113, 'b'),
         'battery' : (75, 114, 'b'),
         },
     'au' : {
         'filename': 'a_face_unrotated.png', 
         'dateCard' : (106, 82, 'B'), 
-        'bluetooth' : (64, 97, 'b'),
-        'battery' : (61, 116, 'b'),
+        'bluetooth' : (51, 113, 'b'),
+        'battery' : (75, 114, 'b'),
         },
     'b' : {
         'filename' : 'b_face.png', 
@@ -244,8 +244,8 @@ faces = {
     'e' : {
         'filename' : 'e_face.png',
         'dateCard' : (123, 82, 'B'), 
-        'bluetooth' : (0, 0, 'b'),
-        'battery' : (123, 0, 'w'),
+        'bluetooth' : (11, 12, 'w'),
+        'battery' : (111, 13, 'w'),
         },
     }
 
