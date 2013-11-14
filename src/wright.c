@@ -515,7 +515,7 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
   } else {
     graphics_draw_bitmap_in_rect(ctx, battery_gauge_empty_bitmap, box);
     int bar_width = (charge_state.charge_percent * 11 + 50) / 100;
-    graphics_fill_rect(ctx, GRect(5, 6, bar_width, 4), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(2, 3, bar_width, 4), 0, GCornerNone);
   }
 }
 #endif  // SHOW_BATTERY_GAUGE
@@ -796,7 +796,7 @@ void handle_init() {
 #ifdef SHOW_BATTERY_GAUGE
   battery_gauge_empty_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BATTERY_GAUGE_EMPTY);
   battery_gauge_charging_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BATTERY_GAUGE_CHARGING);
-  battery_gauge_layer = layer_create(GRect(BATTERY_GAUGE_X, BATTERY_GAUGE_Y, 22, 16));
+  battery_gauge_layer = layer_create(GRect(BATTERY_GAUGE_X, BATTERY_GAUGE_Y, 16, 10));
   layer_set_update_proc(battery_gauge_layer, &battery_gauge_layer_update_callback);
   layer_add_child(window_layer, battery_gauge_layer);
   battery_state_service_subscribe(&handle_battery);
