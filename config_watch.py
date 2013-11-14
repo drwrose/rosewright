@@ -232,14 +232,14 @@ faces = {
         'filename' : 'c_face.png', 
         'centers' : [('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)],
         'bluetooth' : (0, 0, 'w'),
-        'battery' : (126, 3, 'b'),
+        'battery' : (126, 3, 'w'),
         },
     'd' : {
         'filename' : 'd_face.png', 
         'dayCard' : (53, 107, 'w'), 
         'dateCard' : (91, 107, 'w'), 
         'bluetooth' : (0, 0, 'w'),
-        'battery' : (126, 3, 'b'),
+        'battery' : (126, 3, 'w'),
         },
     'e' : {
         'filename' : 'e_face.png',

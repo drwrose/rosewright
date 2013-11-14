@@ -507,14 +507,14 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
   if (charge_state.is_charging) {
     graphics_draw_bitmap_in_rect(ctx, battery_gauge_charging_bitmap, box);
 #if !SHOW_BATTERY_GAUGE_ALWAYS
-  } else if (!charge_state.is_plugged && charge_state.charge_percent >= 20) {
+  } else if (!charge_state.is_plugged && charge_state.charge_percent > 10) {
     // Unless SHOW_BATTERY_GAUGE_ALWAYS is configured true (e.g. with
     // -I to config_watch.py), then we don't bother showing the
     // battery gauge when it's in a normal condition.
 #endif  // SHOW_BATTERY_GAUGE_ALWAYS
   } else {
     graphics_draw_bitmap_in_rect(ctx, battery_gauge_empty_bitmap, box);
-    int bar_width = (charge_state.charge_percent * 11 + 50) / 100;
+    int bar_width = (charge_state.charge_percent * 9 + 50) / 100 + 2;
     graphics_fill_rect(ctx, GRect(2, 3, bar_width, 4), 0, GCornerNone);
   }
 }
