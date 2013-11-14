@@ -10,6 +10,11 @@
 #define SCREEN_WIDTH 144
 #define SCREEN_HEIGHT 168
 
+// Define this to ring the buzzer when the bluetooth connection is
+// lost.  Only works when the clock face defines a bluetooth icon
+// (i.e. SHOW_BLUETOOTH is defined).
+#define BLUETOOTH_BUZZER 1
+
 Window *window;
 
 GBitmap *clock_face_bitmap;
@@ -22,6 +27,7 @@ Layer *battery_gauge_layer;
 GBitmap *bluetooth_disconnected_bitmap;
 GBitmap *bluetooth_connected_bitmap;
 Layer *bluetooth_layer;
+bool bluetooth_state = false;
 
 Layer *hour_layer;
 Layer *minute_layer;
@@ -528,7 +534,17 @@ void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
   graphics_context_set_compositing_mode(ctx, GCompOpAnd);
 #endif  // BLUETOOTH_ON_BLACK
 
-  if (bluetooth_connection_service_peek()) {
+  bool new_state = bluetooth_connection_service_peek();
+  if (new_state != bluetooth_state) {
+    bluetooth_state = new_state;
+#ifdef BLUETOOTH_BUZZER
+    if (!bluetooth_state) {
+      // We just lost the bluetooth connection.  Ring the buzzer.
+      vibes_short_pulse();
+    }
+#endif
+  }
+  if (bluetooth_state) {
 #if SHOW_BLUETOOTH_ALWAYS
     // We only draw the "connected" bitmap if SHOW_BLUETOOTH_ALWAYS is
     // configured true (e.g. with -I to config_watch.py).
