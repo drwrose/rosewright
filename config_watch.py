@@ -564,8 +564,6 @@ def makeHands(generatedTable):
 
     for hand, bitmapParams, vectorParams in hands[handStyle]:
         if hand == 'second':
-            if suppressSecondHand:
-                continue
             global showSecondHand
             showSecondHand = True
         elif hand == 'chrono_minute':
@@ -623,6 +621,15 @@ def configWatch():
         'generatedMedia' : resourceStr[:-1],
         }
 
+    jsIn = open('%s/src/js/pebble-js-app.js.in' % (rootDir), 'r').read()
+    js = open('%s/src/js/pebble-js-app.js' % (rootDir), 'w')
+
+    print >> js, jsIn % {
+        'watchName' : watchName,
+        'indicatorsAlways' : int(indicatorsAlways),
+        'showSecondHand' : int(showSecondHand and not suppressSecondHand),
+        'enableHourBuzzer' : int(enableHourBuzzer),
+        }
 
     configIn = open('%s/generated_config.h.in' % (resourcesDir), 'r').read()
     config = open('%s/generated_config.h' % (resourcesDir), 'w')
@@ -641,6 +648,7 @@ def configWatch():
     stackingOrder.append('STACKING_ORDER_DONE')
     
     print >> config, configIn % {
+        'persistKey' : 0x5151 + uuId[-1],
         'numStepsHour' : numSteps['hour'],
         'numStepsMinute' : numSteps['minute'],
         'numStepsSecond' : numSteps['second'],

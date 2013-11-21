@@ -1,3 +1,5 @@
+// This key is used to record the persistent storage.
+#define PERSIST_KEY %(persistKey)s
 
 // The number of subdivisions around the face for each kind of hand.
 #define NUM_STEPS_HOUR %(numStepsHour)s
@@ -43,29 +45,25 @@
  
 #if %(showBluetooth)s
   #define SHOW_BLUETOOTH 1
-  #define SHOW_BLUETOOTH_ALWAYS %(showBluetoothAlways)s
   #define BLUETOOTH_X %(bluetoothX)s
   #define BLUETOOTH_Y %(bluetoothY)s
   #define BLUETOOTH_ON_BLACK %(bluetoothOnBlack)s
 #endif
+#define SHOW_BLUETOOTH_ALWAYS %(showBluetoothAlways)s
  
 #if %(showBatteryGauge)s
   #define SHOW_BATTERY_GAUGE 1
-  #define SHOW_BATTERY_GAUGE_ALWAYS %(showBatteryGaugeAlways)s
   #define BATTERY_GAUGE_X %(batteryGaugeX)s
   #define BATTERY_GAUGE_Y %(batteryGaugeY)s
   #define BATTERY_GAUGE_ON_BLACK %(batteryGaugeOnBlack)s
 #endif
+#define SHOW_BATTERY_GAUGE_ALWAYS %(showBatteryGaugeAlways)s
 
-#if %(showSecondHand)s
-  #define SHOW_SECOND_HAND 1
-  #define SECOND_HAND_X %(secondHandX)s
-  #define SECOND_HAND_Y %(secondHandY)s
-#endif
+#define SHOW_SECOND_HAND %(showSecondHand)s
+#define SECOND_HAND_X %(secondHandX)s
+#define SECOND_HAND_Y %(secondHandY)s
 
-#if %(enableHourBuzzer)s
-  #define ENABLE_HOUR_BUZZER 1
-#endif
+#define ENABLE_HOUR_BUZZER %(enableHourBuzzer)s
 
 #if %(makeChronograph)s
   #define MAKE_CHRONOGRAPH 1

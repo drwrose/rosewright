@@ -2,13 +2,19 @@
   "uuid": "%(uuId)s",
   "shortName": "%(watchName)s",
   "longName": "%(watchName)s",
+  "capabilities": [ "configurable" ],
   "companyName": "drwrose",
   "versionCode": 1,
   "versionLabel": "2.1.0",
   "watchapp": {
     "watchface": %(watchface)s
   },
-  "appKeys": {},
+  "appKeys": {
+    "keep_battery_gauge": 0,
+    "keep_bluetooth_indicator": 1,
+    "second_hand": 2,
+    "hour_buzzer": 3
+  },
   "resources": {
   "media": [
     {

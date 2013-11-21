@@ -6,4 +6,5 @@ build
 resources/clock_hands/flat_*.png
 resources/generated_config.h
 resources/generated_table.c
+src/js/pebble-js-app.js
 appinfo.json

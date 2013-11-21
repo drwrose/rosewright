@@ -5,6 +5,7 @@
 #include "../resources/generated_table.c"
 #include "bluetooth_indicator.h"
 #include "battery_gauge.h"
+#include "config_options.h"
 
 #define SECONDS_PER_DAY 86400
 #define MS_PER_DAY (SECONDS_PER_DAY * 1000)
@@ -90,10 +91,7 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 
   placement->hour_hand_index = ((NUM_STEPS_HOUR * ms) / (3600 * 12 * 1000)) % NUM_STEPS_HOUR;
   placement->minute_hand_index = ((NUM_STEPS_MINUTE * ms) / (3600 * 1000)) % NUM_STEPS_MINUTE;
-
-#ifdef SHOW_SECOND_HAND
   placement->second_hand_index = ((NUM_STEPS_SECOND * ms) / (60 * 1000)) % NUM_STEPS_SECOND;
-#endif  // SHOW_SECOND_HAND
 
 #ifdef SHOW_DAY_CARD
   if (time != NULL) {
@@ -107,9 +105,7 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
   }
 #endif  // SHOW_DATE_CARD
 
-#ifdef ENABLE_HOUR_BUZZER
   placement->hour_buzzer = (ms / (3600 * 1000)) % 24;
-#endif
 
 #ifdef MAKE_CHRONOGRAPH
   {
@@ -389,21 +385,21 @@ void minute_layer_update_callback(Layer *me, GContext *ctx) {
 #endif
 }
 
-#ifdef SHOW_SECOND_HAND
 void second_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
 
+  if (config.second_hand) {
 #ifdef VECTOR_SECOND_HAND
-  draw_vector_hand(&second_hand_vector_table, current_placement.second_hand_index,
-                   NUM_STEPS_SECOND, SECOND_HAND_X, SECOND_HAND_Y, ctx);
+    draw_vector_hand(&second_hand_vector_table, current_placement.second_hand_index,
+		     NUM_STEPS_SECOND, SECOND_HAND_X, SECOND_HAND_Y, ctx);
 #endif
-
+    
 #ifdef BITMAP_SECOND_HAND
-  draw_bitmap_hand(&second_hand_bitmap_table[current_placement.second_hand_index],
-                   SECOND_HAND_X, SECOND_HAND_Y, ctx);
+    draw_bitmap_hand(&second_hand_bitmap_table[current_placement.second_hand_index],
+		     SECOND_HAND_X, SECOND_HAND_Y, ctx);
 #endif
+  }
 }
-#endif  // SHOW_SECOND_HAND
 
 #ifdef SHOW_CHRONO_MINUTE_HAND
 void chrono_minute_layer_update_callback(Layer *me, GContext *ctx) {
@@ -425,15 +421,17 @@ void chrono_minute_layer_update_callback(Layer *me, GContext *ctx) {
 void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
 
+  if (config.second_hand) {
 #ifdef VECTOR_CHRONO_SECOND_HAND
-  draw_vector_hand(&chrono_second_hand_vector_table, current_placement.chrono_second_hand_index,
-                   NUM_STEPS_CHRONO_SECOND, CHRONO_SECOND_HAND_X, CHRONO_SECOND_HAND_Y, ctx);
+    draw_vector_hand(&chrono_second_hand_vector_table, current_placement.chrono_second_hand_index,
+		     NUM_STEPS_CHRONO_SECOND, CHRONO_SECOND_HAND_X, CHRONO_SECOND_HAND_Y, ctx);
 #endif
-
+    
 #ifdef BITMAP_CHRONO_SECOND_HAND
-  draw_bitmap_hand(&chrono_second_hand_bitmap_table[current_placement.chrono_second_hand_index],
-                   CHRONO_SECOND_HAND_X, CHRONO_SECOND_HAND_Y, ctx);
+    draw_bitmap_hand(&chrono_second_hand_bitmap_table[current_placement.chrono_second_hand_index],
+		     CHRONO_SECOND_HAND_X, CHRONO_SECOND_HAND_Y, ctx);
 #endif
+  }
 }
 #endif  // SHOW_CHRONO_SECOND_HAND
 
@@ -441,15 +439,17 @@ void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
 void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
 
+  if (config.second_hand) {
 #ifdef VECTOR_CHRONO_TENTH_HAND
-  draw_vector_hand(&chrono_tenth_hand_vector_table, current_placement.chrono_tenth_hand_index,
-                   NUM_STEPS_CHRONO_TENTH, CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, ctx);
+    draw_vector_hand(&chrono_tenth_hand_vector_table, current_placement.chrono_tenth_hand_index,
+		     NUM_STEPS_CHRONO_TENTH, CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, ctx);
 #endif
-
+    
 #ifdef BITMAP_CHRONO_TENTH_HAND
-  draw_bitmap_hand(&chrono_tenth_hand_bitmap_table[current_placement.chrono_tenth_hand_index],
-                   CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, ctx);
+    draw_bitmap_hand(&chrono_tenth_hand_bitmap_table[current_placement.chrono_tenth_hand_index],
+		     CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, ctx);
 #endif
+  }
 }
 #endif  // SHOW_CHRONO_TENTH_HAND
 
@@ -504,19 +504,17 @@ void update_hands(struct tm *time) {
     layer_mark_dirty(minute_layer);
   }
 
-#ifdef SHOW_SECOND_HAND
   if (new_placement.second_hand_index != current_placement.second_hand_index) {
     current_placement.second_hand_index = new_placement.second_hand_index;
     layer_mark_dirty(second_layer);
   }
-#endif  // SHOW_SECOND_HAND
 
-#ifdef ENABLE_HOUR_BUZZER
   if (new_placement.hour_buzzer != current_placement.hour_buzzer) {
     current_placement.hour_buzzer = new_placement.hour_buzzer;
-    vibes_short_pulse();
+    if (config.hour_buzzer) {
+      vibes_short_pulse();
+    }
   }
-#endif
 
 #ifdef MAKE_CHRONOGRAPH
 
@@ -679,18 +677,36 @@ void started_click_config_provider(void *context) {
   window_long_click_subscribe(BUTTON_ID_DOWN, 0, NULL, NULL);
 }
 
-void handle_init() {
-  time_t now;
-  struct tm *startup_time;
+// Updates any runtime settings as needed when the config changes.
+void apply_config() {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "apply_config, second_hand=%d", config.second_hand);
+  tick_timer_service_unsubscribe();
 
+#ifdef FAST_TIME
+  tick_timer_service_subscribe(SECOND_UNIT, handle_tick);
+#else
+  if (config.second_hand) {
+    tick_timer_service_subscribe(SECOND_UNIT, handle_tick);
+  } else {
+    tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
+  }
+#endif
+}
+
+void handle_init() {
+  load_config();
+
+  app_message_register_inbox_received(receive_config_handler);
+  app_message_open(64, 64);
+
+  time_t now = time(NULL);
+  struct tm *startup_time = localtime(&now);
   int i;
 
   window = window_create();
   window_set_fullscreen(window, true);
   window_stack_push(window, true /* Animated */);
 
-  now = time(NULL);
-  startup_time = localtime(&now);
   compute_hands(startup_time, &current_placement);
 
   Layer *window_layer = window_get_root_layer(window);
@@ -701,8 +717,8 @@ void handle_init() {
   bitmap_layer_set_bitmap(clock_face_layer, clock_face_bitmap);
   layer_add_child(window_layer, bitmap_layer_get_layer(clock_face_layer));
 
-  init_battery_gauge(window_layer);
-  init_bluetooth_indicator(window_layer);
+  init_battery_gauge(window_layer, BATTERY_GAUGE_X, BATTERY_GAUGE_Y, BATTERY_GAUGE_ON_BLACK);
+  init_bluetooth_indicator(window_layer, BLUETOOTH_X, BLUETOOTH_Y, BLUETOOTH_ON_BLACK);
 
 #ifdef SHOW_DAY_CARD
   day_layer = layer_create(GRect(DAY_CARD_X - 15, DAY_CARD_Y - 8, 31, 19));
@@ -733,11 +749,9 @@ void handle_init() {
       break;
 
     case STACKING_ORDER_SECOND:
-#ifdef SHOW_SECOND_HAND
       second_layer = layer_create(window_frame);
       layer_set_update_proc(second_layer, &second_layer_update_callback);
       layer_add_child(window_layer, second_layer);
-#endif  // SHOW_SECOND_HAND
       break;
 
     case STACKING_ORDER_CHRONO_MINUTE:
@@ -770,11 +784,7 @@ void handle_init() {
  window_set_click_config_provider(window, &stopped_click_config_provider);
 #endif  // MAKE_CHRONOGRAPH
 
-#if defined(FAST_TIME) || defined(SHOW_SECOND_HAND)
-  tick_timer_service_subscribe(SECOND_UNIT, &handle_tick);
-#else
-  tick_timer_service_subscribe(MINUTE_UNIT, &handle_tick);
-#endif
+  apply_config();
 }
 
 
@@ -795,9 +805,7 @@ void handle_deinit() {
 #endif
   layer_destroy(minute_layer);
   layer_destroy(hour_layer);
-#ifdef SHOW_SECOND_HAND
   layer_destroy(second_layer);
-#endif
 #ifdef SHOW_CHRONO_MINUTE_HAND
   layer_destroy(chrono_minute_layer);
 #endif
