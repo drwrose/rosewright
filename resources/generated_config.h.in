@@ -15,9 +15,7 @@
 #define MINUTE_HAND_Y %(minuteHandY)s
 
 // The order in which the hands are layered on top of each other.
-int stacking_order[] = {
-  %(stackingOrder)s
-};
+#define STACKING_ORDER_LIST  %(stackingOrder)s
 
 #if %(compileDebugging)s
   // The following definition is meant for debugging only.  It enables

@@ -3,6 +3,8 @@
 #include "hand_table.h"
 #include "../resources/generated_config.h"
 #include "../resources/generated_table.c"
+#include "bluetooth_indicator.h"
+#include "battery_gauge.h"
 
 #define SECONDS_PER_DAY 86400
 #define MS_PER_DAY (SECONDS_PER_DAY * 1000)
@@ -10,24 +12,10 @@
 #define SCREEN_WIDTH 144
 #define SCREEN_HEIGHT 168
 
-// Define this to ring the buzzer when the bluetooth connection is
-// lost.  Only works when the clock face defines a bluetooth icon
-// (i.e. SHOW_BLUETOOTH is defined).
-#define BLUETOOTH_BUZZER 1
-
 Window *window;
 
 GBitmap *clock_face_bitmap;
 BitmapLayer *clock_face_layer;
-
-GBitmap *battery_gauge_empty_bitmap;
-GBitmap *battery_gauge_charging_bitmap;
-Layer *battery_gauge_layer;
-
-GBitmap *bluetooth_disconnected_bitmap;
-GBitmap *bluetooth_connected_bitmap;
-Layer *bluetooth_layer;
-bool bluetooth_state = false;
 
 Layer *hour_layer;
 Layer *minute_layer;
@@ -62,6 +50,10 @@ static const uint32_t tap_segments[] = { 50 };
 VibePattern tap = {
   tap_segments,
   1,
+};
+
+int stacking_order[] = {
+STACKING_ORDER_LIST
 };
 
 int chrono_running = false;       // the chronograph has been started
@@ -486,76 +478,6 @@ void draw_card(Layer *me, GContext *ctx, const char *text, bool on_black, bool b
                      NULL);
 }
 
-#ifdef SHOW_BATTERY_GAUGE
-void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
-  GRect box;
-
-  box = layer_get_frame(me);
-  box.origin.x = 0;
-  box.origin.y = 0;
-
-  BatteryChargeState charge_state = battery_state_service_peek();
-
-#if BATTERY_GAUGE_ON_BLACK
-  graphics_context_set_compositing_mode(ctx, GCompOpSet);
-  graphics_context_set_fill_color(ctx, GColorWhite);
-#else
-  graphics_context_set_compositing_mode(ctx, GCompOpAnd);
-  graphics_context_set_fill_color(ctx, GColorBlack);
-#endif  // BATTERY_GAUGE_ON_BLACK
-
-  if (charge_state.is_charging) {
-    graphics_draw_bitmap_in_rect(ctx, battery_gauge_charging_bitmap, box);
-#if !SHOW_BATTERY_GAUGE_ALWAYS
-  } else if (!charge_state.is_plugged && charge_state.charge_percent > 10) {
-    // Unless SHOW_BATTERY_GAUGE_ALWAYS is configured true (e.g. with
-    // -I to config_watch.py), then we don't bother showing the
-    // battery gauge when it's in a normal condition.
-#endif  // SHOW_BATTERY_GAUGE_ALWAYS
-  } else {
-    graphics_draw_bitmap_in_rect(ctx, battery_gauge_empty_bitmap, box);
-    int bar_width = (charge_state.charge_percent * 9 + 50) / 100 + 2;
-    graphics_fill_rect(ctx, GRect(2, 3, bar_width, 4), 0, GCornerNone);
-  }
-}
-#endif  // SHOW_BATTERY_GAUGE
-
-#ifdef SHOW_BLUETOOTH
-void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
-  GRect box;
-
-  box = layer_get_frame(me);
-  box.origin.x = 0;
-  box.origin.y = 0;
-
-#if BLUETOOTH_ON_BLACK
-  graphics_context_set_compositing_mode(ctx, GCompOpSet);
-#else
-  graphics_context_set_compositing_mode(ctx, GCompOpAnd);
-#endif  // BLUETOOTH_ON_BLACK
-
-  bool new_state = bluetooth_connection_service_peek();
-  if (new_state != bluetooth_state) {
-    bluetooth_state = new_state;
-#ifdef BLUETOOTH_BUZZER
-    if (!bluetooth_state) {
-      // We just lost the bluetooth connection.  Ring the buzzer.
-      vibes_short_pulse();
-    }
-#endif
-  }
-  if (bluetooth_state) {
-#if SHOW_BLUETOOTH_ALWAYS
-    // We only draw the "connected" bitmap if SHOW_BLUETOOTH_ALWAYS is
-    // configured true (e.g. with -I to config_watch.py).
-    graphics_draw_bitmap_in_rect(ctx, bluetooth_connected_bitmap, box);
-#endif  // SHOW_BLUETOOTH_ALWAYS
-  } else {
-    graphics_draw_bitmap_in_rect(ctx, bluetooth_disconnected_bitmap, box);
-  }
-}
-#endif  // SHOW_BLUETOOTH
-
 #ifdef SHOW_DAY_CARD
 void day_layer_update_callback(Layer *me, GContext *ctx) {
   draw_card(me, ctx, weekday_names[current_placement.day_index], DAY_CARD_ON_BLACK, DAY_CARD_BOLD);
@@ -640,20 +562,6 @@ void update_hands(struct tm *time) {
 void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
   update_hands(tick_time);
 }
-
-#ifdef SHOW_BATTERY_GAUGE
-// Update the battery guage.
-void handle_battery(BatteryChargeState charge_state) {
-  layer_mark_dirty(battery_gauge_layer);
-}
-#endif  // SHOW_BATTERY_GAUGE
-
-#ifdef SHOW_BLUETOOTH
-// Update the battery guage.
-void handle_bluetooth(bool connected) {
-  layer_mark_dirty(bluetooth_layer);
-}
-#endif  // SHOW_BLUETOOTH
 
 // Forward references.
 void stopped_click_config_provider(void *context);
@@ -793,23 +701,8 @@ void handle_init() {
   bitmap_layer_set_bitmap(clock_face_layer, clock_face_bitmap);
   layer_add_child(window_layer, bitmap_layer_get_layer(clock_face_layer));
 
-#ifdef SHOW_BATTERY_GAUGE
-  battery_gauge_empty_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BATTERY_GAUGE_EMPTY);
-  battery_gauge_charging_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BATTERY_GAUGE_CHARGING);
-  battery_gauge_layer = layer_create(GRect(BATTERY_GAUGE_X, BATTERY_GAUGE_Y, 16, 10));
-  layer_set_update_proc(battery_gauge_layer, &battery_gauge_layer_update_callback);
-  layer_add_child(window_layer, battery_gauge_layer);
-  battery_state_service_subscribe(&handle_battery);
-#endif  // SHOW_BATTERY_GAUGE
-
-#ifdef SHOW_BLUETOOTH
-  bluetooth_disconnected_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BLUETOOTH_DISCONNECTED);
-  bluetooth_connected_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BLUETOOTH_CONNECTED);
-  bluetooth_layer = layer_create(GRect(BLUETOOTH_X, BLUETOOTH_Y, 18, 18));
-  layer_set_update_proc(bluetooth_layer, &bluetooth_layer_update_callback);
-  layer_add_child(window_layer, bluetooth_layer);
-  bluetooth_connection_service_subscribe(&handle_bluetooth);
-#endif  // SHOW_BLUETOOTH
+  init_battery_gauge(window_layer);
+  init_bluetooth_indicator(window_layer);
 
 #ifdef SHOW_DAY_CARD
   day_layer = layer_create(GRect(DAY_CARD_X - 15, DAY_CARD_Y - 8, 31, 19));
@@ -891,19 +784,8 @@ void handle_deinit() {
   bitmap_layer_destroy(clock_face_layer);
   gbitmap_destroy(clock_face_bitmap);
 
-#ifdef SHOW_BATTERY_GAUGE
-  battery_state_service_unsubscribe();
-  layer_destroy(battery_gauge_layer);
-  gbitmap_destroy(battery_gauge_empty_bitmap);
-  gbitmap_destroy(battery_gauge_charging_bitmap);
-#endif
-
-#ifdef SHOW_BLUETOOTH
-  bluetooth_connection_service_unsubscribe();
-  layer_destroy(bluetooth_layer);
-  gbitmap_destroy(bluetooth_disconnected_bitmap);
-  gbitmap_destroy(bluetooth_connected_bitmap);
-#endif
+  deinit_battery_gauge();
+  deinit_bluetooth_indicator();
 
 #ifdef SHOW_DAY_CARD
   layer_destroy(day_layer);
