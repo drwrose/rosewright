@@ -421,7 +421,7 @@ void chrono_minute_layer_update_callback(Layer *me, GContext *ctx) {
 void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
 
-  if (config.second_hand) {
+  if (config.second_hand || chrono_running) {
 #ifdef VECTOR_CHRONO_SECOND_HAND
     draw_vector_hand(&chrono_second_hand_vector_table, current_placement.chrono_second_hand_index,
 		     NUM_STEPS_CHRONO_SECOND, CHRONO_SECOND_HAND_X, CHRONO_SECOND_HAND_Y, ctx);
@@ -439,7 +439,7 @@ void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
 void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
 
-  if (config.second_hand) {
+  if (config.second_hand || chrono_running) {
 #ifdef VECTOR_CHRONO_TENTH_HAND
     draw_vector_hand(&chrono_tenth_hand_vector_table, current_placement.chrono_tenth_hand_index,
 		     NUM_STEPS_CHRONO_TENTH, CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, ctx);
@@ -578,6 +578,7 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, void *context) {
     chrono_lap_paused = false;
     vibes_enqueue_custom_pattern(tap);
     update_hands(NULL);
+    apply_config();
 
     // We change the click config provider according to the chrono run
     // state.  When the chrono is stopped, we listen for a different
@@ -590,6 +591,7 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, void *context) {
     chrono_running = true;
     vibes_enqueue_custom_pattern(tap);
     update_hands(NULL);
+    apply_config();
 
     window_set_click_config_provider(window, &started_click_config_provider);
   }
@@ -629,6 +631,7 @@ void chrono_reset_button() {
   chrono_hold_ms = 0;
   vibes_double_pulse();
   update_hands(this_time);
+  apply_config();
 }
 
 void chrono_lap_handler(ClickRecognizerRef recognizer, void *context) {
@@ -685,7 +688,7 @@ void apply_config() {
 #ifdef FAST_TIME
   tick_timer_service_subscribe(SECOND_UNIT, handle_tick);
 #else
-  if (config.second_hand) {
+  if (config.second_hand || chrono_running) {
     tick_timer_service_subscribe(SECOND_UNIT, handle_tick);
   } else {
     tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
