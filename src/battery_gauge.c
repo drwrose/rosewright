@@ -7,15 +7,30 @@ GBitmap *battery_gauge_charging_bitmap;
 Layer *battery_gauge_layer;
 
 bool battery_gauge_on_black = false;
+bool battery_gauge_opaque_layer = false;
 
 void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
-  GRect box;
+  BatteryChargeState charge_state = battery_state_service_peek();
 
-  box = layer_get_frame(me);
+  if (battery_gauge_opaque_layer) {
+    if (charge_state.is_charging || config.keep_battery_gauge || (charge_state.is_plugged || charge_state.charge_percent <= 10)) {
+      // Draw the background of the layer.
+      GRect box = layer_get_frame(me);
+      box.origin.x = 0;
+      box.origin.y = 0;
+      if (battery_gauge_on_black) {
+	graphics_context_set_fill_color(ctx, GColorBlack);
+      } else {
+	graphics_context_set_fill_color(ctx, GColorWhite);
+      }
+      graphics_fill_rect(ctx, box, 0, GCornerNone);
+    }
+  }
+
+  GRect box = layer_get_frame(me);
   box.origin.x = 1;
   box.origin.y = 0;
-
-  BatteryChargeState charge_state = battery_state_service_peek();
+  box.size.w -= 2;
 
   if (battery_gauge_on_black) {
     graphics_context_set_compositing_mode(ctx, GCompOpSet);
@@ -42,8 +57,9 @@ void handle_battery(BatteryChargeState charge_state) {
   layer_mark_dirty(battery_gauge_layer);
 }
 
-void init_battery_gauge(Layer *window_layer, int x, int y, bool on_black) {
+void init_battery_gauge(Layer *window_layer, int x, int y, bool on_black, bool opaque_layer) {
   battery_gauge_on_black = on_black;
+  battery_gauge_opaque_layer = opaque_layer;
   battery_gauge_empty_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BATTERY_GAUGE_EMPTY);
   battery_gauge_charging_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BATTERY_GAUGE_CHARGING);
   battery_gauge_layer = layer_create(GRect(x, y, 18, 10));
@@ -57,4 +73,8 @@ void deinit_battery_gauge() {
   layer_destroy(battery_gauge_layer);
   gbitmap_destroy(battery_gauge_empty_bitmap);
   gbitmap_destroy(battery_gauge_charging_bitmap);
+}
+
+void refresh_battery_gauge() {
+  layer_mark_dirty(battery_gauge_layer);
 }

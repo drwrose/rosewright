@@ -720,8 +720,8 @@ void handle_init() {
   bitmap_layer_set_bitmap(clock_face_layer, clock_face_bitmap);
   layer_add_child(window_layer, bitmap_layer_get_layer(clock_face_layer));
 
-  init_battery_gauge(window_layer, BATTERY_GAUGE_X, BATTERY_GAUGE_Y, BATTERY_GAUGE_ON_BLACK);
-  init_bluetooth_indicator(window_layer, BLUETOOTH_X, BLUETOOTH_Y, BLUETOOTH_ON_BLACK);
+  init_battery_gauge(window_layer, BATTERY_GAUGE_X, BATTERY_GAUGE_Y, BATTERY_GAUGE_ON_BLACK, false);
+  init_bluetooth_indicator(window_layer, BLUETOOTH_X, BLUETOOTH_Y, BLUETOOTH_ON_BLACK, false);
 
 #ifdef SHOW_DAY_CARD
   day_layer = layer_create(GRect(DAY_CARD_X - 15, DAY_CARD_Y - 8, 31, 19));

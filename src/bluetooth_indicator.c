@@ -12,18 +12,19 @@ Layer *bluetooth_layer;
 bool bluetooth_state = false;
 
 bool bluetooth_on_black = false;
+bool bluetooth_opaque_layer = false;
 
 void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
-  GRect box;
-
-  box = layer_get_frame(me);
+  GRect box = layer_get_frame(me);
   box.origin.x = 0;
   box.origin.y = 0;
 
   if (bluetooth_on_black) {
     graphics_context_set_compositing_mode(ctx, GCompOpSet);
+    graphics_context_set_fill_color(ctx, GColorBlack);
   } else {
     graphics_context_set_compositing_mode(ctx, GCompOpAnd);
+    graphics_context_set_fill_color(ctx, GColorWhite);
   }
 
   bool new_state = bluetooth_connection_service_peek();
@@ -40,9 +41,15 @@ void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
     if (config.keep_bluetooth_indicator) {
       // We only draw the "connected" bitmap if
       // keep_bluetooth_indicator is configured true.
+      if (bluetooth_opaque_layer) {
+	graphics_fill_rect(ctx, box, 0, GCornerNone);
+      }
       graphics_draw_bitmap_in_rect(ctx, bluetooth_connected_bitmap, box);
     }
   } else {
+    if (bluetooth_opaque_layer) {
+      graphics_fill_rect(ctx, box, 0, GCornerNone);
+    }
     graphics_draw_bitmap_in_rect(ctx, bluetooth_disconnected_bitmap, box);
   }
 }
@@ -52,8 +59,9 @@ void handle_bluetooth(bool connected) {
   layer_mark_dirty(bluetooth_layer);
 }
 
-void init_bluetooth_indicator(Layer *window_layer, int x, int y, bool on_black) {
+void init_bluetooth_indicator(Layer *window_layer, int x, int y, bool on_black, bool opaque_layer) {
   bluetooth_on_black = on_black;
+  bluetooth_opaque_layer = opaque_layer;
   bluetooth_disconnected_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BLUETOOTH_DISCONNECTED);
   bluetooth_connected_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BLUETOOTH_CONNECTED);
   bluetooth_layer = layer_create(GRect(x, y, 18, 18));
@@ -67,4 +75,8 @@ void deinit_bluetooth_indicator() {
   layer_destroy(bluetooth_layer);
   gbitmap_destroy(bluetooth_disconnected_bitmap);
   gbitmap_destroy(bluetooth_connected_bitmap);
+}
+
+void refresh_bluetooth_indicator() {
+  layer_mark_dirty(bluetooth_layer);
 }
