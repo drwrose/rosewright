@@ -17,7 +17,7 @@ typedef struct {
   bool keep_bluetooth_indicator;
   bool second_hand;
   bool hour_buzzer;
-} ConfigOptions;
+} __attribute__((__packed__)) ConfigOptions;
 
 #define CURRENT_CONFIG_VERSION 1
 extern ConfigOptions config;

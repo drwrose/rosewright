@@ -24,8 +24,12 @@ const char *show_config() {
 
 void save_config() {
   config.version = CURRENT_CONFIG_VERSION;
-  persist_write_data(PERSIST_KEY, &config, sizeof(config));
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Saved config: %s", show_config());
+  int wrote = persist_write_data(PERSIST_KEY, &config, sizeof(config));
+  if (wrote == sizeof(config)) {
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Saved config (%d, %d): %s", PERSIST_KEY, sizeof(config), show_config());
+  } else {
+    app_log(APP_LOG_LEVEL_ERROR, __FILE__, __LINE__, "Error saving config (%d, %d): %d", PERSIST_KEY, sizeof(config), wrote);
+  }
 }
 
 void load_config() {
@@ -46,6 +50,7 @@ void load_config() {
 
 void receive_config_handler(DictionaryIterator *received, void *context) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "receive_config_handler");
+  ConfigOptions orig_config = config;
 
   Tuple *keep_battery_gauge = dict_find(received, CK_keep_battery_gauge);
   if (keep_battery_gauge != NULL) {
@@ -68,6 +73,10 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
   }
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "New config: %s", show_config());
-  save_config();
-  apply_config();
+  if (memcmp(&orig_config, &config, sizeof(config)) == 0) {
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Config is unchanged.");
+  } else {
+    save_config();
+    apply_config();
+  }
 }
