@@ -9,7 +9,6 @@ void init_default_options() {
   // that these defaults are used only if the Pebble is not connected
   // to the phone at the time of launch; otherwise, the defaults in
   // pebble-js-app.js are used instead.
-  config.version = CURRENT_CONFIG_VERSION;
   config.keep_battery_gauge = SHOW_BATTERY_GAUGE_ALWAYS;
   config.keep_bluetooth_indicator = SHOW_BLUETOOTH_ALWAYS;
   config.second_hand = SHOW_SECOND_HAND;
@@ -23,7 +22,6 @@ const char *show_config() {
 }
 
 void save_config() {
-  config.version = CURRENT_CONFIG_VERSION;
   int wrote = persist_write_data(PERSIST_KEY, &config, sizeof(config));
   if (wrote == sizeof(config)) {
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Saved config (%d, %d): %s", PERSIST_KEY, sizeof(config), show_config());
@@ -37,12 +35,8 @@ void load_config() {
 
   ConfigOptions local_config;
   if (persist_read_data(PERSIST_KEY, &local_config, sizeof(local_config)) == sizeof(local_config)) {
-    if (local_config.version == CURRENT_CONFIG_VERSION) {
-      config = local_config;
-      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Loaded config: %s", show_config());
-    } else {
-      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Discarded config with incorrect version %d", local_config.version);
-    }
+    config = local_config;
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Loaded config: %s", show_config());
   } else {
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Wrong previous config size or no previous config.");
   }

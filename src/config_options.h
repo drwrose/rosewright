@@ -12,14 +12,12 @@ typedef enum {
 } ConfigKey;
 
 typedef struct {
-  int version;
   bool keep_battery_gauge;
   bool keep_bluetooth_indicator;
   bool second_hand;
   bool hour_buzzer;
 } __attribute__((__packed__)) ConfigOptions;
 
-#define CURRENT_CONFIG_VERSION 1
 extern ConfigOptions config;
 
 void init_default_options();
