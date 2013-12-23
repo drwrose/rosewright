@@ -47,7 +47,7 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
     // bother showing the battery gauge when it's in a normal
     // condition.
     graphics_draw_bitmap_in_rect(ctx, battery_gauge_empty_bitmap, box);
-    int bar_width = (charge_state.charge_percent * 9 + 50) / 100 + 2;
+    int bar_width = (charge_state.charge_percent * 10 + 50) / 100 + 1;
     graphics_fill_rect(ctx, GRect(2, 3, bar_width, 4), 0, GCornerNone);
   }
 }
