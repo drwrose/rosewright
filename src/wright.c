@@ -794,6 +794,7 @@ void handle_init() {
 void handle_deinit() {
   tick_timer_service_unsubscribe();
 
+  window_stack_pop_all(false);  // Not sure if this is needed?
   bitmap_layer_destroy(clock_face_layer);
   gbitmap_destroy(clock_face_bitmap);
 
