@@ -59,7 +59,7 @@ Pebble.addEventListener("ready", function() {
 });
 
 Pebble.addEventListener("showConfiguration", function(e) {
-    var url = "http://www.ddrose.com/pebble/rosewright_configure.html?watch_name=" + watch_name + "&keep_battery_gauge=" + keep_battery_gauge + "&keep_bluetooth_indicator=" + keep_bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer;
+    var url = "http://www.ddrose.com/pebble/rosewright_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&keep_battery_gauge=" + keep_battery_gauge + "&keep_bluetooth_indicator=" + keep_bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer;
     console.log("showConfiguration: " + url);
     var result = Pebble.openURL(url);
     console.log("openURL result: " + result);
