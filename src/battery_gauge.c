@@ -12,8 +12,13 @@ bool battery_gauge_opaque_layer = false;
 void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
   BatteryChargeState charge_state = battery_state_service_peek();
 
+#ifdef BATTERY_HACK
+  time_t now = time(NULL);  
+  charge_state.charge_percent = 100 - ((now / 2) % 11) * 10;
+#endif  // BATTERY_HACK
+
   if (battery_gauge_opaque_layer) {
-    if (charge_state.is_charging || config.keep_battery_gauge || (charge_state.is_plugged || charge_state.charge_percent <= 10)) {
+    if (charge_state.is_charging || config.keep_battery_gauge || (charge_state.is_plugged || charge_state.charge_percent <= 20)) {
       // Draw the background of the layer.
       GRect box = layer_get_frame(me);
       box.origin.x = 0;
@@ -42,13 +47,13 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
 
   if (charge_state.is_charging) {
     graphics_draw_bitmap_in_rect(ctx, battery_gauge_charging_bitmap, box);
-  } else if (config.keep_battery_gauge || (charge_state.is_plugged || charge_state.charge_percent <= 10)) {
+  } else if (config.keep_battery_gauge || (charge_state.is_plugged || charge_state.charge_percent <= 20)) {
     // Unless keep_battery_gauge is configured true, then we don't
     // bother showing the battery gauge when it's in a normal
     // condition.
     graphics_draw_bitmap_in_rect(ctx, battery_gauge_empty_bitmap, box);
-    int bar_width = (charge_state.charge_percent * 10 + 50) / 100 + 1;
-    graphics_fill_rect(ctx, GRect(2, 3, bar_width, 4), 0, GCornerNone);
+    int bar_width = (charge_state.charge_percent * 9 + 50) / 100 + 1;
+    graphics_fill_rect(ctx, GRect(3, 3, bar_width, 4), 0, GCornerNone);
   }
 }
 

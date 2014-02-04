@@ -685,7 +685,7 @@ void apply_config() {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "apply_config, second_hand=%d", config.second_hand);
   tick_timer_service_unsubscribe();
 
-#ifdef FAST_TIME
+#if defined(FAST_TIME) || defined(BATTERY_HACK)
   tick_timer_service_subscribe(SECOND_UNIT, handle_tick);
 #else
   if (config.second_hand || chrono_running) {

@@ -59,6 +59,7 @@ Pebble.addEventListener("ready", function() {
 });
 
 Pebble.addEventListener("showConfiguration", function(e) {
+    console.log("showConfiguration starting");
     var url = "http://www.ddrose.com/pebble/rosewright_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&keep_battery_gauge=" + keep_battery_gauge + "&keep_bluetooth_indicator=" + keep_bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer;
     console.log("showConfiguration: " + url);
     var result = Pebble.openURL(url);
@@ -70,19 +71,21 @@ Pebble.addEventListener("webviewclosed", function(e) {
     console.log(e.type);
     console.log(e.response);
 
-    var configuration = JSON.parse(e.response);
-    console.log("sending runtime config: " + JSON.stringify(configuration));
-    Pebble.sendAppMessage(configuration);
-    
-    keep_battery_gauge = configuration["keep_battery_gauge"];
-    localStorage.setItem(watch_name + ":keep_battery_gauge", keep_battery_gauge);
-    
-    keep_bluetooth_indicator = configuration["keep_bluetooth_indicator"];
-    localStorage.setItem(watch_name + ":keep_bluetooth_indicator", keep_bluetooth_indicator);
-    
-    second_hand = configuration["second_hand"];
-    localStorage.setItem(watch_name + ":second_hand", second_hand);
-    
-    hour_buzzer = configuration["hour_buzzer"];
-    localStorage.setItem(watch_name + ":hour_buzzer", hour_buzzer);
+    if (e.response) {
+	var configuration = JSON.parse(e.response);
+	console.log("sending runtime config: " + JSON.stringify(configuration));
+	Pebble.sendAppMessage(configuration);
+	
+	keep_battery_gauge = configuration["keep_battery_gauge"];
+	localStorage.setItem(watch_name + ":keep_battery_gauge", keep_battery_gauge);
+	
+	keep_bluetooth_indicator = configuration["keep_bluetooth_indicator"];
+	localStorage.setItem(watch_name + ":keep_bluetooth_indicator", keep_bluetooth_indicator);
+	
+	second_hand = configuration["second_hand"];
+	localStorage.setItem(watch_name + ":second_hand", second_hand);
+	
+	hour_buzzer = configuration["hour_buzzer"];
+	localStorage.setItem(watch_name + ":hour_buzzer", hour_buzzer);
+    }
 });

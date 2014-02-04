@@ -107,16 +107,11 @@ function saveOptions() {
 
 $().ready(function() {
   $("#cancel").click(function() {
-    console.log("Cancel");
     document.location = "pebblejs://close#";
   });
 
   $("#save").click(function() {
-    console.log("Submit");
-    
     var location = "pebblejs://close#" + encodeURIComponent(JSON.stringify(saveOptions()));
-    console.log("Close: " + location);
-    console.log(location);
     document.location = location;
   });
 });
