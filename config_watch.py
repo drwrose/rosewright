@@ -344,9 +344,9 @@ def makeVectorHands(generatedTable, hand, groupList):
     resourceStr = ''
 
     colorMap = {
-        'b' : 'GColorBlack',
-        'w' : 'GColorWhite',
-        '' : 'GColorClear',
+        'b' : '1',
+        'w' : '2',
+        '' : '0',
         }
 
     print >> generatedTable, "#define VECTOR_%s_HAND 1" % (hand.upper())

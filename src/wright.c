@@ -47,6 +47,18 @@ struct HandPlacement {
 
 struct HandPlacement current_placement;
 
+typedef struct {
+  GCompOp paint_black;
+  GCompOp paint_white;
+  GCompOp paint_assign;
+  GColor colors[3];
+} DrawModeTable;
+
+DrawModeTable draw_mode_table[2] = {
+  { GCompOpClear, GCompOpOr, GCompOpAssign, { GColorClear, GColorBlack, GColorWhite } },
+  { GCompOpOr, GCompOpClear, GCompOpAssignInverted, { GColorClear, GColorWhite, GColorBlack } },
+};
+
 static const uint32_t tap_segments[] = { 50 };
 VibePattern tap = {
   tap_segments,
@@ -261,11 +273,11 @@ void draw_vector_hand(struct VectorHandTable *hand, int hand_index, int num_step
     gpath_move_to(path, center);
 
     if (group->fill != GColorClear) {
-      graphics_context_set_fill_color(ctx, group->fill);
+      graphics_context_set_fill_color(ctx, draw_mode_table[config.draw_mode].colors[group->fill]);
       gpath_draw_filled(ctx, path);
     }
     if (group->outline != GColorClear) {
-      graphics_context_set_stroke_color(ctx, group->outline);
+      graphics_context_set_stroke_color(ctx, draw_mode_table[config.draw_mode].colors[group->outline]);
       gpath_draw_outline(ctx, path);
     }
 
@@ -311,10 +323,10 @@ void draw_bitmap_hand(struct BitmapHandTableRow *hand, int place_x, int place_y,
 
     if (hand->paint_black) {
       // Painting foreground ("white") pixels as black.
-      graphics_context_set_compositing_mode(ctx, GCompOpClear);
+      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
     } else {
       // Painting foreground ("white") pixels as white.
-      graphics_context_set_compositing_mode(ctx, GCompOpOr);
+      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
     }
       
     graphics_draw_bitmap_in_rect(ctx, image, destination);
@@ -346,10 +358,10 @@ void draw_bitmap_hand(struct BitmapHandTableRow *hand, int place_x, int place_y,
     destination.origin.x = place_x - cx;
     destination.origin.y = place_y - cy;
 
-    graphics_context_set_compositing_mode(ctx, GCompOpOr);
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
     graphics_draw_bitmap_in_rect(ctx, mask, destination);
     
-    graphics_context_set_compositing_mode(ctx, GCompOpClear);
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
     graphics_draw_bitmap_in_rect(ctx, image, destination);
     
     gbitmap_destroy(image);
@@ -405,15 +417,17 @@ void second_layer_update_callback(Layer *me, GContext *ctx) {
 void chrono_minute_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
 
+  if (config.second_hand || chrono_running || chrono_hold_ms != 0) {
 #ifdef VECTOR_CHRONO_MINUTE_HAND
-  draw_vector_hand(&chrono_minute_hand_vector_table, current_placement.chrono_minute_hand_index,
-                   NUM_STEPS_CHRONO_MINUTE, CHRONO_MINUTE_HAND_X, CHRONO_MINUTE_HAND_Y, ctx);
+    draw_vector_hand(&chrono_minute_hand_vector_table, current_placement.chrono_minute_hand_index,
+		     NUM_STEPS_CHRONO_MINUTE, CHRONO_MINUTE_HAND_X, CHRONO_MINUTE_HAND_Y, ctx);
 #endif
-
+    
 #ifdef BITMAP_CHRONO_MINUTE_HAND
-  draw_bitmap_hand(&chrono_minute_hand_bitmap_table[current_placement.chrono_minute_hand_index],
-                   CHRONO_MINUTE_HAND_X, CHRONO_MINUTE_HAND_Y, ctx);
+    draw_bitmap_hand(&chrono_minute_hand_bitmap_table[current_placement.chrono_minute_hand_index],
+		     CHRONO_MINUTE_HAND_X, CHRONO_MINUTE_HAND_Y, ctx);
 #endif
+  }
 }
 #endif  // SHOW_CHRONO_MINUTE_HAND
 
@@ -421,7 +435,7 @@ void chrono_minute_layer_update_callback(Layer *me, GContext *ctx) {
 void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
 
-  if (config.second_hand || chrono_running) {
+  if (config.second_hand || chrono_running || chrono_hold_ms != 0) {
 #ifdef VECTOR_CHRONO_SECOND_HAND
     draw_vector_hand(&chrono_second_hand_vector_table, current_placement.chrono_second_hand_index,
 		     NUM_STEPS_CHRONO_SECOND, CHRONO_SECOND_HAND_X, CHRONO_SECOND_HAND_Y, ctx);
@@ -439,7 +453,7 @@ void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
 void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
 
-  if (config.second_hand || chrono_running) {
+  if (config.second_hand || chrono_running || chrono_hold_ms != 0) {
 #ifdef VECTOR_CHRONO_TENTH_HAND
     draw_vector_hand(&chrono_tenth_hand_vector_table, current_placement.chrono_tenth_hand_index,
 		     NUM_STEPS_CHRONO_TENTH, CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, ctx);
@@ -694,6 +708,11 @@ void apply_config() {
     tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
   }
 #endif
+
+  // Also adjust the draw mode on the clock_face_layer.  (The other
+  // layers all draw themselves interactively.)
+  bitmap_layer_set_compositing_mode(clock_face_layer, draw_mode_table[config.draw_mode].paint_assign);
+  layer_mark_dirty((Layer *)clock_face_layer);
 }
 
 void handle_init() {

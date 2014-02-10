@@ -5,7 +5,7 @@
   "capabilities": [ "configurable" ],
   "companyName": "drwrose",
   "versionCode": 1,
-  "versionLabel": "2.2.3",
+  "versionLabel": "2.3.0",
   "watchapp": {
     "watchface": %(watchface)s
   },
@@ -13,7 +13,8 @@
     "keep_battery_gauge": 0,
     "keep_bluetooth_indicator": 1,
     "second_hand": 2,
-    "hour_buzzer": 3
+    "hour_buzzer": 3,
+    "draw_mode": 4
   },
   "resources": {
   "media": [

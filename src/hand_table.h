@@ -14,8 +14,8 @@ struct BitmapHandTableRow {
 
 
 struct VectorHandGroup {
-  enum GColor outline;
-  enum GColor fill;
+  int outline;
+  int fill;
   GPathInfo path_info;
 };
 

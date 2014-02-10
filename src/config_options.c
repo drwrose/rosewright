@@ -13,11 +13,12 @@ void init_default_options() {
   config.keep_bluetooth_indicator = SHOW_BLUETOOTH_ALWAYS;
   config.second_hand = SHOW_SECOND_HAND;
   config.hour_buzzer = ENABLE_HOUR_BUZZER;
+  config.draw_mode = 0;
 }
 
 const char *show_config() {
   static char buffer[48];
-  snprintf(buffer, 48, "bat: %d, bt: %d, sh: %d, hb: %d", config.keep_battery_gauge, config.keep_bluetooth_indicator, config.second_hand, config.hour_buzzer);
+  snprintf(buffer, 48, "bat: %d, bt: %d, sh: %d, hb: %d, dm: %d", config.keep_battery_gauge, config.keep_bluetooth_indicator, config.second_hand, config.hour_buzzer, config.draw_mode);
   return buffer;
 }
 
@@ -64,6 +65,11 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
   Tuple *hour_buzzer = dict_find(received, CK_hour_buzzer);
   if (hour_buzzer != NULL) {
     config.hour_buzzer = hour_buzzer->value->int32;
+  }
+
+  Tuple *draw_mode = dict_find(received, CK_draw_mode);
+  if (draw_mode != NULL) {
+    config.draw_mode = draw_mode->value->int32;
   }
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "New config: %s", show_config());

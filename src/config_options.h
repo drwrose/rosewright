@@ -3,19 +3,22 @@
 
 #include <pebble.h>
 
-// These keys are used to communicate with Javascript.
+// These keys are used to communicate with Javascript and must match
+// the corresponding index numbers in appinfo.json.in.
 typedef enum {
   CK_keep_battery_gauge = 0,
   CK_keep_bluetooth_indicator = 1,
   CK_second_hand = 2,
   CK_hour_buzzer = 3,
+  CK_draw_mode = 4,
 } ConfigKey;
 
 typedef struct {
-  bool keep_battery_gauge;
-  bool keep_bluetooth_indicator;
-  bool second_hand;
-  bool hour_buzzer;
+  unsigned char keep_battery_gauge;
+  unsigned char keep_bluetooth_indicator;
+  unsigned char second_hand;
+  unsigned char hour_buzzer;
+  unsigned char draw_mode;
 } __attribute__((__packed__)) ConfigOptions;
 
 extern ConfigOptions config;

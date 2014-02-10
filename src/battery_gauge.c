@@ -23,7 +23,7 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
       GRect box = layer_get_frame(me);
       box.origin.x = 0;
       box.origin.y = 0;
-      if (battery_gauge_on_black) {
+      if (battery_gauge_on_black ^ config.draw_mode) {
 	graphics_context_set_fill_color(ctx, GColorBlack);
       } else {
 	graphics_context_set_fill_color(ctx, GColorWhite);
@@ -37,7 +37,7 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
   box.origin.y = 0;
   box.size.w -= 2;
 
-  if (battery_gauge_on_black) {
+  if (battery_gauge_on_black ^ config.draw_mode) {
     graphics_context_set_compositing_mode(ctx, GCompOpSet);
     graphics_context_set_fill_color(ctx, GColorWhite);
   } else {

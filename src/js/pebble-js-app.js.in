@@ -8,6 +8,7 @@ var default_keep_battery_gauge = %(indicatorsAlways)s;
 var default_keep_bluetooth_indicator = %(indicatorsAlways)s;
 var default_second_hand = %(showSecondHand)s;
 var default_hour_buzzer = %(enableHourBuzzer)s;
+var default_draw_mode = 0;
 
 var keep_battery_gauge = localStorage.getItem(watch_name + ":keep_battery_gauge");
 if (!keep_battery_gauge) {
@@ -32,6 +33,12 @@ if (!hour_buzzer) {
     hour_buzzer = default_hour_buzzer;
 }
 hour_buzzer = parseInt(hour_buzzer);
+
+var draw_mode = localStorage.getItem(watch_name + ":draw_mode");
+if (!draw_mode) {
+    draw_mode = default_draw_mode;
+}
+draw_mode = parseInt(draw_mode);
 
 Pebble.addEventListener("ready", function() {
     console.log("ready");
@@ -60,7 +67,7 @@ Pebble.addEventListener("ready", function() {
 
 Pebble.addEventListener("showConfiguration", function(e) {
     console.log("showConfiguration starting");
-    var url = "http://www.ddrose.com/pebble/rosewright_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&keep_battery_gauge=" + keep_battery_gauge + "&keep_bluetooth_indicator=" + keep_bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer;
+    var url = "http://www.ddrose.com/pebble/rosewright_2_3_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&keep_battery_gauge=" + keep_battery_gauge + "&keep_bluetooth_indicator=" + keep_bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&draw_mode=" + draw_mode;
     console.log("showConfiguration: " + url);
     var result = Pebble.openURL(url);
     console.log("openURL result: " + result);
@@ -87,5 +94,8 @@ Pebble.addEventListener("webviewclosed", function(e) {
 	
 	hour_buzzer = configuration["hour_buzzer"];
 	localStorage.setItem(watch_name + ":hour_buzzer", hour_buzzer);
+	
+	draw_mode = configuration["draw_mode"];
+	localStorage.setItem(watch_name + ":draw_mode", draw_mode);
     }
 });
