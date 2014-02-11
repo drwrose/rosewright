@@ -229,8 +229,8 @@ faces = {
         'battery' : (125, 3, 'b'),
         },
     'c' : {
-        'filename' : 'c_face.png', 
-        'centers' : [('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)],
+        'filename' : ['c_face.png', 'c_face_chrono_tenths.png', 'c_face_chrono_hours.png'],
+        'centers' : [('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84), ('chrono_dial', 45, 99)],
         'bluetooth' : (0, 0, 'w'),
         'battery' : (125, 3, 'w'),
         },
@@ -271,7 +271,7 @@ numSteps = {
     'second' : 60,
     'chrono_minute' : 30,
     'chrono_second' : 60,
-    'chrono_tenth' : 10,
+    'chrono_tenth' : 24,
     }
 
 # The threshold level for dropping to 1-bit images.
@@ -331,12 +331,33 @@ def makeFaces():
       "type": "png"
     },"""    
 
+    chronoResourceEntry = """
+    {
+      "name": "CHRONO_DIAL_TENTHS",
+      "file": "clock_faces/%(targetChronoTenths)s",
+      "type": "png-trans"
+    },
+    {
+      "name": "CHRONO_DIAL_HOURS",
+      "file": "clock_faces/%(targetChronoHours)s",
+      "type": "png-trans"
+    },"""    
+
     fd = faces[faceStyle]
     targetFilename = fd.get('filename')
+    targetChronoTenths = None
+    targetChronoHours = None
+    if not isinstance(targetFilename, type('')):
+        targetFilename, targetChronoTenths, targetChronoHours = targetFilename
 
     resourceStr += resourceEntry % {
         'targetFilename' : targetFilename,
         }
+    if targetChronoTenths:
+        resourceStr += chronoResourceEntry % {
+            'targetChronoTenths' : targetChronoTenths,
+            'targetChronoHours' : targetChronoHours,
+            }
 
     return resourceStr
 
@@ -626,6 +647,7 @@ def configWatch():
 
     print >> js, jsIn % {
         'watchName' : watchName,
+        'showChronoDial' : int(makeChronograph),
         'indicatorsAlways' : int(indicatorsAlways),
         'showSecondHand' : int(showSecondHand and not suppressSecondHand),
         'enableHourBuzzer' : int(enableHourBuzzer),
@@ -642,8 +664,9 @@ def configWatch():
     implicitStackingOrder = ['hour', 'minute', 'second', 'chrono_minute', 'chrono_second', 'chrono_tenth']
     explicitStackingOrder = []
     for hand, x, y in centers:
-        implicitStackingOrder.remove(hand)
-        explicitStackingOrder.append(hand)
+        if hand in implicitStackingOrder:
+            implicitStackingOrder.remove(hand)
+            explicitStackingOrder.append(hand)
     stackingOrder = map(lambda hand: 'STACKING_ORDER_%s' % (hand.upper()), explicitStackingOrder + implicitStackingOrder)
     stackingOrder.append('STACKING_ORDER_DONE')
     
@@ -667,6 +690,8 @@ def configWatch():
         'chronoSecondHandY' : cyd.get('chrono_second', centerY),
         'chronoTenthHandX' : cxd.get('chrono_tenth', centerX),
         'chronoTenthHandY' : cyd.get('chrono_tenth', centerY),
+        'chronoDialX' : cxd.get('chrono_dial', centerX),
+        'chronoDialY' : cyd.get('chrono_dial', centerY),
         'compileDebugging' : int(compileDebugging),
         'showDayCard' : int(bool(dayCard)),
         'showDateCard' : int(bool(dateCard)),

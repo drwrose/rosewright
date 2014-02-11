@@ -14,11 +14,12 @@ void init_default_options() {
   config.second_hand = SHOW_SECOND_HAND;
   config.hour_buzzer = ENABLE_HOUR_BUZZER;
   config.draw_mode = 0;
+  config.chrono_dial = CDM_off;
 }
 
 const char *show_config() {
-  static char buffer[48];
-  snprintf(buffer, 48, "bat: %d, bt: %d, sh: %d, hb: %d, dm: %d", config.keep_battery_gauge, config.keep_bluetooth_indicator, config.second_hand, config.hour_buzzer, config.draw_mode);
+  static char buffer[64];
+  snprintf(buffer, 64, "bat: %d, bt: %d, sh: %d, hb: %d, dm: %d, cd: %d", config.keep_battery_gauge, config.keep_bluetooth_indicator, config.second_hand, config.hour_buzzer, config.draw_mode, config.chrono_dial);
   return buffer;
 }
 
@@ -70,6 +71,13 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
   Tuple *draw_mode = dict_find(received, CK_draw_mode);
   if (draw_mode != NULL) {
     config.draw_mode = draw_mode->value->int32;
+  }
+
+  Tuple *chrono_dial = dict_find(received, CK_chrono_dial);
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_dial = %p", chrono_dial);
+  if (chrono_dial != NULL) {
+    config.chrono_dial = chrono_dial->value->int32;
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "got chrono_dial value = %d", config.chrono_dial);
   }
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "New config: %s", show_config());

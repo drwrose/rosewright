@@ -37,7 +37,7 @@
             </label>
             <select name="keep_battery_gauge" id="keep_battery_gauge" data-theme="" data-role="slider">
 <script>
-  if ($.url().param("keep_battery_gauge") == 1) {
+  if ($.url().param("keep_battery_gauge") == "1") {
      document.write('<option value="0">Off</option><option value="1" selected>On</option>');
   } else {
      document.write('<option value="0" selected>Off</option><option value="1">On</option>');
@@ -52,7 +52,7 @@
             </label>
             <select name="keep_bluetooth_indicator" id="keep_bluetooth_indicator" data-theme="" data-role="slider">
 <script>
-  if ($.url().param("keep_bluetooth_indicator") == 1) {
+  if ($.url().param("keep_bluetooth_indicator") == "1") {
      document.write('<option value="0">Off</option><option value="1" selected>On</option>');
   } else {
      document.write('<option value="0" selected>Off</option><option value="1">On</option>');
@@ -67,7 +67,7 @@
             </label>
             <select name="second_hand" id="second_hand" data-theme="" data-role="slider">
 <script>
-  if ($.url().param("second_hand") == 1) {
+  if ($.url().param("second_hand") == "1") {
      document.write('<option value="0">Off</option><option value="1" selected>On</option>');
   } else {
      document.write('<option value="0" selected>Off</option><option value="1">On</option>');
@@ -82,7 +82,7 @@
             </label>
             <select name="hour_buzzer" id="hour_buzzer" data-theme="" data-role="slider">
 <script>
-  if ($.url().param("hour_buzzer") == 1) {
+  if ($.url().param("hour_buzzer") == "1") {
      document.write('<option value="0">Off</option><option value="1" selected>On</option>');
   } else {
      document.write('<option value="0" selected>Off</option><option value="1">On</option>');
@@ -97,13 +97,49 @@
             </label>
             <select name="draw_mode" id="draw_mode" data-theme="" data-role="slider">
 <script>
-  if ($.url().param("draw_mode") == 1) {
+  if ($.url().param("draw_mode") == "1") {
      document.write('<option value="0">Off</option><option value="1" selected>On</option>');
   } else {
      document.write('<option value="0" selected>Off</option><option value="1">On</option>');
   }
 </script>
          </select>
+        </div>
+
+<script>
+  if ($.url().param("chrono_dial") == undefined) {
+     document.write('<div data-role="fieldcontain" style="display: none">')
+  } else {
+     document.write('<div data-role="fieldcontain">')
+  }	   
+</script>
+            <label for="chrono_dial">
+                Bottom chrono dial
+            </label>
+            <select name="chrono_dial" id="chrono_dial" data-theme="" data-role="select">
+<script>
+  if ($.url().param("chrono_dial") == "0") {
+     document.write('<option value="0" selected>Off</option>');
+  } else {
+     document.write('<option value="0">Off</option>');
+  }
+  if ($.url().param("chrono_dial") == "1") {
+     document.write('<option value="1" selected>Tenths</option>');
+  } else {
+     document.write('<option value="1">Tenths</option>');
+  }
+  if ($.url().param("chrono_dial") == "2") {
+     document.write('<option value="2" selected>Hours</option>');
+  } else {
+     document.write('<option value="2">Hours</option>');
+  }
+  if ($.url().param("chrono_dial") == "3") {
+     document.write('<option value="3" selected>Dual</option>');
+  } else {
+     document.write('<option value="3">Dual</option>');
+  }
+</script>
+            </select>
         </div>
         
     </div>
@@ -117,6 +153,7 @@ function saveOptions() {
     'second_hand': parseInt($("#second_hand").val(), 10),
     'hour_buzzer': parseInt($("#hour_buzzer").val(), 10),
     'draw_mode': parseInt($("#draw_mode").val(), 10),
+    'chrono_dial': parseInt($("#chrono_dial").val(), 10),
   }
   return options;
 }

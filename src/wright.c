@@ -13,10 +13,24 @@
 #define SCREEN_WIDTH 144
 #define SCREEN_HEIGHT 168
 
+// These maybe should be per-face parameters.
+#define CHRONO_DIAL_WIDTH 56
+#define CHRONO_DIAL_HEIGHT 56
+
 Window *window;
 
 GBitmap *clock_face_bitmap;
 BitmapLayer *clock_face_layer;
+
+GBitmap *chrono_dial_tenths_bitmap_white;
+GBitmap *chrono_dial_tenths_bitmap_black;
+GBitmap *chrono_dial_hours_bitmap_white;
+GBitmap *chrono_dial_hours_bitmap_black;
+Layer *chrono_dial_layer;
+
+// True if we're currently showing tenths, false if we're currently
+// showing hours, in the chrono subdial.
+bool chrono_dial_shows_tenths = true;
 
 Layer *hour_layer;
 Layer *minute_layer;
@@ -130,6 +144,34 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
       chrono_ms = chrono_hold_ms;
     }
 
+    bool chrono_dial_wants_tenths = true;
+    switch (config.chrono_dial) {
+    case CDM_off:
+      break;
+
+    case CDM_tenths:
+      chrono_dial_wants_tenths = true;
+      break;
+
+    case CDM_hours:
+      chrono_dial_wants_tenths = false;
+      break;
+
+    case CDM_dual:
+      // In dual mode, we show either tenths or hours, depending on the
+      // amount of elapsed time.  Less than 30 minutes shows tenths.
+      chrono_dial_wants_tenths = (chrono_ms < 30 * 60 * 1000);
+      break;
+    }
+
+    if (chrono_dial_shows_tenths != chrono_dial_wants_tenths) {
+      // The dial has changed states; redraw it.
+      chrono_dial_shows_tenths = chrono_dial_wants_tenths;
+      if (chrono_dial_layer != NULL) {
+	layer_mark_dirty(chrono_dial_layer);
+      }
+    }
+    
 #ifdef SHOW_CHRONO_MINUTE_HAND
     // The chronograph minute hand rolls completely around in 30
     // minutes (not 60).
@@ -141,13 +183,19 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 #endif  // SHOW_CHRONO_SECOND_HAND
 
 #ifdef SHOW_CHRONO_TENTH_HAND
-    if (chrono_running && !chrono_lap_paused) {
-      // We don't actually show the tenths time while the chrono is running.
-      placement->chrono_tenth_hand_index = 0;
+    if (chrono_dial_shows_tenths) {
+      // Drawing tenths-of-a-second.
+      if (chrono_running && !chrono_lap_paused) {
+	// We don't actually show the tenths time while the chrono is running.
+	placement->chrono_tenth_hand_index = 0;
+      } else {
+	// We show the tenths time when the chrono is stopped or showing
+	// the lap time.
+	placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * chrono_ms) / (100)) % NUM_STEPS_CHRONO_TENTH;
+      }
     } else {
-      // We show the tenths time when the chrono is stopped or showing
-      // the lap time.
-      placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * chrono_ms) / (100)) % NUM_STEPS_CHRONO_TENTH;
+      // Drawing hours.
+      placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * chrono_ms) / (86400 * 1000)) % NUM_STEPS_CHRONO_TENTH;
     }
 #endif  // SHOW_CHRONO_TENTH_HAND
 
@@ -492,6 +540,32 @@ void draw_card(Layer *me, GContext *ctx, const char *text, bool on_black, bool b
                      NULL);
 }
 
+#ifdef MAKE_CHRONOGRAPH
+void chrono_dial_layer_update_callback(Layer *me, GContext *ctx) {
+  if (config.chrono_dial != CDM_off) {
+    GRect destination;
+    destination.origin.x = 0;
+    destination.origin.y = 0;
+    destination.size.w = CHRONO_DIAL_WIDTH;
+    destination.size.h = CHRONO_DIAL_HEIGHT;
+
+    if (chrono_dial_shows_tenths) {
+      // Draw the tenths dial.
+      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
+      graphics_draw_bitmap_in_rect(ctx, chrono_dial_tenths_bitmap_black, destination);
+      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
+      graphics_draw_bitmap_in_rect(ctx, chrono_dial_tenths_bitmap_white, destination);
+    } else {
+      // Draw the hours dial.
+      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
+      graphics_draw_bitmap_in_rect(ctx, chrono_dial_hours_bitmap_black, destination);
+      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
+      graphics_draw_bitmap_in_rect(ctx, chrono_dial_hours_bitmap_white, destination);
+    }
+  }
+}
+#endif  // MAKE_CHRONOGRAPH
+
 #ifdef SHOW_DAY_CARD
 void day_layer_update_callback(Layer *me, GContext *ctx) {
   draw_card(me, ctx, weekday_names[current_placement.day_index], DAY_CARD_ON_BLACK, DAY_CARD_BOLD);
@@ -719,7 +793,7 @@ void handle_init() {
   load_config();
 
   app_message_register_inbox_received(receive_config_handler);
-  app_message_open(64, 64);
+  app_message_open(96, 96);
 
   time_t now = time(NULL);
   struct tm *startup_time = localtime(&now);
@@ -738,6 +812,17 @@ void handle_init() {
   clock_face_layer = bitmap_layer_create(window_frame);
   bitmap_layer_set_bitmap(clock_face_layer, clock_face_bitmap);
   layer_add_child(window_layer, bitmap_layer_get_layer(clock_face_layer));
+
+#ifdef MAKE_CHRONOGRAPH
+  chrono_dial_tenths_bitmap_white = gbitmap_create_with_resource(RESOURCE_ID_CHRONO_DIAL_TENTHS_WHITE);
+  chrono_dial_tenths_bitmap_black = gbitmap_create_with_resource(RESOURCE_ID_CHRONO_DIAL_TENTHS_BLACK);
+  chrono_dial_hours_bitmap_white = gbitmap_create_with_resource(RESOURCE_ID_CHRONO_DIAL_HOURS_WHITE);
+  chrono_dial_hours_bitmap_black = gbitmap_create_with_resource(RESOURCE_ID_CHRONO_DIAL_HOURS_BLACK);
+
+  chrono_dial_layer = layer_create(GRect(CHRONO_DIAL_X, CHRONO_DIAL_Y, CHRONO_DIAL_WIDTH, CHRONO_DIAL_HEIGHT));
+  layer_set_update_proc(chrono_dial_layer, &chrono_dial_layer_update_callback);
+  layer_add_child(window_layer, chrono_dial_layer);
+#endif  // MAKE_CHRONOGRAPH
 
   init_battery_gauge(window_layer, BATTERY_GAUGE_X, BATTERY_GAUGE_Y, BATTERY_GAUGE_ON_BLACK, false);
   init_bluetooth_indicator(window_layer, BLUETOOTH_X, BLUETOOTH_Y, BLUETOOTH_ON_BLACK, false);
@@ -816,6 +901,14 @@ void handle_deinit() {
   window_stack_pop_all(false);  // Not sure if this is needed?
   bitmap_layer_destroy(clock_face_layer);
   gbitmap_destroy(clock_face_bitmap);
+
+#ifdef MAKE_CHRONOGRAPH
+  layer_destroy(chrono_dial_layer);
+  gbitmap_destroy(chrono_dial_tenths_bitmap_white);
+  gbitmap_destroy(chrono_dial_tenths_bitmap_black);
+  gbitmap_destroy(chrono_dial_hours_bitmap_white);
+  gbitmap_destroy(chrono_dial_hours_bitmap_black);
+#endif  // MAKE_CHRONOGRAPH
 
   deinit_battery_gauge();
   deinit_bluetooth_indicator();

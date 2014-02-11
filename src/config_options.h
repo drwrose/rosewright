@@ -11,7 +11,15 @@ typedef enum {
   CK_second_hand = 2,
   CK_hour_buzzer = 3,
   CK_draw_mode = 4,
+  CK_chrono_dial = 5,
 } ConfigKey;
+
+typedef enum {
+  CDM_off = 0,
+  CDM_tenths = 1,
+  CDM_hours = 2,
+  CDM_dual = 3,
+} ChronoDialMode;
 
 typedef struct {
   unsigned char keep_battery_gauge;
@@ -19,6 +27,7 @@ typedef struct {
   unsigned char second_hand;
   unsigned char hour_buzzer;
   unsigned char draw_mode;
+  unsigned char chrono_dial;
 } __attribute__((__packed__)) ConfigOptions;
 
 extern ConfigOptions config;
