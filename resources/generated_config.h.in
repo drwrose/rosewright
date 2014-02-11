@@ -16,9 +16,6 @@
 #define MINUTE_HAND_X %(minuteHandX)s
 #define MINUTE_HAND_Y %(minuteHandY)s
 
-#define CHRONO_DIAL_X %(chronoDialX)s
-#define CHRONO_DIAL_Y %(chronoDialY)s
-
 // The order in which the hands are layered on top of each other.
 #define STACKING_ORDER_LIST  %(stackingOrder)s
 

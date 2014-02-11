@@ -230,7 +230,7 @@ faces = {
         },
     'c' : {
         'filename' : ['c_face.png', 'c_face_chrono_tenths.png', 'c_face_chrono_hours.png'],
-        'centers' : [('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84), ('chrono_dial', 45, 99)],
+        'centers' : [('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)],
         'bluetooth' : (0, 0, 'w'),
         'battery' : (125, 3, 'w'),
         },
@@ -271,7 +271,7 @@ numSteps = {
     'second' : 60,
     'chrono_minute' : 30,
     'chrono_second' : 60,
-    'chrono_tenth' : 24,
+    'chrono_tenth' : 48,
     }
 
 # The threshold level for dropping to 1-bit images.
@@ -690,8 +690,6 @@ def configWatch():
         'chronoSecondHandY' : cyd.get('chrono_second', centerY),
         'chronoTenthHandX' : cxd.get('chrono_tenth', centerX),
         'chronoTenthHandY' : cyd.get('chrono_tenth', centerY),
-        'chronoDialX' : cxd.get('chrono_dial', centerX),
-        'chronoDialY' : cyd.get('chrono_dial', centerY),
         'compileDebugging' : int(compileDebugging),
         'showDayCard' : int(bool(dayCard)),
         'showDateCard' : int(bool(dateCard)),

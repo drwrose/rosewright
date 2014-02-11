@@ -13,10 +13,6 @@
 #define SCREEN_WIDTH 144
 #define SCREEN_HEIGHT 168
 
-// These maybe should be per-face parameters.
-#define CHRONO_DIAL_WIDTH 56
-#define CHRONO_DIAL_HEIGHT 56
-
 Window *window;
 
 GBitmap *clock_face_bitmap;
@@ -547,11 +543,9 @@ void draw_card(Layer *me, GContext *ctx, const char *text, bool on_black, bool b
 #ifdef MAKE_CHRONOGRAPH
 void chrono_dial_layer_update_callback(Layer *me, GContext *ctx) {
   if (config.chrono_dial != CDM_off) {
-    GRect destination;
+    GRect destination = layer_get_bounds(me);
     destination.origin.x = 0;
     destination.origin.y = 0;
-    destination.size.w = CHRONO_DIAL_WIDTH;
-    destination.size.h = CHRONO_DIAL_HEIGHT;
 
     if (chrono_dial_shows_tenths) {
       // Draw the tenths dial.
@@ -846,7 +840,14 @@ void handle_init() {
   chrono_dial_hours_bitmap_white = gbitmap_create_with_resource(RESOURCE_ID_CHRONO_DIAL_HOURS_WHITE);
   chrono_dial_hours_bitmap_black = gbitmap_create_with_resource(RESOURCE_ID_CHRONO_DIAL_HOURS_BLACK);
 
-  chrono_dial_layer = layer_create(GRect(CHRONO_DIAL_X, CHRONO_DIAL_Y, CHRONO_DIAL_WIDTH, CHRONO_DIAL_HEIGHT));
+  {
+    int height = chrono_dial_tenths_bitmap_white->bounds.size.h;
+    int width = chrono_dial_tenths_bitmap_white->bounds.size.w;
+    int x = CHRONO_TENTH_HAND_X - width / 2;
+    int y = CHRONO_TENTH_HAND_Y - height / 2;
+
+    chrono_dial_layer = layer_create(GRect(x, y, width, height));
+  }
   layer_set_update_proc(chrono_dial_layer, &chrono_dial_layer_update_callback);
   layer_add_child(window_layer, chrono_dial_layer);
 #endif  // MAKE_CHRONOGRAPH
