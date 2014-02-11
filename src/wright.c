@@ -83,10 +83,14 @@ int stacking_order[] = {
 STACKING_ORDER_LIST
 };
 
-int chrono_running = false;       // the chronograph has been started
-int chrono_lap_paused = false;    // the "lap" button has been pressed
-int chrono_start_ms = 0; // consulted if chrono_running && !chrono_lap_paused
-int chrono_hold_ms = 0;  // consulted if !chrono_running || chrono_lap_paused
+typedef struct {
+  int start_ms;              // consulted if chrono_running && !chrono_lap_paused
+  int hold_ms;               // consulted if !chrono_running || chrono_lap_paused
+  bool running;              // the chronograph has been started
+  bool lap_paused;           // the "lap" button has been pressed
+} __attribute__((__packed__)) ChronoData;
+
+ChronoData chrono_data = { false, false, 0, 0 };
 
 // Returns the number of milliseconds since midnight.
 int get_time_ms(struct tm *time) {
@@ -136,12 +140,12 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 #ifdef MAKE_CHRONOGRAPH
   {
     int chrono_ms;
-    if (chrono_running && !chrono_lap_paused) {
+    if (chrono_data.running && !chrono_data.lap_paused) {
       // The chronograph is running.  Show the active elapsed time.
-      chrono_ms = (ms - chrono_start_ms + MS_PER_DAY) % MS_PER_DAY;
+      chrono_ms = (ms - chrono_data.start_ms + MS_PER_DAY) % MS_PER_DAY;
     } else {
       // The chronograph is paused.  Show the time it is paused on.
-      chrono_ms = chrono_hold_ms;
+      chrono_ms = chrono_data.hold_ms;
     }
 
     bool chrono_dial_wants_tenths = true;
@@ -185,7 +189,7 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 #ifdef SHOW_CHRONO_TENTH_HAND
     if (chrono_dial_shows_tenths) {
       // Drawing tenths-of-a-second.
-      if (chrono_running && !chrono_lap_paused) {
+      if (chrono_data.running && !chrono_data.lap_paused) {
 	// We don't actually show the tenths time while the chrono is running.
 	placement->chrono_tenth_hand_index = 0;
       } else {
@@ -465,7 +469,7 @@ void second_layer_update_callback(Layer *me, GContext *ctx) {
 void chrono_minute_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
 
-  if (config.second_hand || chrono_running || chrono_hold_ms != 0) {
+  if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
 #ifdef VECTOR_CHRONO_MINUTE_HAND
     draw_vector_hand(&chrono_minute_hand_vector_table, current_placement.chrono_minute_hand_index,
 		     NUM_STEPS_CHRONO_MINUTE, CHRONO_MINUTE_HAND_X, CHRONO_MINUTE_HAND_Y, ctx);
@@ -483,7 +487,7 @@ void chrono_minute_layer_update_callback(Layer *me, GContext *ctx) {
 void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
 
-  if (config.second_hand || chrono_running || chrono_hold_ms != 0) {
+  if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
 #ifdef VECTOR_CHRONO_SECOND_HAND
     draw_vector_hand(&chrono_second_hand_vector_table, current_placement.chrono_second_hand_index,
 		     NUM_STEPS_CHRONO_SECOND, CHRONO_SECOND_HAND_X, CHRONO_SECOND_HAND_Y, ctx);
@@ -501,7 +505,7 @@ void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
 void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
 
-  if (config.second_hand || chrono_running || chrono_hold_ms != 0) {
+  if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
 #ifdef VECTOR_CHRONO_TENTH_HAND
     draw_vector_hand(&chrono_tenth_hand_vector_table, current_placement.chrono_tenth_hand_index,
 		     NUM_STEPS_CHRONO_TENTH, CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, ctx);
@@ -658,12 +662,12 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, void *context) {
   int ms = get_time_ms(NULL);
 
   // The start/stop button was pressed.
-  if (chrono_running) {
+  if (chrono_data.running) {
     // If the chronograph is currently running, this means to stop (or
     // pause).
-    chrono_hold_ms = ms - chrono_start_ms;
-    chrono_running = false;
-    chrono_lap_paused = false;
+    chrono_data.hold_ms = ms - chrono_data.start_ms;
+    chrono_data.running = false;
+    chrono_data.lap_paused = false;
     vibes_enqueue_custom_pattern(tap);
     update_hands(NULL);
     apply_config();
@@ -675,8 +679,8 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, void *context) {
   } else {
     // If the chronograph is not currently running, this means to
     // start, from the currently showing Chronograph time.
-    chrono_start_ms = ms - chrono_hold_ms;
-    chrono_running = true;
+    chrono_data.start_ms = ms - chrono_data.hold_ms;
+    chrono_data.running = true;
     vibes_enqueue_custom_pattern(tap);
     update_hands(NULL);
     apply_config();
@@ -690,17 +694,17 @@ void chrono_lap_button() {
  
   ms = get_time_ms(NULL);
 
-  if (chrono_lap_paused) {
+  if (chrono_data.lap_paused) {
     // If we were already paused, this resumes the motion, jumping
     // ahead to the currently elapsed time.
-    chrono_lap_paused = false;
+    chrono_data.lap_paused = false;
     vibes_enqueue_custom_pattern(tap);
     update_hands(NULL);
   } else {
     // If we were not already paused, this pauses the hands here (but
     // does not stop the timer).
-    chrono_hold_ms = ms - chrono_start_ms;
-    chrono_lap_paused = true;
+    chrono_data.hold_ms = ms - chrono_data.start_ms;
+    chrono_data.lap_paused = true;
     vibes_enqueue_custom_pattern(tap);
     update_hands(NULL);
   }
@@ -713,10 +717,10 @@ void chrono_reset_button() {
 
   now = time(NULL);
   this_time = localtime(&now);
-  chrono_running = false;
-  chrono_lap_paused = false;
-  chrono_start_ms = 0;
-  chrono_hold_ms = 0;
+  chrono_data.running = false;
+  chrono_data.lap_paused = false;
+  chrono_data.start_ms = 0;
+  chrono_data.hold_ms = 0;
   vibes_double_pulse();
   update_hands(this_time);
   apply_config();
@@ -726,7 +730,7 @@ void chrono_lap_handler(ClickRecognizerRef recognizer, void *context) {
   // The lap/reset button was pressed (briefly).
 
   // We only do anything here if the chronograph is currently running.
-  if (chrono_running) {
+  if (chrono_data.running) {
     chrono_lap_button();
   }
 }
@@ -736,7 +740,7 @@ void chrono_lap_or_reset_handler(ClickRecognizerRef recognizer, void *context) {
 
   // This means a lap if the chronograph is running, and a reset if it
   // is not.
-  if (chrono_running) {
+  if (chrono_data.running) {
     chrono_lap_button();
   } else {
     chrono_reset_button();
@@ -776,7 +780,7 @@ void apply_config() {
 #if defined(FAST_TIME) || defined(BATTERY_HACK)
   tick_timer_service_subscribe(SECOND_UNIT, handle_tick);
 #else
-  if (config.second_hand || chrono_running) {
+  if (config.second_hand || chrono_data.running) {
     tick_timer_service_subscribe(SECOND_UNIT, handle_tick);
   } else {
     tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
@@ -789,8 +793,31 @@ void apply_config() {
   layer_mark_dirty((Layer *)clock_face_layer);
 }
 
+void
+load_chrono_data() {
+#ifdef MAKE_CHRONOGRAPH
+  ChronoData local_data;
+  if (persist_read_data(PERSIST_KEY + 1, &local_data, sizeof(local_data)) == sizeof(local_data)) {
+    chrono_data = local_data;
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Loaded chrono_data");
+  } else {
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Wrong previous chrono_data size or no previous data.");
+  }
+#endif  // MAKE_CHRONOGRAPH
+}
+
+void save_chrono_data() {
+  int wrote = persist_write_data(PERSIST_KEY + 1, &chrono_data, sizeof(chrono_data));
+  if (wrote == sizeof(chrono_data)) {
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Saved chrono_data (%d, %d)", PERSIST_KEY + 1, sizeof(chrono_data));
+  } else {
+    app_log(APP_LOG_LEVEL_ERROR, __FILE__, __LINE__, "Error saving chrono_data (%d, %d): %d", PERSIST_KEY + 1, sizeof(chrono_data), wrote);
+  }
+}
+
 void handle_init() {
   load_config();
+  load_chrono_data();
 
   app_message_register_inbox_received(receive_config_handler);
   app_message_open(96, 96);
@@ -888,7 +915,11 @@ void handle_init() {
   }
 
 #ifdef MAKE_CHRONOGRAPH
- window_set_click_config_provider(window, &stopped_click_config_provider);
+  if (chrono_data.running) {
+    window_set_click_config_provider(window, &started_click_config_provider);
+  } else {
+    window_set_click_config_provider(window, &stopped_click_config_provider);
+  }
 #endif  // MAKE_CHRONOGRAPH
 
   apply_config();
@@ -896,6 +927,7 @@ void handle_init() {
 
 
 void handle_deinit() {
+  save_chrono_data();
   tick_timer_service_unsubscribe();
 
   window_stack_pop_all(false);  // Not sure if this is needed?

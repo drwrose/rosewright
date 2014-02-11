@@ -14,7 +14,7 @@ void init_default_options() {
   config.second_hand = SHOW_SECOND_HAND;
   config.hour_buzzer = ENABLE_HOUR_BUZZER;
   config.draw_mode = 0;
-  config.chrono_dial = CDM_off;
+  config.chrono_dial = CDM_dual;
 }
 
 const char *show_config() {
@@ -74,10 +74,8 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
   }
 
   Tuple *chrono_dial = dict_find(received, CK_chrono_dial);
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_dial = %p", chrono_dial);
   if (chrono_dial != NULL) {
     config.chrono_dial = chrono_dial->value->int32;
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "got chrono_dial value = %d", config.chrono_dial);
   }
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "New config: %s", show_config());
