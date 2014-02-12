@@ -24,6 +24,22 @@ GBitmap *chrono_dial_hours_bitmap_white;
 GBitmap *chrono_dial_hours_bitmap_black;
 Layer *chrono_dial_layer;
 
+// Number of laps preserved for the laps digital display
+#define CHRONO_MAX_LAPS 4
+
+// This window is pushed on top of the chrono dial to display the
+// readout in digital form for ease of recording.
+Window *chrono_digital_window;
+TextLayer *chrono_digital_current_layer = NULL;
+TextLayer *chrono_digital_laps_layer[CHRONO_MAX_LAPS];
+bool chrono_digital_window_showing = false;
+AppTimer *chrono_digital_timer = NULL;
+#define CHRONO_DIGITAL_BUFFER_SIZE 48
+char chrono_current_buffer[CHRONO_DIGITAL_BUFFER_SIZE];
+char chrono_laps_buffer[CHRONO_MAX_LAPS][CHRONO_DIGITAL_BUFFER_SIZE] = { "ab", "cd", "ef", "gh" };
+
+#define CHRONO_DIGITAL_TICK_MS 10  // Every 0.1 seconds
+
 // True if we're currently showing tenths, false if we're currently
 // showing hours, in the chrono subdial.
 bool chrono_dial_shows_tenths = true;
@@ -80,13 +96,14 @@ STACKING_ORDER_LIST
 };
 
 typedef struct {
-  int start_ms;              // consulted if chrono_running && !chrono_lap_paused
-  int hold_ms;               // consulted if !chrono_running || chrono_lap_paused
-  bool running;              // the chronograph has been started
-  bool lap_paused;           // the "lap" button has been pressed
+  int start_ms;              // consulted if chrono_data.running && !chrono_data.lap_paused
+  int hold_ms;               // consulted if !chrono_data.running || chrono_data.lap_paused
+  unsigned char running;              // the chronograph has been started
+  unsigned char lap_paused;           // the "lap" button has been pressed
+  int laps[CHRONO_MAX_LAPS];
 } __attribute__((__packed__)) ChronoData;
 
-ChronoData chrono_data = { false, false, 0, 0 };
+ChronoData chrono_data = { false, false, 0, 0, { 0, 0, 0, 0 } };
 
 // Returns the number of milliseconds since midnight.
 int get_time_ms(struct tm *time) {
@@ -108,6 +125,37 @@ int get_time_ms(struct tm *time) {
   return result;
 }
 
+// Returns the time showing on the chronograph, given the ms returned
+// by get_time_ms().  Returns the current lap time if the lap is
+// paused.
+int get_chrono_ms(int ms) {
+  int chrono_ms;
+  if (chrono_data.running && !chrono_data.lap_paused) {
+    // The chronograph is running.  Show the active elapsed time.
+    chrono_ms = (ms - chrono_data.start_ms + MS_PER_DAY) % MS_PER_DAY;
+  } else {
+    // The chronograph is paused.  Show the time it is paused on.
+    chrono_ms = chrono_data.hold_ms;
+  }
+
+  return chrono_ms;
+}
+
+// Returns the time showing on the chronograph, given the ms returned
+// by get_time_ms().  Never returns the current lap time.
+int get_chrono_ms_no_lap(int ms) {
+  int chrono_ms;
+  if (chrono_data.running) {
+    // The chronograph is running.  Show the active elapsed time.
+    chrono_ms = (ms - chrono_data.start_ms + MS_PER_DAY) % MS_PER_DAY;
+  } else {
+    // The chronograph is paused.  Show the time it is paused on.
+    chrono_ms = chrono_data.hold_ms;
+  }
+
+  return chrono_ms;
+}
+  
 // Determines the specific hand bitmaps that should be displayed based
 // on the current time.
 void compute_hands(struct tm *time, struct HandPlacement *placement) {
@@ -135,14 +183,7 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 
 #ifdef MAKE_CHRONOGRAPH
   {
-    int chrono_ms;
-    if (chrono_data.running && !chrono_data.lap_paused) {
-      // The chronograph is running.  Show the active elapsed time.
-      chrono_ms = (ms - chrono_data.start_ms + MS_PER_DAY) % MS_PER_DAY;
-    } else {
-      // The chronograph is paused.  Show the time it is paused on.
-      chrono_ms = chrono_data.hold_ms;
-    }
+    int chrono_ms = get_chrono_ms(ms);
 
     bool chrono_dial_wants_tenths = true;
     switch (config.chrono_dial) {
@@ -564,6 +605,18 @@ void chrono_dial_layer_update_callback(Layer *me, GContext *ctx) {
 }
 #endif  // MAKE_CHRONOGRAPH
 
+/*
+#ifdef MAKE_CHRONOGRAPH
+void chrono_digital_current_layer_update_callback(Layer *me, GContext *ctx) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_digital_current_layer_update_callback: %p, %p", me, ctx);
+
+  GRect destination = layer_get_bounds(me);
+  destination.origin.x = 0;
+  destination.origin.y = 0;
+}
+#endif  // MAKE_CHRONOGRAPH
+*/
+
 #ifdef SHOW_DAY_CARD
 void day_layer_update_callback(Layer *me, GContext *ctx) {
   draw_card(me, ctx, weekday_names[current_placement.day_index], DAY_CARD_ON_BLACK, DAY_CARD_BOLD);
@@ -650,6 +703,9 @@ void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 // Forward references.
 void stopped_click_config_provider(void *context);
 void started_click_config_provider(void *context);
+void reset_chrono_digital_timer();
+void record_chrono_lap(int chrono_ms);
+void update_chrono_laps_time();
 
 void chrono_start_stop_handler(ClickRecognizerRef recognizer, void *context) {
   Window *window = (Window *)context;
@@ -670,6 +726,7 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, void *context) {
     // state.  When the chrono is stopped, we listen for a different
     // set of buttons than when it is started.
     window_set_click_config_provider(window, &stopped_click_config_provider);
+    window_set_click_config_provider(chrono_digital_window, &stopped_click_config_provider);
   } else {
     // If the chronograph is not currently running, this means to
     // start, from the currently showing Chronograph time.
@@ -680,6 +737,7 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, void *context) {
     apply_config();
 
     window_set_click_config_provider(window, &started_click_config_provider);
+    window_set_click_config_provider(chrono_digital_window, &started_click_config_provider);
   }
 }
 
@@ -697,8 +755,14 @@ void chrono_lap_button() {
   } else {
     // If we were not already paused, this pauses the hands here (but
     // does not stop the timer).
-    chrono_data.hold_ms = ms - chrono_data.start_ms;
-    chrono_data.lap_paused = true;
+    int lap_ms = ms - chrono_data.start_ms;
+    record_chrono_lap(lap_ms);
+    if (!chrono_digital_window_showing) {
+      // Actually, we only pause the hands if we're not looking at the
+      // digital timer.
+      chrono_data.hold_ms = lap_ms;
+      chrono_data.lap_paused = true;
+    }
     vibes_enqueue_custom_pattern(tap);
     update_hands(NULL);
   }
@@ -716,6 +780,7 @@ void chrono_reset_button() {
   chrono_data.start_ms = 0;
   chrono_data.hold_ms = 0;
   vibes_double_pulse();
+  update_chrono_laps_time();
   update_hands(this_time);
   apply_config();
 }
@@ -741,6 +806,13 @@ void chrono_lap_or_reset_handler(ClickRecognizerRef recognizer, void *context) {
   }
 }
 
+void push_chrono_digital_handler(ClickRecognizerRef recognizer, void *context) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "push chrono digital");
+  if (!chrono_digital_window_showing) {
+    window_stack_push(chrono_digital_window, true);
+  }
+}
+
 // Enable the set of buttons active while the chrono is stopped.
 void stopped_click_config_provider(void *context) {
   // single click config:
@@ -749,6 +821,9 @@ void stopped_click_config_provider(void *context) {
 
   // long click config:
   window_long_click_subscribe(BUTTON_ID_DOWN, 700, &chrono_lap_or_reset_handler, NULL);
+
+  // To push the digital chrono display.
+  window_single_click_subscribe(BUTTON_ID_SELECT, &push_chrono_digital_handler);
 }
 
 // Enable the set of buttons active while the chrono is running.
@@ -764,7 +839,167 @@ void started_click_config_provider(void *context) {
   // differentiate a long_click from a click, which makes the lap
   // response sluggish.
   window_long_click_subscribe(BUTTON_ID_DOWN, 0, NULL, NULL);
+
+  // To push the digital chrono display.
+  window_single_click_subscribe(BUTTON_ID_SELECT, &push_chrono_digital_handler);
 }
+
+void window_load_handler(struct Window *window) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "main window loads");
+}
+
+void window_appear_handler(struct Window *window) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "main window appears");
+
+#ifdef MAKE_CHRONOGRAPH
+  if (chrono_data.running) {
+    window_set_click_config_provider(window, &started_click_config_provider);
+  } else {
+    window_set_click_config_provider(window, &stopped_click_config_provider);
+  }
+#endif  // MAKE_CHRONOGRAPH
+}
+
+void window_disappear_handler(struct Window *window) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "main window disappears");
+}
+
+void window_unload_handler(struct Window *window) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "main window unloads");
+}
+
+#ifdef MAKE_CHRONOGRAPH
+void update_chrono_laps_time() {
+  int i;
+
+  for (i = 0; i < CHRONO_MAX_LAPS; ++i) {
+    int chrono_ms = chrono_data.laps[i];
+    int chrono_h = chrono_ms / (1000 * 60 * 60);
+    int chrono_m = (chrono_ms / (1000 * 60)) % 60;
+    int chrono_s = (chrono_ms / (1000)) % 60;
+    int chrono_t = (chrono_ms / (100)) % 10;
+
+    if (chrono_ms == 0) {
+      // No data: empty string.
+      chrono_laps_buffer[i][0] = '\0';
+    } else {
+      // Real data: formatted string.
+      snprintf(chrono_laps_buffer[i], CHRONO_DIGITAL_BUFFER_SIZE, "%d:%02d:%02d.%d", 
+	       chrono_h, chrono_m, chrono_s, chrono_t);
+    }
+    if (chrono_digital_laps_layer[i] != NULL) {
+      layer_mark_dirty((Layer *)chrono_digital_laps_layer[i]);
+    }
+  }
+}
+
+void record_chrono_lap(int chrono_ms) {
+  // Lose the first one.
+  memmove(&chrono_data.laps[0], &chrono_data.laps[1], sizeof(chrono_data.laps[0]) * CHRONO_MAX_LAPS - 1);
+  chrono_data.laps[CHRONO_MAX_LAPS - 1] = chrono_ms;
+  update_chrono_laps_time();
+}
+
+void update_chrono_current_time() {
+  int ms = get_time_ms(NULL);
+  int chrono_ms = get_chrono_ms_no_lap(ms);
+  int chrono_h = chrono_ms / (1000 * 60 * 60);
+  int chrono_m = (chrono_ms / (1000 * 60)) % 60;
+  int chrono_s = (chrono_ms / (1000)) % 60;
+  int chrono_t = (chrono_ms / (100)) % 10;
+  
+  snprintf(chrono_current_buffer, CHRONO_DIGITAL_BUFFER_SIZE, "%d:%02d:%02d.%d", 
+	   chrono_h, chrono_m, chrono_s, chrono_t);
+  if (chrono_digital_current_layer != NULL) {
+    layer_mark_dirty((Layer *)chrono_digital_current_layer);
+  }
+}
+
+void handle_chrono_digital_timer(void *data) {
+  chrono_digital_timer = NULL;  // When the timer is handled, it is implicitly canceled.
+
+  reset_chrono_digital_timer();
+}
+
+void chrono_digital_window_load_handler(struct Window *window) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono digital loads");
+
+  GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+
+  Layer *chrono_digital_window_layer = window_get_root_layer(chrono_digital_window);
+  chrono_digital_current_layer = text_layer_create(GRect(0, 120, SCREEN_WIDTH, 48));
+  int i;
+  for (i = 0; i < CHRONO_MAX_LAPS; ++i) {
+    chrono_digital_laps_layer[i] = text_layer_create(GRect(0, 30 * i, SCREEN_WIDTH, 30));
+
+    text_layer_set_text(chrono_digital_laps_layer[i], chrono_laps_buffer[i]);
+    text_layer_set_text_color(chrono_digital_laps_layer[i], GColorBlack);
+    text_layer_set_text_alignment(chrono_digital_laps_layer[i], GTextAlignmentCenter);
+    text_layer_set_overflow_mode(chrono_digital_laps_layer[i], GTextOverflowModeFill);
+    text_layer_set_font(chrono_digital_laps_layer[i], font);
+    layer_add_child(chrono_digital_window_layer, (Layer *)chrono_digital_laps_layer[i]);
+  }
+
+  text_layer_set_text(chrono_digital_current_layer, chrono_current_buffer);
+  text_layer_set_text_color(chrono_digital_current_layer, GColorBlack);
+  text_layer_set_text_alignment(chrono_digital_current_layer, GTextAlignmentCenter);
+  text_layer_set_overflow_mode(chrono_digital_current_layer, GTextOverflowModeFill);
+  text_layer_set_font(chrono_digital_current_layer, font);
+  layer_add_child(chrono_digital_window_layer, (Layer *)chrono_digital_current_layer);
+}
+
+void chrono_digital_window_appear_handler(struct Window *window) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono digital appears");
+  chrono_digital_window_showing = true;
+
+  // We never have the lap timer paused while the digital window is visible.
+  chrono_data.lap_paused = false;
+
+  if (chrono_data.running) {
+    window_set_click_config_provider(chrono_digital_window, &started_click_config_provider);
+  } else {
+    window_set_click_config_provider(chrono_digital_window, &stopped_click_config_provider);
+  }
+
+  reset_chrono_digital_timer();
+}
+
+void chrono_digital_window_disappear_handler(struct Window *window) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono digital disappears");
+  chrono_digital_window_showing = false;
+  reset_chrono_digital_timer();
+}
+
+void chrono_digital_window_unload_handler(struct Window *window) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono digital unloads");
+  if (chrono_digital_current_layer != NULL) {
+    text_layer_destroy(chrono_digital_current_layer);
+    chrono_digital_current_layer = NULL;
+  }
+  int i;
+  for (i = 0; i < CHRONO_MAX_LAPS; ++i) {
+    if (chrono_digital_laps_layer[i] != NULL) {
+      text_layer_destroy(chrono_digital_laps_layer[i]);
+      chrono_digital_laps_layer[i] = NULL;
+    }
+  }
+}
+#endif  // MAKE_CHRONOGRAPH
+
+void reset_chrono_digital_timer() {
+#ifdef MAKE_CHRONOGRAPH
+  if (chrono_digital_timer != NULL) {
+    app_timer_cancel(chrono_digital_timer);
+    chrono_digital_timer = NULL;
+  }
+  update_chrono_current_time();
+  if (chrono_digital_window_showing && chrono_data.running) {
+    // Set the timer for the next update.
+    chrono_digital_timer = app_timer_register(CHRONO_DIGITAL_TICK_MS, &handle_chrono_digital_timer, 0);
+  }
+#endif  // MAKE_CHRONOGRAPH
+}
+
 
 // Updates any runtime settings as needed when the config changes.
 void apply_config() {
@@ -785,6 +1020,7 @@ void apply_config() {
   // layers all draw themselves interactively.)
   bitmap_layer_set_compositing_mode(clock_face_layer, draw_mode_table[config.draw_mode].paint_assign);
   layer_mark_dirty((Layer *)clock_face_layer);
+  reset_chrono_digital_timer();
 }
 
 void
@@ -794,6 +1030,7 @@ load_chrono_data() {
   if (persist_read_data(PERSIST_KEY + 1, &local_data, sizeof(local_data)) == sizeof(local_data)) {
     chrono_data = local_data;
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Loaded chrono_data");
+    update_chrono_laps_time();
   } else {
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Wrong previous chrono_data size or no previous data.");
   }
@@ -821,6 +1058,15 @@ void handle_init() {
   int i;
 
   window = window_create();
+
+  struct WindowHandlers window_handlers;
+  memset(&window_handlers, 0, sizeof(window_handlers));
+  window_handlers.load = window_load_handler;
+  window_handlers.appear = window_appear_handler;
+  window_handlers.disappear = window_disappear_handler;
+  window_handlers.unload = window_unload_handler;
+  window_set_window_handlers(window, window_handlers);
+
   window_set_fullscreen(window, true);
   window_stack_push(window, true /* Animated */);
 
@@ -850,6 +1096,17 @@ void handle_init() {
   }
   layer_set_update_proc(chrono_dial_layer, &chrono_dial_layer_update_callback);
   layer_add_child(window_layer, chrono_dial_layer);
+
+  chrono_digital_window = window_create();
+
+  struct WindowHandlers chrono_digital_window_handlers;
+  memset(&chrono_digital_window_handlers, 0, sizeof(chrono_digital_window_handlers));
+  chrono_digital_window_handlers.load = chrono_digital_window_load_handler;
+  chrono_digital_window_handlers.appear = chrono_digital_window_appear_handler;
+  chrono_digital_window_handlers.disappear = chrono_digital_window_disappear_handler;
+  chrono_digital_window_handlers.unload = chrono_digital_window_unload_handler;
+  window_set_window_handlers(chrono_digital_window, chrono_digital_window_handlers);
+
 #endif  // MAKE_CHRONOGRAPH
 
   init_battery_gauge(window_layer, BATTERY_GAUGE_X, BATTERY_GAUGE_Y, BATTERY_GAUGE_ON_BLACK, false);
@@ -915,14 +1172,7 @@ void handle_init() {
     }
   }
 
-#ifdef MAKE_CHRONOGRAPH
-  if (chrono_data.running) {
-    window_set_click_config_provider(window, &started_click_config_provider);
-  } else {
-    window_set_click_config_provider(window, &stopped_click_config_provider);
-  }
-#endif  // MAKE_CHRONOGRAPH
-
+  update_chrono_laps_time();
   apply_config();
 }
 
@@ -931,7 +1181,7 @@ void handle_deinit() {
   save_chrono_data();
   tick_timer_service_unsubscribe();
 
-  window_stack_pop_all(false);  // Not sure if this is needed?
+  window_stack_pop_all(false);
   bitmap_layer_destroy(clock_face_layer);
   gbitmap_destroy(clock_face_bitmap);
 
@@ -941,6 +1191,8 @@ void handle_deinit() {
   gbitmap_destroy(chrono_dial_tenths_bitmap_black);
   gbitmap_destroy(chrono_dial_hours_bitmap_white);
   gbitmap_destroy(chrono_dial_hours_bitmap_black);
+
+  window_destroy(chrono_digital_window);
 #endif  // MAKE_CHRONOGRAPH
 
   deinit_battery_gauge();

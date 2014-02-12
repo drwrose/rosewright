@@ -2,16 +2,14 @@
 #define HAND_TABLE_H
 
 struct BitmapHandTableRow {
-  int image_id;
-  int mask_id;
-  int cx;
-  int cy;
-  int flip_x;
-  int flip_y;
-  int paint_black;
+  unsigned char image_id;
+  unsigned char mask_id;
+  signed char cx;
+  signed char cy;
+  unsigned char flip_x;
+  unsigned char flip_y;
+  unsigned char paint_black;
 };
-
-
 
 struct VectorHandGroup {
   int outline;
