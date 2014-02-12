@@ -65,18 +65,18 @@ Layer *date_layer; // numeric date of the month
 // This structure keeps track of the things that change on the visible
 // watch face and their current state.
 struct HandPlacement {
-  int hour_hand_index;
-  int minute_hand_index;
-  int second_hand_index;
-  int chrono_minute_hand_index;
-  int chrono_second_hand_index;
-  int chrono_tenth_hand_index;
-  int day_index;
-  int date_value;
+  unsigned int hour_hand_index;
+  unsigned int minute_hand_index;
+  unsigned int second_hand_index;
+  unsigned int chrono_minute_hand_index;
+  unsigned int chrono_second_hand_index;
+  unsigned int chrono_tenth_hand_index;
+  unsigned int day_index;
+  unsigned int date_value;
 
   // Not really a hand placement, but this is used to keep track of
   // whether we have buzzed for the top of the hour or not.
-  int hour_buzzer;
+  unsigned int hour_buzzer;
 };
 
 struct HandPlacement current_placement;
@@ -104,8 +104,8 @@ STACKING_ORDER_LIST
 };
 
 typedef struct {
-  int start_ms;              // consulted if chrono_data.running && !chrono_data.lap_paused
-  int hold_ms;               // consulted if !chrono_data.running || chrono_data.lap_paused
+  unsigned int start_ms;              // consulted if chrono_data.running && !chrono_data.lap_paused
+  unsigned int hold_ms;               // consulted if !chrono_data.running || chrono_data.lap_paused
   unsigned char running;              // the chronograph has been started
   unsigned char lap_paused;           // the "lap" button has been pressed
   int laps[CHRONO_MAX_LAPS];
@@ -114,13 +114,13 @@ typedef struct {
 ChronoData chrono_data = { false, false, 0, 0, { 0, 0, 0, 0 } };
 
 // Returns the number of milliseconds since midnight.
-int get_time_ms(struct tm *time) {
+unsigned int get_time_ms(struct tm *time) {
   time_t s;
   uint16_t ms;
-  int result;
+  unsigned int result;
 
   time_ms(&s, &ms);
-  result = (s % SECONDS_PER_DAY) * 1000 + ms;
+  result = (unsigned int)((s % SECONDS_PER_DAY) * 1000 + ms);
 
 #ifdef FAST_TIME
   if (time != NULL) {
@@ -136,8 +136,8 @@ int get_time_ms(struct tm *time) {
 // Returns the time showing on the chronograph, given the ms returned
 // by get_time_ms().  Returns the current lap time if the lap is
 // paused.
-int get_chrono_ms(int ms) {
-  int chrono_ms;
+unsigned int get_chrono_ms(unsigned int ms) {
+  unsigned int chrono_ms;
   if (chrono_data.running && !chrono_data.lap_paused) {
     // The chronograph is running.  Show the active elapsed time.
     chrono_ms = (ms - chrono_data.start_ms + MS_PER_DAY) % MS_PER_DAY;
@@ -151,8 +151,8 @@ int get_chrono_ms(int ms) {
 
 // Returns the time showing on the chronograph, given the ms returned
 // by get_time_ms().  Never returns the current lap time.
-int get_chrono_ms_no_lap(int ms) {
-  int chrono_ms;
+unsigned int get_chrono_ms_no_lap(int ms) {
+  unsigned int chrono_ms;
   if (chrono_data.running) {
     // The chronograph is running.  Show the active elapsed time.
     chrono_ms = (ms - chrono_data.start_ms + MS_PER_DAY) % MS_PER_DAY;
@@ -167,7 +167,7 @@ int get_chrono_ms_no_lap(int ms) {
 // Determines the specific hand bitmaps that should be displayed based
 // on the current time.
 void compute_hands(struct tm *time, struct HandPlacement *placement) {
-  int ms;
+  unsigned int ms;
 
   ms = get_time_ms(time);
 
@@ -191,7 +191,7 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 
 #ifdef MAKE_CHRONOGRAPH
   {
-    int chrono_ms = get_chrono_ms(ms);
+    unsigned int chrono_ms = get_chrono_ms(ms);
 
     bool chrono_dial_wants_tenths = true;
     switch (config.chrono_dial) {
@@ -229,6 +229,7 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 
 #ifdef SHOW_CHRONO_SECOND_HAND
     placement->chrono_second_hand_index = ((NUM_STEPS_CHRONO_SECOND * chrono_ms) / (60 * 1000)) % NUM_STEPS_CHRONO_SECOND;
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "computed chrono_second_hand = %d from %d", placement->chrono_second_hand_index, chrono_ms);
 #endif  // SHOW_CHRONO_SECOND_HAND
 
 #ifdef SHOW_CHRONO_TENTH_HAND
@@ -912,18 +913,18 @@ void update_chrono_laps_time() {
   int i;
 
   for (i = 0; i < CHRONO_MAX_LAPS; ++i) {
-    int chrono_ms = chrono_data.laps[i];
-    int chrono_h = chrono_ms / (1000 * 60 * 60);
-    int chrono_m = (chrono_ms / (1000 * 60)) % 60;
-    int chrono_s = (chrono_ms / (1000)) % 60;
-    int chrono_t = (chrono_ms / (100)) % 10;
+    unsigned int chrono_ms = chrono_data.laps[i];
+    unsigned int chrono_h = chrono_ms / (1000 * 60 * 60);
+    unsigned int chrono_m = (chrono_ms / (1000 * 60)) % 60;
+    unsigned int chrono_s = (chrono_ms / (1000)) % 60;
+    unsigned int chrono_t = (chrono_ms / (100)) % 10;
 
     if (chrono_ms == 0) {
       // No data: empty string.
       chrono_laps_buffer[i][0] = '\0';
     } else {
       // Real data: formatted string.
-      snprintf(chrono_laps_buffer[i], CHRONO_DIGITAL_BUFFER_SIZE, "%d:%02d:%02d.%d", 
+      snprintf(chrono_laps_buffer[i], CHRONO_DIGITAL_BUFFER_SIZE, "%u:%02u:%02u.%u", 
 	       chrono_h, chrono_m, chrono_s, chrono_t);
     }
     if (chrono_digital_laps_layer[i] != NULL) {
@@ -942,14 +943,14 @@ void record_chrono_lap(int chrono_ms) {
 }
 
 void update_chrono_current_time() {
-  int ms = get_time_ms(NULL);
-  int chrono_ms = get_chrono_ms_no_lap(ms);
-  int chrono_h = chrono_ms / (1000 * 60 * 60);
-  int chrono_m = (chrono_ms / (1000 * 60)) % 60;
-  int chrono_s = (chrono_ms / (1000)) % 60;
-  int chrono_t = (chrono_ms / (100)) % 10;
+  unsigned int ms = get_time_ms(NULL);
+  unsigned int chrono_ms = get_chrono_ms_no_lap(ms);
+  unsigned int chrono_h = chrono_ms / (1000 * 60 * 60);
+  unsigned int chrono_m = (chrono_ms / (1000 * 60)) % 60;
+  unsigned int chrono_s = (chrono_ms / (1000)) % 60;
+  unsigned int chrono_t = (chrono_ms / (100)) % 10;
   
-  snprintf(chrono_current_buffer, CHRONO_DIGITAL_BUFFER_SIZE, "%d:%02d:%02d.%d", 
+  snprintf(chrono_current_buffer, CHRONO_DIGITAL_BUFFER_SIZE, "%u:%02u:%02u.%u", 
 	   chrono_h, chrono_m, chrono_s, chrono_t);
   if (chrono_digital_current_layer != NULL) {
     layer_mark_dirty((Layer *)chrono_digital_current_layer);
