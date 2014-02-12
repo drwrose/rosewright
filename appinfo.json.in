@@ -15,7 +15,8 @@
     "second_hand": 2,
     "hour_buzzer": 3,
     "draw_mode": 4,
-    "chrono_dial": 5
+    "chrono_dial": 5,
+    "sweep_seconds": 6
   },
   "resources": {
   "media": [

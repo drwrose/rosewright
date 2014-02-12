@@ -62,6 +62,7 @@
 #define SHOW_SECOND_HAND %(showSecondHand)s
 #define SECOND_HAND_X %(secondHandX)s
 #define SECOND_HAND_Y %(secondHandY)s
+#define ENABLE_SWEEP_SECONDS %(enableSweepSeconds)s
 
 #define ENABLE_HOUR_BUZZER %(enableHourBuzzer)s
 

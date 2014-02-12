@@ -1,6 +1,7 @@
 // This name is displayed on the configuration title card.
 var watch_name = "%(watchName)s";
 var show_chrono_dial = %(showChronoDial)s;
+var enable_sweep_seconds = %(enableSweepSeconds)s;
 
 // Define the initial config default values.  These defaults are used
 // only if the Pebble is connected to the phone at the time of launch;
@@ -11,6 +12,7 @@ var default_second_hand = %(showSecondHand)s;
 var default_hour_buzzer = %(enableHourBuzzer)s;
 var default_draw_mode = 0;
 var default_chrono_dial = 1;
+var default_sweep_seconds = %(enableSweepSeconds)s;
 
 var keep_battery_gauge = localStorage.getItem(watch_name + ":keep_battery_gauge");
 if (!keep_battery_gauge) {
@@ -48,6 +50,12 @@ if (!chrono_dial) {
 }
 chrono_dial = parseInt(chrono_dial);
 
+var sweep_seconds = localStorage.getItem(watch_name + ":sweep_seconds");
+if (!sweep_seconds) {
+    sweep_seconds = default_sweep_seconds;
+}
+sweep_seconds = parseInt(sweep_seconds);
+
 Pebble.addEventListener("ready", function() {
     console.log("ready");
     console.log("   keep_battery_gauge: " + keep_battery_gauge);
@@ -56,6 +64,7 @@ Pebble.addEventListener("ready", function() {
     console.log("   hour_buzzer: " + hour_buzzer);
     console.log("   draw_mode: " + draw_mode);
     console.log("   chrono_dial: " + chrono_dial);
+    console.log("   sweep_seconds: " + sweep_seconds);
 
 	// At startup, send the current configuration to the Pebble--the
 	// phone storage keeps the authoritative state.  We delay by 1
@@ -69,6 +78,7 @@ Pebble.addEventListener("ready", function() {
 			'hour_buzzer' : hour_buzzer,
 			'draw_mode' : draw_mode,
 			'chrono_dial' : chrono_dial,
+			'sweep_seconds' : sweep_seconds,
 		};
    	        console.log("sending init config: " + JSON.stringify(configuration));
 		Pebble.sendAppMessage(configuration);
@@ -82,6 +92,9 @@ Pebble.addEventListener("showConfiguration", function(e) {
     var url = "http://www.ddrose.com/pebble/rosewright_2_3_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&keep_battery_gauge=" + keep_battery_gauge + "&keep_bluetooth_indicator=" + keep_bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&draw_mode=" + draw_mode;
     if (show_chrono_dial) {
 	url += "&chrono_dial=" + chrono_dial
+    }
+    if (enable_sweep_seconds) {
+	url += "&sweep_seconds=" + sweep_seconds
     }
     console.log("showConfiguration: " + url);
     var result = Pebble.openURL(url);
@@ -115,5 +128,8 @@ Pebble.addEventListener("webviewclosed", function(e) {
 	
 	chrono_dial = configuration["chrono_dial"];
 	localStorage.setItem(watch_name + ":chrono_dial", chrono_dial);
+	
+	sweep_seconds = configuration["sweep_seconds"];
+	localStorage.setItem(watch_name + ":sweep_seconds", sweep_seconds);
     }
 });

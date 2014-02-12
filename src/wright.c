@@ -665,7 +665,10 @@ void update_hands(struct tm *time) {
 
   // Make sure the sweep timer is fast enough to capture the second
   // hand.
-  sweep_timer_ms = sweep_seconds_ms;
+  sweep_timer_ms = 1000;
+  if (config.sweep_seconds) {
+    sweep_timer_ms = sweep_seconds_ms;
+  }
 
 #ifdef MAKE_CHRONOGRAPH
 
@@ -690,11 +693,13 @@ void update_hands(struct tm *time) {
   }
 #endif  // SHOW_CHRONO_TENTH_HAND
 
-  if (chrono_data.running && !chrono_data.lap_paused && !chrono_digital_window_showing) {
-    // With the chronograph running, the sweep timer must be fast
-    // enough to capture the chrono second hand.
-    if (sweep_chrono_seconds_ms < sweep_timer_ms) {
-      sweep_timer_ms = sweep_chrono_seconds_ms;
+  if (config.sweep_seconds) {
+    if (chrono_data.running && !chrono_data.lap_paused && !chrono_digital_window_showing) {
+      // With the chronograph running, the sweep timer must be fast
+      // enough to capture the chrono second hand.
+      if (sweep_chrono_seconds_ms < sweep_timer_ms) {
+        sweep_timer_ms = sweep_chrono_seconds_ms;
+      }
     }
   }
 
@@ -772,8 +777,10 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, void *context) {
     // start, from the currently showing Chronograph time.
     chrono_data.start_ms = ms - chrono_data.hold_ms;
     chrono_data.running = true;
-    if (sweep_chrono_seconds_ms < sweep_timer_ms) {
-      sweep_timer_ms = sweep_chrono_seconds_ms;
+    if (config.sweep_seconds) {
+      if (sweep_chrono_seconds_ms < sweep_timer_ms) {
+        sweep_timer_ms = sweep_chrono_seconds_ms;
+      }
     }
     vibes_enqueue_custom_pattern(tap);
     update_hands(NULL);

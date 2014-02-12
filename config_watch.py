@@ -270,8 +270,13 @@ numSteps = {
     'minute' : 60,
     'second' : 60,
     'chrono_minute' : 30,
-    'chrono_second' : 180,
+    'chrono_second' : 60,
     'chrono_tenth' : 24,
+    }
+
+numStepsSweep = {
+    'second' : 180,
+    'chrono_second' : 180,
     }
 
 # The threshold level for dropping to 1-bit images.
@@ -387,6 +392,23 @@ def makeVectorHands(generatedTable, hand, groupList):
 
     return resourceStr
 
+def getNumSteps(hand):
+    # Get the number of subdivisions for the hand.
+    numStepsHand = numSteps[hand]
+
+    # If we're building support for sweep-second hands, we might need
+    # more subdivisions.
+    if supportSweep:
+        if makeChronograph:
+            if hand == 'chrono_second':
+                numStepsHand = numStepsSweep[hand]
+        else:
+            if hand == 'second':
+                numStepsHand = numStepsSweep[hand]
+
+    return numStepsHand
+                
+
 def makeBitmapHands(generatedTable, hand, sourceFilename, colorMode, asymmetric, pivot, scale):
     resourceStr = ''
 
@@ -443,10 +465,11 @@ def makeBitmapHands(generatedTable, hand, sourceFilename, colorMode, asymmetric,
         largeMask = PIL.Image.new('L', size, 0)
         largeMask.paste(sourceMask, (center[0] - pivot[0], center[1] - pivot[1]))
 
-    for i in range(numSteps[hand]):
+    numStepsHand = getNumSteps(hand)
+    for i in range(numStepsHand):
         flip_x = False
         flip_y = False
-        angle = i * 360.0 / numSteps[hand]
+        angle = i * 360.0 / numStepsHand
 
         # Check for quadrant symmetry, an easy resource-memory
         # optimization.  Instead of generating bitmaps for all 360
@@ -466,16 +489,16 @@ def makeBitmapHands(generatedTable, hand, sourceFilename, colorMode, asymmetric,
                 if angle > 180:
                     # If we're in the right half of the circle, flip
                     # over from the left.
-                    i = (numSteps[hand] - i)
+                    i = (numStepsHand - i)
                     flip_x = True
-                    angle = i * 360.0 / numSteps[hand]
+                    angle = i * 360.0 / numStepsHand
 
                 if angle > 90 and angle < 270:
                     # If we're in the bottom half of the circle, flip
                     # over from the top.
-                    i = (numSteps[hand] / 2 - i) % numSteps[hand]
+                    i = (numStepsHand / 2 - i) % numStepsHand
                     flip_y = True
-                    angle = i * 360.0 / numSteps[hand]
+                    angle = i * 360.0 / numStepsHand
         else:
             # If the hand is asymmetric, then it's important not
             # to flip it an odd number of times.  But we can still
@@ -483,10 +506,10 @@ def makeBitmapHands(generatedTable, hand, sourceFilename, colorMode, asymmetric,
             # 180-degree rotation), and this means we only need to
             # generate the right half, and rotate into the left.
             if angle >= 180:
-                i -= (numSteps[hand] / 2)
+                i -= (numStepsHand / 2)
                 flip_x = True
                 flip_y = True
-                angle = i * 360.0 / numSteps[hand]
+                angle = i * 360.0 / numStepsHand
 
         symbolName = '%s_%s' % (hand.upper(), i)
         symbolMaskName = symbolName
@@ -651,6 +674,7 @@ def configWatch():
         'indicatorsAlways' : int(indicatorsAlways),
         'showSecondHand' : int(showSecondHand and not suppressSecondHand),
         'enableHourBuzzer' : int(enableHourBuzzer),
+        'enableSweepSeconds' : int(showSecondHand and not suppressSecondHand and supportSweep),
         }
 
     configIn = open('%s/generated_config.h.in' % (resourcesDir), 'r').read()
@@ -674,9 +698,9 @@ def configWatch():
         'persistKey' : 0x5151 + uuId[-1],
         'numStepsHour' : numSteps['hour'],
         'numStepsMinute' : numSteps['minute'],
-        'numStepsSecond' : numSteps['second'],
+        'numStepsSecond' : getNumSteps('second'),
         'numStepsChronoMinute' : numSteps['chrono_minute'],
-        'numStepsChronoSecond' : numSteps['chrono_second'],
+        'numStepsChronoSecond' : getNumSteps('chrono_second'),
         'numStepsChronoTenth' : numSteps['chrono_tenth'],
         'hourHandX' : cxd.get('hour', centerX),
         'hourHandY' : cyd.get('hour', centerY),
@@ -712,6 +736,7 @@ def configWatch():
         'batteryGaugeY' : battery and battery[1],
         'batteryGaugeOnBlack' : int(bool(battery and (battery[2].lower() == 'w'))),
         'showSecondHand' : int(showSecondHand and not suppressSecondHand),
+        'enableSweepSeconds' : int(showSecondHand and not suppressSecondHand and supportSweep),
         'enableHourBuzzer' : int(enableHourBuzzer),
         'makeChronograph' : int(makeChronograph and showChronoSecondHand),
         'showChronoMinuteHand' : int(showChronoMinuteHand),
@@ -723,7 +748,7 @@ def configWatch():
 
 # Main.
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:SbIcidl:h')
+    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:SbIciwdl:h')
 except getopt.error, msg:
     usage(1, msg)
 
@@ -731,6 +756,7 @@ watchStyle = None
 handStyle = None
 faceStyle = None
 invertHands = False
+supportSweep = False
 compileDebugging = False
 localeName = ''
 for opt, arg in opts:
@@ -759,6 +785,8 @@ for opt, arg in opts:
         makeChronograph = True
     elif opt == '-i':
         invertHands = True
+    elif opt == '-w':
+        supportSweep = True
     elif opt == '-d':
         compileDebugging = True
     elif opt == '-l':

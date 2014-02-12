@@ -141,6 +141,27 @@
 </script>
             </select>
         </div>
+
+<script>
+  if ($.url().param("sweep_seconds") == undefined) {
+     document.write('<div data-role="fieldcontain" style="display: none">')
+  } else {
+     document.write('<div data-role="fieldcontain">')
+  }	   
+</script>
+            <label for="sweep_seconds">
+                Smooth-sweep seconds
+            </label>
+            <select name="sweep_seconds" id="sweep_seconds" data-theme="" data-role="slider">
+<script>
+  if ($.url().param("sweep_seconds") == "1") {
+     document.write('<option value="0">Off</option><option value="1" selected>On</option>');
+  } else {
+     document.write('<option value="0" selected>Off</option><option value="1">On</option>');
+  }
+</script>
+            </select>
+        </div>
         
     </div>
 </div>
@@ -154,6 +175,7 @@ function saveOptions() {
     'hour_buzzer': parseInt($("#hour_buzzer").val(), 10),
     'draw_mode': parseInt($("#draw_mode").val(), 10),
     'chrono_dial': parseInt($("#chrono_dial").val(), 10),
+    'sweep_seconds': parseInt($("#sweep_seconds").val(), 10),
   }
   return options;
 }

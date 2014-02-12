@@ -12,6 +12,7 @@ typedef enum {
   CK_hour_buzzer = 3,
   CK_draw_mode = 4,
   CK_chrono_dial = 5,
+  CK_sweep_seconds = 6,
 } ConfigKey;
 
 typedef enum {
@@ -28,6 +29,7 @@ typedef struct {
   unsigned char hour_buzzer;
   unsigned char draw_mode;
   unsigned char chrono_dial;
+  unsigned char sweep_seconds;
 } __attribute__((__packed__)) ConfigOptions;
 
 extern ConfigOptions config;
