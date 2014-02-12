@@ -619,13 +619,13 @@ void chrono_digital_current_layer_update_callback(Layer *me, GContext *ctx) {
 
 #ifdef SHOW_DAY_CARD
 void day_layer_update_callback(Layer *me, GContext *ctx) {
-  draw_card(me, ctx, weekday_names[current_placement.day_index], DAY_CARD_ON_BLACK, DAY_CARD_BOLD);
+  draw_card(me, ctx, weekday_names[current_placement.day_index], (DAY_CARD_ON_BLACK) ^ config.draw_mode, DAY_CARD_BOLD);
 }
 #endif  // SHOW_DAY_CARD
 
 #ifdef SHOW_DATE_CARD
 void date_layer_update_callback(Layer *me, GContext *ctx) {
-  draw_card(me, ctx, quick_itoa(current_placement.date_value), DATE_CARD_ON_BLACK, DATE_CARD_BOLD);
+  draw_card(me, ctx, quick_itoa(current_placement.date_value), (DATE_CARD_ON_BLACK) ^ config.draw_mode, DATE_CARD_BOLD);
 }
 #endif  // SHOW_DATE_CARD
 
@@ -868,8 +868,8 @@ void window_unload_handler(struct Window *window) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "main window unloads");
 }
 
-#ifdef MAKE_CHRONOGRAPH
 void update_chrono_laps_time() {
+#ifdef MAKE_CHRONOGRAPH
   int i;
 
   for (i = 0; i < CHRONO_MAX_LAPS; ++i) {
@@ -891,8 +891,10 @@ void update_chrono_laps_time() {
       layer_mark_dirty((Layer *)chrono_digital_laps_layer[i]);
     }
   }
+#endif  // MAKE_CHRONOGRAPH
 }
 
+#ifdef MAKE_CHRONOGRAPH
 void record_chrono_lap(int chrono_ms) {
   // Lose the first one.
   memmove(&chrono_data.laps[0], &chrono_data.laps[1], sizeof(chrono_data.laps[0]) * CHRONO_MAX_LAPS - 1);
@@ -1027,7 +1029,7 @@ void
 load_chrono_data() {
 #ifdef MAKE_CHRONOGRAPH
   ChronoData local_data;
-  if (persist_read_data(PERSIST_KEY + 1, &local_data, sizeof(local_data)) == sizeof(local_data)) {
+  if (persist_read_data(PERSIST_KEY + 0x100, &local_data, sizeof(local_data)) == sizeof(local_data)) {
     chrono_data = local_data;
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Loaded chrono_data");
     update_chrono_laps_time();
@@ -1038,12 +1040,14 @@ load_chrono_data() {
 }
 
 void save_chrono_data() {
-  int wrote = persist_write_data(PERSIST_KEY + 1, &chrono_data, sizeof(chrono_data));
+#ifdef MAKE_CHRONOGRAPH
+  int wrote = persist_write_data(PERSIST_KEY + 0x100, &chrono_data, sizeof(chrono_data));
   if (wrote == sizeof(chrono_data)) {
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Saved chrono_data (%d, %d)", PERSIST_KEY + 1, sizeof(chrono_data));
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Saved chrono_data (%d, %d)", PERSIST_KEY + 0x100, sizeof(chrono_data));
   } else {
-    app_log(APP_LOG_LEVEL_ERROR, __FILE__, __LINE__, "Error saving chrono_data (%d, %d): %d", PERSIST_KEY + 1, sizeof(chrono_data), wrote);
+    app_log(APP_LOG_LEVEL_ERROR, __FILE__, __LINE__, "Error saving chrono_data (%d, %d): %d", PERSIST_KEY + 0x100, sizeof(chrono_data), wrote);
   }
+#endif  // MAKE_CHRONOGRAPH
 }
 
 void handle_init() {
