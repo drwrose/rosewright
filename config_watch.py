@@ -270,7 +270,7 @@ numSteps = {
     'minute' : 60,
     'second' : 60,
     'chrono_minute' : 30,
-    'chrono_second' : 60,
+    'chrono_second' : 180,
     'chrono_tenth' : 48,
     }
 

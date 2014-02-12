@@ -38,11 +38,18 @@ AppTimer *chrono_digital_timer = NULL;
 char chrono_current_buffer[CHRONO_DIGITAL_BUFFER_SIZE];
 char chrono_laps_buffer[CHRONO_MAX_LAPS][CHRONO_DIGITAL_BUFFER_SIZE] = { "ab", "cd", "ef", "gh" };
 
-#define CHRONO_DIGITAL_TICK_MS 10  // Every 0.1 seconds
+#define CHRONO_DIGITAL_TICK_MS 100 // Every 0.1 seconds
 
 // True if we're currently showing tenths, false if we're currently
 // showing hours, in the chrono subdial.
 bool chrono_dial_shows_tenths = true;
+
+// Triggered at regular intervals to implement sweep seconds.
+AppTimer *sweep_timer = NULL;
+int sweep_timer_ms = 1000;
+
+int sweep_seconds_ms = 60 * 1000 / NUM_STEPS_SECOND;
+int sweep_chrono_seconds_ms = 60 * 1000 / NUM_STEPS_CHRONO_SECOND;
 
 Layer *hour_layer;
 Layer *minute_layer;
@@ -655,6 +662,10 @@ void update_hands(struct tm *time) {
     }
   }
 
+  // Make sure the sweep timer is fast enough to capture the second
+  // hand.
+  sweep_timer_ms = sweep_seconds_ms;
+
 #ifdef MAKE_CHRONOGRAPH
 
 #ifdef SHOW_CHRONO_MINUTE_HAND
@@ -678,6 +689,14 @@ void update_hands(struct tm *time) {
   }
 #endif  // SHOW_CHRONO_TENTH_HAND
 
+  if (chrono_data.running && !chrono_data.lap_paused && !chrono_digital_window_showing) {
+    // With the chronograph running, the sweep timer must be fast
+    // enough to capture the chrono second hand.
+    if (sweep_chrono_seconds_ms < sweep_timer_ms) {
+      sweep_timer_ms = sweep_chrono_seconds_ms;
+    }
+  }
+
 #endif  // MAKE_CHRONOGRAPH
 
 #ifdef SHOW_DAY_CARD
@@ -695,9 +714,29 @@ void update_hands(struct tm *time) {
 #endif  // SHOW_DATE_CARD
 }
 
+// Triggered at sweep_timer_ms intervals to run the sweep-second hand.
+void handle_sweep(void *data) {
+  sweep_timer = NULL;  // When the timer is handled, it is implicitly canceled.
+  if (sweep_timer_ms < 1000) {
+    update_hands(NULL);
+    sweep_timer = app_timer_register(sweep_timer_ms, &handle_sweep, 0);
+  }
+}
+
+void reset_sweep() {
+  if (sweep_timer != NULL) {
+    app_timer_cancel(sweep_timer);
+    sweep_timer = NULL;
+  }
+  if (sweep_timer_ms < 1000) {
+    sweep_timer = app_timer_register(sweep_timer_ms, &handle_sweep, 0);
+  }
+}
+
 // Compute new hand positions once a minute (or once a second).
 void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
   update_hands(tick_time);
+  reset_sweep();
 }
 
 // Forward references.
@@ -732,6 +771,9 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, void *context) {
     // start, from the currently showing Chronograph time.
     chrono_data.start_ms = ms - chrono_data.hold_ms;
     chrono_data.running = true;
+    if (sweep_chrono_seconds_ms < sweep_timer_ms) {
+      sweep_timer_ms = sweep_chrono_seconds_ms;
+    }
     vibes_enqueue_custom_pattern(tap);
     update_hands(NULL);
     apply_config();
