@@ -531,6 +531,7 @@ void chrono_minute_layer_update_callback(Layer *me, GContext *ctx) {
 #ifdef SHOW_CHRONO_SECOND_HAND
 void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_second_hand = %d of %d", current_placement.chrono_second_hand_index, NUM_STEPS_CHRONO_SECOND);
 
   if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
 #ifdef VECTOR_CHRONO_SECOND_HAND
@@ -612,18 +613,6 @@ void chrono_dial_layer_update_callback(Layer *me, GContext *ctx) {
   }
 }
 #endif  // MAKE_CHRONOGRAPH
-
-/*
-#ifdef MAKE_CHRONOGRAPH
-void chrono_digital_current_layer_update_callback(Layer *me, GContext *ctx) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_digital_current_layer_update_callback: %p, %p", me, ctx);
-
-  GRect destination = layer_get_bounds(me);
-  destination.origin.x = 0;
-  destination.origin.y = 0;
-}
-#endif  // MAKE_CHRONOGRAPH
-*/
 
 #ifdef SHOW_DAY_CARD
 void day_layer_update_callback(Layer *me, GContext *ctx) {

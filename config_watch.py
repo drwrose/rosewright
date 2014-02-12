@@ -422,7 +422,7 @@ def makeBitmapHands(generatedTable, hand, sourceFilename, colorMode, asymmetric,
     handTableEntry = """  { RESOURCE_ID_%(symbolName)s, RESOURCE_ID_%(symbolMaskName)s, %(cx)s, %(cy)s, %(flip_x)s, %(flip_y)s, %(paintBlack)s },"""
     
     print >> generatedTable, "#define BITMAP_%s_HAND 1" % (hand.upper())
-    print >> generatedTable, "struct BitmapHandTableRow %s_hand_bitmap_table[] = {" % (hand)
+    print >> generatedTable, "struct BitmapHandTableRow %s_hand_bitmap_table[NUM_STEPS_%s] = {" % (hand, hand.upper())
 
     source = PIL.Image.open('%s/clock_hands/%s' % (resourcesDir, sourceFilename))
 
