@@ -271,7 +271,7 @@ numSteps = {
     'second' : 60,
     'chrono_minute' : 30,
     'chrono_second' : 180,
-    'chrono_tenth' : 48,
+    'chrono_tenth' : 24,
     }
 
 # The threshold level for dropping to 1-bit images.

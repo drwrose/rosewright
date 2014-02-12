@@ -8,6 +8,7 @@
 #include "config_options.h"
 
 #define SECONDS_PER_DAY 86400
+#define SECONDS_PER_HOUR 3600
 #define MS_PER_DAY (SECONDS_PER_DAY * 1000)
 
 #define SCREEN_WIDTH 144
@@ -170,8 +171,8 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 
   ms = get_time_ms(time);
 
-  placement->hour_hand_index = ((NUM_STEPS_HOUR * ms) / (3600 * 12 * 1000)) % NUM_STEPS_HOUR;
-  placement->minute_hand_index = ((NUM_STEPS_MINUTE * ms) / (3600 * 1000)) % NUM_STEPS_MINUTE;
+  placement->hour_hand_index = ((NUM_STEPS_HOUR * ms) / (SECONDS_PER_HOUR * 12 * 1000)) % NUM_STEPS_HOUR;
+  placement->minute_hand_index = ((NUM_STEPS_MINUTE * ms) / (SECONDS_PER_HOUR * 1000)) % NUM_STEPS_MINUTE;
   placement->second_hand_index = ((NUM_STEPS_SECOND * ms) / (60 * 1000)) % NUM_STEPS_SECOND;
 
 #ifdef SHOW_DAY_CARD
@@ -186,7 +187,7 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
   }
 #endif  // SHOW_DATE_CARD
 
-  placement->hour_buzzer = (ms / (3600 * 1000)) % 24;
+  placement->hour_buzzer = (ms / (SECONDS_PER_HOUR * 1000)) % 24;
 
 #ifdef MAKE_CHRONOGRAPH
   {
@@ -242,8 +243,8 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 	placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * chrono_ms) / (100)) % NUM_STEPS_CHRONO_TENTH;
       }
     } else {
-      // Drawing hours.
-      placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * chrono_ms) / (86400 * 1000)) % NUM_STEPS_CHRONO_TENTH;
+      // Drawing hours.  12-hour scale.
+      placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * chrono_ms) / (12 * SECONDS_PER_HOUR * 1000)) % NUM_STEPS_CHRONO_TENTH;
     }
 #endif  // SHOW_CHRONO_TENTH_HAND
 
