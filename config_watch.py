@@ -674,7 +674,7 @@ def configWatch():
         'indicatorsAlways' : int(indicatorsAlways),
         'showSecondHand' : int(showSecondHand and not suppressSecondHand),
         'enableHourBuzzer' : int(enableHourBuzzer),
-        'enableSweepSeconds' : int(showSecondHand and not suppressSecondHand and supportSweep),
+        'enableSweepSeconds' : int(showSecondHand and supportSweep),
         }
 
     configIn = open('%s/generated_config.h.in' % (resourcesDir), 'r').read()
@@ -736,7 +736,7 @@ def configWatch():
         'batteryGaugeY' : battery and battery[1],
         'batteryGaugeOnBlack' : int(bool(battery and (battery[2].lower() == 'w'))),
         'showSecondHand' : int(showSecondHand and not suppressSecondHand),
-        'enableSweepSeconds' : int(showSecondHand and not suppressSecondHand and supportSweep),
+        'enableSweepSeconds' : int(showSecondHand and supportSweep),
         'enableHourBuzzer' : int(enableHourBuzzer),
         'makeChronograph' : int(makeChronograph and showChronoSecondHand),
         'showChronoMinuteHand' : int(showChronoMinuteHand),

@@ -37,11 +37,12 @@ void load_config() {
   init_default_options();
 
   ConfigOptions local_config;
-  if (persist_read_data(PERSIST_KEY, &local_config, sizeof(local_config)) == sizeof(local_config)) {
+  int read_size = persist_read_data(PERSIST_KEY, &local_config, sizeof(local_config));
+  if (read_size == sizeof(local_config)) {
     config = local_config;
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Loaded config: %s", show_config());
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Loaded config (%d, %d): %s", PERSIST_KEY, sizeof(config), show_config());
   } else {
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Wrong previous config size or no previous config.");
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "No previous config (%d, %d): %d", PERSIST_KEY, sizeof(config), read_size);
   }
 }
 

@@ -76,6 +76,27 @@
             </select>
         </div>
 
+<script>
+  if ($.url().param("sweep_seconds") == undefined) {
+     document.write('<div data-role="fieldcontain" style="display: none">')
+  } else {
+     document.write('<div data-role="fieldcontain">')
+  }	   
+</script>
+            <label for="sweep_seconds">
+                Smooth-sweep seconds (heavy battery use)
+            </label>
+            <select name="sweep_seconds" id="sweep_seconds" data-theme="" data-role="slider">
+<script>
+  if ($.url().param("sweep_seconds") == "1") {
+     document.write('<option value="0">Off</option><option value="1" selected>On</option>');
+  } else {
+     document.write('<option value="0" selected>Off</option><option value="1">On</option>');
+  }
+</script>
+            </select>
+        </div>
+
         <div data-role="fieldcontain">
             <label for="hour_buzzer">
                Vibrate at each hour
@@ -114,7 +135,7 @@
   }	   
 </script>
             <label for="chrono_dial">
-                Bottom chrono dial
+                Bottom chrono dial shows
             </label>
             <select name="chrono_dial" id="chrono_dial" data-theme="" data-role="select">
 <script>
@@ -134,30 +155,9 @@
      document.write('<option value="2">Hours</option>');
   }
   if ($.url().param("chrono_dial") == "3") {
-     document.write('<option value="3" selected>Dual</option>');
+     document.write('<option value="3" selected>Dual (tenths, then hours)</option>');
   } else {
-     document.write('<option value="3">Dual</option>');
-  }
-</script>
-            </select>
-        </div>
-
-<script>
-  if ($.url().param("sweep_seconds") == undefined) {
-     document.write('<div data-role="fieldcontain" style="display: none">')
-  } else {
-     document.write('<div data-role="fieldcontain">')
-  }	   
-</script>
-            <label for="sweep_seconds">
-                Smooth-sweep seconds
-            </label>
-            <select name="sweep_seconds" id="sweep_seconds" data-theme="" data-role="slider">
-<script>
-  if ($.url().param("sweep_seconds") == "1") {
-     document.write('<option value="0">Off</option><option value="1" selected>On</option>');
-  } else {
-     document.write('<option value="0" selected>Off</option><option value="1">On</option>');
+     document.write('<option value="3">Dual (tenths, then hours)</option>');
   }
 </script>
             </select>

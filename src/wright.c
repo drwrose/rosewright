@@ -31,6 +31,7 @@ Layer *chrono_dial_layer;
 // This window is pushed on top of the chrono dial to display the
 // readout in digital form for ease of recording.
 Window *chrono_digital_window;
+InverterLayer *chrono_digital_line_layer = NULL;
 TextLayer *chrono_digital_current_layer = NULL;
 TextLayer *chrono_digital_laps_layer[CHRONO_MAX_LAPS];
 bool chrono_digital_window_showing = false;
@@ -151,7 +152,7 @@ unsigned int get_chrono_ms(unsigned int ms) {
 
 // Returns the time showing on the chronograph, given the ms returned
 // by get_time_ms().  Never returns the current lap time.
-unsigned int get_chrono_ms_no_lap(int ms) {
+unsigned int get_chrono_ms_no_lap(unsigned int ms) {
   unsigned int chrono_ms;
   if (chrono_data.running) {
     // The chronograph is running.  Show the active elapsed time.
@@ -173,7 +174,16 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 
   placement->hour_hand_index = ((NUM_STEPS_HOUR * ms) / (SECONDS_PER_HOUR * 12 * 1000)) % NUM_STEPS_HOUR;
   placement->minute_hand_index = ((NUM_STEPS_MINUTE * ms) / (SECONDS_PER_HOUR * 1000)) % NUM_STEPS_MINUTE;
-  placement->second_hand_index = ((NUM_STEPS_SECOND * ms) / (60 * 1000)) % NUM_STEPS_SECOND;
+  {
+    // Avoid overflowing the integer arithmetic by pre-constraining
+    // the ms value to the appropriate range.
+    unsigned int use_ms = ms % (60 * 1000);
+    if (!config.sweep_seconds) {
+      // Also constrain to an integer second if we've not enabled sweep-second resolution.
+      use_ms = (use_ms / 1000) * 1000;
+    }
+    placement->second_hand_index = ((NUM_STEPS_SECOND * use_ms) / (60 * 1000));
+  }
 
 #ifdef SHOW_DAY_CARD
   if (time != NULL) {
@@ -228,8 +238,16 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 #endif  // SHOW_CHRONO_MINUTE_HAND
 
 #ifdef SHOW_CHRONO_SECOND_HAND
-    placement->chrono_second_hand_index = ((NUM_STEPS_CHRONO_SECOND * chrono_ms) / (60 * 1000)) % NUM_STEPS_CHRONO_SECOND;
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "computed chrono_second_hand = %d from %d", placement->chrono_second_hand_index, chrono_ms);
+    {
+      // Avoid overflowing the integer arithmetic by pre-constraining
+      // the ms value to the appropriate range.
+      unsigned int use_ms = chrono_ms % (60 * 1000);
+      if (!config.sweep_seconds) {
+	// Also constrain to an integer second if we've not enabled sweep-second resolution.
+	use_ms = (use_ms / 1000) * 1000;
+      }
+      placement->chrono_second_hand_index = ((NUM_STEPS_CHRONO_SECOND * use_ms) / (60 * 1000));
+    }
 #endif  // SHOW_CHRONO_SECOND_HAND
 
 #ifdef SHOW_CHRONO_TENTH_HAND
@@ -532,7 +550,6 @@ void chrono_minute_layer_update_callback(Layer *me, GContext *ctx) {
 #ifdef SHOW_CHRONO_SECOND_HAND
 void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_second_hand = %d of %d", current_placement.chrono_second_hand_index, NUM_STEPS_CHRONO_SECOND);
 
   if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
 #ifdef VECTOR_CHRONO_SECOND_HAND
@@ -628,7 +645,7 @@ void date_layer_update_callback(Layer *me, GContext *ctx) {
 #endif  // SHOW_DATE_CARD
 
 void update_hands(struct tm *time) {
-  struct HandPlacement new_placement;
+  struct HandPlacement new_placement = current_placement;
 
   compute_hands(time, &new_placement);
   if (new_placement.hour_hand_index != current_placement.hour_hand_index) {
@@ -744,7 +761,7 @@ void update_chrono_laps_time();
 
 void chrono_start_stop_handler(ClickRecognizerRef recognizer, void *context) {
   Window *window = (Window *)context;
-  int ms = get_time_ms(NULL);
+  unsigned int ms = get_time_ms(NULL);
 
   // The start/stop button was pressed.
   if (chrono_data.running) {
@@ -782,7 +799,7 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, void *context) {
 }
 
 void chrono_lap_button() {
-  int ms;
+  unsigned int ms;
  
   ms = get_time_ms(NULL);
 
@@ -795,7 +812,7 @@ void chrono_lap_button() {
   } else {
     // If we were not already paused, this pauses the hands here (but
     // does not stop the timer).
-    int lap_ms = ms - chrono_data.start_ms;
+    unsigned int lap_ms = ms - chrono_data.start_ms;
     record_chrono_lap(lap_ms);
     if (!chrono_digital_window_showing) {
       // Actually, we only pause the hands if we're not looking at the
@@ -819,6 +836,7 @@ void chrono_reset_button() {
   chrono_data.lap_paused = false;
   chrono_data.start_ms = 0;
   chrono_data.hold_ms = 0;
+  memset(&chrono_data.laps[0], 0, sizeof(chrono_data.laps[0]) * CHRONO_MAX_LAPS);
   vibes_double_pulse();
   update_chrono_laps_time();
   update_hands(this_time);
@@ -937,7 +955,7 @@ void update_chrono_laps_time() {
 #ifdef MAKE_CHRONOGRAPH
 void record_chrono_lap(int chrono_ms) {
   // Lose the first one.
-  memmove(&chrono_data.laps[0], &chrono_data.laps[1], sizeof(chrono_data.laps[0]) * CHRONO_MAX_LAPS - 1);
+  memmove(&chrono_data.laps[0], &chrono_data.laps[1], sizeof(chrono_data.laps[0]) * (CHRONO_MAX_LAPS - 1));
   chrono_data.laps[CHRONO_MAX_LAPS - 1] = chrono_ms;
   update_chrono_laps_time();
 }
@@ -969,14 +987,15 @@ void chrono_digital_window_load_handler(struct Window *window) {
   GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
 
   Layer *chrono_digital_window_layer = window_get_root_layer(chrono_digital_window);
-  chrono_digital_current_layer = text_layer_create(GRect(0, 120, SCREEN_WIDTH, 48));
+
+  chrono_digital_current_layer = text_layer_create(GRect(25, 120, 94, 48));
   int i;
   for (i = 0; i < CHRONO_MAX_LAPS; ++i) {
-    chrono_digital_laps_layer[i] = text_layer_create(GRect(0, 30 * i, SCREEN_WIDTH, 30));
+    chrono_digital_laps_layer[i] = text_layer_create(GRect(25, 30 * i, 94, 30));
 
     text_layer_set_text(chrono_digital_laps_layer[i], chrono_laps_buffer[i]);
     text_layer_set_text_color(chrono_digital_laps_layer[i], GColorBlack);
-    text_layer_set_text_alignment(chrono_digital_laps_layer[i], GTextAlignmentCenter);
+    text_layer_set_text_alignment(chrono_digital_laps_layer[i], GTextAlignmentRight);
     text_layer_set_overflow_mode(chrono_digital_laps_layer[i], GTextOverflowModeFill);
     text_layer_set_font(chrono_digital_laps_layer[i], font);
     layer_add_child(chrono_digital_window_layer, (Layer *)chrono_digital_laps_layer[i]);
@@ -984,10 +1003,13 @@ void chrono_digital_window_load_handler(struct Window *window) {
 
   text_layer_set_text(chrono_digital_current_layer, chrono_current_buffer);
   text_layer_set_text_color(chrono_digital_current_layer, GColorBlack);
-  text_layer_set_text_alignment(chrono_digital_current_layer, GTextAlignmentCenter);
+  text_layer_set_text_alignment(chrono_digital_current_layer, GTextAlignmentRight);
   text_layer_set_overflow_mode(chrono_digital_current_layer, GTextOverflowModeFill);
   text_layer_set_font(chrono_digital_current_layer, font);
   layer_add_child(chrono_digital_window_layer, (Layer *)chrono_digital_current_layer);
+
+  chrono_digital_line_layer = inverter_layer_create(GRect(0, 121, SCREEN_WIDTH, 1));
+  layer_add_child(chrono_digital_window_layer, (Layer *)chrono_digital_line_layer);
 }
 
 void chrono_digital_window_appear_handler(struct Window *window) {
@@ -1014,6 +1036,12 @@ void chrono_digital_window_disappear_handler(struct Window *window) {
 
 void chrono_digital_window_unload_handler(struct Window *window) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono digital unloads");
+
+  if (chrono_digital_line_layer != NULL) {
+    inverter_layer_destroy(chrono_digital_line_layer);
+    chrono_digital_line_layer = NULL;
+  }
+
   if (chrono_digital_current_layer != NULL) {
     text_layer_destroy(chrono_digital_current_layer);
     chrono_digital_current_layer = NULL;
@@ -1071,7 +1099,19 @@ load_chrono_data() {
   ChronoData local_data;
   if (persist_read_data(PERSIST_KEY + 0x100, &local_data, sizeof(local_data)) == sizeof(local_data)) {
     chrono_data = local_data;
+    // Ensure the start time is within modulo 24 hours of the current
+    // day, to minimize the danger of integer overflow after 49 days.
+    // As long as you launch the Chronograph at least once every 49
+    // days, we'll keep an accurate time measurement (but we only ever
+    // show modulo 24 hours).
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Loaded chrono_data");
+    if (chrono_data.running) {
+      unsigned int ms = get_time_ms(NULL);
+      unsigned int chrono_ms = get_chrono_ms_no_lap(ms);
+      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Modulated start_ms from %u to %u", chrono_data.start_ms, ms - chrono_ms);
+      chrono_data.start_ms = ms - chrono_ms;
+    }
+    
     update_chrono_laps_time();
   } else {
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Wrong previous chrono_data size or no previous data.");
