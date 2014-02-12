@@ -14,7 +14,7 @@ void init_default_options() {
   config.second_hand = SHOW_SECOND_HAND;
   config.hour_buzzer = ENABLE_HOUR_BUZZER;
   config.draw_mode = 0;
-  config.chrono_dial = CDM_dual;
+  config.chrono_dial = CDM_tenths;
 }
 
 const char *show_config() {

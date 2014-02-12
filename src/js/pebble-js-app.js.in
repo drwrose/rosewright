@@ -10,7 +10,7 @@ var default_keep_bluetooth_indicator = %(indicatorsAlways)s;
 var default_second_hand = %(showSecondHand)s;
 var default_hour_buzzer = %(enableHourBuzzer)s;
 var default_draw_mode = 0;
-var default_chrono_dial = 0;
+var default_chrono_dial = 1;
 
 var keep_battery_gauge = localStorage.getItem(watch_name + ":keep_battery_gauge");
 if (!keep_battery_gauge) {
