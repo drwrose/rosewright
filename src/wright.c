@@ -251,19 +251,24 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 #endif  // SHOW_CHRONO_SECOND_HAND
 
 #ifdef SHOW_CHRONO_TENTH_HAND
-    if (chrono_dial_shows_tenths) {
-      // Drawing tenths-of-a-second.
-      if (chrono_data.running && !chrono_data.lap_paused) {
-	// We don't actually show the tenths time while the chrono is running.
-	placement->chrono_tenth_hand_index = 0;
-      } else {
-	// We show the tenths time when the chrono is stopped or showing
-	// the lap time.
-	placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * chrono_ms) / (100)) % NUM_STEPS_CHRONO_TENTH;
-      }
+    if (config.chrono_dial == CDM_off) {
+      // Don't keep updating this hand if we're not showing it anyway.
+      placement->chrono_tenth_hand_index = 0;
     } else {
-      // Drawing hours.  12-hour scale.
-      placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * chrono_ms) / (12 * SECONDS_PER_HOUR * 1000)) % NUM_STEPS_CHRONO_TENTH;
+      if (chrono_dial_shows_tenths) {
+	// Drawing tenths-of-a-second.
+	if (chrono_data.running && !chrono_data.lap_paused) {
+	  // We don't actually show the tenths time while the chrono is running.
+	  placement->chrono_tenth_hand_index = 0;
+	} else {
+	  // We show the tenths time when the chrono is stopped or showing
+	  // the lap time.
+	  placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * chrono_ms) / (100)) % NUM_STEPS_CHRONO_TENTH;
+	}
+      } else {
+	// Drawing hours.  12-hour scale.
+	placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * chrono_ms) / (12 * SECONDS_PER_HOUR * 1000)) % NUM_STEPS_CHRONO_TENTH;
+      }
     }
 #endif  // SHOW_CHRONO_TENTH_HAND
 
@@ -569,16 +574,18 @@ void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
 void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
   (void)me;
 
-  if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
+  if (config.chrono_dial != CDM_off) {
+    if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
 #ifdef VECTOR_CHRONO_TENTH_HAND
-    draw_vector_hand(&chrono_tenth_hand_vector_table, current_placement.chrono_tenth_hand_index,
-		     NUM_STEPS_CHRONO_TENTH, CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, ctx);
+      draw_vector_hand(&chrono_tenth_hand_vector_table, current_placement.chrono_tenth_hand_index,
+		       NUM_STEPS_CHRONO_TENTH, CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, ctx);
 #endif
-    
+      
 #ifdef BITMAP_CHRONO_TENTH_HAND
-    draw_bitmap_hand(&chrono_tenth_hand_bitmap_table[current_placement.chrono_tenth_hand_index],
-		     CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, ctx);
+      draw_bitmap_hand(&chrono_tenth_hand_bitmap_table[current_placement.chrono_tenth_hand_index],
+		       CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, ctx);
 #endif
+    }
   }
 }
 #endif  // SHOW_CHRONO_TENTH_HAND
