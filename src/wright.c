@@ -263,7 +263,14 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 	} else {
 	  // We show the tenths time when the chrono is stopped or showing
 	  // the lap time.
-	  placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * chrono_ms) / (100)) % NUM_STEPS_CHRONO_TENTH;
+
+	  // Avoid overflowing the integer arithmetic by pre-constraining
+	  // the ms value to the appropriate range.
+	  unsigned int use_ms = chrono_ms % 1000;
+	  // Truncate to the previous 0.1 seconds (100 ms), just to
+	  // make the dial easier to read.
+	  use_ms = 100 * (use_ms / 100);
+	  placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * use_ms) / (1000)) % NUM_STEPS_CHRONO_TENTH;
 	}
       } else {
 	// Drawing hours.  12-hour scale.
