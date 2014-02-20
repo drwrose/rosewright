@@ -172,14 +172,21 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 
   ms = get_time_ms(time);
 
-  placement->hour_hand_index = ((NUM_STEPS_HOUR * ms) / (SECONDS_PER_HOUR * 12 * 1000)) % NUM_STEPS_HOUR;
-  placement->minute_hand_index = ((NUM_STEPS_MINUTE * ms) / (SECONDS_PER_HOUR * 1000)) % NUM_STEPS_MINUTE;
   {
     // Avoid overflowing the integer arithmetic by pre-constraining
     // the ms value to the appropriate range.
+    unsigned int use_ms = ms % (SECONDS_PER_HOUR * 12* 1000);
+  placement->hour_hand_index = ((NUM_STEPS_HOUR * use_ms) / (SECONDS_PER_HOUR * 12 * 1000)) % NUM_STEPS_HOUR;
+  }
+  {
+    unsigned int use_ms = ms % (SECONDS_PER_HOUR * 1000);
+    placement->minute_hand_index = ((NUM_STEPS_MINUTE * use_ms) / (SECONDS_PER_HOUR * 1000)) % NUM_STEPS_MINUTE;
+  }
+  {
     unsigned int use_ms = ms % (60 * 1000);
     if (!config.sweep_seconds) {
-      // Also constrain to an integer second if we've not enabled sweep-second resolution.
+      // Also constrain to an integer second if we've not enabled
+      // sweep-second resolution.
       use_ms = (use_ms / 1000) * 1000;
     }
     placement->second_hand_index = ((NUM_STEPS_SECOND * use_ms) / (60 * 1000));
@@ -234,7 +241,10 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 #ifdef SHOW_CHRONO_MINUTE_HAND
     // The chronograph minute hand rolls completely around in 30
     // minutes (not 60).
-    placement->chrono_minute_hand_index = ((NUM_STEPS_CHRONO_MINUTE * chrono_ms) / (1800 * 1000)) % NUM_STEPS_CHRONO_MINUTE;
+    {
+      unsigned int use_ms = chrono_ms % (1800 * 1000);
+      placement->chrono_minute_hand_index = ((NUM_STEPS_CHRONO_MINUTE * use_ms) / (1800 * 1000)) % NUM_STEPS_CHRONO_MINUTE;
+    }
 #endif  // SHOW_CHRONO_MINUTE_HAND
 
 #ifdef SHOW_CHRONO_SECOND_HAND
@@ -263,9 +273,6 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 	} else {
 	  // We show the tenths time when the chrono is stopped or showing
 	  // the lap time.
-
-	  // Avoid overflowing the integer arithmetic by pre-constraining
-	  // the ms value to the appropriate range.
 	  unsigned int use_ms = chrono_ms % 1000;
 	  // Truncate to the previous 0.1 seconds (100 ms), just to
 	  // make the dial easier to read.
@@ -274,7 +281,8 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 	}
       } else {
 	// Drawing hours.  12-hour scale.
-	placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * chrono_ms) / (12 * SECONDS_PER_HOUR * 1000)) % NUM_STEPS_CHRONO_TENTH;
+        unsigned int use_ms = chrono_ms % (12 * SECONDS_PER_HOUR * 1000);
+	placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * use_ms) / (12 * SECONDS_PER_HOUR * 1000)) % NUM_STEPS_CHRONO_TENTH;
       }
     }
 #endif  // SHOW_CHRONO_TENTH_HAND
