@@ -12,52 +12,67 @@ var default_second_hand = %(showSecondHand)s;
 var default_hour_buzzer = %(enableHourBuzzer)s;
 var default_draw_mode = 0;
 var default_chrono_dial = 1;
-var default_sweep_seconds = %(enableSweepSeconds)s;
+var default_sweep_seconds = 0;
 
-var keep_battery_gauge = localStorage.getItem(watch_name + ":keep_battery_gauge");
-if (!keep_battery_gauge) {
-    keep_battery_gauge = default_keep_battery_gauge;
-}
-keep_battery_gauge = parseInt(keep_battery_gauge);
+var keep_battery_gauge;
+var keep_bluetooth_indicator;
+var second_hand;
+var hour_buzzer;
+var draw_mode;
+var chrono_dial;
+var sweep_seconds;
 
-var keep_bluetooth_indicator = localStorage.getItem(watch_name + ":keep_bluetooth_indicator");
-if (!keep_bluetooth_indicator) {
-    keep_bluetooth_indicator = default_keep_battery_gauge;
+/*
+var logLocalStorage = function() {
+    var keys = Object.keys(localStorage);
+    console.log("  localStorage = {");
+    for (var key in keys) {
+	console.log('      "' + keys[key] + '" : ' + localStorage[keys[key]] + ',');
+    }
+    console.log("  }");
 }
-keep_bluetooth_indicator = parseInt(keep_bluetooth_indicator);
-
-var second_hand = localStorage.getItem(watch_name + ":second_hand");
-if (!second_hand) {
-    second_hand = default_second_hand;
-}
-second_hand = parseInt(second_hand);
-
-var hour_buzzer = localStorage.getItem(watch_name + ":hour_buzzer");
-if (!hour_buzzer) {
-    hour_buzzer = default_hour_buzzer;
-}
-hour_buzzer = parseInt(hour_buzzer);
-
-var draw_mode = localStorage.getItem(watch_name + ":draw_mode");
-if (!draw_mode) {
-    draw_mode = default_draw_mode;
-}
-draw_mode = parseInt(draw_mode);
-
-var chrono_dial = localStorage.getItem(watch_name + ":chrono_dial");
-if (!chrono_dial) {
-    chrono_dial = default_chrono_dial;
-}
-chrono_dial = parseInt(chrono_dial);
-
-var sweep_seconds = localStorage.getItem(watch_name + ":sweep_seconds");
-if (!sweep_seconds) {
-    sweep_seconds = default_sweep_seconds;
-}
-sweep_seconds = parseInt(sweep_seconds);
+*/
 
 Pebble.addEventListener("ready", function() {
     console.log("ready");
+    //logLocalStorage();
+
+    keep_battery_gauge = localStorage.getItem(watch_name + ":keep_battery_gauge");
+    if (!keep_battery_gauge) {
+	keep_battery_gauge = default_keep_battery_gauge;
+    }
+    keep_battery_gauge = parseInt(keep_battery_gauge);
+    
+    keep_bluetooth_indicator = localStorage.getItem(watch_name + ":keep_bluetooth_indicator");
+    if (!keep_bluetooth_indicator) {
+	keep_bluetooth_indicator = default_keep_battery_gauge;
+    }
+    keep_bluetooth_indicator = parseInt(keep_bluetooth_indicator);
+
+    second_hand = localStorage.getItem(watch_name + ":second_hand");
+    if (!second_hand) {
+	second_hand = default_second_hand;
+    }
+    second_hand = parseInt(second_hand);
+
+    hour_buzzer = localStorage.getItem(watch_name + ":hour_buzzer");
+    if (!hour_buzzer) {
+	hour_buzzer = default_hour_buzzer;
+    }
+    hour_buzzer = parseInt(hour_buzzer);
+
+    draw_mode = localStorage.getItem(watch_name + ":draw_mode");
+    if (!draw_mode) {
+	draw_mode = default_draw_mode;
+    }
+    draw_mode = parseInt(draw_mode);
+
+    chrono_dial = localStorage.getItem(watch_name + ":chrono_dial");
+    if (!chrono_dial) {
+	chrono_dial = default_chrono_dial;
+    }
+    chrono_dial = parseInt(chrono_dial);
+
     console.log("   keep_battery_gauge: " + keep_battery_gauge);
     console.log("   keep_bluetooth_indicator: " + keep_bluetooth_indicator);
     console.log("   second_hand: " + second_hand);
@@ -131,5 +146,7 @@ Pebble.addEventListener("webviewclosed", function(e) {
 	
 	sweep_seconds = configuration["sweep_seconds"];
 	localStorage.setItem(watch_name + ":sweep_seconds", sweep_seconds);
+
+	//logLocalStorage();
     }
 });
