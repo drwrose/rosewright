@@ -15,7 +15,7 @@ void init_default_options() {
   config.hour_buzzer = ENABLE_HOUR_BUZZER;
   config.draw_mode = 0;
   config.chrono_dial = CDM_tenths;
-  config.sweep_seconds = ENABLE_SWEEP_SECONDS;
+  config.sweep_seconds = 0;
 }
 
 const char *show_config() {

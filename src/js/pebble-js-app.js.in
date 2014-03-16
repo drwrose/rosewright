@@ -22,7 +22,6 @@ var draw_mode;
 var chrono_dial;
 var sweep_seconds;
 
-/*
 var logLocalStorage = function() {
     var keys = Object.keys(localStorage);
     console.log("  localStorage = {");
@@ -31,11 +30,15 @@ var logLocalStorage = function() {
     }
     console.log("  }");
 }
-*/
 
-Pebble.addEventListener("ready", function() {
-    console.log("ready");
-    //logLocalStorage();
+var initialized = false;
+var initialize = function() {
+    console.log("initialize: " + initialized);
+    if (initialized) {
+	return;
+    }
+
+    logLocalStorage();
 
     keep_battery_gauge = localStorage.getItem(watch_name + ":keep_battery_gauge");
     if (!keep_battery_gauge) {
@@ -73,6 +76,12 @@ Pebble.addEventListener("ready", function() {
     }
     chrono_dial = parseInt(chrono_dial);
 
+    sweep_seconds = localStorage.getItem(watch_name + ":sweep_seconds");
+    if (!sweep_seconds) {
+	sweep_seconds = default_sweep_seconds;
+    }
+    sweep_seconds = parseInt(sweep_seconds);
+
     console.log("   keep_battery_gauge: " + keep_battery_gauge);
     console.log("   keep_bluetooth_indicator: " + keep_bluetooth_indicator);
     console.log("   second_hand: " + second_hand);
@@ -81,29 +90,33 @@ Pebble.addEventListener("ready", function() {
     console.log("   chrono_dial: " + chrono_dial);
     console.log("   sweep_seconds: " + sweep_seconds);
 
-	// At startup, send the current configuration to the Pebble--the
-	// phone storage keeps the authoritative state.  We delay by 1
-	// second to give the Pebble a chance to set itself up for
-	// receiving messages.
-	setTimeout(function() {
-		var configuration = {
-			'keep_battery_gauge' : keep_battery_gauge,
-			'keep_bluetooth_indicator' : keep_bluetooth_indicator,
-			'second_hand' : second_hand,
-			'hour_buzzer' : hour_buzzer,
-			'draw_mode' : draw_mode,
-			'chrono_dial' : chrono_dial,
-			'sweep_seconds' : sweep_seconds,
-		};
-   	        console.log("sending init config: " + JSON.stringify(configuration));
-		Pebble.sendAppMessage(configuration);
-	}, 1000)
+    // At startup, send the current configuration to the Pebble--the
+    // phone storage keeps the authoritative state.  We delay by 1
+    // second to give the Pebble a chance to set itself up for
+    // receiving messages.
+    setTimeout(function() {
+	var configuration = {
+	    'keep_battery_gauge' : keep_battery_gauge,
+	    'keep_bluetooth_indicator' : keep_bluetooth_indicator,
+	    'second_hand' : second_hand,
+	    'hour_buzzer' : hour_buzzer,
+	    'draw_mode' : draw_mode,
+	    'chrono_dial' : chrono_dial,
+	    'sweep_seconds' : sweep_seconds,
+	};
+   	console.log("sending init config: " + JSON.stringify(configuration));
+	Pebble.sendAppMessage(configuration);
+    }, 1000)
+}
 
-    initialized = true;
+Pebble.addEventListener("ready", function(e) {
+    console.log("ready");
+    initialize();
 });
 
 Pebble.addEventListener("showConfiguration", function(e) {
     console.log("showConfiguration starting");
+    initialize();
     var url = "http://www.ddrose.com/pebble/rosewright_2_3_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&keep_battery_gauge=" + keep_battery_gauge + "&keep_bluetooth_indicator=" + keep_bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&draw_mode=" + draw_mode;
     if (show_chrono_dial) {
 	url += "&chrono_dial=" + chrono_dial
@@ -121,7 +134,7 @@ Pebble.addEventListener("webviewclosed", function(e) {
     console.log(e.type);
     console.log(e.response);
 
-    if (e.response) {
+    if (e.response && e.response != 'CANCELLED') {
 	var configuration = JSON.parse(e.response);
 	console.log("sending runtime config: " + JSON.stringify(configuration));
 	Pebble.sendAppMessage(configuration);
@@ -147,6 +160,6 @@ Pebble.addEventListener("webviewclosed", function(e) {
 	sweep_seconds = configuration["sweep_seconds"];
 	localStorage.setItem(watch_name + ":sweep_seconds", sweep_seconds);
 
-	//logLocalStorage();
+	logLocalStorage();
     }
 });
