@@ -6,6 +6,7 @@
 #include "bluetooth_indicator.h"
 #include "battery_gauge.h"
 #include "config_options.h"
+#include "assert.h"
 
 #define SECONDS_PER_DAY 86400
 #define SECONDS_PER_HOUR 3600
@@ -79,6 +80,26 @@ struct HandPlacement {
   // whether we have buzzed for the top of the hour or not.
   unsigned int hour_buzzer;
 };
+
+// Keeps track of the current bitmap and/or path for a particular
+// hand, so we don't need to do as much work if we're redrawing a hand
+// in the same position as last time.
+#define HAND_CACHE_MAX_GROUPS 5
+struct HandCache {
+  struct BitmapHandTableRow *bitmap_hand;
+  GBitmap *image;
+  GBitmap *mask;
+  int vector_hand_index;
+  int cx, cy;
+  GPath *path[HAND_CACHE_MAX_GROUPS];
+};
+
+struct HandCache hour_cache;
+struct HandCache minute_cache;
+struct HandCache second_cache;
+struct HandCache chrono_minute_cache;
+struct HandCache chrono_second_cache;
+struct HandCache chrono_tenth_cache;
 
 struct HandPlacement current_placement;
 
@@ -394,64 +415,111 @@ void flip_bitmap_y(GBitmap *image, int *cy) {
 }
 
 // Draws a given hand on the face, using the vector structures.
-void draw_vector_hand(struct VectorHandTable *hand, int hand_index, int num_steps,
+void draw_vector_hand(struct HandCache *hand_cache, struct VectorHandTable *hand, int hand_index, int num_steps,
                       int place_x, int place_y, GContext *ctx) {
+  int gi;
+  if (hand_cache->vector_hand_index != hand_index) {
+    // Force a new path.
+    for (gi = 0; gi < hand->num_groups; ++gi) {
+      if (hand_cache->path[gi] != NULL) {
+        gpath_destroy(hand_cache->path[gi]);
+        hand_cache->path[gi] = NULL;
+      }
+    }
+    hand_cache->vector_hand_index = hand_index;
+  }
+
   GPoint center = { place_x, place_y };
   int32_t angle = TRIG_MAX_ANGLE * hand_index / num_steps;
-  int gi;
 
+  assert(hand->num_groups <= HAND_CACHE_MAX_GROUPS);
   for (gi = 0; gi < hand->num_groups; ++gi) {
     struct VectorHandGroup *group = &hand->group[gi];
 
-    GPath *path = gpath_create(&group->path_info);
+    if (hand_cache->path[gi] == NULL) {
+      hand_cache->path[gi] = gpath_create(&group->path_info);
 
-    gpath_rotate_to(path, angle);
-    gpath_move_to(path, center);
+      gpath_rotate_to(hand_cache->path[gi], angle);
+      gpath_move_to(hand_cache->path[gi], center);
+    }
 
     if (group->fill != GColorClear) {
       graphics_context_set_fill_color(ctx, draw_mode_table[config.draw_mode].colors[group->fill]);
-      gpath_draw_filled(ctx, path);
+      gpath_draw_filled(ctx, hand_cache->path[gi]);
     }
     if (group->outline != GColorClear) {
       graphics_context_set_stroke_color(ctx, draw_mode_table[config.draw_mode].colors[group->outline]);
-      gpath_draw_outline(ctx, path);
+      gpath_draw_outline(ctx, hand_cache->path[gi]);
     }
+  }
+}
 
-    gpath_destroy(path);
+void hand_cache_init(struct HandCache *hand_cache) {
+  memset(hand_cache, 0, sizeof(struct HandCache));
+}
+
+void hand_cache_destroy(struct HandCache *hand_cache) {
+  if (hand_cache->image != NULL) {
+    gbitmap_destroy(hand_cache->image);
+    hand_cache->image = NULL;
+  }
+  if (hand_cache->mask != NULL) {
+    gbitmap_destroy(hand_cache->mask);
+    hand_cache->mask = NULL;
+  }
+  int gi;
+  for (gi = 0; gi < HAND_CACHE_MAX_GROUPS; ++gi) {
+    if (hand_cache->path[gi] != NULL) {
+      gpath_destroy(hand_cache->path[gi]);
+      hand_cache->path[gi] = NULL;
+    }
   }
 }
 
 // Draws a given hand on the face, using the bitmap structures.
-void draw_bitmap_hand(struct BitmapHandTableRow *hand, int place_x, int place_y, GContext *ctx) {
-  int cx, cy;
-  cx = hand->cx;
-  cy = hand->cy;
-
+void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandTableRow *hand, int place_x, int place_y, GContext *ctx) {
+  //  return;
+  if (hand_cache->bitmap_hand != hand) {
+    // Force a new bitmap.
+    if (hand_cache->image != NULL) {
+      gbitmap_destroy(hand_cache->image);
+      hand_cache->image = NULL;
+    }
+    if (hand_cache->mask != NULL) {
+      gbitmap_destroy(hand_cache->mask);
+      hand_cache->mask = NULL;
+    }
+    hand_cache->bitmap_hand = hand;
+  }
+  
   if (hand->mask_id == hand->image_id) {
     // The hand does not have a mask.  Draw the hand on top of the scene.
-    GBitmap *image;
-    image = gbitmap_create_with_resource(hand->image_id);
+    if (hand_cache->image == NULL) {
+      hand_cache->image = gbitmap_create_with_resource(hand->image_id);
+      hand_cache->cx = hand->cx;
+      hand_cache->cy = hand->cy;
     
-    if (hand->flip_x) {
-      // To minimize wasteful resource usage, if the hand is symmetric
-      // we can store only the bitmaps for the right half of the clock
-      // face, and flip them for the left half.
-      flip_bitmap_x(image, &cx);
+      if (hand->flip_x) {
+        // To minimize wasteful resource usage, if the hand is symmetric
+        // we can store only the bitmaps for the right half of the clock
+        // face, and flip them for the left half.
+        flip_bitmap_x(hand_cache->image, &hand_cache->cx);
+      }
+    
+      if (hand->flip_y) {
+        // We can also do this vertically.
+        flip_bitmap_y(hand_cache->image, &hand_cache->cy);
+      }
     }
-    
-    if (hand->flip_y) {
-      // We can also do this vertically.
-      flip_bitmap_y(image, &cy);
-    }
-    
+      
     // We make sure the dimensions of the GRect to draw into
     // are equal to the size of the bitmap--otherwise the image
     // will automatically tile.
-    GRect destination = image->bounds;
+    GRect destination = hand_cache->image->bounds;
     
     // Place the hand's center point at place_x, place_y.
-    destination.origin.x = place_x - cx;
-    destination.origin.y = place_y - cy;
+    destination.origin.x = place_x - hand_cache->cx;
+    destination.origin.y = place_y - hand_cache->cy;
     
     // Specify a compositing mode to make the hands overlay on top of
     // each other, instead of the background parts of the bitmaps
@@ -465,85 +533,83 @@ void draw_bitmap_hand(struct BitmapHandTableRow *hand, int place_x, int place_y,
       graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
     }
       
-    graphics_draw_bitmap_in_rect(ctx, image, destination);
+    graphics_draw_bitmap_in_rect(ctx, hand_cache->image, destination);
     
-    gbitmap_destroy(image);
-
   } else {
     // The hand has a mask, so use it to draw the hand opaquely.
-    GBitmap *image, *mask;
-    image = gbitmap_create_with_resource(hand->image_id);
-    mask = gbitmap_create_with_resource(hand->mask_id);
+    if (hand_cache->image == NULL) {
+      hand_cache->image = gbitmap_create_with_resource(hand->image_id);
+      hand_cache->mask = gbitmap_create_with_resource(hand->mask_id);
+      hand_cache->cx = hand->cx;
+      hand_cache->cy = hand->cy;
     
-    if (hand->flip_x) {
-      // To minimize wasteful resource usage, if the hand is symmetric
-      // we can store only the bitmaps for the right half of the clock
-      // face, and flip them for the left half.
-      flip_bitmap_x(image, &cx);
-      flip_bitmap_x(mask, NULL);
+      if (hand->flip_x) {
+        // To minimize wasteful resource usage, if the hand is symmetric
+        // we can store only the bitmaps for the right half of the clock
+        // face, and flip them for the left half.
+        flip_bitmap_x(hand_cache->image, &hand_cache->cx);
+        flip_bitmap_x(hand_cache->mask, NULL);
+      }
+    
+      if (hand->flip_y) {
+        // We can also do this vertically.
+        flip_bitmap_y(hand_cache->image, &hand_cache->cy);
+        flip_bitmap_y(hand_cache->mask, NULL);
+      }
     }
     
-    if (hand->flip_y) {
-      // We can also do this vertically.
-      flip_bitmap_y(image, &cy);
-      flip_bitmap_y(mask, NULL);
-    }
+    GRect destination = hand_cache->image->bounds;
     
-    GRect destination = image->bounds;
-    
-    destination.origin.x = place_x - cx;
-    destination.origin.y = place_y - cy;
+    destination.origin.x = place_x - hand_cache->cx;
+    destination.origin.y = place_y - hand_cache->cy;
 
     graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
-    graphics_draw_bitmap_in_rect(ctx, mask, destination);
+    graphics_draw_bitmap_in_rect(ctx, hand_cache->mask, destination);
     
     graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
-    graphics_draw_bitmap_in_rect(ctx, image, destination);
-    
-    gbitmap_destroy(image);
-    gbitmap_destroy(mask);
+    graphics_draw_bitmap_in_rect(ctx, hand_cache->image, destination);
   }
 }
   
 void hour_layer_update_callback(Layer *me, GContext *ctx) {
-  (void)me;
+  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "hour_layer");
 
 #ifdef VECTOR_HOUR_HAND
-  draw_vector_hand(&hour_hand_vector_table, current_placement.hour_hand_index,
+  draw_vector_hand(&hour_cache, &hour_hand_vector_table, current_placement.hour_hand_index,
                    NUM_STEPS_HOUR, HOUR_HAND_X, HOUR_HAND_Y, ctx);
 #endif
 
 #ifdef BITMAP_HOUR_HAND
-  draw_bitmap_hand(&hour_hand_bitmap_table[current_placement.hour_hand_index],
+  draw_bitmap_hand(&hour_cache, &hour_hand_bitmap_table[current_placement.hour_hand_index],
                    HOUR_HAND_X, HOUR_HAND_Y, ctx);
 #endif
 }
 
 void minute_layer_update_callback(Layer *me, GContext *ctx) {
-  (void)me;
+  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "minute_layer");
 
 #ifdef VECTOR_MINUTE_HAND
-  draw_vector_hand(&minute_hand_vector_table, current_placement.minute_hand_index,
+  draw_vector_hand(&minute_cache, &minute_hand_vector_table, current_placement.minute_hand_index,
                    NUM_STEPS_MINUTE, MINUTE_HAND_X, MINUTE_HAND_Y, ctx);
 #endif
 
 #ifdef BITMAP_MINUTE_HAND
-  draw_bitmap_hand(&minute_hand_bitmap_table[current_placement.minute_hand_index],
+  draw_bitmap_hand(&minute_cache, &minute_hand_bitmap_table[current_placement.minute_hand_index],
                    MINUTE_HAND_X, MINUTE_HAND_Y, ctx);
 #endif
 }
 
 void second_layer_update_callback(Layer *me, GContext *ctx) {
-  (void)me;
+  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "second_layer");
 
   if (config.second_hand) {
 #ifdef VECTOR_SECOND_HAND
-    draw_vector_hand(&second_hand_vector_table, current_placement.second_hand_index,
+    draw_vector_hand(&second_cache, &second_hand_vector_table, current_placement.second_hand_index,
 		     NUM_STEPS_SECOND, SECOND_HAND_X, SECOND_HAND_Y, ctx);
 #endif
     
 #ifdef BITMAP_SECOND_HAND
-    draw_bitmap_hand(&second_hand_bitmap_table[current_placement.second_hand_index],
+    draw_bitmap_hand(&second_cache, &second_hand_bitmap_table[current_placement.second_hand_index],
 		     SECOND_HAND_X, SECOND_HAND_Y, ctx);
 #endif
   }
@@ -551,16 +617,16 @@ void second_layer_update_callback(Layer *me, GContext *ctx) {
 
 #ifdef SHOW_CHRONO_MINUTE_HAND
 void chrono_minute_layer_update_callback(Layer *me, GContext *ctx) {
-  (void)me;
+  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_minute_layer");
 
   if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
 #ifdef VECTOR_CHRONO_MINUTE_HAND
-    draw_vector_hand(&chrono_minute_hand_vector_table, current_placement.chrono_minute_hand_index,
+    draw_vector_hand(&chrono_minute_cache, &chrono_minute_hand_vector_table, current_placement.chrono_minute_hand_index,
 		     NUM_STEPS_CHRONO_MINUTE, CHRONO_MINUTE_HAND_X, CHRONO_MINUTE_HAND_Y, ctx);
 #endif
     
 #ifdef BITMAP_CHRONO_MINUTE_HAND
-    draw_bitmap_hand(&chrono_minute_hand_bitmap_table[current_placement.chrono_minute_hand_index],
+    draw_bitmap_hand(&chrono_minute_cache, &chrono_minute_hand_bitmap_table[current_placement.chrono_minute_hand_index],
 		     CHRONO_MINUTE_HAND_X, CHRONO_MINUTE_HAND_Y, ctx);
 #endif
   }
@@ -569,16 +635,16 @@ void chrono_minute_layer_update_callback(Layer *me, GContext *ctx) {
 
 #ifdef SHOW_CHRONO_SECOND_HAND
 void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
-  (void)me;
+  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_second_layer");
 
   if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
 #ifdef VECTOR_CHRONO_SECOND_HAND
-    draw_vector_hand(&chrono_second_hand_vector_table, current_placement.chrono_second_hand_index,
+    draw_vector_hand(&chrono_second_cache, &chrono_second_hand_vector_table, current_placement.chrono_second_hand_index,
 		     NUM_STEPS_CHRONO_SECOND, CHRONO_SECOND_HAND_X, CHRONO_SECOND_HAND_Y, ctx);
 #endif
     
 #ifdef BITMAP_CHRONO_SECOND_HAND
-    draw_bitmap_hand(&chrono_second_hand_bitmap_table[current_placement.chrono_second_hand_index],
+    draw_bitmap_hand(&chrono_second_cache, &chrono_second_hand_bitmap_table[current_placement.chrono_second_hand_index],
 		     CHRONO_SECOND_HAND_X, CHRONO_SECOND_HAND_Y, ctx);
 #endif
   }
@@ -587,17 +653,17 @@ void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
 
 #ifdef SHOW_CHRONO_TENTH_HAND
 void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
-  (void)me;
+  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_tenth_layer");
 
   if (config.chrono_dial != CDM_off) {
     if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
 #ifdef VECTOR_CHRONO_TENTH_HAND
-      draw_vector_hand(&chrono_tenth_hand_vector_table, current_placement.chrono_tenth_hand_index,
+      draw_vector_hand(&chrono_tenth_cache, &chrono_tenth_hand_vector_table, current_placement.chrono_tenth_hand_index,
 		       NUM_STEPS_CHRONO_TENTH, CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, ctx);
 #endif
       
 #ifdef BITMAP_CHRONO_TENTH_HAND
-      draw_bitmap_hand(&chrono_tenth_hand_bitmap_table[current_placement.chrono_tenth_hand_index],
+      draw_bitmap_hand(&chrono_tenth_cache, &chrono_tenth_hand_bitmap_table[current_placement.chrono_tenth_hand_index],
 		       CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, ctx);
 #endif
     }
@@ -632,6 +698,7 @@ void draw_card(Layer *me, GContext *ctx, const char *text, bool on_black, bool b
 
 #ifdef MAKE_CHRONOGRAPH
 void chrono_dial_layer_update_callback(Layer *me, GContext *ctx) {
+  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_dial_layer");
   if (config.chrono_dial != CDM_off) {
     GRect destination = layer_get_bounds(me);
     destination.origin.x = 0;
@@ -656,12 +723,16 @@ void chrono_dial_layer_update_callback(Layer *me, GContext *ctx) {
 
 #ifdef SHOW_DAY_CARD
 void day_layer_update_callback(Layer *me, GContext *ctx) {
+  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "day_layer");
+
   draw_card(me, ctx, weekday_names[current_placement.day_index], (DAY_CARD_ON_BLACK) ^ config.draw_mode, DAY_CARD_BOLD);
 }
 #endif  // SHOW_DAY_CARD
 
 #ifdef SHOW_DATE_CARD
 void date_layer_update_callback(Layer *me, GContext *ctx) {
+  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "date_layer");
+
   draw_card(me, ctx, quick_itoa(current_placement.date_value), (DATE_CARD_ON_BLACK) ^ config.draw_mode, DATE_CARD_BOLD);
 }
 #endif  // SHOW_DATE_CARD
@@ -1176,6 +1247,13 @@ void handle_init() {
   window_set_fullscreen(window, true);
   window_stack_push(window, true /* Animated */);
 
+  hand_cache_init(&hour_cache);
+  hand_cache_init(&minute_cache);
+  hand_cache_init(&second_cache);
+  hand_cache_init(&chrono_minute_cache);
+  hand_cache_init(&chrono_second_cache);
+  hand_cache_init(&chrono_tenth_cache);
+
   compute_hands(startup_time, &current_placement);
 
   Layer *window_layer = window_get_root_layer(window);
@@ -1322,6 +1400,13 @@ void handle_deinit() {
 #ifdef SHOW_CHRONO_TENTH_HAND
   layer_destroy(chrono_tenth_layer);
 #endif
+
+  hand_cache_destroy(&hour_cache);
+  hand_cache_destroy(&minute_cache);
+  hand_cache_destroy(&second_cache);
+  hand_cache_destroy(&chrono_minute_cache);
+  hand_cache_destroy(&chrono_second_cache);
+  hand_cache_destroy(&chrono_tenth_cache);
 
   window_destroy(window);
 }

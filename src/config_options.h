@@ -23,13 +23,13 @@ typedef enum {
 } ChronoDialMode;
 
 typedef struct {
-  unsigned char keep_battery_gauge;
-  unsigned char keep_bluetooth_indicator;
-  unsigned char second_hand;
-  unsigned char hour_buzzer;
+  bool keep_battery_gauge;
+  bool keep_bluetooth_indicator;
+  bool second_hand;
+  bool hour_buzzer;
   unsigned char draw_mode;
   unsigned char chrono_dial;
-  unsigned char sweep_seconds;
+  bool sweep_seconds;
 } __attribute__((__packed__)) ConfigOptions;
 
 extern ConfigOptions config;
