@@ -7,6 +7,7 @@
 #include "battery_gauge.h"
 #include "config_options.h"
 #include "assert.h"
+#include "bwd.h"
 
 #define SECONDS_PER_DAY 86400
 #define SECONDS_PER_HOUR 3600
@@ -17,13 +18,18 @@
 
 Window *window;
 
-GBitmap *clock_face_bitmap;
+BitmapWithData clock_face;
 BitmapLayer *clock_face_layer;
 
-GBitmap *chrono_dial_tenths_bitmap_white;
-GBitmap *chrono_dial_tenths_bitmap_black;
-GBitmap *chrono_dial_hours_bitmap_white;
-GBitmap *chrono_dial_hours_bitmap_black;
+BitmapWithData day_card_white;
+BitmapWithData day_card_black;
+BitmapWithData date_card_white;
+BitmapWithData date_card_black;
+
+BitmapWithData chrono_dial_tenths_white;
+BitmapWithData chrono_dial_tenths_black;
+BitmapWithData chrono_dial_hours_white;
+BitmapWithData chrono_dial_hours_black;
 Layer *chrono_dial_layer;
 
 // Number of laps preserved for the laps digital display
@@ -37,9 +43,9 @@ TextLayer *chrono_digital_current_layer = NULL;
 TextLayer *chrono_digital_laps_layer[CHRONO_MAX_LAPS];
 bool chrono_digital_window_showing = false;
 AppTimer *chrono_digital_timer = NULL;
-#define CHRONO_DIGITAL_BUFFER_SIZE 48
+#define CHRONO_DIGITAL_BUFFER_SIZE 10
 char chrono_current_buffer[CHRONO_DIGITAL_BUFFER_SIZE];
-char chrono_laps_buffer[CHRONO_MAX_LAPS][CHRONO_DIGITAL_BUFFER_SIZE] = { "ab", "cd", "ef", "gh" };
+char chrono_laps_buffer[CHRONO_MAX_LAPS][CHRONO_DIGITAL_BUFFER_SIZE];
 
 #define CHRONO_DIGITAL_TICK_MS 100 // Every 0.1 seconds
 
@@ -84,11 +90,11 @@ struct HandPlacement {
 // Keeps track of the current bitmap and/or path for a particular
 // hand, so we don't need to do as much work if we're redrawing a hand
 // in the same position as last time.
-#define HAND_CACHE_MAX_GROUPS 5
+#define HAND_CACHE_MAX_GROUPS 2
 struct HandCache {
   struct BitmapHandTableRow *bitmap_hand;
-  GBitmap *image;
-  GBitmap *mask;
+  BitmapWithData image;
+  BitmapWithData mask;
   int vector_hand_index;
   int cx, cy;
   GPath *path[HAND_CACHE_MAX_GROUPS];
@@ -146,7 +152,7 @@ unsigned int get_time_ms(struct tm *time) {
 
 #ifdef FAST_TIME
   if (time != NULL) {
-    time->tm_wday = s % 7;
+    time->tm_wday = (s / 4) % 7;
     time->tm_mday = (s % 31) + 1;
   }
   result *= 67;
@@ -161,21 +167,6 @@ unsigned int get_time_ms(struct tm *time) {
 unsigned int get_chrono_ms(unsigned int ms) {
   unsigned int chrono_ms;
   if (chrono_data.running && !chrono_data.lap_paused) {
-    // The chronograph is running.  Show the active elapsed time.
-    chrono_ms = (ms - chrono_data.start_ms + MS_PER_DAY) % MS_PER_DAY;
-  } else {
-    // The chronograph is paused.  Show the time it is paused on.
-    chrono_ms = chrono_data.hold_ms;
-  }
-
-  return chrono_ms;
-}
-
-// Returns the time showing on the chronograph, given the ms returned
-// by get_time_ms().  Never returns the current lap time.
-unsigned int get_chrono_ms_no_lap(unsigned int ms) {
-  unsigned int chrono_ms;
-  if (chrono_data.running) {
     // The chronograph is running.  Show the active elapsed time.
     chrono_ms = (ms - chrono_data.start_ms + MS_PER_DAY) % MS_PER_DAY;
   } else {
@@ -313,42 +304,6 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 }
 
 
-#define MAX_DIGITS 12
-const char *quick_itoa(int value) {
-  int neg = 0;
-  static char digits[MAX_DIGITS + 2];
-  char *p = digits + MAX_DIGITS + 1;
-  *p = '\0';
-
-  if (value < 0) {
-    value = -value;
-    neg = 1;
-  }
-
-  do {
-    --p;
-    if (p < digits) {
-      digits[0] = '*';
-      return digits;
-    }
-
-    *p = '0' + (value % 10);
-    value /= 10;
-  } while (value != 0);
-
-  if (neg) {
-    --p;
-    if (p < digits) {
-      digits[0] = '*';
-      return digits;
-    }
-
-    *p = '-';
-  }
-
-  return p;
-}
-
 // Reverse the bits of a byte.
 // http://www-graphics.stanford.edu/~seander/bithacks.html#BitReverseTable
 uint8_t reverse_bits(uint8_t b) {
@@ -459,13 +414,11 @@ void hand_cache_init(struct HandCache *hand_cache) {
 }
 
 void hand_cache_destroy(struct HandCache *hand_cache) {
-  if (hand_cache->image != NULL) {
-    gbitmap_destroy(hand_cache->image);
-    hand_cache->image = NULL;
+  if (hand_cache->image.bitmap != NULL) {
+    bwd_destroy(&hand_cache->image);
   }
-  if (hand_cache->mask != NULL) {
-    gbitmap_destroy(hand_cache->mask);
-    hand_cache->mask = NULL;
+  if (hand_cache->mask.bitmap != NULL) {
+    bwd_destroy(&hand_cache->mask);
   }
   int gi;
   for (gi = 0; gi < HAND_CACHE_MAX_GROUPS; ++gi) {
@@ -477,25 +430,26 @@ void hand_cache_destroy(struct HandCache *hand_cache) {
 }
 
 // Draws a given hand on the face, using the bitmap structures.
-void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandTableRow *hand, int place_x, int place_y, GContext *ctx) {
-  //  return;
+void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandTableRow *hand, bool use_rle, int place_x, int place_y, GContext *ctx) {
   if (hand_cache->bitmap_hand != hand) {
     // Force a new bitmap.
-    if (hand_cache->image != NULL) {
-      gbitmap_destroy(hand_cache->image);
-      hand_cache->image = NULL;
+    if (hand_cache->image.bitmap != NULL) {
+      bwd_destroy(&hand_cache->image);
     }
-    if (hand_cache->mask != NULL) {
-      gbitmap_destroy(hand_cache->mask);
-      hand_cache->mask = NULL;
+    if (hand_cache->mask.bitmap != NULL) {
+      bwd_destroy(&hand_cache->mask);
     }
     hand_cache->bitmap_hand = hand;
   }
   
   if (hand->mask_id == hand->image_id) {
     // The hand does not have a mask.  Draw the hand on top of the scene.
-    if (hand_cache->image == NULL) {
-      hand_cache->image = gbitmap_create_with_resource(hand->image_id);
+    if (hand_cache->image.bitmap == NULL) {
+      if (use_rle) {
+	hand_cache->image = rle_bwd_create(hand->image_id);
+      } else {
+	hand_cache->image = png_bwd_create(hand->image_id);
+      }
       hand_cache->cx = hand->cx;
       hand_cache->cy = hand->cy;
     
@@ -503,19 +457,19 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandTableRow *h
         // To minimize wasteful resource usage, if the hand is symmetric
         // we can store only the bitmaps for the right half of the clock
         // face, and flip them for the left half.
-        flip_bitmap_x(hand_cache->image, &hand_cache->cx);
+        flip_bitmap_x(hand_cache->image.bitmap, &hand_cache->cx);
       }
     
       if (hand->flip_y) {
         // We can also do this vertically.
-        flip_bitmap_y(hand_cache->image, &hand_cache->cy);
+        flip_bitmap_y(hand_cache->image.bitmap, &hand_cache->cy);
       }
     }
       
     // We make sure the dimensions of the GRect to draw into
     // are equal to the size of the bitmap--otherwise the image
     // will automatically tile.
-    GRect destination = hand_cache->image->bounds;
+    GRect destination = hand_cache->image.bitmap->bounds;
     
     // Place the hand's center point at place_x, place_y.
     destination.origin.x = place_x - hand_cache->cx;
@@ -533,13 +487,18 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandTableRow *h
       graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
     }
       
-    graphics_draw_bitmap_in_rect(ctx, hand_cache->image, destination);
+    graphics_draw_bitmap_in_rect(ctx, hand_cache->image.bitmap, destination);
     
   } else {
     // The hand has a mask, so use it to draw the hand opaquely.
-    if (hand_cache->image == NULL) {
-      hand_cache->image = gbitmap_create_with_resource(hand->image_id);
-      hand_cache->mask = gbitmap_create_with_resource(hand->mask_id);
+    if (hand_cache->image.bitmap == NULL) {
+      if (use_rle) {
+	hand_cache->image = rle_bwd_create(hand->image_id);
+	hand_cache->mask = rle_bwd_create(hand->mask_id);
+      } else {
+	hand_cache->image = png_bwd_create(hand->image_id);
+	hand_cache->mask = png_bwd_create(hand->mask_id);
+      }
       hand_cache->cx = hand->cx;
       hand_cache->cy = hand->cy;
     
@@ -547,27 +506,27 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandTableRow *h
         // To minimize wasteful resource usage, if the hand is symmetric
         // we can store only the bitmaps for the right half of the clock
         // face, and flip them for the left half.
-        flip_bitmap_x(hand_cache->image, &hand_cache->cx);
-        flip_bitmap_x(hand_cache->mask, NULL);
+        flip_bitmap_x(hand_cache->image.bitmap, &hand_cache->cx);
+        flip_bitmap_x(hand_cache->mask.bitmap, NULL);
       }
     
       if (hand->flip_y) {
         // We can also do this vertically.
-        flip_bitmap_y(hand_cache->image, &hand_cache->cy);
-        flip_bitmap_y(hand_cache->mask, NULL);
+        flip_bitmap_y(hand_cache->image.bitmap, &hand_cache->cy);
+        flip_bitmap_y(hand_cache->mask.bitmap, NULL);
       }
     }
     
-    GRect destination = hand_cache->image->bounds;
+    GRect destination = hand_cache->image.bitmap->bounds;
     
     destination.origin.x = place_x - hand_cache->cx;
     destination.origin.y = place_y - hand_cache->cy;
 
     graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
-    graphics_draw_bitmap_in_rect(ctx, hand_cache->mask, destination);
+    graphics_draw_bitmap_in_rect(ctx, hand_cache->mask.bitmap, destination);
     
     graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
-    graphics_draw_bitmap_in_rect(ctx, hand_cache->image, destination);
+    graphics_draw_bitmap_in_rect(ctx, hand_cache->image.bitmap, destination);
   }
 }
   
@@ -576,12 +535,12 @@ void hour_layer_update_callback(Layer *me, GContext *ctx) {
 
 #ifdef VECTOR_HOUR_HAND
   draw_vector_hand(&hour_cache, &hour_hand_vector_table, current_placement.hour_hand_index,
-                   NUM_STEPS_HOUR, HOUR_HAND_X, HOUR_HAND_Y, ctx);
+		   NUM_STEPS_HOUR, HOUR_HAND_X, HOUR_HAND_Y, ctx);
 #endif
 
 #ifdef BITMAP_HOUR_HAND
   draw_bitmap_hand(&hour_cache, &hour_hand_bitmap_table[current_placement.hour_hand_index],
-                   HOUR_HAND_X, HOUR_HAND_Y, ctx);
+                   true, HOUR_HAND_X, HOUR_HAND_Y, ctx);
 #endif
 }
 
@@ -595,7 +554,7 @@ void minute_layer_update_callback(Layer *me, GContext *ctx) {
 
 #ifdef BITMAP_MINUTE_HAND
   draw_bitmap_hand(&minute_cache, &minute_hand_bitmap_table[current_placement.minute_hand_index],
-                   MINUTE_HAND_X, MINUTE_HAND_Y, ctx);
+                   true, MINUTE_HAND_X, MINUTE_HAND_Y, ctx);
 #endif
 }
 
@@ -610,7 +569,7 @@ void second_layer_update_callback(Layer *me, GContext *ctx) {
     
 #ifdef BITMAP_SECOND_HAND
     draw_bitmap_hand(&second_cache, &second_hand_bitmap_table[current_placement.second_hand_index],
-		     SECOND_HAND_X, SECOND_HAND_Y, ctx);
+		     false, SECOND_HAND_X, SECOND_HAND_Y, ctx);
 #endif
   }
 }
@@ -627,7 +586,7 @@ void chrono_minute_layer_update_callback(Layer *me, GContext *ctx) {
     
 #ifdef BITMAP_CHRONO_MINUTE_HAND
     draw_bitmap_hand(&chrono_minute_cache, &chrono_minute_hand_bitmap_table[current_placement.chrono_minute_hand_index],
-		     CHRONO_MINUTE_HAND_X, CHRONO_MINUTE_HAND_Y, ctx);
+		     true, CHRONO_MINUTE_HAND_X, CHRONO_MINUTE_HAND_Y, ctx);
 #endif
   }
 }
@@ -645,7 +604,7 @@ void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
     
 #ifdef BITMAP_CHRONO_SECOND_HAND
     draw_bitmap_hand(&chrono_second_cache, &chrono_second_hand_bitmap_table[current_placement.chrono_second_hand_index],
-		     CHRONO_SECOND_HAND_X, CHRONO_SECOND_HAND_Y, ctx);
+		     false, CHRONO_SECOND_HAND_X, CHRONO_SECOND_HAND_Y, ctx);
 #endif
   }
 }
@@ -664,14 +623,14 @@ void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
       
 #ifdef BITMAP_CHRONO_TENTH_HAND
       draw_bitmap_hand(&chrono_tenth_cache, &chrono_tenth_hand_bitmap_table[current_placement.chrono_tenth_hand_index],
-		       CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, ctx);
+		       true, CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, ctx);
 #endif
     }
   }
 }
 #endif  // SHOW_CHRONO_TENTH_HAND
 
-void draw_card(Layer *me, GContext *ctx, const char *text, bool on_black, bool bold) {
+void draw_card(Layer *me, GContext *ctx, GBitmap *bitmap_black, GBitmap *bitmap_white, const char *text, bool on_black, bool bold) {
   GFont font;
   GRect box;
 
@@ -683,7 +642,18 @@ void draw_card(Layer *me, GContext *ctx, const char *text, bool on_black, bool b
   box = layer_get_frame(me);
   box.origin.x = 0;
   box.origin.y = 0;
-  if (on_black) {
+
+  if (bitmap_white && bitmap_black) {
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
+    graphics_draw_bitmap_in_rect(ctx, bitmap_black, box);
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
+    graphics_draw_bitmap_in_rect(ctx, bitmap_white, box);
+  } else if (bitmap_black) {
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_assign);
+    graphics_draw_bitmap_in_rect(ctx, bitmap_black, box);
+  }
+
+  if (on_black ^ config.draw_mode) {
     graphics_context_set_text_color(ctx, GColorWhite);
   } else {
     graphics_context_set_text_color(ctx, GColorBlack);
@@ -707,15 +677,15 @@ void chrono_dial_layer_update_callback(Layer *me, GContext *ctx) {
     if (chrono_dial_shows_tenths) {
       // Draw the tenths dial.
       graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
-      graphics_draw_bitmap_in_rect(ctx, chrono_dial_tenths_bitmap_black, destination);
+      graphics_draw_bitmap_in_rect(ctx, chrono_dial_tenths_black.bitmap, destination);
       graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
-      graphics_draw_bitmap_in_rect(ctx, chrono_dial_tenths_bitmap_white, destination);
+      graphics_draw_bitmap_in_rect(ctx, chrono_dial_tenths_white.bitmap, destination);
     } else {
       // Draw the hours dial.
       graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
-      graphics_draw_bitmap_in_rect(ctx, chrono_dial_hours_bitmap_black, destination);
+      graphics_draw_bitmap_in_rect(ctx, chrono_dial_hours_black.bitmap, destination);
       graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
-      graphics_draw_bitmap_in_rect(ctx, chrono_dial_hours_bitmap_white, destination);
+      graphics_draw_bitmap_in_rect(ctx, chrono_dial_hours_white.bitmap, destination);
     }
   }
 }
@@ -725,7 +695,13 @@ void chrono_dial_layer_update_callback(Layer *me, GContext *ctx) {
 void day_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "day_layer");
 
-  draw_card(me, ctx, weekday_names[current_placement.day_index], (DAY_CARD_ON_BLACK) ^ config.draw_mode, DAY_CARD_BOLD);
+  if (config.show_day) {
+#if SHARE_DATE_CARD
+    draw_card(me, ctx, date_card_black.bitmap, date_card_white.bitmap, weekday_names[current_placement.day_index], DAY_CARD_ON_BLACK, DAY_CARD_BOLD);
+#else
+    draw_card(me, ctx, day_card_black.bitmap, day_card_white.bitmap, weekday_names[current_placement.day_index], DAY_CARD_ON_BLACK, DAY_CARD_BOLD);
+#endif
+  }
 }
 #endif  // SHOW_DAY_CARD
 
@@ -733,7 +709,12 @@ void day_layer_update_callback(Layer *me, GContext *ctx) {
 void date_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "date_layer");
 
-  draw_card(me, ctx, quick_itoa(current_placement.date_value), (DATE_CARD_ON_BLACK) ^ config.draw_mode, DATE_CARD_BOLD);
+  if (config.show_date) {
+    static const int buffer_size = 16;
+    char buffer[buffer_size];
+    snprintf(buffer, buffer_size, "%d", current_placement.date_value);
+    draw_card(me, ctx, date_card_black.bitmap, date_card_white.bitmap, buffer, DATE_CARD_ON_BLACK, DATE_CARD_BOLD);
+  }
 }
 #endif  // SHOW_DATE_CARD
 
@@ -958,7 +939,7 @@ void chrono_lap_or_reset_handler(ClickRecognizerRef recognizer, void *context) {
 }
 
 void push_chrono_digital_handler(ClickRecognizerRef recognizer, void *context) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "push chrono digital");
+  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "push chrono digital");
   if (!chrono_digital_window_showing) {
     window_stack_push(chrono_digital_window, true);
   }
@@ -1055,7 +1036,7 @@ void record_chrono_lap(int chrono_ms) {
 
 void update_chrono_current_time() {
   unsigned int ms = get_time_ms(NULL);
-  unsigned int chrono_ms = get_chrono_ms_no_lap(ms);
+  unsigned int chrono_ms = get_chrono_ms(ms);
   unsigned int chrono_h = chrono_ms / (1000 * 60 * 60);
   unsigned int chrono_m = (chrono_ms / (1000 * 60)) % 60;
   unsigned int chrono_s = (chrono_ms / (1000)) % 60;
@@ -1200,7 +1181,7 @@ load_chrono_data() {
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Loaded chrono_data");
     if (chrono_data.running) {
       unsigned int ms = get_time_ms(NULL);
-      unsigned int chrono_ms = get_chrono_ms_no_lap(ms);
+      unsigned int chrono_ms = (ms - chrono_data.start_ms + MS_PER_DAY) % MS_PER_DAY;
       app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Modulated start_ms from %u to %u", chrono_data.start_ms, ms - chrono_ms);
       chrono_data.start_ms = ms - chrono_ms;
     }
@@ -1224,11 +1205,12 @@ void save_chrono_data() {
 }
 
 void handle_init() {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "handle_init begin");
   load_config();
   load_chrono_data();
 
   app_message_register_inbox_received(receive_config_handler);
-  app_message_open(96, 96);
+  app_message_open(128, 128);
 
   time_t now = time(NULL);
   struct tm *startup_time = localtime(&now);
@@ -1259,20 +1241,20 @@ void handle_init() {
   Layer *window_layer = window_get_root_layer(window);
   GRect window_frame = layer_get_frame(window_layer);
 
-  clock_face_bitmap = gbitmap_create_with_resource(RESOURCE_ID_CLOCK_FACE);
+  clock_face = rle_bwd_create(RESOURCE_ID_CLOCK_FACE);
   clock_face_layer = bitmap_layer_create(window_frame);
-  bitmap_layer_set_bitmap(clock_face_layer, clock_face_bitmap);
+  bitmap_layer_set_bitmap(clock_face_layer, clock_face.bitmap);
   layer_add_child(window_layer, bitmap_layer_get_layer(clock_face_layer));
 
 #ifdef MAKE_CHRONOGRAPH
-  chrono_dial_tenths_bitmap_white = gbitmap_create_with_resource(RESOURCE_ID_CHRONO_DIAL_TENTHS_WHITE);
-  chrono_dial_tenths_bitmap_black = gbitmap_create_with_resource(RESOURCE_ID_CHRONO_DIAL_TENTHS_BLACK);
-  chrono_dial_hours_bitmap_white = gbitmap_create_with_resource(RESOURCE_ID_CHRONO_DIAL_HOURS_WHITE);
-  chrono_dial_hours_bitmap_black = gbitmap_create_with_resource(RESOURCE_ID_CHRONO_DIAL_HOURS_BLACK);
+  chrono_dial_tenths_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_TENTHS_WHITE);
+  chrono_dial_tenths_black = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_TENTHS_BLACK);
+  chrono_dial_hours_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_HOURS_WHITE);
+  chrono_dial_hours_black = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_HOURS_BLACK);
 
   {
-    int height = chrono_dial_tenths_bitmap_white->bounds.size.h;
-    int width = chrono_dial_tenths_bitmap_white->bounds.size.w;
+    int height = chrono_dial_tenths_white.bitmap->bounds.size.h;
+    int width = chrono_dial_tenths_white.bitmap->bounds.size.w;
     int x = CHRONO_TENTH_HAND_X - width / 2;
     int y = CHRONO_TENTH_HAND_Y - height / 2;
 
@@ -1297,12 +1279,28 @@ void handle_init() {
   init_bluetooth_indicator(window_layer, BLUETOOTH_X, BLUETOOTH_Y, BLUETOOTH_ON_BLACK, false);
 
 #ifdef SHOW_DAY_CARD
+  #if !SHARE_DATE_CARD
+  #if DAY_CARD_TRANS
+  day_card_white = rle_bwd_create(RESOURCE_ID_DAY_CARD_WHITE);
+  day_card_black = rle_bwd_create(RESOURCE_ID_DAY_CARD_BLACK);
+  #else
+  day_card_black = rle_bwd_create(RESOURCE_ID_DAY_CARD);
+  #endif
+  #endif
+
   day_layer = layer_create(GRect(DAY_CARD_X - 15, DAY_CARD_Y - 8, 31, 19));
   layer_set_update_proc(day_layer, &day_layer_update_callback);
   layer_add_child(window_layer, day_layer);
 #endif  // SHOW_DAY_CARD
 
 #ifdef SHOW_DATE_CARD
+  #if DATE_CARD_TRANS
+  date_card_white = rle_bwd_create(RESOURCE_ID_DATE_CARD_WHITE);
+  date_card_black = rle_bwd_create(RESOURCE_ID_DATE_CARD_BLACK);
+  #else
+  date_card_black = rle_bwd_create(RESOURCE_ID_DATE_CARD);
+  #endif
+
   date_layer = layer_create(GRect(DATE_CARD_X - 15, DATE_CARD_Y - 8, 31, 19));
   layer_set_update_proc(date_layer, &date_layer_update_callback);
   layer_add_child(window_layer, date_layer);
@@ -1358,6 +1356,7 @@ void handle_init() {
 
   update_chrono_laps_time();
   apply_config();
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "handle_init done");
 }
 
 
@@ -1367,14 +1366,14 @@ void handle_deinit() {
 
   window_stack_pop_all(false);
   bitmap_layer_destroy(clock_face_layer);
-  gbitmap_destroy(clock_face_bitmap);
+  bwd_destroy(&clock_face);
 
 #ifdef MAKE_CHRONOGRAPH
   layer_destroy(chrono_dial_layer);
-  gbitmap_destroy(chrono_dial_tenths_bitmap_white);
-  gbitmap_destroy(chrono_dial_tenths_bitmap_black);
-  gbitmap_destroy(chrono_dial_hours_bitmap_white);
-  gbitmap_destroy(chrono_dial_hours_bitmap_black);
+  bwd_destroy(&chrono_dial_tenths_white);
+  bwd_destroy(&chrono_dial_tenths_black);
+  bwd_destroy(&chrono_dial_hours_white);
+  bwd_destroy(&chrono_dial_hours_black);
 
   window_destroy(chrono_digital_window);
 #endif  // MAKE_CHRONOGRAPH
@@ -1384,9 +1383,21 @@ void handle_deinit() {
 
 #ifdef SHOW_DAY_CARD
   layer_destroy(day_layer);
+  if (day_card_white.bitmap != NULL) {
+    bwd_destroy(&day_card_white);
+  }
+  if (day_card_black.bitmap != NULL) {
+    bwd_destroy(&day_card_black);
+  }
 #endif
 #ifdef SHOW_DATE_CARD
   layer_destroy(date_layer);
+  if (date_card_white.bitmap != NULL) {
+    bwd_destroy(&date_card_white);
+  }
+  if (date_card_black.bitmap != NULL) {
+    bwd_destroy(&date_card_black);
+  }
 #endif
   layer_destroy(minute_layer);
   layer_destroy(hour_layer);

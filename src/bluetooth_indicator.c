@@ -1,13 +1,14 @@
 #include <pebble.h>
 #include "bluetooth_indicator.h"
 #include "config_options.h"
+#include "bwd.h"
 
 // Define this to ring the buzzer when the bluetooth connection is
 // lost.
 #define BLUETOOTH_BUZZER 1
 
-GBitmap *bluetooth_disconnected_bitmap;
-GBitmap *bluetooth_connected_bitmap;
+BitmapWithData bluetooth_disconnected;
+BitmapWithData bluetooth_connected;
 Layer *bluetooth_layer;
 bool bluetooth_state = false;
 
@@ -44,13 +45,13 @@ void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
       if (bluetooth_opaque_layer) {
 	graphics_fill_rect(ctx, box, 0, GCornerNone);
       }
-      graphics_draw_bitmap_in_rect(ctx, bluetooth_connected_bitmap, box);
+      graphics_draw_bitmap_in_rect(ctx, bluetooth_connected.bitmap, box);
     }
   } else {
     if (bluetooth_opaque_layer) {
       graphics_fill_rect(ctx, box, 0, GCornerNone);
     }
-    graphics_draw_bitmap_in_rect(ctx, bluetooth_disconnected_bitmap, box);
+    graphics_draw_bitmap_in_rect(ctx, bluetooth_disconnected.bitmap, box);
   }
 }
 
@@ -62,8 +63,8 @@ void handle_bluetooth(bool connected) {
 void init_bluetooth_indicator(Layer *window_layer, int x, int y, bool on_black, bool opaque_layer) {
   bluetooth_on_black = on_black;
   bluetooth_opaque_layer = opaque_layer;
-  bluetooth_disconnected_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BLUETOOTH_DISCONNECTED);
-  bluetooth_connected_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BLUETOOTH_CONNECTED);
+  bluetooth_disconnected = png_bwd_create(RESOURCE_ID_BLUETOOTH_DISCONNECTED);
+  bluetooth_connected = png_bwd_create(RESOURCE_ID_BLUETOOTH_CONNECTED);
   bluetooth_layer = layer_create(GRect(x, y, 18, 18));
   layer_set_update_proc(bluetooth_layer, &bluetooth_layer_update_callback);
   layer_add_child(window_layer, bluetooth_layer);
@@ -73,8 +74,8 @@ void init_bluetooth_indicator(Layer *window_layer, int x, int y, bool on_black, 
 void deinit_bluetooth_indicator() {
   bluetooth_connection_service_unsubscribe();
   layer_destroy(bluetooth_layer);
-  gbitmap_destroy(bluetooth_disconnected_bitmap);
-  gbitmap_destroy(bluetooth_connected_bitmap);
+  bwd_destroy(&bluetooth_disconnected);
+  bwd_destroy(&bluetooth_connected);
 }
 
 void refresh_bluetooth_indicator() {

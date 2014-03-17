@@ -2,17 +2,22 @@
 var watch_name = "%(watchName)s";
 var show_chrono_dial = %(showChronoDial)s;
 var enable_sweep_seconds = %(enableSweepSeconds)s;
+var enable_show_day = %(showDayCard)s;
+var enable_show_date = %(showDateCard)s;
 
 // Define the initial config default values.  These defaults are used
 // only if the Pebble is connected to the phone at the time of launch;
 // otherwise, the defaults in init_default_options() are used instead.
-var default_keep_battery_gauge = %(indicatorsAlways)s;
-var default_keep_bluetooth_indicator = %(indicatorsAlways)s;
+var default_keep_battery_gauge = %(defaultBattery)s;
+var default_keep_bluetooth_indicator = %(defaultBluetooth)s;
 var default_second_hand = %(showSecondHand)s;
 var default_hour_buzzer = %(enableHourBuzzer)s;
 var default_draw_mode = 0;
 var default_chrono_dial = 1;
 var default_sweep_seconds = 0;
+var default_show_day = %(defaultDayCard)s;
+var default_show_date = %(defaultDateCard)s;
+var default_display_lang = 0;
 
 var keep_battery_gauge;
 var keep_bluetooth_indicator;
@@ -21,6 +26,9 @@ var hour_buzzer;
 var draw_mode;
 var chrono_dial;
 var sweep_seconds;
+var show_day;
+var show_date;
+var display_lang;
 
 var logLocalStorage = function() {
     var keys = Object.keys(localStorage);
@@ -82,6 +90,24 @@ var initialize = function() {
     }
     sweep_seconds = parseInt(sweep_seconds);
 
+    show_day = localStorage.getItem(watch_name + ":show_day");
+    if (!show_day) {
+	show_day = default_show_day;
+    }
+    show_day = parseInt(show_day);
+
+    show_date = localStorage.getItem(watch_name + ":show_date");
+    if (!show_date) {
+	show_date = default_show_date;
+    }
+    show_date = parseInt(show_date);
+
+    display_lang = localStorage.getItem(watch_name + ":display_lang");
+    if (!display_lang) {
+	display_lang = default_display_lang;
+    }
+    display_lang = parseInt(display_lang);
+
     console.log("   keep_battery_gauge: " + keep_battery_gauge);
     console.log("   keep_bluetooth_indicator: " + keep_bluetooth_indicator);
     console.log("   second_hand: " + second_hand);
@@ -89,6 +115,9 @@ var initialize = function() {
     console.log("   draw_mode: " + draw_mode);
     console.log("   chrono_dial: " + chrono_dial);
     console.log("   sweep_seconds: " + sweep_seconds);
+    console.log("   show_day: " + show_day);
+    console.log("   show_date: " + show_date);
+    console.log("   display_lang: " + display_lang);
 
     // At startup, send the current configuration to the Pebble--the
     // phone storage keeps the authoritative state.  We delay by 1
@@ -103,6 +132,9 @@ var initialize = function() {
 	    'draw_mode' : draw_mode,
 	    'chrono_dial' : chrono_dial,
 	    'sweep_seconds' : sweep_seconds,
+	    'show_day' : show_day,
+	    'show_date' : show_date,
+	    'display_lang' : display_lang,
 	};
    	console.log("sending init config: " + JSON.stringify(configuration));
 	Pebble.sendAppMessage(configuration);
@@ -117,12 +149,18 @@ Pebble.addEventListener("ready", function(e) {
 Pebble.addEventListener("showConfiguration", function(e) {
     console.log("showConfiguration starting");
     initialize();
-    var url = "http://www.ddrose.com/pebble/rosewright_2_3_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&keep_battery_gauge=" + keep_battery_gauge + "&keep_bluetooth_indicator=" + keep_bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&draw_mode=" + draw_mode;
+    var url = "http://www.ddrose.com/pebble/rosewright_2_4_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&keep_battery_gauge=" + keep_battery_gauge + "&keep_bluetooth_indicator=" + keep_bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&draw_mode=" + draw_mode + "&display_lang=" + display_lang;
     if (show_chrono_dial) {
 	url += "&chrono_dial=" + chrono_dial
     }
     if (enable_sweep_seconds) {
 	url += "&sweep_seconds=" + sweep_seconds
+    }
+    if (enable_show_day) {
+	url += "&show_day=" + show_day
+    }
+    if (enable_show_date) {
+	url += "&show_date=" + show_date
     }
     console.log("showConfiguration: " + url);
     var result = Pebble.openURL(url);
@@ -159,6 +197,15 @@ Pebble.addEventListener("webviewclosed", function(e) {
 	
 	sweep_seconds = configuration["sweep_seconds"];
 	localStorage.setItem(watch_name + ":sweep_seconds", sweep_seconds);
+	
+	show_day = configuration["show_day"];
+	localStorage.setItem(watch_name + ":show_day", show_day);
+
+	show_date = configuration["show_date"];
+	localStorage.setItem(watch_name + ":show_date", show_date);
+	
+	display_lang = configuration["display_lang"];
+	localStorage.setItem(watch_name + ":display_lang", display_lang);
 
 	logLocalStorage();
     }

@@ -6,6 +6,7 @@ import sys
 import os
 import getopt
 import locale
+from make_rle import make_rle, make_rle_trans, make_rle_image
 
 help = """
 config_watch.py
@@ -36,10 +37,6 @@ Options:
     -b
         Enable a quick buzz at the top of the hour.
 
-    -I
-        Keep bluetooth and battery indicators visible all the time,
-        instead of only when needed.
-
     -c
         Enable chronograph mode (if the selected hand style includes
         chrono hands).  This builds the watch as a standard app,
@@ -50,9 +47,13 @@ Options:
         Invert the hand color, for instance to apply a set of watch
         hands meant for a white face onto a black face.
 
+    -x
+        Perform no RLE compression of images.
+
     -d
         Compile for debugging.  Specifically this enables "fast time",
-        so the hands move quickly about the face of the watch.
+        so the hands move quickly about the face of the watch.  It
+        also enables logging.
 
     -l locale
         Specifies the locale (for the day-of-week names).  Use a
@@ -195,10 +196,10 @@ hands = {
 # Table of face styles.  For each style, specify the following:
 #
 #   filename  - the background image for the face.
-#   dayCard   - the (x, y, c) position and color of the "day of week" card, or None.
-#   dateCard  - the (x, y, c) position and color of the "date of month" card, or None.
-#   battery   - the (x, y, c) position and color of the battery gauge, or None.
-#   bluetooth - the (x, y, c) position and color of the bluetooth indicator, or None.
+#   dateCard  - the (x, y, c, filename, enabled) position, color, background of the "date of month" card, or None.  If enabled is true the card is enabled by default.
+#   dayCard   - the (x, y, c, filename, enabled) position, color, background of the "day of week" card, or None.  If filename is None the dayCard file is used.
+#   battery   - the (x, y, c, enabled) position and color of the battery gauge, or None.
+#   bluetooth - the (x, y, c, enabled) position and color of the bluetooth indicator, or None.
 #   centers   - a list of [(hand, x, y)] to indicate the position for
 #               each kind of watch hand.  If the list is empty or a
 #               hand is omitted, the default is the center.  This also
@@ -211,41 +212,45 @@ hands = {
 faces = {
     'a' : {
         'filename': 'a_face.png', 
-        'dateCard': (106, 82, 'B'), 
-        'bluetooth' : (51, 113, 'b'),
-        'battery' : (77, 117, 'b'),
+        'dateCard': (106, 82, 'B', 'date_card_white.png', True), 
+        'dayCard': (38, 82, 'B', None, False), 
+        'bluetooth' : (51, 113, 'b', False),
+        'battery' : (77, 117, 'b', False),
         },
     'au' : {
         'filename': 'a_face_unrotated.png', 
-        'dateCard' : (106, 82, 'B'), 
-        'bluetooth' : (51, 113, 'b'),
-        'battery' : (77, 117, 'b'),
+        'dateCard' : (106, 82, 'B', 'date_card_white.png', True), 
+        'dayCard': (38, 82, 'B', None, False), 
+        'bluetooth' : (51, 113, 'b', False),
+        'battery' : (77, 117, 'b', False),
         },
     'b' : {
         'filename' : 'b_face.png', 
-        'dayCard' : (52, 109, 'b'), 
-        'dateCard' : (92, 109, 'b'), 
-        'bluetooth' : (0, 0, 'b'),
-        'battery' : (125, 3, 'b'),
+        'dateCard' : (92, 109, 'b', 'date_card_white.png', True), 
+        'dayCard' : (52, 109, 'b', None, True), 
+        'bluetooth' : (0, 0, 'b', True),
+        'battery' : (125, 3, 'b', True),
         },
     'c' : {
         'filename' : ['c_face.png', 'c_face_chrono_tenths.png', 'c_face_chrono_hours.png'],
         'centers' : [('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)],
-        'bluetooth' : (0, 0, 'w'),
-        'battery' : (125, 3, 'w'),
+        'dateCard' : (92, 45, 'wt', 'date_card_black_trans.png', False), 
+        'dayCard' : (52, 45, 'wt', None, False), 
+        'bluetooth' : (0, 0, 'w', False),
+        'battery' : (125, 3, 'w', False),
         },
     'd' : {
         'filename' : 'd_face.png', 
-        'dayCard' : (53, 107, 'w'), 
-        'dateCard' : (91, 107, 'w'), 
-        'bluetooth' : (0, 0, 'w'),
-        'battery' : (125, 3, 'w'),
+        'dateCard' : (91, 107, 'wt', 'date_card_black_trans.png', True), 
+        'dayCard' : (53, 107, 'wt', None, True), 
+        'bluetooth' : (0, 0, 'w', True),
+        'battery' : (125, 3, 'w', True),
         },
     'e' : {
         'filename' : 'e_face.png',
-        'dateCard' : (123, 82, 'B'), 
-        'bluetooth' : (11, 12, 'w'),
-        'battery' : (113, 16, 'w'),
+        'dateCard' : (123, 82, 'Bt', 'date_card_white_trans.png', True), 
+        'bluetooth' : (11, 12, 'w', False),
+        'battery' : (113, 16, 'w', False),
         },
     }
 
@@ -253,7 +258,6 @@ makeChronograph = False
 showSecondHand = False
 suppressSecondHand = False
 enableHourBuzzer = False
-indicatorsAlways = False
 showChronoMinuteHand = False
 showChronoSecondHand = False
 showChronoTenthHand = False
@@ -329,23 +333,52 @@ def makeFaces():
 
     resourceStr = ''
     
-    resourceEntry = """
+    clockFaceEntry = """
     {
       "name": "CLOCK_FACE",
-      "file": "clock_faces/%(targetFilename)s",
-      "type": "png"
+      "file": "%(rleFilename)s",
+      "type": "%(ptype)s"
+    },"""    
+    
+    dateCardEntry = """
+    {
+      "name": "%(name)s",
+      "file": "%(rleFilename)s",
+      "type": "%(ptype)s"
+    },"""    
+    
+    dateCardTransEntry = """
+    {
+      "name": "%(name)s_WHITE",
+      "file": "%(rleWhiteFilename)s",
+      "type": "%(ptype)s"
+    },
+    {
+      "name": "%(name)s_BLACK",
+      "file": "%(rleBlackFilename)s",
+      "type": "%(ptype)s"
     },"""    
 
     chronoResourceEntry = """
     {
-      "name": "CHRONO_DIAL_TENTHS",
-      "file": "clock_faces/%(targetChronoTenths)s",
-      "type": "png-trans"
+      "name": "CHRONO_DIAL_TENTHS_WHITE",
+      "file": "%(targetChronoTenthsWhite)s",
+      "type": "%(ptype)s"
     },
     {
-      "name": "CHRONO_DIAL_HOURS",
-      "file": "clock_faces/%(targetChronoHours)s",
-      "type": "png-trans"
+      "name": "CHRONO_DIAL_TENTHS_BLACK",
+      "file": "%(targetChronoTenthsBlack)s",
+      "type": "%(ptype)s"
+    },
+    {
+      "name": "CHRONO_DIAL_HOURS_WHITE",
+      "file": "%(targetChronoHoursWhite)s",
+      "type": "%(ptype)s"
+    },
+    {
+      "name": "CHRONO_DIAL_HOURS_BLACK",
+      "file": "%(targetChronoHoursBlack)s",
+      "type": "%(ptype)s"
     },"""    
 
     fd = faces[faceStyle]
@@ -355,13 +388,57 @@ def makeFaces():
     if not isinstance(targetFilename, type('')):
         targetFilename, targetChronoTenths, targetChronoHours = targetFilename
 
-    resourceStr += resourceEntry % {
-        'targetFilename' : targetFilename,
+    rleFilename, ptype = make_rle('clock_faces/' + targetFilename, useRle = supportRle)
+    resourceStr += clockFaceEntry % {
+        'rleFilename' : rleFilename,
+        'ptype' : ptype,
         }
+
+    if dateCard:
+        if dateCard[2][-1] == 't':
+            # Use transparency.
+            rleWhiteFilename, rleBlackFilename, ptype = make_rle_trans('clock_faces/' + dateCard[3], useRle = supportRle)
+            resourceStr += dateCardTransEntry % {
+                'name' : 'DATE_CARD',
+                'rleWhiteFilename' : rleWhiteFilename,
+                'rleBlackFilename' : rleBlackFilename,
+                'ptype' : ptype,
+                }
+        else:
+            # No transparency.
+            rleFilename, ptype = make_rle('clock_faces/' + dateCard[3], useRle = supportRle)
+            resourceStr += dateCardEntry % {
+                'name' : 'DATE_CARD',
+                'rleFilename' : rleFilename,
+                'ptype' : ptype,
+                }
+    if dayCard and dayCard[3]:
+        if dayCard[2][-1] == 't':
+            # Use transparency.
+            rleWhiteFilename, rleBlackFilename, ptype = make_rle_trans('clock_faces/' + dayCard[3], useRle = supportRle)
+            resourceStr += dateCardTransEntry % {
+                'name' : 'DAY_CARD',
+                'rleWhiteFilename' : rleWhiteFilename,
+                'rleBlackFilename' : rleBlackFilename,
+                'ptype' : ptype,
+                }
+        else:
+            # No transparency.
+            rleFilename, ptype = make_rle('clock_faces/' + dayCard[3], useRle = supportRle)
+            resourceStr += dateCardEntry % {
+                'name' : 'DAY_CARD',
+                'rleFilename' : rleFilename,
+                'ptype' : ptype,
+                }
     if targetChronoTenths:
+        tenthsWhite, tenthsBlack, ptype = make_rle_trans('clock_faces/' + targetChronoTenths, useRle = supportRle)
+        hoursWhite, hoursBlack, ptype = make_rle_trans('clock_faces/' + targetChronoHours, useRle = supportRle)
         resourceStr += chronoResourceEntry % {
-            'targetChronoTenths' : targetChronoTenths,
-            'targetChronoHours' : targetChronoHours,
+            'targetChronoTenthsWhite' : tenthsWhite,
+            'targetChronoTenthsBlack' : tenthsBlack,
+            'targetChronoHoursWhite' : hoursWhite,
+            'targetChronoHoursBlack' : hoursBlack,
+            'ptype' : ptype,
             }
 
     return resourceStr
@@ -409,14 +486,14 @@ def getNumSteps(hand):
     return numStepsHand
                 
 
-def makeBitmapHands(generatedTable, hand, sourceFilename, colorMode, asymmetric, pivot, scale):
+def makeBitmapHands(generatedTable, useRle, hand, sourceFilename, colorMode, asymmetric, pivot, scale):
     resourceStr = ''
 
     resourceEntry = """
     {
       "name": "%(defName)s",
       "file": "clock_hands/%(targetFilename)s",
-      "type": "png"
+      "type": "%(ptype)s"
     },"""    
 
     handTableEntry = """  { RESOURCE_ID_%(symbolName)s, RESOURCE_ID_%(symbolMaskName)s, %(cx)s, %(cy)s, %(flip_x)s, %(flip_y)s, %(paintBlack)s },"""
@@ -566,24 +643,42 @@ def makeBitmapHands(generatedTable, hand, sourceFilename, colorMode, asymmetric,
             ##     if useTransparency:
             ##         pm.putpixel((cx, cy), 0)
 
-            targetFilename = 'flat_%s_%s_%s.png' % (handStyle, hand, i)
-            print targetFilename
-
-            p.save('%s/clock_hands/%s' % (resourcesDir, targetFilename))
-            resourceStr += resourceEntry % {
-                'defName' : symbolName,
-                'targetFilename' : targetFilename,
-                }
+            if useRle:
+                targetFilename = 'flat_%s_%s_%s.rle' % (handStyle, hand, i)
+                make_rle_image('%s/clock_hands/%s' % (resourcesDir, targetFilename), p)
+                resourceStr += resourceEntry % {
+                    'defName' : symbolName,
+                    'targetFilename' : targetFilename,
+                    'ptype' : 'raw',
+                    }
+            else:
+                targetFilename = 'flat_%s_%s_%s.png' % (handStyle, hand, i)
+                print targetFilename
+                p.save('%s/clock_hands/%s' % (resourcesDir, targetFilename))
+                resourceStr += resourceEntry % {
+                    'defName' : symbolName,
+                    'targetFilename' : targetFilename,
+                    'ptype' : 'png',
+                    }
 
             if useTransparency:
-                targetMaskFilename = 'flat_%s_%s_%s_mask.png' % (handStyle, hand, i)
-                print targetMaskFilename
-
-                pm.save('%s/clock_hands/%s' % (resourcesDir, targetMaskFilename))
-                resourceStr += resourceEntry % {
-                    'defName' : symbolMaskName,
-                    'targetFilename' : targetMaskFilename,
-                    }
+                if useRle:
+                    targetMaskFilename = 'flat_%s_%s_%s_mask.rle' % (handStyle, hand, i)
+                    make_rle_image('%s/clock_hands/%s' % (resourcesDir, targetMaskFilename), pm)
+                    resourceStr += resourceEntry % {
+                        'defName' : symbolMaskName,
+                        'targetFilename' : targetMaskFilename,
+                        'ptype' : 'raw',
+                        }
+                else:
+                    targetMaskFilename = 'flat_%s_%s_%s_mask.png' % (handStyle, hand, i)
+                    print targetMaskFilename
+                    pm.save('%s/clock_hands/%s' % (resourcesDir, targetMaskFilename))
+                    resourceStr += resourceEntry % {
+                        'defName' : symbolMaskName,
+                        'targetFilename' : targetMaskFilename,
+                        'ptype' : 'png',
+                        }
 
         print >> generatedTable, handTableEntry % {
             'index' : i,
@@ -607,21 +702,24 @@ def makeHands(generatedTable):
     resourceStr = ''
 
     for hand, bitmapParams, vectorParams in hands[handStyle]:
+        useRle = supportRle
         if hand == 'second':
             global showSecondHand
             showSecondHand = True
+            useRle = False
         elif hand == 'chrono_minute':
             global showChronoMinuteHand
             showChronoMinuteHand = True
         elif hand == 'chrono_second':
             global showChronoSecondHand
             showChronoSecondHand = True
+            useRle = False
         elif hand == 'chrono_tenth':
             global showChronoTenthHand
             showChronoTenthHand = True
             
         if bitmapParams:
-            resourceStr += makeBitmapHands(generatedTable, hand, *bitmapParams)
+            resourceStr += makeBitmapHands(generatedTable, useRle, hand, *bitmapParams)
         if vectorParams:
             resourceStr += makeVectorHands(generatedTable, hand, vectorParams)
 
@@ -671,10 +769,15 @@ def configWatch():
     print >> js, jsIn % {
         'watchName' : watchName,
         'showChronoDial' : int(makeChronograph),
-        'indicatorsAlways' : int(indicatorsAlways),
+        'defaultBluetooth' : int(bool(bluetooth and bluetooth[3])),
+        'defaultBattery' : int(bool(battery and battery[3])),
         'showSecondHand' : int(showSecondHand and not suppressSecondHand),
         'enableHourBuzzer' : int(enableHourBuzzer),
         'enableSweepSeconds' : int(showSecondHand and supportSweep),
+        'showDayCard' : int(bool(dayCard)),
+        'showDateCard' : int(bool(dateCard)),
+        'defaultDayCard' : int(bool(dayCard and dayCard[4])),
+        'defaultDateCard' : int(bool(dateCard and dateCard[4])),
         }
 
     configIn = open('%s/generated_config.h.in' % (resourcesDir), 'r').read()
@@ -696,6 +799,7 @@ def configWatch():
     
     print >> config, configIn % {
         'persistKey' : 0x5151 + uuId[-1],
+        'supportRle' : int(bool(supportRle)),
         'numStepsHour' : numSteps['hour'],
         'numStepsMinute' : numSteps['minute'],
         'numStepsSecond' : getNumSteps('second'),
@@ -718,17 +822,22 @@ def configWatch():
         'showDayCard' : int(bool(dayCard)),
         'showDateCard' : int(bool(dateCard)),
         'showBluetooth' : int(bool(bluetooth)),
-        'showBluetoothAlways' : int(bool(bluetooth and indicatorsAlways)),
+        'defaultBluetooth' : int(bool(bluetooth and bluetooth[3])),
         'showBatteryGauge' : int(bool(battery)),
-        'showBatteryGaugeAlways' : int(bool(battery and indicatorsAlways)),
+        'defaultBattery' : int(bool(battery and battery[3])),
         'dayCardX' : dayCard and dayCard[0],
         'dayCardY' : dayCard and dayCard[1],
-        'dayCardOnBlack' : int(bool(dayCard and (dayCard[2].lower() == 'w'))),
-        'dayCardBold' : int(bool(dayCard and (dayCard[2] in 'WB'))),
+        'dayCardOnBlack' : int(bool(dayCard and (dayCard[2][0].lower() == 'w'))),
+        'dayCardBold' : int(bool(dayCard and (dayCard[2][0] in 'WB'))),
+        'dayCardTrans' : int(bool(dayCard and (dayCard[2][-1] == 't'))),
+        'shareDateCard' : int(bool(dayCard and not dayCard[3])),
+        'defaultDayCard' : int(bool(dayCard and dayCard[4])),
         'dateCardX' : dateCard and dateCard[0],
         'dateCardY' : dateCard and dateCard[1],
-        'dateCardOnBlack' : int(bool(dateCard and (dateCard[2].lower() == 'w'))),
-        'dateCardBold' : int(bool(dateCard and (dateCard[2] in 'WB'))),
+        'dateCardOnBlack' : int(bool(dateCard and (dateCard[2][0].lower() == 'w'))),
+        'dateCardBold' : int(bool(dateCard and (dateCard[2][0] in 'WB'))),
+        'dateCardTrans' : int(bool(dateCard and (dateCard[2][-1] == 't'))),
+        'defaultDateCard' : int(bool(dateCard and dateCard[4])),
         'bluetoothX' : bluetooth and bluetooth[0],
         'bluetoothY' : bluetooth and bluetooth[1],
         'bluetoothOnBlack' : int(bool(bluetooth and (bluetooth[2].lower() == 'w'))),
@@ -748,7 +857,7 @@ def configWatch():
 
 # Main.
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:SbIciwdl:h')
+    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:Sbciwxdl:h')
 except getopt.error, msg:
     usage(1, msg)
 
@@ -758,6 +867,7 @@ faceStyle = None
 invertHands = False
 supportSweep = False
 compileDebugging = False
+supportRle = True
 localeName = ''
 for opt, arg in opts:
     if opt == '-s':
@@ -779,14 +889,14 @@ for opt, arg in opts:
         suppressSecondHand = True
     elif opt == '-b':
         enableHourBuzzer = True
-    elif opt == '-I':
-        indicatorsAlways = True
     elif opt == '-c':
         makeChronograph = True
     elif opt == '-i':
         invertHands = True
     elif opt == '-w':
         supportSweep = True
+    elif opt == '-x':
+        supportRle = False
     elif opt == '-d':
         compileDebugging = True
     elif opt == '-l':

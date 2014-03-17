@@ -16,7 +16,10 @@
     "hour_buzzer": 3,
     "draw_mode": 4,
     "chrono_dial": 5,
-    "sweep_seconds": 6
+    "sweep_seconds": 6,
+    "show_day": 7,
+    "show_date": 8,
+    "display_lang": 9
   },
   "resources": {
   "media": [

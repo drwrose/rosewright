@@ -1,9 +1,10 @@
 #include <pebble.h>
 #include "battery_gauge.h"
 #include "config_options.h"
+#include "bwd.h"
 
-GBitmap *battery_gauge_empty_bitmap;
-GBitmap *battery_gauge_charging_bitmap;
+BitmapWithData battery_gauge_empty;
+BitmapWithData battery_gauge_charging;
 Layer *battery_gauge_layer;
 
 bool battery_gauge_on_black = false;
@@ -46,12 +47,12 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
   }
 
   if (charge_state.is_charging) {
-    graphics_draw_bitmap_in_rect(ctx, battery_gauge_charging_bitmap, box);
+    graphics_draw_bitmap_in_rect(ctx, battery_gauge_charging.bitmap, box);
   } else if (config.keep_battery_gauge || (charge_state.is_plugged || charge_state.charge_percent <= 20)) {
     // Unless keep_battery_gauge is configured true, then we don't
     // bother showing the battery gauge when it's in a normal
     // condition.
-    graphics_draw_bitmap_in_rect(ctx, battery_gauge_empty_bitmap, box);
+    graphics_draw_bitmap_in_rect(ctx, battery_gauge_empty.bitmap, box);
     int bar_width = (charge_state.charge_percent * 9 + 50) / 100 + 1;
     graphics_fill_rect(ctx, GRect(3, 3, bar_width, 4), 0, GCornerNone);
   }
@@ -65,8 +66,8 @@ void handle_battery(BatteryChargeState charge_state) {
 void init_battery_gauge(Layer *window_layer, int x, int y, bool on_black, bool opaque_layer) {
   battery_gauge_on_black = on_black;
   battery_gauge_opaque_layer = opaque_layer;
-  battery_gauge_empty_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BATTERY_GAUGE_EMPTY);
-  battery_gauge_charging_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BATTERY_GAUGE_CHARGING);
+  battery_gauge_empty = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_EMPTY);
+  battery_gauge_charging = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_CHARGING);
   battery_gauge_layer = layer_create(GRect(x, y, 18, 10));
   layer_set_update_proc(battery_gauge_layer, &battery_gauge_layer_update_callback);
   layer_add_child(window_layer, battery_gauge_layer);
@@ -76,8 +77,8 @@ void init_battery_gauge(Layer *window_layer, int x, int y, bool on_black, bool o
 void deinit_battery_gauge() {
   battery_state_service_unsubscribe();
   layer_destroy(battery_gauge_layer);
-  gbitmap_destroy(battery_gauge_empty_bitmap);
-  gbitmap_destroy(battery_gauge_charging_bitmap);
+  bwd_destroy(&battery_gauge_empty);
+  bwd_destroy(&battery_gauge_charging);
 }
 
 void refresh_battery_gauge() {

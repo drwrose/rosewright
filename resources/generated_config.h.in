@@ -1,6 +1,12 @@
 // This key is used to record the persistent storage.
 #define PERSIST_KEY %(persistKey)s
 
+// Defined if we are compiling in support for RLE-encoded images.  If
+// not, all resource images must be unencoded.
+#if %(supportRle)s
+  #define SUPPORT_RLE 1
+#endif
+
 // The number of subdivisions around the face for each kind of hand.
 #define NUM_STEPS_HOUR %(numStepsHour)s
 #define NUM_STEPS_MINUTE %(numStepsMinute)s
@@ -25,23 +31,37 @@
   // easily see the hands in several different orientations around the
   // face.
   #define FAST_TIME 1
+
+  // Allow log calls to remain in the code.
+  #define ENABLE_LOG 1
+  #define app_log app_log
+#else
+  // Eliminate log calls from even appearing in the code.
+  #define app_log(...)
 #endif
 
+#define ENABLE_DAY_CARD %(showDayCard)s
 #if %(showDayCard)s
   #define SHOW_DAY_CARD 1
   #define DAY_CARD_X %(dayCardX)s
   #define DAY_CARD_Y %(dayCardY)s
   #define DAY_CARD_ON_BLACK %(dayCardOnBlack)s
   #define DAY_CARD_BOLD %(dayCardBold)s
+  #define DAY_CARD_TRANS %(dayCardTrans)s
+  #define SHARE_DATE_CARD %(shareDateCard)s
 #endif
+#define DEFAULT_DAY_CARD %(defaultDayCard)s
 
+#define ENABLE_DATE_CARD %(showDateCard)s
 #if %(showDateCard)s
   #define SHOW_DATE_CARD 1
   #define DATE_CARD_X %(dateCardX)s
   #define DATE_CARD_Y %(dateCardY)s
   #define DATE_CARD_ON_BLACK %(dateCardOnBlack)s
   #define DATE_CARD_BOLD %(dateCardBold)s
+  #define DATE_CARD_TRANS %(dateCardTrans)s
 #endif
+#define DEFAULT_DATE_CARD %(defaultDateCard)s
  
 #if %(showBluetooth)s
   #define SHOW_BLUETOOTH 1
@@ -49,7 +69,7 @@
   #define BLUETOOTH_Y %(bluetoothY)s
   #define BLUETOOTH_ON_BLACK %(bluetoothOnBlack)s
 #endif
-#define SHOW_BLUETOOTH_ALWAYS %(showBluetoothAlways)s
+#define DEFAULT_BLUETOOTH %(defaultBluetooth)s
  
 #if %(showBatteryGauge)s
   #define SHOW_BATTERY_GAUGE 1
@@ -57,7 +77,7 @@
   #define BATTERY_GAUGE_Y %(batteryGaugeY)s
   #define BATTERY_GAUGE_ON_BLACK %(batteryGaugeOnBlack)s
 #endif
-#define SHOW_BATTERY_GAUGE_ALWAYS %(showBatteryGaugeAlways)s
+#define DEFAULT_BATTERY_GAUGE %(defaultBattery)s
 
 #define SHOW_SECOND_HAND %(showSecondHand)s
 #define SECOND_HAND_X %(secondHandX)s

@@ -13,7 +13,21 @@ typedef enum {
   CK_draw_mode = 4,
   CK_chrono_dial = 5,
   CK_sweep_seconds = 6,
+  CK_show_day = 7,
+  CK_show_date = 8,
+  CK_display_lang = 9,
 } ConfigKey;
+
+typedef enum {
+  DL_english,
+  DL_french,
+  DL_german,
+  DL_italian,
+  DL_dutch,
+  DL_spanish,
+  DL_portuguese,
+  DL_num_languages,
+} DisplayLanguages;
 
 typedef enum {
   CDM_off = 0,
@@ -30,6 +44,9 @@ typedef struct {
   unsigned char draw_mode;
   unsigned char chrono_dial;
   bool sweep_seconds;
+  bool show_day;
+  bool show_date;
+  DisplayLanguages display_lang;
 } __attribute__((__packed__)) ConfigOptions;
 
 extern ConfigOptions config;

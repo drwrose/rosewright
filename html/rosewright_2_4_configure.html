@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset='utf-8'>
+        <meta name='viewport' content='width=device-width, initial-scale=1'>
+        <link rel='stylesheet' href='http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.css' />
+        <script src='http://code.jquery.com/jquery-1.9.1.min.js'></script>
+        <script src='http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.js'></script>
+        <script src='purl.js'></script>
+        <style>
+          .ui-header .ui-title { margin-left: 1em; margin-right: 1em; text-overflow: clip; }
+        </style>
+        <title>Rosewright</title>
+    </head>
+    <body>
+    <div data-role="page" id="page1">
+    <div data-theme="a" data-role="header" data-position="fixed">
+        <h3>
+<script>
+  document.write($.url().param("watch_name"));
+</script>
+      Configuration</h3>
+    </div>
+    <div data-role="content">
+        <div class="ui-grid-a">
+            <div class="ui-block-a">
+                <input id="cancel" value="Cancel" type="submit">
+            </div>
+            <div class="ui-block-b">
+                <input id="save" data-theme="a" value="Save" type="submit">
+            </div>
+        </div>
+
+        <div data-role="fieldcontain">
+            <label for="keep_battery_gauge">
+                Keep battery visible
+            </label>
+            <select name="keep_battery_gauge" id="keep_battery_gauge" data-theme="" data-role="slider">
+<script>
+  if ($.url().param("keep_battery_gauge") == "1") {
+     document.write('<option value="0">Off</option><option value="1" selected>On</option>');
+  } else {
+     document.write('<option value="0" selected>Off</option><option value="1">On</option>');
+  }
+</script>
+            </select>
+        </div>
+
+        <div data-role="fieldcontain">
+            <label for="keep_bluetooth_indicator">
+                Keep bluetooth visible
+            </label>
+            <select name="keep_bluetooth_indicator" id="keep_bluetooth_indicator" data-theme="" data-role="slider">
+<script>
+  if ($.url().param("keep_bluetooth_indicator") == "1") {
+     document.write('<option value="0">Off</option><option value="1" selected>On</option>');
+  } else {
+     document.write('<option value="0" selected>Off</option><option value="1">On</option>');
+  }
+</script>
+            </select>
+        </div>
+
+        <div data-role="fieldcontain">
+            <label for="second_hand">
+                Second hand
+            </label>
+            <select name="second_hand" id="second_hand" data-theme="" data-role="slider">
+<script>
+  if ($.url().param("second_hand") == "1") {
+     document.write('<option value="0">Off</option><option value="1" selected>On</option>');
+  } else {
+     document.write('<option value="0" selected>Off</option><option value="1">On</option>');
+  }
+</script>
+            </select>
+        </div>
+
+<script>
+  if ($.url().param("sweep_seconds") == undefined) {
+     document.write('<div data-role="fieldcontain" style="display: none">')
+  } else {
+     document.write('<div data-role="fieldcontain">')
+  }	   
+</script>
+            <label for="sweep_seconds">
+                Smooth-sweep seconds (heavy battery use)
+            </label>
+            <select name="sweep_seconds" id="sweep_seconds" data-theme="" data-role="slider">
+<script>
+  if ($.url().param("sweep_seconds") == "1") {
+     document.write('<option value="0">Off</option><option value="1" selected>On</option>');
+  } else {
+     document.write('<option value="0" selected>Off</option><option value="1">On</option>');
+  }
+</script>
+            </select>
+        </div>
+
+        <div data-role="fieldcontain">
+            <label for="hour_buzzer">
+               Vibrate at each hour
+            </label>
+            <select name="hour_buzzer" id="hour_buzzer" data-theme="" data-role="slider">
+<script>
+  if ($.url().param("hour_buzzer") == "1") {
+     document.write('<option value="0">Off</option><option value="1" selected>On</option>');
+  } else {
+     document.write('<option value="0" selected>Off</option><option value="1">On</option>');
+  }
+</script>
+         </select>
+        </div>
+
+        <div data-role="fieldcontain">
+            <label for="draw_mode">
+               Invert colors
+            </label>
+            <select name="draw_mode" id="draw_mode" data-theme="" data-role="slider">
+<script>
+  if ($.url().param("draw_mode") == "1") {
+     document.write('<option value="0">Off</option><option value="1" selected>On</option>');
+  } else {
+     document.write('<option value="0" selected>Off</option><option value="1">On</option>');
+  }
+</script>
+         </select>
+        </div>
+
+<script>
+  if ($.url().param("chrono_dial") == undefined) {
+     document.write('<div data-role="fieldcontain" style="display: none">')
+  } else {
+     document.write('<div data-role="fieldcontain">')
+  }	   
+</script>
+            <label for="chrono_dial">
+                Bottom chrono dial shows
+            </label>
+            <select name="chrono_dial" id="chrono_dial" data-theme="" data-role="select">
+<script>
+  if ($.url().param("chrono_dial") == "0") {
+     document.write('<option value="0" selected>Off</option>');
+  } else {
+     document.write('<option value="0">Off</option>');
+  }
+  if ($.url().param("chrono_dial") == "1") {
+     document.write('<option value="1" selected>Tenths</option>');
+  } else {
+     document.write('<option value="1">Tenths</option>');
+  }
+  if ($.url().param("chrono_dial") == "2") {
+     document.write('<option value="2" selected>Hours</option>');
+  } else {
+     document.write('<option value="2">Hours</option>');
+  }
+  if ($.url().param("chrono_dial") == "3") {
+     document.write('<option value="3" selected>Dual (tenths, then hours)</option>');
+  } else {
+     document.write('<option value="3">Dual (tenths, then hours)</option>');
+  }
+</script>
+            </select>
+        </div>
+
+<script>
+  if ($.url().param("show_day") == undefined) {
+     document.write('<div data-role="fieldcontain" style="display: none">')
+  } else {
+     document.write('<div data-role="fieldcontain">')
+  }	   
+</script>
+            <label for="show_day">
+                Show day of week
+            </label>
+            <select name="show_day" id="show_day" data-theme="" data-role="slider">
+<script>
+  if ($.url().param("show_day") == "1") {
+     document.write('<option value="0">Off</option><option value="1" selected>On</option>');
+  } else {
+     document.write('<option value="0" selected>Off</option><option value="1">On</option>');
+  }
+</script>
+            </select>
+        </div>
+        
+<script>
+  if ($.url().param("show_day") == undefined) {
+     document.write('<div data-role="fieldcontain" style="display: none">')
+  } else {
+     document.write('<div data-role="fieldcontain">')
+  }	   
+</script>
+            <label for="display_lang">
+                Language for day
+            </label>
+            <select name="display_lang" id="display_lang" data-theme="" data-rolee="select">
+<script>
+  if ($.url().param("display_lang") == "0") {
+     document.write('<option value="0" selected>English</option>');
+  } else {
+     document.write('<option value="0">English</option>');
+  }
+  if ($.url().param("display_lang") == "1") {
+     document.write('<option value="1" selected>French</option>');
+  } else {
+     document.write('<option value="1">French</option>');
+  }
+  if ($.url().param("display_lang") == "2") {
+     document.write('<option value="2" selected>German</option>');
+  } else {
+     document.write('<option value="2">German</option>');
+  }
+  if ($.url().param("display_lang") == "3") {
+     document.write('<option value="3" selected>Italian</option>');
+  } else {
+     document.write('<option value="3">Italian</option>');
+  }
+  if ($.url().param("display_lang") == "4") {
+     document.write('<option value="4" selected>Dutch</option>');
+  } else {
+     document.write('<option value="4">Dutch</option>');
+  }
+  if ($.url().param("display_lang") == "5") {
+     document.write('<option value="5" selected>Spanish</option>');
+  } else {
+     document.write('<option value="5">Spanish</option>');
+  }
+  if ($.url().param("display_lang") == "6") {
+     document.write('<option value="6" selected>Portuguese</option>');
+  } else {
+     document.write('<option value="6">Portuguese</option>');
+  }
+</script>
+            </select>
+        </div>
+
+<script>
+  if ($.url().param("show_date") == undefined) {
+     document.write('<div data-role="fieldcontain" style="display: none">')
+  } else {
+     document.write('<div data-role="fieldcontain">')
+  }	   
+</script>
+            <label for="show_date">
+                Show numeric date
+            </label>
+            <select name="show_date" id="show_date" data-theme="" data-role="slider">
+<script>
+  if ($.url().param("show_date") == "1") {
+     document.write('<option value="0">Off</option><option value="1" selected>On</option>');
+  } else {
+     document.write('<option value="0" selected>Off</option><option value="1">On</option>');
+  }
+</script>
+            </select>
+        </div>
+        
+    </div>
+</div>
+
+<script>
+function saveOptions() {
+  var options = {
+    'keep_battery_gauge': parseInt($("#keep_battery_gauge").val(), 10),
+    'keep_bluetooth_indicator': parseInt($("#keep_bluetooth_indicator").val(), 10),
+    'second_hand': parseInt($("#second_hand").val(), 10),
+    'hour_buzzer': parseInt($("#hour_buzzer").val(), 10),
+    'draw_mode': parseInt($("#draw_mode").val(), 10),
+    'chrono_dial': parseInt($("#chrono_dial").val(), 10),
+    'sweep_seconds': parseInt($("#sweep_seconds").val(), 10),
+    'show_day': parseInt($("#show_day").val(), 10),
+    'show_date': parseInt($("#show_date").val(), 10),
+    'display_lang': parseInt($("#display_lang").val(), 10),
+  }
+  return options;
+}
+
+$().ready(function() {
+  $("#cancel").click(function() {
+    document.location = "pebblejs://close#";
+  });
+
+  $("#save").click(function() {
+    var location = "pebblejs://close#" + encodeURIComponent(JSON.stringify(saveOptions()));
+    document.location = location;
+  });
+});
+</script>
+</body>
+</html>

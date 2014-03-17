@@ -9,20 +9,25 @@ void init_default_options() {
   // that these defaults are used only if the Pebble is not connected
   // to the phone at the time of launch; otherwise, the defaults in
   // pebble-js-app.js are used instead.
-  config.keep_battery_gauge = SHOW_BATTERY_GAUGE_ALWAYS;
-  config.keep_bluetooth_indicator = SHOW_BLUETOOTH_ALWAYS;
+  config.keep_battery_gauge = DEFAULT_BATTERY_GAUGE;
+  config.keep_bluetooth_indicator = DEFAULT_BLUETOOTH;
   config.second_hand = SHOW_SECOND_HAND;
   config.hour_buzzer = ENABLE_HOUR_BUZZER;
   config.draw_mode = 0;
   config.chrono_dial = CDM_tenths;
   config.sweep_seconds = 0;
+  config.show_day = DEFAULT_DAY_CARD;
+  config.show_date = DEFAULT_DATE_CARD;
+  config.display_lang = DL_english;
 }
 
+#ifdef ENABLE_LOG
 const char *show_config() {
-  static char buffer[64];
-  snprintf(buffer, 64, "bat: %d, bt: %d, sh: %d, hb: %d, dm: %d, cd: %d, sw: %d", config.keep_battery_gauge, config.keep_bluetooth_indicator, config.second_hand, config.hour_buzzer, config.draw_mode, config.chrono_dial, config.sweep_seconds);
+  static char buffer[80];
+  snprintf(buffer, 80, "bat: %d, bt: %d, sh: %d, hb: %d, dm: %d, cd: %d, sw: %d, day: %d, date: %d, dl: %d", config.keep_battery_gauge, config.keep_bluetooth_indicator, config.second_hand, config.hour_buzzer, config.draw_mode, config.chrono_dial, config.sweep_seconds, config.show_day, config.show_date, config.display_lang);
   return buffer;
 }
+#endif  // ENABLE_LOG
 
 void save_config() {
   int wrote = persist_write_data(PERSIST_KEY, &config, sizeof(config));
@@ -83,6 +88,21 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
   Tuple *sweep_seconds = dict_find(received, CK_sweep_seconds);
   if (sweep_seconds != NULL) {
     config.sweep_seconds = sweep_seconds->value->int32;
+  }
+
+  Tuple *show_day = dict_find(received, CK_show_day);
+  if (show_day != NULL) {
+    config.show_day = show_day->value->int32;
+  }
+
+  Tuple *show_date = dict_find(received, CK_show_date);
+  if (show_date != NULL) {
+    config.show_date = show_date->value->int32;
+  }
+
+  Tuple *display_lang = dict_find(received, CK_display_lang);
+  if (display_lang != NULL) {
+    config.display_lang = display_lang->value->int32;
   }
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "New config: %s", show_config());
