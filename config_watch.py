@@ -490,10 +490,12 @@ def makeBitmapHands(generatedTable, useRle, hand, sourceFilename, colorMode, asy
       "type": "%(ptype)s"
     },"""    
 
-    handTableEntry = """  { RESOURCE_ID_%(symbolName)s, RESOURCE_ID_%(symbolMaskName)s, %(cx)s, %(cy)s, %(flip_x)s, %(flip_y)s, %(paintBlack)s },"""
+    handLookupEntry = """  { RESOURCE_ID_%(symbolName)s, RESOURCE_ID_%(symbolMaskName)s, %(cx)s, %(cy)s },"""
+    handTableEntry = """  { %(lookup_index)s, %(flip_x)s, %(flip_y)s, %(paintBlack)s },"""
     
     print >> generatedTable, "#define BITMAP_%s_HAND 1" % (hand.upper())
-    print >> generatedTable, "struct BitmapHandTableRow %s_hand_bitmap_table[NUM_STEPS_%s] = {" % (hand, hand.upper())
+    handLookupLines = []
+    handTableLines = []
 
     source = PIL.Image.open('%s/clock_hands/%s' % (resourcesDir, sourceFilename))
 
@@ -674,17 +676,34 @@ def makeBitmapHands(generatedTable, useRle, hand, sourceFilename, colorMode, asy
                         'ptype' : 'png',
                         }
 
-        print >> generatedTable, handTableEntry % {
-            'index' : i,
+        line = handLookupEntry % {
             'symbolName' : symbolName,
             'symbolMaskName' : symbolMaskName,
             'cx' : cx,
             'cy' : cy,
+            }
+        if line in handLookupLines:
+            lookup_index = handLookupLines.index(line)
+        else:
+            lookup_index = len(handLookupLines)
+            handLookupLines.append(line)
+
+        line = handTableEntry % {
+            'lookup_index' : lookup_index,
             'flip_x' : int(flip_x),
             'flip_y' : int(flip_y),
             'paintBlack' : int(paintBlack),
             }
+        handTableLines.append(line)
 
+    print >> generatedTable, "struct BitmapHandLookupRow %s_hand_bitmap_lookup[] = {" % (hand)
+    for line in handLookupLines:
+        print >> generatedTable, line
+    print >> generatedTable, "};\n"
+
+    print >> generatedTable, "struct BitmapHandTableRow %s_hand_bitmap_table[NUM_STEPS_%s] = {" % (hand, hand.upper())
+    for line in handTableLines:
+        print >> generatedTable, line
     print >> generatedTable, "};\n"
 
     return resourceStr

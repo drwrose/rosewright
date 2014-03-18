@@ -1,11 +1,15 @@
 #ifndef HAND_TABLE_H
 #define HAND_TABLE_H
 
-struct __attribute__((__packed__)) BitmapHandTableRow {
+struct __attribute__((__packed__)) BitmapHandLookupRow {
   unsigned int image_id:8;
   unsigned int mask_id:8;
   signed int cx:8;
   signed int cy:8;
+};
+
+struct __attribute__((__packed__)) BitmapHandTableRow {
+  unsigned int lookup_index:8;
   unsigned int flip_x:1;
   unsigned int flip_y:1;
   unsigned int paint_black:1;

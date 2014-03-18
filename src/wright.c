@@ -92,7 +92,7 @@ struct HandPlacement {
 // in the same position as last time.
 #define HAND_CACHE_MAX_GROUPS 2
 struct HandCache {
-  struct BitmapHandTableRow *bitmap_hand;
+  int bitmap_hand_index;
   BitmapWithData image;
   BitmapWithData mask;
   int vector_hand_index;
@@ -200,7 +200,7 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
     // Avoid overflowing the integer arithmetic by pre-constraining
     // the ms value to the appropriate range.
     unsigned int use_ms = ms % (SECONDS_PER_HOUR * 12* 1000);
-  placement->hour_hand_index = ((NUM_STEPS_HOUR * use_ms) / (SECONDS_PER_HOUR * 12 * 1000)) % NUM_STEPS_HOUR;
+    placement->hour_hand_index = ((NUM_STEPS_HOUR * use_ms) / (SECONDS_PER_HOUR * 12 * 1000)) % NUM_STEPS_HOUR;
   }
   {
     unsigned int use_ms = ms % (SECONDS_PER_HOUR * 1000);
@@ -443,8 +443,8 @@ void hand_cache_destroy(struct HandCache *hand_cache) {
 }
 
 // Draws a given hand on the face, using the bitmap structures.
-void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandTableRow *hand, bool use_rle, int place_x, int place_y, GContext *ctx) {
-  if (hand_cache->bitmap_hand != hand) {
+void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandLookupRow *lookup_table, struct BitmapHandTableRow *hand_table, int hand_index, bool use_rle, int place_x, int place_y, GContext *ctx) {
+  if (hand_cache->bitmap_hand_index != hand_index) {
     // Force a new bitmap.
     if (hand_cache->image.bitmap != NULL) {
       bwd_destroy(&hand_cache->image);
@@ -452,19 +452,22 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandTableRow *h
     if (hand_cache->mask.bitmap != NULL) {
       bwd_destroy(&hand_cache->mask);
     }
-    hand_cache->bitmap_hand = hand;
+    hand_cache->bitmap_hand_index = hand_index;
   }
+
+  struct BitmapHandTableRow *hand = &hand_table[hand_index];
+  struct BitmapHandLookupRow *lookup = &lookup_table[hand->lookup_index];
   
-  if (hand->mask_id == hand->image_id) {
+  if (lookup->mask_id == lookup->image_id) {
     // The hand does not have a mask.  Draw the hand on top of the scene.
     if (hand_cache->image.bitmap == NULL) {
       if (use_rle) {
-	hand_cache->image = rle_bwd_create(hand->image_id);
+	hand_cache->image = rle_bwd_create(lookup->image_id);
       } else {
-	hand_cache->image = png_bwd_create(hand->image_id);
+	hand_cache->image = png_bwd_create(lookup->image_id);
       }
-      hand_cache->cx = hand->cx;
-      hand_cache->cy = hand->cy;
+      hand_cache->cx = lookup->cx;
+      hand_cache->cy = lookup->cy;
     
       if (hand->flip_x) {
         // To minimize wasteful resource usage, if the hand is symmetric
@@ -506,14 +509,14 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandTableRow *h
     // The hand has a mask, so use it to draw the hand opaquely.
     if (hand_cache->image.bitmap == NULL) {
       if (use_rle) {
-	hand_cache->image = rle_bwd_create(hand->image_id);
-	hand_cache->mask = rle_bwd_create(hand->mask_id);
+	hand_cache->image = rle_bwd_create(lookup->image_id);
+	hand_cache->mask = rle_bwd_create(lookup->mask_id);
       } else {
-	hand_cache->image = png_bwd_create(hand->image_id);
-	hand_cache->mask = png_bwd_create(hand->mask_id);
+	hand_cache->image = png_bwd_create(lookup->image_id);
+	hand_cache->mask = png_bwd_create(lookup->mask_id);
       }
-      hand_cache->cx = hand->cx;
-      hand_cache->cy = hand->cy;
+      hand_cache->cx = lookup->cx;
+      hand_cache->cy = lookup->cy;
     
       if (hand->flip_x) {
         // To minimize wasteful resource usage, if the hand is symmetric
@@ -552,7 +555,7 @@ void hour_layer_update_callback(Layer *me, GContext *ctx) {
 #endif
 
 #ifdef BITMAP_HOUR_HAND
-  draw_bitmap_hand(&hour_cache, &hour_hand_bitmap_table[current_placement.hour_hand_index],
+  draw_bitmap_hand(&hour_cache, hour_hand_bitmap_lookup, hour_hand_bitmap_table, current_placement.hour_hand_index,
                    true, HOUR_HAND_X, HOUR_HAND_Y, ctx);
 #endif
 }
@@ -566,7 +569,7 @@ void minute_layer_update_callback(Layer *me, GContext *ctx) {
 #endif
 
 #ifdef BITMAP_MINUTE_HAND
-  draw_bitmap_hand(&minute_cache, &minute_hand_bitmap_table[current_placement.minute_hand_index],
+  draw_bitmap_hand(&minute_cache, minute_hand_bitmap_lookup, minute_hand_bitmap_table, current_placement.minute_hand_index,
                    true, MINUTE_HAND_X, MINUTE_HAND_Y, ctx);
 #endif
 }
@@ -581,7 +584,7 @@ void second_layer_update_callback(Layer *me, GContext *ctx) {
 #endif
     
 #ifdef BITMAP_SECOND_HAND
-    draw_bitmap_hand(&second_cache, &second_hand_bitmap_table[current_placement.second_hand_index],
+    draw_bitmap_hand(&second_cache, second_hand_bitmap_lookup, second_hand_bitmap_table, current_placement.second_hand_index,
 		     false, SECOND_HAND_X, SECOND_HAND_Y, ctx);
 #endif
   }
@@ -598,7 +601,7 @@ void chrono_minute_layer_update_callback(Layer *me, GContext *ctx) {
 #endif
     
 #ifdef BITMAP_CHRONO_MINUTE_HAND
-    draw_bitmap_hand(&chrono_minute_cache, &chrono_minute_hand_bitmap_table[current_placement.chrono_minute_hand_index],
+    draw_bitmap_hand(&chrono_minute_cache, chrono_minute_hand_bitmap_lookup, chrono_minute_hand_bitmap_table, current_placement.chrono_minute_hand_index,
 		     true, CHRONO_MINUTE_HAND_X, CHRONO_MINUTE_HAND_Y, ctx);
 #endif
   }
@@ -616,7 +619,7 @@ void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
 #endif
     
 #ifdef BITMAP_CHRONO_SECOND_HAND
-    draw_bitmap_hand(&chrono_second_cache, &chrono_second_hand_bitmap_table[current_placement.chrono_second_hand_index],
+    draw_bitmap_hand(&chrono_second_cache, chrono_second_hand_bitmap_lookup, chrono_second_hand_bitmap_table, current_placement.chrono_second_hand_index,
 		     false, CHRONO_SECOND_HAND_X, CHRONO_SECOND_HAND_Y, ctx);
 #endif
   }
@@ -635,7 +638,7 @@ void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
 #endif
       
 #ifdef BITMAP_CHRONO_TENTH_HAND
-      draw_bitmap_hand(&chrono_tenth_cache, &chrono_tenth_hand_bitmap_table[current_placement.chrono_tenth_hand_index],
+      draw_bitmap_hand(&chrono_tenth_cache, chrono_tenth_hand_bitmap_lookup, chrono_tenth_hand_bitmap_table, current_placement.chrono_tenth_hand_index,
 		       true, CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, ctx);
 #endif
     }
