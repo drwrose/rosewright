@@ -256,8 +256,8 @@ def make_rle_trans(filename, useRle = True):
     zero = PIL.Image.new('1', image.size, 0)
     one = PIL.Image.new('1', image.size, 1)
 
-    black = PIL.Image.composite(one, zero, bits)
-    black = PIL.Image.composite(one, black, alpha)
+    black = PIL.Image.composite(zero, one, bits)
+    black = PIL.Image.composite(black, zero, alpha)
     white = PIL.Image.composite(one, zero, bits)
     white = PIL.Image.composite(white, zero, alpha)
     

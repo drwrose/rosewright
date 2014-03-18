@@ -217,9 +217,11 @@ rle_bwd_create(int resource_id) {
   int value = 0;
   int b = 0;
   int count = rl2unpacker_getc(&rl2);
-  assert(count > 0);
-  // We discard the first, implicit black pixel; it's not part of the image.
-  --count;
+  if (count != EOF) {
+    assert(count > 0);
+    // We discard the first, implicit black pixel; it's not part of the image.
+    --count;
+  }
   while (count != EOF) {
     assert(dp < dp_stop);
     if (value) {
