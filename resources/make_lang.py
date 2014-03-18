@@ -14,7 +14,7 @@ based on the system language data.
 make_lang.py [opts]
 """
 
-# This list is duplicated from rosewright_X_configure.html.
+# This list is duplicated in rosewright_X_configure.html.
 langs = [
     [ 'en_US', 'English' ],
     [ 'fr_FR', 'French' ],
