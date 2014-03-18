@@ -44,7 +44,6 @@ var langs = [
     [ 'nl_NL', 'Dutch' ],
     [ 'da_DK', 'Danish' ],
     [ 'sv_SE', 'Swedish' ],
-    [ 'no_NO', 'Norwegian' ],
     [ 'is_IS' ,'Icelandic' ],
     [ 'el_GR', 'Greek' ],
     [ 'hu_HU', 'Hungarian' ],

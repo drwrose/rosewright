@@ -14,3 +14,5 @@ src/js/pebble-js-app.js
 appinfo.json
 
 *.pyc
+*~
+#*
