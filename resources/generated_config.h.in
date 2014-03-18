@@ -46,7 +46,6 @@
   #define DAY_CARD_X %(dayCardX)s
   #define DAY_CARD_Y %(dayCardY)s
   #define DAY_CARD_ON_BLACK %(dayCardOnBlack)s
-  #define DAY_CARD_BOLD %(dayCardBold)s
   #define DAY_CARD_TRANS %(dayCardTrans)s
   #define SHARE_DATE_CARD %(shareDateCard)s
 #endif
@@ -58,7 +57,6 @@
   #define DATE_CARD_X %(dateCardX)s
   #define DATE_CARD_Y %(dateCardY)s
   #define DATE_CARD_ON_BLACK %(dateCardOnBlack)s
-  #define DATE_CARD_BOLD %(dateCardBold)s
   #define DATE_CARD_TRANS %(dateCardTrans)s
 #endif
 #define DEFAULT_DATE_CARD %(defaultDateCard)s

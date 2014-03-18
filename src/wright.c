@@ -32,6 +32,11 @@ BitmapWithData chrono_dial_white;
 BitmapWithData chrono_dial_black;
 Layer *chrono_dial_layer;
 
+GFont date_font;
+int date_font_vshift = -3;  // Determined empirically.
+GFont day_font;
+int day_font_vshift = -1;   // Determined empirically.
+
 // Number of laps preserved for the laps digital display
 #define CHRONO_MAX_LAPS 4
 
@@ -177,6 +182,7 @@ unsigned int get_chrono_ms(unsigned int ms) {
   return chrono_ms;
 }
 
+#ifdef MAKE_CHRONOGRAPH
 void load_chrono_dial() {
   bwd_destroy(&chrono_dial_white);
   bwd_destroy(&chrono_dial_black);
@@ -188,6 +194,7 @@ void load_chrono_dial() {
     chrono_dial_black = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_HOURS_BLACK);
   }
 }
+#endif  // MAKE_CHRONOGRAPH
   
 // Determines the specific hand bitmaps that should be displayed based
 // on the current time.
@@ -646,15 +653,9 @@ void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
 }
 #endif  // SHOW_CHRONO_TENTH_HAND
 
-void draw_card(Layer *me, GContext *ctx, GBitmap *bitmap_black, GBitmap *bitmap_white, const char *text, bool on_black, bool bold) {
-  GFont font;
+void draw_card(Layer *me, GContext *ctx, GBitmap *bitmap_black, GBitmap *bitmap_white, const char *text, GFont font, int font_vshift, bool on_black) {
   GRect box;
 
-  if (bold) {
-    font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
-  } else {
-    font = fonts_get_system_font(FONT_KEY_GOTHIC_18);
-  }
   box = layer_get_frame(me);
   box.origin.x = 0;
   box.origin.y = 0;
@@ -675,7 +676,7 @@ void draw_card(Layer *me, GContext *ctx, GBitmap *bitmap_black, GBitmap *bitmap_
     graphics_context_set_text_color(ctx, GColorBlack);
   }
 
-  box.origin.y -= 3;  // Determined empirically.
+  box.origin.y += font_vshift;
 
   // Cheat for a bit more space for text
   box.origin.x -= 2;
@@ -711,9 +712,9 @@ void day_layer_update_callback(Layer *me, GContext *ctx) {
     const LangDef *lang = &lang_table[config.display_lang % num_langs];
     const char *weekday_name = lang->weekday_names[current_placement.day_index];
 #if SHARE_DATE_CARD
-    draw_card(me, ctx, date_card_black.bitmap, date_card_white.bitmap, weekday_name, DAY_CARD_ON_BLACK, DAY_CARD_BOLD);
+    draw_card(me, ctx, date_card_black.bitmap, date_card_white.bitmap, weekday_name, day_font, day_font_vshift, DAY_CARD_ON_BLACK);
 #else
-    draw_card(me, ctx, day_card_black.bitmap, day_card_white.bitmap, weekday_name, DAY_CARD_ON_BLACK, DAY_CARD_BOLD);
+    draw_card(me, ctx, day_card_black.bitmap, day_card_white.bitmap, weekday_name, day_font, day_font_vshift, DAY_CARD_ON_BLACK);
 #endif
   }
 }
@@ -727,7 +728,7 @@ void date_layer_update_callback(Layer *me, GContext *ctx) {
     static const int buffer_size = 16;
     char buffer[buffer_size];
     snprintf(buffer, buffer_size, "%d", current_placement.date_value);
-    draw_card(me, ctx, date_card_black.bitmap, date_card_white.bitmap, buffer, DATE_CARD_ON_BLACK, DATE_CARD_BOLD);
+    draw_card(me, ctx, date_card_black.bitmap, date_card_white.bitmap, buffer, date_font, date_font_vshift, DATE_CARD_ON_BLACK);
   }
 }
 #endif  // SHOW_DATE_CARD
@@ -1259,6 +1260,9 @@ void handle_init() {
   clock_face_layer = bitmap_layer_create(window_frame);
   bitmap_layer_set_bitmap(clock_face_layer, clock_face.bitmap);
   layer_add_child(window_layer, bitmap_layer_get_layer(clock_face_layer));
+
+  date_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+  day_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_DAY_FONT_16));
 
 #ifdef MAKE_CHRONOGRAPH
   load_chrono_dial();

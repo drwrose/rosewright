@@ -49,6 +49,11 @@
       "file": "bluetooth_connected.png",
       "type": "png"
     },
+    {
+      "type": "font",
+      "name": "DAY_FONT_16",
+      "file": "day_font.otf"
+    },
 %(generatedMedia)s
     ]
   }
