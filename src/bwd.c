@@ -1,6 +1,7 @@
 #include "bwd.h"
 #include "assert.h"
 #include "../resources/generated_config.h"
+//#define SUPPORT_RLE
 
 // From bitmapgen.py:
 /*
