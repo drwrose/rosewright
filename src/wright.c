@@ -28,10 +28,8 @@ BitmapWithData day_card_black;
 BitmapWithData date_card_white;
 BitmapWithData date_card_black;
 
-BitmapWithData chrono_dial_tenths_white;
-BitmapWithData chrono_dial_tenths_black;
-BitmapWithData chrono_dial_hours_white;
-BitmapWithData chrono_dial_hours_black;
+BitmapWithData chrono_dial_white;
+BitmapWithData chrono_dial_black;
 Layer *chrono_dial_layer;
 
 // Number of laps preserved for the laps digital display
@@ -53,7 +51,7 @@ char chrono_laps_buffer[CHRONO_MAX_LAPS][CHRONO_DIGITAL_BUFFER_SIZE];
 
 // True if we're currently showing tenths, false if we're currently
 // showing hours, in the chrono subdial.
-bool chrono_dial_shows_tenths = true;
+bool chrono_dial_shows_tenths = false;
 
 // Triggered at regular intervals to implement sweep seconds.
 AppTimer *sweep_timer = NULL;
@@ -138,7 +136,7 @@ typedef struct {
   unsigned int hold_ms;               // consulted if !chrono_data.running || chrono_data.lap_paused
   unsigned char running;              // the chronograph has been started
   unsigned char lap_paused;           // the "lap" button has been pressed
-  int laps[CHRONO_MAX_LAPS];
+  unsigned int laps[CHRONO_MAX_LAPS];
 } __attribute__((__packed__)) ChronoData;
 
 ChronoData chrono_data = { false, false, 0, 0, { 0, 0, 0, 0 } };
@@ -177,6 +175,18 @@ unsigned int get_chrono_ms(unsigned int ms) {
   }
 
   return chrono_ms;
+}
+
+void load_chrono_dial() {
+  bwd_destroy(&chrono_dial_white);
+  bwd_destroy(&chrono_dial_black);
+  if (chrono_dial_shows_tenths) {
+    chrono_dial_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_TENTHS_WHITE);
+    chrono_dial_black = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_TENTHS_BLACK);
+  } else {
+    chrono_dial_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_HOURS_WHITE);
+    chrono_dial_black = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_HOURS_BLACK);
+  }
 }
   
 // Determines the specific hand bitmaps that should be displayed based
@@ -245,8 +255,9 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
     }
 
     if (chrono_dial_shows_tenths != chrono_dial_wants_tenths) {
-      // The dial has changed states; redraw it.
+      // The dial has changed states; reload and redraw it.
       chrono_dial_shows_tenths = chrono_dial_wants_tenths;
+      load_chrono_dial();
       if (chrono_dial_layer != NULL) {
 	layer_mark_dirty(chrono_dial_layer);
       }
@@ -681,19 +692,10 @@ void chrono_dial_layer_update_callback(Layer *me, GContext *ctx) {
     destination.origin.x = 0;
     destination.origin.y = 0;
 
-    if (chrono_dial_shows_tenths) {
-      // Draw the tenths dial.
-      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
-      graphics_draw_bitmap_in_rect(ctx, chrono_dial_tenths_black.bitmap, destination);
-      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
-      graphics_draw_bitmap_in_rect(ctx, chrono_dial_tenths_white.bitmap, destination);
-    } else {
-      // Draw the hours dial.
-      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
-      graphics_draw_bitmap_in_rect(ctx, chrono_dial_hours_black.bitmap, destination);
-      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
-      graphics_draw_bitmap_in_rect(ctx, chrono_dial_hours_white.bitmap, destination);
-    }
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
+    graphics_draw_bitmap_in_rect(ctx, chrono_dial_black.bitmap, destination);
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
+    graphics_draw_bitmap_in_rect(ctx, chrono_dial_white.bitmap, destination);
   }
 }
 #endif  // MAKE_CHRONOGRAPH
@@ -1256,14 +1258,11 @@ void handle_init() {
   layer_add_child(window_layer, bitmap_layer_get_layer(clock_face_layer));
 
 #ifdef MAKE_CHRONOGRAPH
-  chrono_dial_tenths_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_TENTHS_WHITE);
-  chrono_dial_tenths_black = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_TENTHS_BLACK);
-  chrono_dial_hours_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_HOURS_WHITE);
-  chrono_dial_hours_black = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_HOURS_BLACK);
+  load_chrono_dial();
 
   {
-    int height = chrono_dial_tenths_white.bitmap->bounds.size.h;
-    int width = chrono_dial_tenths_white.bitmap->bounds.size.w;
+    int height = chrono_dial_white.bitmap->bounds.size.h;
+    int width = chrono_dial_white.bitmap->bounds.size.w;
     int x = CHRONO_TENTH_HAND_X - width / 2;
     int y = CHRONO_TENTH_HAND_Y - height / 2;
 
@@ -1379,10 +1378,8 @@ void handle_deinit() {
 
 #ifdef MAKE_CHRONOGRAPH
   layer_destroy(chrono_dial_layer);
-  bwd_destroy(&chrono_dial_tenths_white);
-  bwd_destroy(&chrono_dial_tenths_black);
-  bwd_destroy(&chrono_dial_hours_white);
-  bwd_destroy(&chrono_dial_hours_black);
+  bwd_destroy(&chrono_dial_white);
+  bwd_destroy(&chrono_dial_black);
 
   window_destroy(chrono_digital_window);
 #endif  // MAKE_CHRONOGRAPH

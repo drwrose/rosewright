@@ -1,24 +1,24 @@
 #ifndef HAND_TABLE_H
 #define HAND_TABLE_H
 
-struct BitmapHandTableRow {
-  unsigned char image_id;
-  unsigned char mask_id;
-  signed char cx;
-  signed char cy;
-  unsigned char flip_x;
-  unsigned char flip_y;
-  unsigned char paint_black;
+struct __attribute__((__packed__)) BitmapHandTableRow {
+  unsigned int image_id:8;
+  unsigned int mask_id:8;
+  signed int cx:8;
+  signed int cy:8;
+  unsigned int flip_x:1;
+  unsigned int flip_y:1;
+  unsigned int paint_black:1;
 };
 
-struct VectorHandGroup {
-  int outline;
-  int fill;
+struct __attribute__((__packed__)) VectorHandGroup {
+  int outline:8;
+  int fill:8;
   GPathInfo path_info;
 };
 
-struct VectorHandTable {
-  int num_groups;
+struct __attribute__((__packed__)) VectorHandTable {
+  unsigned int num_groups:8;
   struct VectorHandGroup *group;
 };
 
