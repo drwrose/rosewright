@@ -19,17 +19,6 @@ typedef enum {
 } ConfigKey;
 
 typedef enum {
-  DL_english,
-  DL_french,
-  DL_german,
-  DL_italian,
-  DL_dutch,
-  DL_spanish,
-  DL_portuguese,
-  DL_num_languages,
-} DisplayLanguages;
-
-typedef enum {
   CDM_off = 0,
   CDM_tenths = 1,
   CDM_hours = 2,
@@ -46,7 +35,7 @@ typedef struct {
   bool sweep_seconds;
   bool show_day;
   bool show_date;
-  DisplayLanguages display_lang;
+  unsigned char display_lang;
 } __attribute__((__packed__)) ConfigOptions;
 
 extern ConfigOptions config;

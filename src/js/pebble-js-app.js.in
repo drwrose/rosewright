@@ -17,7 +17,7 @@ var default_chrono_dial = 1;
 var default_sweep_seconds = 0;
 var default_show_day = %(defaultDayCard)s;
 var default_show_date = %(defaultDateCard)s;
-var default_display_lang = 0;
+var default_display_lang = 'en_US';
 
 var keep_battery_gauge;
 var keep_bluetooth_indicator;
@@ -106,7 +106,6 @@ var initialize = function() {
     if (!display_lang) {
 	display_lang = default_display_lang;
     }
-    display_lang = parseInt(display_lang);
 
     console.log("   keep_battery_gauge: " + keep_battery_gauge);
     console.log("   keep_bluetooth_indicator: " + keep_bluetooth_indicator);

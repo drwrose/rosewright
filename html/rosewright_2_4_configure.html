@@ -196,40 +196,30 @@
             </label>
             <select name="display_lang" id="display_lang" data-theme="" data-rolee="select">
 <script>
-  if ($.url().param("display_lang") == "0") {
-     document.write('<option value="0" selected>English</option>');
-  } else {
-     document.write('<option value="0">English</option>');
-  }
-  if ($.url().param("display_lang") == "1") {
-     document.write('<option value="1" selected>French</option>');
-  } else {
-     document.write('<option value="1">French</option>');
-  }
-  if ($.url().param("display_lang") == "2") {
-     document.write('<option value="2" selected>German</option>');
-  } else {
-     document.write('<option value="2">German</option>');
-  }
-  if ($.url().param("display_lang") == "3") {
-     document.write('<option value="3" selected>Italian</option>');
-  } else {
-     document.write('<option value="3">Italian</option>');
-  }
-  if ($.url().param("display_lang") == "4") {
-     document.write('<option value="4" selected>Dutch</option>');
-  } else {
-     document.write('<option value="4">Dutch</option>');
-  }
-  if ($.url().param("display_lang") == "5") {
-     document.write('<option value="5" selected>Spanish</option>');
-  } else {
-     document.write('<option value="5">Spanish</option>');
-  }
-  if ($.url().param("display_lang") == "6") {
-     document.write('<option value="6" selected>Portuguese</option>');
-  } else {
-     document.write('<option value="6">Portuguese</option>');
+  var langs = [
+    [ 'en_US', 'English' ],
+    [ 'fr_FR', 'French' ],
+    [ 'it_IT', 'Italian' ],
+    [ 'es_ES', 'Spanish' ],
+    [ 'pt_PT', 'Portuguese' ],
+    [ 'de_DE', 'German' ],
+    [ 'nl_NL', 'Dutch' ],
+    [ 'da_DK', 'Danish' ],
+    [ 'sv_SE', 'Swedish' ],
+    [ 'no_NO', 'Norwegian' ],
+    [ 'is_IS' ,'Icelandic' ],
+    [ 'el_GR', 'Greek' ],
+    [ 'hu_HU', 'Hungarian' ],
+    [ 'ru_RU', 'Russian' ],
+    [ 'pl_PL', 'Polish' ],
+    [ 'cs_CZ', 'Czech' ],
+  ];
+  for (var lang in langs) {
+    if ($.url().param("display_lang") == langs[lang][0]) {
+       document.write('<option value="' + langs[lang][0] + '" selected>' + langs[lang][1] + '</option>');
+    } else {
+       document.write('<option value="' + langs[lang][0] + '">' + langs[lang][1] + '</option>');
+    }
   }
 </script>
             </select>
@@ -271,7 +261,7 @@ function saveOptions() {
     'sweep_seconds': parseInt($("#sweep_seconds").val(), 10),
     'show_day': parseInt($("#show_day").val(), 10),
     'show_date': parseInt($("#show_date").val(), 10),
-    'display_lang': parseInt($("#display_lang").val(), 10),
+    'display_lang': $("#display_lang").val(),
   }
   return options;
 }

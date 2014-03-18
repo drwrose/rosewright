@@ -1,5 +1,6 @@
 #include "config_options.h"
 #include "hand_table.h"
+#include "lang_table.h"
 #include "../resources/generated_config.h"
 
 ConfigOptions config;
@@ -18,7 +19,7 @@ void init_default_options() {
   config.sweep_seconds = 0;
   config.show_day = DEFAULT_DAY_CARD;
   config.show_date = DEFAULT_DATE_CARD;
-  config.display_lang = DL_english;
+  config.display_lang = 0;
 }
 
 #ifdef ENABLE_LOG
@@ -102,7 +103,13 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
 
   Tuple *display_lang = dict_find(received, CK_display_lang);
   if (display_lang != NULL) {
-    config.display_lang = display_lang->value->int32;
+    // Look for the matching language name in our table of known languages.
+    for (int li = 0; li < num_langs; ++li) {
+      if (strcmp(display_lang->value->cstring, lang_table[li].locale_name) == 0) {
+	config.display_lang = li;
+	break;
+      }
+    }
   }
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "New config: %s", show_config());

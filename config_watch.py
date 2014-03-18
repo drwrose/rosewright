@@ -5,8 +5,7 @@ import PIL.ImageChops
 import sys
 import os
 import getopt
-import locale
-from make_rle import make_rle, make_rle_trans, make_rle_image
+from resources.make_rle import make_rle, make_rle_trans, make_rle_image
 
 help = """
 config_watch.py
@@ -54,11 +53,6 @@ Options:
         Compile for debugging.  Specifically this enables "fast time",
         so the hands move quickly about the face of the watch.  It
         also enables logging.
-
-    -l locale
-        Specifies the locale (for the day-of-week names).  Use a
-        C-style local string such as en_US or de_DE.  The default is
-        the current locale.
         
 """
 
@@ -724,21 +718,6 @@ def makeHands(generatedTable):
             resourceStr += makeVectorHands(generatedTable, hand, vectorParams)
 
     return resourceStr
-
-def makeDates(generatedTable):
-    print >> generatedTable, "const char *weekday_names[7] = {"
-    for sym in [locale.ABDAY_1, locale.ABDAY_2, locale.ABDAY_3, locale.ABDAY_4, locale.ABDAY_5, locale.ABDAY_6, locale.ABDAY_7]:
-        name = locale.nl_langinfo(sym)
-        #name = name.decode('utf-8').upper().encode('utf-8')
-
-        if '"' in name or name.encode('string_escape') != name:
-            # The text has some fancy characters.  We can't just pass
-            # string_escape, since that's not 100% C compatible.
-            # Instead, we'll aggressively hexify every character.
-            name = ''.join(map(lambda c: '\\x%02x' % (ord(c)), name))
-        
-        print >> generatedTable, '  \"%s\",' % (name)
-    print >> generatedTable, "};\n"
         
 def configWatch():
     generatedTable = open('%s/generated_table.c' % (resourcesDir), 'w')
@@ -746,8 +725,6 @@ def configWatch():
     resourceStr = ''
     resourceStr += makeFaces()
     resourceStr += makeHands(generatedTable)
-
-    makeDates(generatedTable)
 
     resourceIn = open('%s/appinfo.json.in' % (rootDir), 'r').read()
     resource = open('%s/appinfo.json' % (rootDir), 'w')
@@ -857,7 +834,7 @@ def configWatch():
 
 # Main.
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:Sbciwxdl:h')
+    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:Sbciwxdh')
 except getopt.error, msg:
     usage(1, msg)
 
@@ -868,7 +845,6 @@ invertHands = False
 supportSweep = False
 compileDebugging = False
 supportRle = True
-localeName = ''
 for opt, arg in opts:
     if opt == '-s':
         watchStyle = arg
@@ -899,8 +875,6 @@ for opt, arg in opts:
         supportRle = False
     elif opt == '-d':
         compileDebugging = True
-    elif opt == '-l':
-        localeName = arg
     elif opt == '-h':
         usage(0)
 
@@ -922,7 +896,5 @@ dateCard = fd.get('dateCard', None)
 bluetooth = fd.get('bluetooth', None)
 battery = fd.get('battery', None)
 centers = fd.get('centers', [])
-
-locale.setlocale(locale.LC_ALL, localeName)
 
 configWatch()

@@ -1,8 +1,10 @@
 #include <pebble.h>
 
 #include "hand_table.h"
+#include "lang_table.h"
 #include "../resources/generated_config.h"
 #include "../resources/generated_table.c"
+#include "../resources/lang_table.c"
 #include "bluetooth_indicator.h"
 #include "battery_gauge.h"
 #include "config_options.h"
@@ -661,6 +663,11 @@ void draw_card(Layer *me, GContext *ctx, GBitmap *bitmap_black, GBitmap *bitmap_
 
   box.origin.y -= 3;  // Determined empirically.
 
+  // Cheat for a bit more space for text
+  box.origin.x -= 2;
+  box.size.w += 4;
+  box.size.h += 4;
+
   graphics_draw_text(ctx, text, font, box,
                      GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
                      NULL);
@@ -696,10 +703,12 @@ void day_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "day_layer");
 
   if (config.show_day) {
+    const LangDef *lang = &lang_table[config.display_lang % num_langs];
+    const char *weekday_name = lang->weekday_names[current_placement.day_index];
 #if SHARE_DATE_CARD
-    draw_card(me, ctx, date_card_black.bitmap, date_card_white.bitmap, weekday_names[current_placement.day_index], DAY_CARD_ON_BLACK, DAY_CARD_BOLD);
+    draw_card(me, ctx, date_card_black.bitmap, date_card_white.bitmap, weekday_name, DAY_CARD_ON_BLACK, DAY_CARD_BOLD);
 #else
-    draw_card(me, ctx, day_card_black.bitmap, day_card_white.bitmap, weekday_names[current_placement.day_index], DAY_CARD_ON_BLACK, DAY_CARD_BOLD);
+    draw_card(me, ctx, day_card_black.bitmap, day_card_white.bitmap, weekday_name, DAY_CARD_ON_BLACK, DAY_CARD_BOLD);
 #endif
   }
 }
