@@ -16,6 +16,7 @@ typedef enum {
   CK_show_day = 7,
   CK_show_date = 8,
   CK_display_lang = 9,
+  CK_face_index = 10,
 } ConfigKey;
 
 typedef enum {
@@ -36,6 +37,7 @@ typedef struct {
   bool show_day;
   bool show_date;
   unsigned char display_lang;
+  unsigned char face_index;
 } __attribute__((__packed__)) ConfigOptions;
 
 extern ConfigOptions config;

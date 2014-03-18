@@ -189,7 +189,8 @@ hands = {
 
 # Table of face styles.  For each style, specify the following:
 #
-#   filename  - the background image for the face.
+#   filename  - the background image for the face, or a list of optional faces.
+#   chrono    - the (tenths, hours) images for the two chrono dials, if used.
 #   dateCard  - the (x, y, c, filename, enabled) position, color, background of the "date of month" card, or None.  If enabled is true the card is enabled by default.
 #   dayCard   - the (x, y, c, filename, enabled) position, color, background of the "day of week" card, or None.  If filename is None the dayCard file is used.
 #   battery   - the (x, y, c, enabled) position and color of the battery gauge, or None.
@@ -205,28 +206,22 @@ hands = {
 
 faces = {
     'a' : {
-        'filename': 'a_face.png', 
+        'filename': ['a_face.png', 'a_face_unrotated.png'],
         'dateCard': (106, 82, 'b', 'date_card_white.png', True), 
         'dayCard': (38, 82, 'b', None, False), 
         'bluetooth' : (51, 113, 'b', False),
         'battery' : (77, 117, 'b', False),
         },
-    'au' : {
-        'filename': 'a_face_unrotated.png', 
-        'dateCard' : (106, 82, 'b', 'date_card_white.png', True), 
-        'dayCard': (38, 82, 'b', None, False), 
-        'bluetooth' : (51, 113, 'b', False),
-        'battery' : (77, 117, 'b', False),
-        },
     'b' : {
-        'filename' : 'b_face.png', 
+        'filename' : ['b_face_rect.png', 'b_face.png'],
         'dateCard' : (92, 109, 'b', 'date_card_white.png', True), 
         'dayCard' : (52, 109, 'b', None, True), 
-        'bluetooth' : (0, 0, 'b', True),
-        'battery' : (125, 3, 'b', True),
+        'bluetooth' : (0, 0, 'bt', False),
+        'battery' : (125, 3, 'bt', False),
         },
     'c' : {
-        'filename' : ['c_face.png', 'c_face_chrono_tenths.png', 'c_face_chrono_hours.png'],
+        'filename' : 'c_face.png',
+        'chrono' : ('c_face_chrono_tenths.png', 'c_face_chrono_hours.png'),
         'centers' : [('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)],
         'dateCard' : (92, 45, 'wt', 'date_card_black_trans.png', False), 
         'dayCard' : (52, 45, 'wt', None, False), 
@@ -241,7 +236,7 @@ faces = {
         'battery' : (125, 3, 'w', True),
         },
     'e' : {
-        'filename' : 'e_face.png',
+        'filename' : ['e_face.png', 'e_face_white.png'],
         'dateCard' : (123, 82, 'bt', 'date_card_white_trans.png', True), 
         'dayCard' : (21, 82, 'bt', None, False), 
         'bluetooth' : (11, 12, 'w', False),
@@ -324,13 +319,13 @@ def parseColorMode(colorMode):
 
     return paintBlack, useTransparency, invertColors, dither
         
-def makeFaces():
+def makeFaces(generatedTable):
 
     resourceStr = ''
     
     clockFaceEntry = """
     {
-      "name": "CLOCK_FACE",
+      "name": "CLOCK_FACE_%(index)s",
       "file": "%(rleFilename)s",
       "type": "%(ptype)s"
     },"""    
@@ -377,17 +372,27 @@ def makeFaces():
     },"""    
 
     fd = faces[faceStyle]
-    targetFilename = fd.get('filename')
+    faceFilenames = fd.get('filename')
+    if isinstance(faceFilenames, type('')):
+        faceFilenames = [faceFilenames]
+
     targetChronoTenths = None
     targetChronoHours = None
-    if not isinstance(targetFilename, type('')):
-        targetFilename, targetChronoTenths, targetChronoHours = targetFilename
+    chronoFilenames = fd.get('chrono')
+    if chronoFilenames:
+        targetChronoTenths, targetChronoHours = chronoFilenames
 
-    rleFilename, ptype = make_rle('clock_faces/' + targetFilename, useRle = supportRle)
-    resourceStr += clockFaceEntry % {
-        'rleFilename' : rleFilename,
-        'ptype' : ptype,
-        }
+    print >> generatedTable, "unsigned int clock_face_table[NUM_FACES] = {"
+    for i in range(len(faceFilenames)):
+        print >> generatedTable, "  RESOURCE_ID_CLOCK_FACE_%s," % (i)
+        
+        rleFilename, ptype = make_rle('clock_faces/' + faceFilenames[i], useRle = supportRle)
+        resourceStr += clockFaceEntry % {
+            'index' : i,
+            'rleFilename' : rleFilename,
+            'ptype' : ptype,
+            }
+    print >> generatedTable, "};\n"
 
     if dateCard:
         if dateCard[2][-1] == 't':
@@ -743,7 +748,7 @@ def configWatch():
     generatedTable = open('%s/generated_table.c' % (resourcesDir), 'w')
 
     resourceStr = ''
-    resourceStr += makeFaces()
+    resourceStr += makeFaces(generatedTable)
     resourceStr += makeHands(generatedTable)
 
     resourceIn = open('%s/appinfo.json.in' % (rootDir), 'r').read()
@@ -765,6 +770,7 @@ def configWatch():
 
     print >> js, jsIn % {
         'watchName' : watchName,
+        'numFaces' : numFaces,
         'showChronoDial' : int(makeChronograph),
         'defaultBluetooth' : int(bool(bluetooth and bluetooth[3])),
         'defaultBattery' : int(bool(battery and battery[3])),
@@ -797,6 +803,7 @@ def configWatch():
     print >> config, configIn % {
         'persistKey' : 0x5151 + uuId[-1],
         'supportRle' : int(bool(supportRle)),
+        'numFaces' : numFaces,
         'numStepsHour' : numSteps['hour'],
         'numStepsMinute' : numSteps['minute'],
         'numStepsSecond' : getNumSteps('second'),
@@ -835,10 +842,12 @@ def configWatch():
         'defaultDateCard' : int(bool(dateCard and dateCard[4])),
         'bluetoothX' : bluetooth and bluetooth[0],
         'bluetoothY' : bluetooth and bluetooth[1],
-        'bluetoothOnBlack' : int(bool(bluetooth and (bluetooth[2].lower() == 'w'))),
+        'bluetoothOnBlack' : int(bool(bluetooth and (bluetooth[2][0].lower() == 'w'))),
+        'bluetoothOpaque' : int(bool(bluetooth and (bluetooth[2][-1].lower() == 't'))),
         'batteryGaugeX' : battery and battery[0],
         'batteryGaugeY' : battery and battery[1],
-        'batteryGaugeOnBlack' : int(bool(battery and (battery[2].lower() == 'w'))),
+        'batteryGaugeOnBlack' : int(bool(battery and (battery[2][0].lower() == 'w'))),
+        'batteryGaugeOpaque' : int(bool(battery and (battery[2][-1].lower() == 't'))),
         'showSecondHand' : int(showSecondHand and not suppressSecondHand),
         'enableSweepSeconds' : int(showSecondHand and supportSweep),
         'enableHourBuzzer' : int(enableHourBuzzer),
@@ -908,7 +917,12 @@ if not faceStyle:
     faceStyle = defaultFaceStyle
 
 fd = faces[faceStyle]
-targetFilename = fd.get('filename')
+
+faceFilenames = fd.get('filename')
+if isinstance(faceFilenames, type('')):
+    faceFilenames = [faceFilenames]
+numFaces = len(faceFilenames)
+
 dayCard = fd.get('dayCard', None)
 dateCard = fd.get('dateCard', None)
 bluetooth = fd.get('bluetooth', None)

@@ -20,12 +20,13 @@ void init_default_options() {
   config.show_day = DEFAULT_DAY_CARD;
   config.show_date = DEFAULT_DATE_CARD;
   config.display_lang = 0;
+  config.face_index = 0;
 }
 
 #ifdef ENABLE_LOG
 const char *show_config() {
-  static char buffer[80];
-  snprintf(buffer, 80, "bat: %d, bt: %d, sh: %d, hb: %d, dm: %d, cd: %d, sw: %d, day: %d, date: %d, dl: %d", config.keep_battery_gauge, config.keep_bluetooth_indicator, config.second_hand, config.hour_buzzer, config.draw_mode, config.chrono_dial, config.sweep_seconds, config.show_day, config.show_date, config.display_lang);
+  static char buffer[100];
+  snprintf(buffer, 100, "bat: %d, bt: %d, sh: %d, hb: %d, dm: %d, cd: %d, sw: %d, day: %d, date: %d, dl: %d, fi: %d", config.keep_battery_gauge, config.keep_bluetooth_indicator, config.second_hand, config.hour_buzzer, config.draw_mode, config.chrono_dial, config.sweep_seconds, config.show_day, config.show_date, config.display_lang, config.face_index);
   return buffer;
 }
 #endif  // ENABLE_LOG
@@ -110,6 +111,11 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
 	break;
       }
     }
+  }
+
+  Tuple *face_index = dict_find(received, CK_face_index);
+  if (face_index != NULL) {
+    config.face_index = face_index->value->int32;
   }
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "New config: %s", show_config());

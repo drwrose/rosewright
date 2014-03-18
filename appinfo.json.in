@@ -19,7 +19,8 @@
     "sweep_seconds": 6,
     "show_day": 7,
     "show_date": 8,
-    "display_lang": 9
+    "display_lang": 9,
+    "face_index" : 10
   },
   "resources": {
   "media": [

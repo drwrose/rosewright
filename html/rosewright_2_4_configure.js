@@ -17,15 +17,24 @@ function makeOption(keyword, label, options) {
     document.write('</select></div>');
 };
 
-makeOption("keep_battery_gauge", "Keep battery visible");
-makeOption("keep_bluetooth_indicator", "Keep bluetooth visible");
 makeOption("second_hand", "Second hand");
 
 if ($.url().param("sweep_seconds") != undefined) {
     makeOption("sweep_seconds", "Smooth-sweep seconds (heavy battery use)");
 }	
 
-makeOption("hour_buzzer", "Vibrate at each hour");
+var num_faces = $.url().param("num_faces");
+if (num_faces > 1) {
+    var faces = [
+	[ 0, 'One' ],
+	[ 1, 'Two' ],
+	[ 2, 'Three' ],
+	[ 3, 'Four' ],
+	[ 4, 'Five' ],
+    ];
+    makeOption("face_index", "Select face variant", faces.slice(0, num_faces));
+}
+
 makeOption("draw_mode", "Invert colors");
 
 if ($.url().param("chrono_dial") != undefined) {
@@ -61,6 +70,10 @@ if ($.url().param("show_date") != undefined) {
     makeOption("show_date", "Show numeric date");
 }
 
+makeOption("hour_buzzer", "Vibrate at each hour");
+makeOption("keep_battery_gauge", "Keep battery visible");
+makeOption("keep_bluetooth_indicator", "Keep bluetooth visible");
+
 function saveOptions() {
   var options = {
     'keep_battery_gauge': parseInt($("#keep_battery_gauge").val(), 10),
@@ -73,6 +86,7 @@ function saveOptions() {
     'show_day': parseInt($("#show_day").val(), 10),
     'show_date': parseInt($("#show_date").val(), 10),
     'display_lang': $("#display_lang").val(),
+    'face_index': parseInt($("#face_index").val(), 10),
   }
   return options;
 }

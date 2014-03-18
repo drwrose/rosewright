@@ -7,6 +7,9 @@
   #define SUPPORT_RLE 1
 #endif
 
+// The number of different clock faces available.
+#define NUM_FACES %(numFaces)s
+
 // The number of subdivisions around the face for each kind of hand.
 #define NUM_STEPS_HOUR %(numStepsHour)s
 #define NUM_STEPS_MINUTE %(numStepsMinute)s
@@ -66,6 +69,7 @@
   #define BLUETOOTH_X %(bluetoothX)s
   #define BLUETOOTH_Y %(bluetoothY)s
   #define BLUETOOTH_ON_BLACK %(bluetoothOnBlack)s
+  #define BLUETOOTH_OPAQUE %(bluetoothOpaque)s
 #endif
 #define DEFAULT_BLUETOOTH %(defaultBluetooth)s
  
@@ -74,6 +78,7 @@
   #define BATTERY_GAUGE_X %(batteryGaugeX)s
   #define BATTERY_GAUGE_Y %(batteryGaugeY)s
   #define BATTERY_GAUGE_ON_BLACK %(batteryGaugeOnBlack)s
+  #define BATTERY_GAUGE_OPAQUE %(batteryGaugeOpaque)s
 #endif
 #define DEFAULT_BATTERY_GAUGE %(defaultBattery)s
 

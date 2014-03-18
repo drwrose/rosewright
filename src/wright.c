@@ -21,6 +21,7 @@
 Window *window;
 
 BitmapWithData clock_face;
+int face_index = -1;
 BitmapLayer *clock_face_layer;
 
 BitmapWithData day_card_white;
@@ -1175,6 +1176,14 @@ void apply_config() {
   }
 #endif
 
+  if (face_index != config.face_index) {
+    // Update the face bitmap if it's changed.
+    face_index = config.face_index;
+    bwd_destroy(&clock_face);
+    clock_face = rle_bwd_create(clock_face_table[face_index % NUM_FACES]);
+    bitmap_layer_set_bitmap(clock_face_layer, clock_face.bitmap);
+  }
+
   // Also adjust the draw mode on the clock_face_layer.  (The other
   // layers all draw themselves interactively.)
   bitmap_layer_set_compositing_mode(clock_face_layer, draw_mode_table[config.draw_mode].paint_assign);
@@ -1256,9 +1265,7 @@ void handle_init() {
   Layer *window_layer = window_get_root_layer(window);
   GRect window_frame = layer_get_frame(window_layer);
 
-  clock_face = rle_bwd_create(RESOURCE_ID_CLOCK_FACE);
   clock_face_layer = bitmap_layer_create(window_frame);
-  bitmap_layer_set_bitmap(clock_face_layer, clock_face.bitmap);
   layer_add_child(window_layer, bitmap_layer_get_layer(clock_face_layer));
 
   date_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
@@ -1290,8 +1297,8 @@ void handle_init() {
 
 #endif  // MAKE_CHRONOGRAPH
 
-  init_battery_gauge(window_layer, BATTERY_GAUGE_X, BATTERY_GAUGE_Y, BATTERY_GAUGE_ON_BLACK, false);
-  init_bluetooth_indicator(window_layer, BLUETOOTH_X, BLUETOOTH_Y, BLUETOOTH_ON_BLACK, false);
+  init_battery_gauge(window_layer, BATTERY_GAUGE_X, BATTERY_GAUGE_Y, BATTERY_GAUGE_ON_BLACK, BATTERY_GAUGE_OPAQUE);
+  init_bluetooth_indicator(window_layer, BLUETOOTH_X, BLUETOOTH_Y, BLUETOOTH_ON_BLACK, BLUETOOTH_OPAQUE);
 
 #ifdef SHOW_DAY_CARD
   #if !SHARE_DATE_CARD
