@@ -2,6 +2,7 @@
 #include "bluetooth_indicator.h"
 #include "config_options.h"
 #include "bwd.h"
+#include "../resources/generated_config.h"
 
 // Define this to ring the buzzer when the bluetooth connection is
 // lost.
@@ -20,7 +21,15 @@ void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
   box.origin.x = 0;
   box.origin.y = 0;
 
-  if (bluetooth_on_black ^ config.draw_mode) {
+  unsigned int draw_mode = config.draw_mode;
+#if PERSIST_KEY == 21018
+  // A hideous hack for Rosewright E auxiliary face.
+  if (config.face_index == 1) {
+    draw_mode = !draw_mode;
+  }
+#endif
+
+  if (bluetooth_on_black ^ draw_mode) {
     graphics_context_set_compositing_mode(ctx, GCompOpSet);
     graphics_context_set_fill_color(ctx, GColorBlack);
   } else {

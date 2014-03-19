@@ -2,6 +2,7 @@
 #include "battery_gauge.h"
 #include "config_options.h"
 #include "bwd.h"
+#include "../resources/generated_config.h"
 
 BitmapWithData battery_gauge_empty;
 BitmapWithData battery_gauge_charging;
@@ -18,13 +19,21 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
   charge_state.charge_percent = 100 - ((now / 2) % 11) * 10;
 #endif  // BATTERY_HACK
 
+  unsigned int draw_mode = config.draw_mode;
+#if PERSIST_KEY == 21018
+  // A hideous hack for Rosewright E auxiliary face.
+  if (config.face_index == 1) {
+    draw_mode = !draw_mode;
+  }
+#endif
+
   if (battery_gauge_opaque_layer) {
     if (charge_state.is_charging || config.keep_battery_gauge || (charge_state.is_plugged || charge_state.charge_percent <= 20)) {
       // Draw the background of the layer.
       GRect box = layer_get_frame(me);
       box.origin.x = 0;
       box.origin.y = 0;
-      if (battery_gauge_on_black ^ config.draw_mode) {
+      if (battery_gauge_on_black ^ draw_mode) {
 	graphics_context_set_fill_color(ctx, GColorBlack);
       } else {
 	graphics_context_set_fill_color(ctx, GColorWhite);
@@ -38,7 +47,7 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
   box.origin.y = 0;
   box.size.w -= 2;
 
-  if (battery_gauge_on_black ^ config.draw_mode) {
+  if (battery_gauge_on_black ^ draw_mode) {
     graphics_context_set_compositing_mode(ctx, GCompOpSet);
     graphics_context_set_fill_color(ctx, GColorWhite);
   } else {
