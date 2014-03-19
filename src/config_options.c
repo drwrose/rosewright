@@ -53,6 +53,11 @@ void load_config() {
   }
 }
 
+
+void dropped_config_handler(AppMessageResult reason, void *context) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "dropped message: %d", reason);
+}
+
 void receive_config_handler(DictionaryIterator *received, void *context) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "receive_config_handler");
   ConfigOptions orig_config = config;

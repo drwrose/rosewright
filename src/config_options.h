@@ -45,6 +45,8 @@ extern ConfigOptions config;
 void init_default_options();
 void save_config();
 void load_config();
+
+void dropped_config_handler(AppMessageResult reason, void *context);
 void receive_config_handler(DictionaryIterator *received, void *context);
 
 void apply_config();  // implemented in the main program

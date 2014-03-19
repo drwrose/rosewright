@@ -33,7 +33,16 @@ var show_date;
 var display_lang;
 var face_index;
 
-var logLocalStorage = function() {
+function sent_ack(e) {
+    console.log("Message sent");
+}
+
+function sent_nack(e) {
+    console.log("Message not sent: " + e.error);
+    //console.log(e.error.message);
+}
+
+function logLocalStorage() {
     var keys = Object.keys(localStorage);
     console.log("  localStorage = {");
     for (var key in keys) {
@@ -42,8 +51,32 @@ var logLocalStorage = function() {
     console.log("  }");
 }
 
+function getIntFromStorage(keyword, default_value) {
+    var value = localStorage.getItem(watch_name + ":" + keyword);
+    if (!value) {
+	value = default_value;
+    }
+    value = parseInt(value);
+    if (isNaN(value)) {
+	value = default_value;
+    }
+
+    console.log("   " + keyword + ": " + value);
+    return value;
+}
+
+function getStringFromStorage(keyword, default_value) {
+    var value = localStorage.getItem(watch_name + ":" + keyword);
+    if (!value) {
+	value = default_value;
+    }
+
+    console.log("   " + keyword + ": '" + value + "'");
+    return value;
+}
+
 var initialized = false;
-var initialize = function() {
+function initialize() {
     console.log("initialize: " + initialized);
     if (initialized) {
 	return;
@@ -51,82 +84,17 @@ var initialize = function() {
 
     logLocalStorage();
 
-    keep_battery_gauge = localStorage.getItem(watch_name + ":keep_battery_gauge");
-    if (!keep_battery_gauge) {
-	keep_battery_gauge = default_keep_battery_gauge;
-    }
-    keep_battery_gauge = parseInt(keep_battery_gauge);
-    
-    keep_bluetooth_indicator = localStorage.getItem(watch_name + ":keep_bluetooth_indicator");
-    if (!keep_bluetooth_indicator) {
-	keep_bluetooth_indicator = default_keep_battery_gauge;
-    }
-    keep_bluetooth_indicator = parseInt(keep_bluetooth_indicator);
-
-    second_hand = localStorage.getItem(watch_name + ":second_hand");
-    if (!second_hand) {
-	second_hand = default_second_hand;
-    }
-    second_hand = parseInt(second_hand);
-
-    hour_buzzer = localStorage.getItem(watch_name + ":hour_buzzer");
-    if (!hour_buzzer) {
-	hour_buzzer = default_hour_buzzer;
-    }
-    hour_buzzer = parseInt(hour_buzzer);
-
-    draw_mode = localStorage.getItem(watch_name + ":draw_mode");
-    if (!draw_mode) {
-	draw_mode = default_draw_mode;
-    }
-    draw_mode = parseInt(draw_mode);
-
-    chrono_dial = localStorage.getItem(watch_name + ":chrono_dial");
-    if (!chrono_dial) {
-	chrono_dial = default_chrono_dial;
-    }
-    chrono_dial = parseInt(chrono_dial);
-
-    sweep_seconds = localStorage.getItem(watch_name + ":sweep_seconds");
-    if (!sweep_seconds) {
-	sweep_seconds = default_sweep_seconds;
-    }
-    sweep_seconds = parseInt(sweep_seconds);
-
-    show_day = localStorage.getItem(watch_name + ":show_day");
-    if (!show_day) {
-	show_day = default_show_day;
-    }
-    show_day = parseInt(show_day);
-
-    show_date = localStorage.getItem(watch_name + ":show_date");
-    if (!show_date) {
-	show_date = default_show_date;
-    }
-    show_date = parseInt(show_date);
-
-    display_lang = localStorage.getItem(watch_name + ":display_lang");
-    if (!display_lang) {
-	display_lang = default_display_lang;
-    }
-
-    face_index = localStorage.getItem(watch_name + ":face_index");
-    if (!face_index) {
-	face_index = default_face_index;
-    }
-    face_index = parseInt(face_index);
-
-    console.log("   keep_battery_gauge: " + keep_battery_gauge);
-    console.log("   keep_bluetooth_indicator: " + keep_bluetooth_indicator);
-    console.log("   second_hand: " + second_hand);
-    console.log("   hour_buzzer: " + hour_buzzer);
-    console.log("   draw_mode: " + draw_mode);
-    console.log("   chrono_dial: " + chrono_dial);
-    console.log("   sweep_seconds: " + sweep_seconds);
-    console.log("   show_day: " + show_day);
-    console.log("   show_date: " + show_date);
-    console.log("   display_lang: " + display_lang);
-    console.log("   face_index: " + face_index);
+    keep_battery_gauge = getIntFromStorage('keep_battery_gauge', default_keep_battery_gauge);
+    keep_bluetooth_indicator = getIntFromStorage('keep_bluetooth_indicator', default_keep_bluetooth_indicator);
+    second_hand = getIntFromStorage('second_hand', default_second_hand);
+    hour_buzzer = getIntFromStorage('hour_buzzer', default_hour_buzzer);
+    draw_mode = getIntFromStorage('draw_mode', default_draw_mode);
+    chrono_dial = getIntFromStorage('chrono_dial', default_chrono_dial);
+    sweep_seconds = getIntFromStorage('sweep_seconds', default_sweep_seconds);
+    show_day = getIntFromStorage('show_day', default_show_day);
+    show_date = getIntFromStorage('show_date', default_show_date);
+    display_lang = getStringFromStorage('display_lang', default_display_lang);
+    face_index = getIntFromStorage('face_index', default_face_index);
 
     // At startup, send the current configuration to the Pebble--the
     // phone storage keeps the authoritative state.  We delay by 1
@@ -147,7 +115,7 @@ var initialize = function() {
 	    'face_index' : face_index,
 	};
    	console.log("sending init config: " + JSON.stringify(configuration));
-	Pebble.sendAppMessage(configuration);
+	Pebble.sendAppMessage(configuration, sent_ack, sent_nack);
     }, 1000)
 }
 
@@ -159,7 +127,7 @@ Pebble.addEventListener("ready", function(e) {
 Pebble.addEventListener("showConfiguration", function(e) {
     console.log("showConfiguration starting");
     initialize();
-    var url = "http://www.ddrose.com/pebble/rosewright_2_4_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&keep_battery_gauge=" + keep_battery_gauge + "&keep_bluetooth_indicator=" + keep_bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&draw_mode=" + draw_mode + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces;
+    var url = "http://www.ddrose.com/pebble/rosewright_2_4_2_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&keep_battery_gauge=" + keep_battery_gauge + "&keep_bluetooth_indicator=" + keep_bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&draw_mode=" + draw_mode + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces;
     if (show_chrono_dial) {
 	url += "&chrono_dial=" + chrono_dial
     }
@@ -185,7 +153,7 @@ Pebble.addEventListener("webviewclosed", function(e) {
     if (e.response && e.response != 'CANCELLED') {
 	var configuration = JSON.parse(e.response);
 	console.log("sending runtime config: " + JSON.stringify(configuration));
-	Pebble.sendAppMessage(configuration);
+	Pebble.sendAppMessage(configuration, sent_ack, sent_nack);
 	
 	keep_battery_gauge = configuration["keep_battery_gauge"];
 	localStorage.setItem(watch_name + ":keep_battery_gauge", keep_battery_gauge);
