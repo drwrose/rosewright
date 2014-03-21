@@ -10,10 +10,11 @@
 
 BitmapWithData bluetooth_disconnected;
 BitmapWithData bluetooth_connected;
+BitmapWithData bluetooth_mask;
 Layer *bluetooth_layer;
 bool bluetooth_state = false;
 
-bool bluetooth_on_black = false;
+bool bluetooth_invert = false;
 bool bluetooth_opaque_layer = false;
 
 void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
@@ -21,12 +22,15 @@ void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
   box.origin.x = 0;
   box.origin.y = 0;
 
-  if (bluetooth_on_black ^ config.draw_mode) {
-    graphics_context_set_compositing_mode(ctx, GCompOpSet);
-    graphics_context_set_fill_color(ctx, GColorBlack);
+  GCompOp fg_mode;
+  GCompOp mask_mode;
+
+  if (bluetooth_invert ^ config.draw_mode) {
+    fg_mode = GCompOpSet;
+    mask_mode = GCompOpAnd;
   } else {
-    graphics_context_set_compositing_mode(ctx, GCompOpAnd);
-    graphics_context_set_fill_color(ctx, GColorWhite);
+    fg_mode = GCompOpAnd;
+    mask_mode = GCompOpSet;
   }
 
   bool new_state = bluetooth_connection_service_peek();
@@ -39,19 +43,36 @@ void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
     }
 #endif
   }
+
   if (bluetooth_state) {
     if (config.keep_bluetooth_indicator) {
       // We only draw the "connected" bitmap if
       // keep_bluetooth_indicator is configured true.
       if (bluetooth_opaque_layer) {
-	graphics_fill_rect(ctx, box, 0, GCornerNone);
+	if (bluetooth_mask.bitmap == NULL) {
+	  bluetooth_mask = png_bwd_create(RESOURCE_ID_BLUETOOTH_MASK);
+	}
+	graphics_context_set_compositing_mode(ctx, mask_mode);
+	graphics_draw_bitmap_in_rect(ctx, bluetooth_mask.bitmap, box);
       }
+      if (bluetooth_connected.bitmap == NULL) {
+	bluetooth_connected = png_bwd_create(RESOURCE_ID_BLUETOOTH_CONNECTED);
+      }
+      graphics_context_set_compositing_mode(ctx, fg_mode);
       graphics_draw_bitmap_in_rect(ctx, bluetooth_connected.bitmap, box);
     }
   } else {
     if (bluetooth_opaque_layer) {
-      graphics_fill_rect(ctx, box, 0, GCornerNone);
+      if (bluetooth_mask.bitmap == NULL) {
+	bluetooth_mask = png_bwd_create(RESOURCE_ID_BLUETOOTH_MASK);
+      }
+      graphics_context_set_compositing_mode(ctx, mask_mode);
+      graphics_draw_bitmap_in_rect(ctx, bluetooth_mask.bitmap, box);
     }
+    if (bluetooth_disconnected.bitmap == NULL) {
+      bluetooth_disconnected = png_bwd_create(RESOURCE_ID_BLUETOOTH_DISCONNECTED);
+    }
+    graphics_context_set_compositing_mode(ctx, fg_mode);
     graphics_draw_bitmap_in_rect(ctx, bluetooth_disconnected.bitmap, box);
   }
 }
@@ -61,19 +82,17 @@ void handle_bluetooth(bool connected) {
   layer_mark_dirty(bluetooth_layer);
 }
 
-void init_bluetooth_indicator(Layer *window_layer, int x, int y, bool on_black, bool opaque_layer) {
-  bluetooth_on_black = on_black;
+void init_bluetooth_indicator(Layer *window_layer, int x, int y, bool invert, bool opaque_layer) {
+  bluetooth_invert = invert;
   bluetooth_opaque_layer = opaque_layer;
-  bluetooth_disconnected = png_bwd_create(RESOURCE_ID_BLUETOOTH_DISCONNECTED);
-  bluetooth_connected = png_bwd_create(RESOURCE_ID_BLUETOOTH_CONNECTED);
   bluetooth_layer = layer_create(GRect(x, y, 18, 18));
   layer_set_update_proc(bluetooth_layer, &bluetooth_layer_update_callback);
   layer_add_child(window_layer, bluetooth_layer);
   bluetooth_connection_service_subscribe(&handle_bluetooth);
 }
 
-void move_bluetooth_indicator(int x, int y, bool on_black, bool opaque_layer) {
-  bluetooth_on_black = on_black;
+void move_bluetooth_indicator(int x, int y, bool invert, bool opaque_layer) {
+  bluetooth_invert = invert;
   bluetooth_opaque_layer = opaque_layer;
   layer_set_frame((Layer *)bluetooth_layer, GRect(x, y, 18, 18));
 }
@@ -83,6 +102,7 @@ void deinit_bluetooth_indicator() {
   layer_destroy(bluetooth_layer);
   bwd_destroy(&bluetooth_disconnected);
   bwd_destroy(&bluetooth_connected);
+  bwd_destroy(&bluetooth_mask);
 }
 
 void refresh_bluetooth_indicator() {

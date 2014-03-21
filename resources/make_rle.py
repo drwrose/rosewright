@@ -216,8 +216,9 @@ def make_rle_image(rleFilename, image):
     # Find the best n for this image.
     result = None
     n = None
-    for n0 in [1, 8]:
+    for n0 in [1, 2, 4, 8]:
         result0 = pack_rle(chop_rle(generate_rle(generate_pixels(image, stride)), n0), n0)
+        #print n0, len(result0)
         if result is None or len(result0) < len(result):
             result = result0
             n = n0

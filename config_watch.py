@@ -193,7 +193,7 @@ hands = {
 #   chrono    - the (tenths, hours) images for the two chrono dials, if used.
 #   dateCard  - the (x, y, c) position, color, background of the "date of month" card, or None.
 #   dayCard   - the (x, y, c) position, color, background of the "day of week" card, or None.
-#   dateCardFilename - the filename shared by all day and date cards.
+#   dateCardFilename - the (card, mask) images shared by all day and date cards.  The mask is used only if one of the dateCard or dayCard colors includes t for transparency.
 #   battery   - the (x, y, c) position and color of the battery gauge, or None.
 #   bluetooth - the (x, y, c) position and color of the bluetooth indicator, or None.
 #   defaults  - a list of things enabled by default: one or more of 'date', 'day', 'battery', 'bluetooth', 'second'
@@ -214,15 +214,14 @@ hands = {
 # each background option.  (But they don't have to be lists, in which
 # case their definitions are the same for all background options.)
 
-# Currently, all day/date cards must share the same filename, and all
-# must use the same transparency/nontransparency flag.
+# Currently, all day/date cards must share the same (card, mask) images.
 
 faces = {
     'a' : {
         'filename': ['a_face.png', 'a_face_unrotated.png'],
         'dateCard': (106, 82, 'b'), 
         'dayCard': (38, 82, 'b'),
-        'dateCardFilename' : 'date_card_white.png',
+        'dateCardFilename' : ('date_card.png', 'date_card_mask.png'),
         'bluetooth' : (51, 113, 'b'),
         'battery' : (77, 117, 'b'),
         'defaults' : [ 'date' ],
@@ -231,7 +230,7 @@ faces = {
         'filename' : ['b_face_rect.png', 'b_face.png'],
         'dateCard' : (92, 109, 'b'), 
         'dayCard' : (52, 109, 'b'), 
-        'dateCardFilename' : 'date_card_white.png',
+        'dateCardFilename' : ('date_card.png', 'date_card_mask.png'),
         'bluetooth' : (0, 0, 'bt'),
         'battery' : (125, 3, 'bt'),
         'defaults' : [ 'day', 'date' ],
@@ -242,27 +241,29 @@ faces = {
         'centers' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
         'dateCard' : (92, 45, 'wt'), 
         'dayCard' : (52, 45, 'wt'),
-        'dateCardFilename' : 'date_card_black_trans.png', 
+        'dateCardFilename' : ('date_card.png', 'date_card_mask.png'),
         'bluetooth' : (0, 0, 'w'),
         'battery' : (125, 3, 'w'),
         'defaults' : [ 'second' ],
         },
     'd' : {
         'filename' : ['d_face_rect.png', 'd_face_rect_clean.png', 'd_face.png', 'd_face_clean.png'],
-        'dateCard' : [ (95, 125, 'wt'), (95, 125, 'wt'),
-                       (91, 107, 'wt'), (91, 107, 'wt'), ],
-        'dayCard' : [ (49, 125, 'wt'), (49, 125, 'wt'),
-                      (53, 107, 'wt'), (53, 107, 'wt'), ],
-        'dateCardFilename' : 'date_card_black_trans.png', 
-        'bluetooth' : (0, 0, 'w'),
-        'battery' : (125, 3, 'w'),
-        'defaults' : [ 'day', 'date', 'bluetooth', 'battery' ],
+        'dateCard' : [ (95, 121, 'wt'), (95, 121, 'b'),
+                       (91, 107, 'wt'), (91, 107, 'b'), ],
+        'dayCard' : [ (49, 121, 'wt'), (49, 121, 'b'),
+                      (53, 107, 'wt'), (53, 107, 'b'), ],
+        'dateCardFilename' : ('date_card.png', 'date_card_mask.png'),
+        'bluetooth' : [ (49, 45, 'bt'), (49, 45, 'b'),
+                        (0, 0, 'w'), (0, 0, 'w'), ],
+        'battery' : [ (79, 49, 'bt'), (79, 49, 'bt'),
+                      (125, 3, 'w'), (125, 3, 'w'), ],
+        'defaults' : [ 'day', 'date' ],
         },
     'e' : {
         'filename' : ['e_face.png', 'e_face_white.png'],
         'dateCard' : (123, 82, 'bt'), 
         'dayCard' : (21, 82, 'bt'),
-        'dateCardFilename' : 'date_card_white_trans.png', 
+        'dateCardFilename' : ('date_card.png', 'date_card_mask.png'),
         'bluetooth' : [ (11, 12, 'w'), (11, 12, 'b'), ],
         'battery' : [ (113, 16, 'w'), (113, 16, 'b'), ],
         'defaults' : [ 'date' ],
@@ -279,7 +280,6 @@ enableChronoTenthHand = False
 dayCard = [None]
 dateCard = [None]
 dateCardFilename = None
-dateCardOpaque = None
 bluetooth = [None]
 battery = [None]
 defaults = []
@@ -364,18 +364,6 @@ def makeFaces(generatedTable):
       "file": "%(rleFilename)s",
       "type": "%(ptype)s"
     },"""    
-    
-    dateCardTransEntry = """
-    {
-      "name": "%(name)s_WHITE",
-      "file": "%(rleWhiteFilename)s",
-      "type": "%(ptype)s"
-    },
-    {
-      "name": "%(name)s_BLACK",
-      "file": "%(rleBlackFilename)s",
-      "type": "%(ptype)s"
-    },"""    
 
     chronoResourceEntry = """
     {
@@ -423,23 +411,23 @@ def makeFaces(generatedTable):
     print >> generatedTable, "};\n"
 
     if (dateCard[0] or dayCard[0]) and dateCardFilename:
-        if dateCardOpaque:
-            # Use transparency.
-            rleWhiteFilename, rleBlackFilename, ptype = make_rle_trans('clock_faces/' + dateCardFilename, useRle = supportRle)
-            resourceStr += dateCardTransEntry % {
-                'name' : 'DATE_CARD',
-                'rleWhiteFilename' : rleWhiteFilename,
-                'rleBlackFilename' : rleBlackFilename,
-                'ptype' : ptype,
-                }
-        else:
-            # No transparency.
-            rleFilename, ptype = make_rle('clock_faces/' + dateCardFilename, useRle = supportRle)
+        card, mask = dateCardFilename
+
+        rleFilename, ptype = make_rle('clock_faces/' + card, useRle = supportRle)
+        resourceStr += dateCardEntry % {
+            'name' : 'DATE_CARD',
+            'rleFilename' : rleFilename,
+            'ptype' : ptype,
+            }
+
+        if mask:
+            rleFilename, ptype = make_rle('clock_faces/' + mask, useRle = supportRle)
             resourceStr += dateCardEntry % {
-                'name' : 'DATE_CARD',
+                'name' : 'DATE_CARD_MASK',
                 'rleFilename' : rleFilename,
                 'ptype' : ptype,
                 }
+        
     if targetChronoTenths:
         tenthsWhite, tenthsBlack, ptype = make_rle_trans('clock_faces/' + targetChronoTenths, useRle = supportRle)
         hoursWhite, hoursBlack, ptype = make_rle_trans('clock_faces/' + targetChronoHours, useRle = supportRle)
@@ -877,7 +865,6 @@ def configWatch():
         'defaultBattery' : int(bool('battery' in defaults)),
         'defaultDayCard' : int(bool('day' in defaults)),
         'defaultDateCard' : int(bool('date' in defaults)),
-        'dateCardOpaque' : int(dateCardOpaque),
         'enableSecondHand' : int(enableSecondHand and not suppressSecondHand),
         'enableSweepSeconds' : int(enableSecondHand and supportSweep),
         'enableHourBuzzer' : int(enableHourBuzzer),
@@ -956,7 +943,6 @@ numFaces = len(faceFilenames)
 dayCard = getIndicator(fd, 'dayCard')
 dateCard = getIndicator(fd, 'dateCard')
 dateCardFilename = fd.get('dateCardFilename', None)
-dateCardOpaque = (dateCard[0] and dateCard[0][2][-1] == 't') or (dayCard[0] and dayCard[0][2][-1] == 't')
 bluetooth = getIndicator(fd, 'bluetooth')
 battery = getIndicator(fd, 'battery')
 defaults = fd.get('defaults', [])

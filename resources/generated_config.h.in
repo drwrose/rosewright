@@ -48,7 +48,6 @@
 
 #define ENABLE_DATE_CARD %(enableDateCard)s
 #define DEFAULT_DATE_CARD %(defaultDateCard)s
-#define DATE_CARD_OPAQUE %(dateCardOpaque)s
  
 #define ENABLE_BLUETOOTH %(enableBluetooth)s
 #define DEFAULT_BLUETOOTH %(defaultBluetooth)s

@@ -24,8 +24,8 @@ BitmapWithData clock_face;
 int face_index = -1;
 BitmapLayer *clock_face_layer;
 
-BitmapWithData date_card_white;
-BitmapWithData date_card_black;
+BitmapWithData date_card;
+BitmapWithData date_card_mask;
 
 BitmapWithData chrono_dial_white;
 BitmapWithData chrono_dial_black;
@@ -117,12 +117,14 @@ typedef struct {
   GCompOp paint_black;
   GCompOp paint_white;
   GCompOp paint_assign;
+  GCompOp paint_fg;
+  GCompOp paint_mask;
   GColor colors[3];
 } DrawModeTable;
 
 DrawModeTable draw_mode_table[2] = {
-  { GCompOpClear, GCompOpOr, GCompOpAssign, { GColorClear, GColorBlack, GColorWhite } },
-  { GCompOpOr, GCompOpClear, GCompOpAssignInverted, { GColorClear, GColorWhite, GColorBlack } },
+  { GCompOpClear, GCompOpOr, GCompOpAssign, GCompOpAnd, GCompOpSet, { GColorClear, GColorBlack, GColorWhite } },
+  { GCompOpOr, GCompOpClear, GCompOpAssignInverted, GCompOpSet, GCompOpAnd, { GColorClear, GColorWhite, GColorBlack } },
 };
 
 static const uint32_t tap_segments[] = { 50 };
@@ -652,28 +654,31 @@ void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
 }
 #endif  // ENABLE_CHRONO_TENTH_HAND
 
-void draw_card(Layer *me, GContext *ctx, GBitmap *bitmap_black, GBitmap *bitmap_white, const char *text, GFont font, int font_vshift, bool invert) {
+void draw_card(Layer *me, GContext *ctx, const char *text, GFont font, int font_vshift, bool invert, bool opaque_layer) {
   GRect box;
 
   box = layer_get_frame(me);
   box.origin.x = 0;
   box.origin.y = 0;
 
-  if (bitmap_white && bitmap_black) {
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
-    graphics_draw_bitmap_in_rect(ctx, bitmap_black, box);
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
-    graphics_draw_bitmap_in_rect(ctx, bitmap_white, box);
-  } else if (bitmap_black) {
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_assign);
-    graphics_draw_bitmap_in_rect(ctx, bitmap_black, box);
+  unsigned int draw_mode = invert ^ config.draw_mode;
+
+  if (opaque_layer) {
+    if (date_card_mask.bitmap == NULL) {
+      date_card_mask = rle_bwd_create(RESOURCE_ID_DATE_CARD_MASK);
+    }
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_mask);
+    graphics_draw_bitmap_in_rect(ctx, date_card_mask.bitmap, box);
+  }
+  
+  if (date_card.bitmap == NULL) {
+    date_card = rle_bwd_create(RESOURCE_ID_DATE_CARD);
   }
 
-  if (invert ^ config.draw_mode) {
-    graphics_context_set_text_color(ctx, GColorWhite);
-  } else {
-    graphics_context_set_text_color(ctx, GColorBlack);
-  }
+  graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_fg);
+  graphics_draw_bitmap_in_rect(ctx, date_card.bitmap, box);
+
+  graphics_context_set_text_color(ctx, draw_mode_table[draw_mode].colors[1]);
 
   box.origin.y += font_vshift;
 
@@ -711,7 +716,7 @@ void day_layer_update_callback(Layer *me, GContext *ctx) {
     const LangDef *lang = &lang_table[config.display_lang % num_langs];
     const char *weekday_name = lang->weekday_names[current_placement.day_index];
     const struct IndicatorTable *card = &day_table[config.face_index];
-    draw_card(me, ctx, date_card_black.bitmap, date_card_white.bitmap, weekday_name, day_font, day_font_vshift, card->invert);
+    draw_card(me, ctx, weekday_name, day_font, day_font_vshift, card->invert, card->opaque);
   }
 }
 #endif  // ENABLE_DAY_CARD
@@ -725,7 +730,7 @@ void date_layer_update_callback(Layer *me, GContext *ctx) {
     char buffer[buffer_size];
     snprintf(buffer, buffer_size, "%d", current_placement.date_value);
     const struct IndicatorTable *card = &date_table[config.face_index];
-    draw_card(me, ctx, date_card_black.bitmap, date_card_white.bitmap, buffer, date_font, date_font_vshift, card->invert);
+    draw_card(me, ctx, buffer, date_font, date_font_vshift, card->invert, card->opaque);
   }
 }
 #endif  // ENABLE_DATE_CARD
@@ -1341,15 +1346,6 @@ void handle_init() {
     init_bluetooth_indicator(window_layer, card->x, card->y, card->invert, card->opaque);
   }
 
-#if defined(ENABLE_DAY_CARD) || defined(ENABLE_DATE_CARD)
-  #if DATE_CARD_OPAQUE
-  date_card_white = rle_bwd_create(RESOURCE_ID_DATE_CARD_WHITE);
-  date_card_black = rle_bwd_create(RESOURCE_ID_DATE_CARD_BLACK);
-  #else
-  date_card_black = rle_bwd_create(RESOURCE_ID_DATE_CARD);
-  #endif
-#endif
-
 #ifdef ENABLE_DAY_CARD
   {
     const struct IndicatorTable *card = &day_table[config.face_index];
@@ -1449,12 +1445,8 @@ void handle_deinit() {
   layer_destroy(date_layer);
 #endif
 #if defined(ENABLE_DAY_CARD) || defined(ENABLE_DATE_CARD)
-  if (date_card_white.bitmap != NULL) {
-    bwd_destroy(&date_card_white);
-  }
-  if (date_card_black.bitmap != NULL) {
-    bwd_destroy(&date_card_black);
-  }
+  bwd_destroy(&date_card);
+  bwd_destroy(&date_card_mask);
 #endif
   layer_destroy(minute_layer);
   layer_destroy(hour_layer);
