@@ -257,7 +257,7 @@ faces = {
                         (0, 0, 'w'), (0, 0, 'w'), ],
         'battery' : [ (79, 49, 'bt'), (79, 49, 'bt'),
                       (125, 3, 'w'), (125, 3, 'w'), ],
-        'defaults' : [ 'day', 'date' ],
+        'defaults' : [ 'day', 'date', 'bluetooth', 'battery' ],
         },
     'e' : {
         'filename' : ['e_face.png', 'e_face_white.png'],
