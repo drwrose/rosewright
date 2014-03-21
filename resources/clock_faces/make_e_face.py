@@ -8,9 +8,9 @@ import PIL.Image
 face = FaceMaker.FaceMaker(zoom = 1.0)
 
 face.drawTicks(60, 0.5, 2.0, width = 0.003)
-face.drawTicks(12, 0.5, 2.0, width = 0.01)
+#face.drawTicks(12, 0.5, 2.0, width = 0.01)
 
 # 1.0 = 317 ref pixels
 
 print "handScale = %s" % (face.pixelScaleToHandScale(317))
-face.save('e_face_ticks.png')
+face.save('d_face_ticks.png')

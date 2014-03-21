@@ -9,8 +9,8 @@ face = FaceMaker.FaceMaker(zoom = 0.92)
 
 # 1.0 = 634 ref pixels
 
-face.setFg(128)
-#face.setFg(255)
+#face.setFg(128)
+face.setFg(255)
 face.fillCircle(1.0)
 
 face.setFg(255)
@@ -35,8 +35,8 @@ font = face.loadFont('Multicolore.otf', 0.13)
 face.drawCircularLabels(face.standardLabels, 0.86, font, align = 'i')
 
 cx, cy = 0.120, 0.15
-face.pasteImage((-cx, cy), 'date_card_black.png', (15, 8), None)
-face.pasteImage((cx, cy), 'date_card_black.png', (15, 8), None)
+#face.pasteImage((-cx, cy), 'date_card_black.png', (15, 8), None)
+#face.pasteImage((cx, cy), 'date_card_black.png', (15, 8), None)
 
 face.save('d_face.png')
 print "handScale = %s" % (face.pixelScaleToHandScale(634))

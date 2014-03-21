@@ -229,7 +229,7 @@ faces = {
         'battery' : (125, 3, 'w', False),
         },
     'd' : {
-        'filename' : 'd_face.png', 
+        'filename' : ['d_face_rect.png', 'd_face_rect_clean.png', 'd_face.png', 'd_face_clean.png'],
         'dateCard' : (91, 107, 'wt', 'date_card_black_trans.png', True), 
         'dayCard' : (53, 107, 'wt', None, True), 
         'bluetooth' : (0, 0, 'w', True),
