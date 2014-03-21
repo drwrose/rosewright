@@ -1,9 +1,9 @@
 // This name is displayed on the configuration title card.
 var watch_name = "%(watchName)s";
-var show_chrono_dial = %(showChronoDial)s;
+var show_chrono_dial = %(enableChronoDial)s;
 var enable_sweep_seconds = %(enableSweepSeconds)s;
-var enable_show_day = %(showDayCard)s;
-var enable_show_date = %(showDateCard)s;
+var enable_show_day = %(enableDayCard)s;
+var enable_show_date = %(enableDateCard)s;
 var num_faces = %(numFaces)s;
 
 // Define the initial config default values.  These defaults are used
@@ -11,7 +11,7 @@ var num_faces = %(numFaces)s;
 // otherwise, the defaults in init_default_options() are used instead.
 var default_keep_battery_gauge = %(defaultBattery)s;
 var default_keep_bluetooth_indicator = %(defaultBluetooth)s;
-var default_second_hand = %(showSecondHand)s;
+var default_second_hand = %(enableSecondHand)s;
 var default_hour_buzzer = %(enableHourBuzzer)s;
 var default_draw_mode = 0;
 var default_chrono_dial = 1;

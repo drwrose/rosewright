@@ -19,21 +19,13 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
   charge_state.charge_percent = 100 - ((now / 2) % 11) * 10;
 #endif  // BATTERY_HACK
 
-  unsigned int draw_mode = config.draw_mode;
-#if PERSIST_KEY == 21018
-  // A hideous hack for Rosewright E auxiliary face.
-  if (config.face_index == 1) {
-    draw_mode = !draw_mode;
-  }
-#endif
-
   if (battery_gauge_opaque_layer) {
     if (charge_state.is_charging || config.keep_battery_gauge || (charge_state.is_plugged || charge_state.charge_percent <= 20)) {
       // Draw the background of the layer.
       GRect box = layer_get_frame(me);
       box.origin.x = 0;
       box.origin.y = 0;
-      if (battery_gauge_on_black ^ draw_mode) {
+      if (battery_gauge_on_black ^ config.draw_mode) {
 	graphics_context_set_fill_color(ctx, GColorBlack);
       } else {
 	graphics_context_set_fill_color(ctx, GColorWhite);
@@ -47,7 +39,7 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
   box.origin.y = 0;
   box.size.w -= 2;
 
-  if (battery_gauge_on_black ^ draw_mode) {
+  if (battery_gauge_on_black ^ config.draw_mode) {
     graphics_context_set_compositing_mode(ctx, GCompOpSet);
     graphics_context_set_fill_color(ctx, GColorWhite);
   } else {
@@ -81,6 +73,12 @@ void init_battery_gauge(Layer *window_layer, int x, int y, bool on_black, bool o
   layer_set_update_proc(battery_gauge_layer, &battery_gauge_layer_update_callback);
   layer_add_child(window_layer, battery_gauge_layer);
   battery_state_service_subscribe(&handle_battery);
+}
+
+void move_battery_gauge(int x, int y, bool on_black, bool opaque_layer) {
+  battery_gauge_on_black = on_black;
+  battery_gauge_opaque_layer = opaque_layer;
+  layer_set_frame((Layer *)battery_gauge_layer, GRect(x, y, 18, 10));
 }
 
 void deinit_battery_gauge() {

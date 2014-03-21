@@ -5,6 +5,7 @@
 //#define BATTERY_HACK 1
 
 void init_battery_gauge(Layer *window_layer, int x, int y, bool on_black, bool opaque_layer);
+void move_battery_gauge(int x, int y, bool on_black, bool opaque_layer);
 void deinit_battery_gauge();
 void refresh_battery_gauge();
 

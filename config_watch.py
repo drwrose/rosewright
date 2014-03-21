@@ -191,12 +191,14 @@ hands = {
 #
 #   filename  - the background image for the face, or a list of optional faces.
 #   chrono    - the (tenths, hours) images for the two chrono dials, if used.
-#   dateCard  - the (x, y, c, filename, enabled) position, color, background of the "date of month" card, or None.  If enabled is true the card is enabled by default.
-#   dayCard   - the (x, y, c, filename, enabled) position, color, background of the "day of week" card, or None.  If filename is None the dayCard file is used.
-#   battery   - the (x, y, c, enabled) position and color of the battery gauge, or None.
-#   bluetooth - the (x, y, c, enabled) position and color of the bluetooth indicator, or None.
-#   centers   - a list of [(hand, x, y)] to indicate the position for
-#               each kind of watch hand.  If the list is empty or a
+#   dateCard  - the (x, y, c) position, color, background of the "date of month" card, or None.
+#   dayCard   - the (x, y, c) position, color, background of the "day of week" card, or None.
+#   dateCardFilename - the filename shared by all day and date cards.
+#   battery   - the (x, y, c) position and color of the battery gauge, or None.
+#   bluetooth - the (x, y, c) position and color of the bluetooth indicator, or None.
+#   defaults  - a list of things enabled by default: one or more of 'date', 'day', 'battery', 'bluetooth', 'second'
+#   centers   - a tuple of ((hand, x, y), ...) to indicate the position for
+#               each kind of watch hand.  If the tuple is empty or a
 #               hand is omitted, the default is the center.  This also
 #               defines the stacking order of the hands--any
 #               explicitly listed hands are drawn in the order
@@ -204,57 +206,83 @@ hands = {
 #               the usual order.
 #
 
+# Note that filename may be a single string if the face style supports
+# a single watchface background, or it may be a list of strings if the
+# face style supports multiple background options.  If it is a list of
+# strings, then dayCard, dateCard, bluetooth, and battery may also be
+# lists, in which case their definitions are applied separately for
+# each background option.  (But they don't have to be lists, in which
+# case their definitions are the same for all background options.)
+
+# Currently, all day/date cards must share the same filename, and all
+# must use the same transparency/nontransparency flag.
+
 faces = {
     'a' : {
         'filename': ['a_face.png', 'a_face_unrotated.png'],
-        'dateCard': (106, 82, 'b', 'date_card_white.png', True), 
-        'dayCard': (38, 82, 'b', None, False), 
-        'bluetooth' : (51, 113, 'b', False),
-        'battery' : (77, 117, 'b', False),
+        'dateCard': (106, 82, 'b'), 
+        'dayCard': (38, 82, 'b'),
+        'dateCardFilename' : 'date_card_white.png',
+        'bluetooth' : (51, 113, 'b'),
+        'battery' : (77, 117, 'b'),
+        'defaults' : [ 'date' ],
         },
     'b' : {
         'filename' : ['b_face_rect.png', 'b_face.png'],
-        'dateCard' : (92, 109, 'b', 'date_card_white.png', True), 
-        'dayCard' : (52, 109, 'b', None, True), 
-        'bluetooth' : (0, 0, 'bt', False),
-        'battery' : (125, 3, 'bt', False),
+        'dateCard' : (92, 109, 'b'), 
+        'dayCard' : (52, 109, 'b'), 
+        'dateCardFilename' : 'date_card_white.png',
+        'bluetooth' : (0, 0, 'bt'),
+        'battery' : (125, 3, 'bt'),
+        'defaults' : [ 'day', 'date' ],
         },
     'c' : {
         'filename' : 'c_face.png',
         'chrono' : ('c_face_chrono_tenths.png', 'c_face_chrono_hours.png'),
-        'centers' : [('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)],
-        'dateCard' : (92, 45, 'wt', 'date_card_black_trans.png', False), 
-        'dayCard' : (52, 45, 'wt', None, False), 
-        'bluetooth' : (0, 0, 'w', False),
-        'battery' : (125, 3, 'w', False),
+        'centers' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
+        'dateCard' : (92, 45, 'wt'), 
+        'dayCard' : (52, 45, 'wt'),
+        'dateCardFilename' : 'date_card_black_trans.png', 
+        'bluetooth' : (0, 0, 'w'),
+        'battery' : (125, 3, 'w'),
+        'defaults' : [ 'second' ],
         },
     'd' : {
         'filename' : ['d_face_rect.png', 'd_face_rect_clean.png', 'd_face.png', 'd_face_clean.png'],
-        'dateCard' : (91, 107, 'wt', 'date_card_black_trans.png', True), 
-        'dayCard' : (53, 107, 'wt', None, True), 
-        'bluetooth' : (0, 0, 'w', True),
-        'battery' : (125, 3, 'w', True),
+        'dateCard' : [ (95, 125, 'wt'), (95, 125, 'wt'),
+                       (91, 107, 'wt'), (91, 107, 'wt'), ],
+        'dayCard' : [ (49, 125, 'wt'), (49, 125, 'wt'),
+                      (53, 107, 'wt'), (53, 107, 'wt'), ],
+        'dateCardFilename' : 'date_card_black_trans.png', 
+        'bluetooth' : (0, 0, 'w'),
+        'battery' : (125, 3, 'w'),
+        'defaults' : [ 'day', 'date', 'bluetooth', 'battery' ],
         },
     'e' : {
         'filename' : ['e_face.png', 'e_face_white.png'],
-        'dateCard' : (123, 82, 'bt', 'date_card_white_trans.png', True), 
-        'dayCard' : (21, 82, 'bt', None, False), 
-        'bluetooth' : (11, 12, 'w', False),
-        'battery' : (113, 16, 'w', False),
+        'dateCard' : (123, 82, 'bt'), 
+        'dayCard' : (21, 82, 'bt'),
+        'dateCardFilename' : 'date_card_white_trans.png', 
+        'bluetooth' : [ (11, 12, 'w'), (11, 12, 'b'), ],
+        'battery' : [ (113, 16, 'w'), (113, 16, 'b'), ],
+        'defaults' : [ 'date' ],
         },
     }
 
 makeChronograph = False
-showSecondHand = False
+enableSecondHand = False
 suppressSecondHand = False
 enableHourBuzzer = False
-showChronoMinuteHand = False
-showChronoSecondHand = False
-showChronoTenthHand = False
-dayCard = None
-dateCard = None
-bluetooth = None
-battery = None
+enableChronoMinuteHand = False
+enableChronoSecondHand = False
+enableChronoTenthHand = False
+dayCard = [None]
+dateCard = [None]
+dateCardFilename = None
+dateCardOpaque = None
+bluetooth = [None]
+battery = [None]
+defaults = []
 
 # The number of subdivisions around the face for each kind of hand.
 # Increase these numbers to show finer movement; decrease them to save
@@ -394,10 +422,10 @@ def makeFaces(generatedTable):
             }
     print >> generatedTable, "};\n"
 
-    if dateCard:
-        if dateCard[2][-1] == 't':
+    if (dateCard[0] or dayCard[0]) and dateCardFilename:
+        if dateCardOpaque:
             # Use transparency.
-            rleWhiteFilename, rleBlackFilename, ptype = make_rle_trans('clock_faces/' + dateCard[3], useRle = supportRle)
+            rleWhiteFilename, rleBlackFilename, ptype = make_rle_trans('clock_faces/' + dateCardFilename, useRle = supportRle)
             resourceStr += dateCardTransEntry % {
                 'name' : 'DATE_CARD',
                 'rleWhiteFilename' : rleWhiteFilename,
@@ -406,27 +434,9 @@ def makeFaces(generatedTable):
                 }
         else:
             # No transparency.
-            rleFilename, ptype = make_rle('clock_faces/' + dateCard[3], useRle = supportRle)
+            rleFilename, ptype = make_rle('clock_faces/' + dateCardFilename, useRle = supportRle)
             resourceStr += dateCardEntry % {
                 'name' : 'DATE_CARD',
-                'rleFilename' : rleFilename,
-                'ptype' : ptype,
-                }
-    if dayCard and dayCard[3]:
-        if dayCard[2][-1] == 't':
-            # Use transparency.
-            rleWhiteFilename, rleBlackFilename, ptype = make_rle_trans('clock_faces/' + dayCard[3], useRle = supportRle)
-            resourceStr += dateCardTransEntry % {
-                'name' : 'DAY_CARD',
-                'rleWhiteFilename' : rleWhiteFilename,
-                'rleBlackFilename' : rleBlackFilename,
-                'ptype' : ptype,
-                }
-        else:
-            # No transparency.
-            rleFilename, ptype = make_rle('clock_faces/' + dayCard[3], useRle = supportRle)
-            resourceStr += dateCardEntry % {
-                'name' : 'DAY_CARD',
                 'rleFilename' : rleFilename,
                 'ptype' : ptype,
                 }
@@ -465,7 +475,7 @@ def makeVectorHands(generatedTable, hand, groupList):
         print >> generatedTable, "  } } },"
     
     print >> generatedTable, "  }"
-    print >> generatedTable, "};"
+    print >> generatedTable, "};\n"
 
     return resourceStr
 
@@ -723,19 +733,19 @@ def makeHands(generatedTable):
     for hand, bitmapParams, vectorParams in hands[handStyle]:
         useRle = supportRle
         if hand == 'second':
-            global showSecondHand
-            showSecondHand = True
+            global enableSecondHand
+            enableSecondHand = True
             useRle = False
         elif hand == 'chrono_minute':
-            global showChronoMinuteHand
-            showChronoMinuteHand = True
+            global enableChronoMinuteHand
+            enableChronoMinuteHand = True
         elif hand == 'chrono_second':
-            global showChronoSecondHand
-            showChronoSecondHand = True
+            global enableChronoSecondHand
+            enableChronoSecondHand = True
             useRle = False
         elif hand == 'chrono_tenth':
-            global showChronoTenthHand
-            showChronoTenthHand = True
+            global enableChronoTenthHand
+            enableChronoTenthHand = True
             
         if bitmapParams:
             resourceStr += makeBitmapHands(generatedTable, useRle, hand, *bitmapParams)
@@ -743,6 +753,37 @@ def makeHands(generatedTable):
             resourceStr += makeVectorHands(generatedTable, hand, vectorParams)
 
     return resourceStr
+
+def getIndicator(fd, indicator):
+    """ Gets an indicator tuple from the config dictionary.  Finds
+    either a tuple or a list of tuples; in either case returns a list
+    of tuples. """
+    
+    list = fd.get(indicator, None)
+    if not isinstance(list, type([])):
+        list = [list]
+
+    return list
+
+def makeIndicatorTable(generatedTable, name, indicator):
+    """ Makes an array of IndicatorTable values to define how a given
+    indicator (that is, a bluetooth or battery indicator, or a
+    day/date card) is meant to be rendered for each of the alternate
+    faces. """
+
+    if not indicator[0]:
+        return
+    if len(indicator) == 1 and numFaces != 1:
+        indicator = [indicator[0]] * numFaces
+        
+    assert len(indicator) == numFaces
+    
+    print >> generatedTable, "struct IndicatorTable %s[NUM_FACES] = {" % (name)
+    for x, y, c in indicator:
+        print >> generatedTable, "  { %s, %s, %s, %s }," % (
+            x, y, int(c[0] == 'w'), int(c[-1] == 't'))
+    print >> generatedTable, "};\n";
+        
         
 def configWatch():
     generatedTable = open('%s/generated_table.c' % (resourcesDir), 'w')
@@ -751,11 +792,16 @@ def configWatch():
     resourceStr += makeFaces(generatedTable)
     resourceStr += makeHands(generatedTable)
 
+    makeIndicatorTable(generatedTable, 'date_table', dateCard)
+    makeIndicatorTable(generatedTable, 'day_table', dayCard)
+    makeIndicatorTable(generatedTable, 'battery_table', battery)
+    makeIndicatorTable(generatedTable, 'bluetooth_table', bluetooth)
+
     resourceIn = open('%s/appinfo.json.in' % (rootDir), 'r').read()
     resource = open('%s/appinfo.json' % (rootDir), 'w')
 
     watchface = 'true'
-    if makeChronograph and showChronoSecondHand:
+    if makeChronograph and enableChronoSecondHand:
         watchface = 'false'
 
     print >> resource, resourceIn % {
@@ -771,22 +817,22 @@ def configWatch():
     print >> js, jsIn % {
         'watchName' : watchName,
         'numFaces' : numFaces,
-        'showChronoDial' : int(makeChronograph),
-        'defaultBluetooth' : int(bool(bluetooth and bluetooth[3])),
-        'defaultBattery' : int(bool(battery and battery[3])),
-        'showSecondHand' : int(showSecondHand and not suppressSecondHand),
+        'enableChronoDial' : int(makeChronograph),
+        'defaultBluetooth' : int(bool('bluetooth' in defaults)),
+        'defaultBattery' : int(bool('battery' in defaults)),
+        'enableSecondHand' : int(enableSecondHand and not suppressSecondHand),
         'enableHourBuzzer' : int(enableHourBuzzer),
-        'enableSweepSeconds' : int(showSecondHand and supportSweep),
-        'showDayCard' : int(bool(dayCard)),
-        'showDateCard' : int(bool(dateCard)),
-        'defaultDayCard' : int(bool(dayCard and dayCard[4])),
-        'defaultDateCard' : int(bool(dateCard and dateCard[4])),
+        'enableSweepSeconds' : int(enableSecondHand and supportSweep),
+        'enableDayCard' : int(bool(dayCard[0])),
+        'enableDateCard' : int(bool(dateCard[0])),
+        'defaultDayCard' : int(bool('day' in defaults)),
+        'defaultDateCard' : int(bool('date' in defaults)),
         }
 
     configIn = open('%s/generated_config.h.in' % (resourcesDir), 'r').read()
     config = open('%s/generated_config.h' % (resourcesDir), 'w')
 
-    # Map the centers list into a dictionary of points for x and y.
+    # Map the centers tuple into a dictionary of points for x and y.
     cxd = dict(map(lambda (hand, x, y): (hand, x), centers))
     cyd = dict(map(lambda (hand, x, y): (hand, y), centers))
 
@@ -823,38 +869,22 @@ def configWatch():
         'chronoTenthHandX' : cxd.get('chrono_tenth', centerX),
         'chronoTenthHandY' : cyd.get('chrono_tenth', centerY),
         'compileDebugging' : int(compileDebugging),
-        'showDayCard' : int(bool(dayCard)),
-        'showDateCard' : int(bool(dateCard)),
-        'showBluetooth' : int(bool(bluetooth)),
-        'defaultBluetooth' : int(bool(bluetooth and bluetooth[3])),
-        'showBatteryGauge' : int(bool(battery)),
-        'defaultBattery' : int(bool(battery and battery[3])),
-        'dayCardX' : dayCard and dayCard[0],
-        'dayCardY' : dayCard and dayCard[1],
-        'dayCardOnBlack' : int(bool(dayCard and (dayCard[2][0].lower() == 'w'))),
-        'dayCardTrans' : int(bool(dayCard and (dayCard[2][-1] == 't'))),
-        'shareDateCard' : int(bool(dayCard and not dayCard[3])),
-        'defaultDayCard' : int(bool(dayCard and dayCard[4])),
-        'dateCardX' : dateCard and dateCard[0],
-        'dateCardY' : dateCard and dateCard[1],
-        'dateCardOnBlack' : int(bool(dateCard and (dateCard[2][0].lower() == 'w'))),
-        'dateCardTrans' : int(bool(dateCard and (dateCard[2][-1] == 't'))),
-        'defaultDateCard' : int(bool(dateCard and dateCard[4])),
-        'bluetoothX' : bluetooth and bluetooth[0],
-        'bluetoothY' : bluetooth and bluetooth[1],
-        'bluetoothOnBlack' : int(bool(bluetooth and (bluetooth[2][0].lower() == 'w'))),
-        'bluetoothOpaque' : int(bool(bluetooth and (bluetooth[2][-1].lower() == 't'))),
-        'batteryGaugeX' : battery and battery[0],
-        'batteryGaugeY' : battery and battery[1],
-        'batteryGaugeOnBlack' : int(bool(battery and (battery[2][0].lower() == 'w'))),
-        'batteryGaugeOpaque' : int(bool(battery and (battery[2][-1].lower() == 't'))),
-        'showSecondHand' : int(showSecondHand and not suppressSecondHand),
-        'enableSweepSeconds' : int(showSecondHand and supportSweep),
+        'enableDayCard' : int(bool(dayCard[0])),
+        'enableDateCard' : int(bool(dateCard[0])),
+        'enableBluetooth' : int(bool(bluetooth[0])),
+        'defaultBluetooth' : int(bool('bluetooth' in defaults)),
+        'enableBatteryGauge' : int(bool(battery[0])),
+        'defaultBattery' : int(bool('battery' in defaults)),
+        'defaultDayCard' : int(bool('day' in defaults)),
+        'defaultDateCard' : int(bool('date' in defaults)),
+        'dateCardOpaque' : int(dateCardOpaque),
+        'enableSecondHand' : int(enableSecondHand and not suppressSecondHand),
+        'enableSweepSeconds' : int(enableSecondHand and supportSweep),
         'enableHourBuzzer' : int(enableHourBuzzer),
-        'makeChronograph' : int(makeChronograph and showChronoSecondHand),
-        'showChronoMinuteHand' : int(showChronoMinuteHand),
-        'showChronoSecondHand' : int(showChronoSecondHand),
-        'showChronoTenthHand' : int(showChronoTenthHand),
+        'makeChronograph' : int(makeChronograph and enableChronoSecondHand),
+        'enableChronoMinuteHand' : int(enableChronoMinuteHand),
+        'enableChronoSecondHand' : int(enableChronoSecondHand),
+        'enableChronoTenthHand' : int(enableChronoTenthHand),
         'stackingOrder' : ', '.join(stackingOrder),
         }
 
@@ -923,10 +953,13 @@ if isinstance(faceFilenames, type('')):
     faceFilenames = [faceFilenames]
 numFaces = len(faceFilenames)
 
-dayCard = fd.get('dayCard', None)
-dateCard = fd.get('dateCard', None)
-bluetooth = fd.get('bluetooth', None)
-battery = fd.get('battery', None)
-centers = fd.get('centers', [])
+dayCard = getIndicator(fd, 'dayCard')
+dateCard = getIndicator(fd, 'dateCard')
+dateCardFilename = fd.get('dateCardFilename', None)
+dateCardOpaque = (dateCard[0] and dateCard[0][2][-1] == 't') or (dayCard[0] and dayCard[0][2][-1] == 't')
+bluetooth = getIndicator(fd, 'bluetooth')
+battery = getIndicator(fd, 'battery')
+defaults = fd.get('defaults', [])
+centers = fd.get('centers', ())
 
 configWatch()

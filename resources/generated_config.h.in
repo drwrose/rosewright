@@ -43,46 +43,20 @@
   #define app_log(...)
 #endif
 
-#define ENABLE_DAY_CARD %(showDayCard)s
-#if %(showDayCard)s
-  #define SHOW_DAY_CARD 1
-  #define DAY_CARD_X %(dayCardX)s
-  #define DAY_CARD_Y %(dayCardY)s
-  #define DAY_CARD_ON_BLACK %(dayCardOnBlack)s
-  #define DAY_CARD_TRANS %(dayCardTrans)s
-  #define SHARE_DATE_CARD %(shareDateCard)s
-#endif
+#define ENABLE_DAY_CARD %(enableDayCard)s
 #define DEFAULT_DAY_CARD %(defaultDayCard)s
 
-#define ENABLE_DATE_CARD %(showDateCard)s
-#if %(showDateCard)s
-  #define SHOW_DATE_CARD 1
-  #define DATE_CARD_X %(dateCardX)s
-  #define DATE_CARD_Y %(dateCardY)s
-  #define DATE_CARD_ON_BLACK %(dateCardOnBlack)s
-  #define DATE_CARD_TRANS %(dateCardTrans)s
-#endif
+#define ENABLE_DATE_CARD %(enableDateCard)s
 #define DEFAULT_DATE_CARD %(defaultDateCard)s
+#define DATE_CARD_OPAQUE %(dateCardOpaque)s
  
-#if %(showBluetooth)s
-  #define SHOW_BLUETOOTH 1
-  #define BLUETOOTH_X %(bluetoothX)s
-  #define BLUETOOTH_Y %(bluetoothY)s
-  #define BLUETOOTH_ON_BLACK %(bluetoothOnBlack)s
-  #define BLUETOOTH_OPAQUE %(bluetoothOpaque)s
-#endif
+#define ENABLE_BLUETOOTH %(enableBluetooth)s
 #define DEFAULT_BLUETOOTH %(defaultBluetooth)s
- 
-#if %(showBatteryGauge)s
-  #define SHOW_BATTERY_GAUGE 1
-  #define BATTERY_GAUGE_X %(batteryGaugeX)s
-  #define BATTERY_GAUGE_Y %(batteryGaugeY)s
-  #define BATTERY_GAUGE_ON_BLACK %(batteryGaugeOnBlack)s
-  #define BATTERY_GAUGE_OPAQUE %(batteryGaugeOpaque)s
-#endif
+
+#define ENABLE_BATTERY_GAUGE %(enableBatteryGauge)s
 #define DEFAULT_BATTERY_GAUGE %(defaultBattery)s
 
-#define SHOW_SECOND_HAND %(showSecondHand)s
+#define ENABLE_SECOND_HAND %(enableSecondHand)s
 #define SECOND_HAND_X %(secondHandX)s
 #define SECOND_HAND_Y %(secondHandY)s
 #define ENABLE_SWEEP_SECONDS %(enableSweepSeconds)s
@@ -93,20 +67,20 @@
   #define MAKE_CHRONOGRAPH 1
 #endif
 
-#if %(showChronoMinuteHand)s
-  #define SHOW_CHRONO_MINUTE_HAND 1
+#if %(enableChronoMinuteHand)s
+  #define ENABLE_CHRONO_MINUTE_HAND 1
   #define CHRONO_MINUTE_HAND_X %(chronoMinuteHandX)s
   #define CHRONO_MINUTE_HAND_Y %(chronoMinuteHandY)s
 #endif
 
-#if %(showChronoSecondHand)s
-  #define SHOW_CHRONO_SECOND_HAND 1
+#if %(enableChronoSecondHand)s
+  #define ENABLE_CHRONO_SECOND_HAND 1
   #define CHRONO_SECOND_HAND_X %(chronoSecondHandX)s
   #define CHRONO_SECOND_HAND_Y %(chronoSecondHandY)s
 #endif
 
-#if %(showChronoTenthHand)s
-  #define SHOW_CHRONO_TENTH_HAND 1
+#if %(enableChronoTenthHand)s
+  #define ENABLE_CHRONO_TENTH_HAND 1
   #define CHRONO_TENTH_HAND_X %(chronoTenthHandX)s
   #define CHRONO_TENTH_HAND_Y %(chronoTenthHandY)s
 #endif

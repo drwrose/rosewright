@@ -36,5 +36,12 @@ struct __attribute__((__packed__)) VectorHandTable {
 #define STACKING_ORDER_CHRONO_TENTH 6
 #define STACKING_ORDER_DONE 0
 
+// A table for bluetooth and battery icons, as well as day/date cards.
+struct __attribute__((__packed__)) IndicatorTable {
+  unsigned char x, y;
+  unsigned int invert:1;
+  unsigned int opaque:1;
+};
+
 #endif
 

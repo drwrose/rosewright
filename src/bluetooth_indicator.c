@@ -21,15 +21,7 @@ void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
   box.origin.x = 0;
   box.origin.y = 0;
 
-  unsigned int draw_mode = config.draw_mode;
-#if PERSIST_KEY == 21018
-  // A hideous hack for Rosewright E auxiliary face.
-  if (config.face_index == 1) {
-    draw_mode = !draw_mode;
-  }
-#endif
-
-  if (bluetooth_on_black ^ draw_mode) {
+  if (bluetooth_on_black ^ config.draw_mode) {
     graphics_context_set_compositing_mode(ctx, GCompOpSet);
     graphics_context_set_fill_color(ctx, GColorBlack);
   } else {
@@ -78,6 +70,12 @@ void init_bluetooth_indicator(Layer *window_layer, int x, int y, bool on_black, 
   layer_set_update_proc(bluetooth_layer, &bluetooth_layer_update_callback);
   layer_add_child(window_layer, bluetooth_layer);
   bluetooth_connection_service_subscribe(&handle_bluetooth);
+}
+
+void move_bluetooth_indicator(int x, int y, bool on_black, bool opaque_layer) {
+  bluetooth_on_black = on_black;
+  bluetooth_opaque_layer = opaque_layer;
+  layer_set_frame((Layer *)bluetooth_layer, GRect(x, y, 18, 18));
 }
 
 void deinit_bluetooth_indicator() {

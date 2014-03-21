@@ -12,7 +12,7 @@ void init_default_options() {
   // pebble-js-app.js are used instead.
   config.keep_battery_gauge = DEFAULT_BATTERY_GAUGE;
   config.keep_bluetooth_indicator = DEFAULT_BLUETOOTH;
-  config.second_hand = SHOW_SECOND_HAND;
+  config.second_hand = ENABLE_SECOND_HAND;
   config.hour_buzzer = ENABLE_HOUR_BUZZER;
   config.draw_mode = 0;
   config.chrono_dial = CDM_tenths;
@@ -21,6 +21,15 @@ void init_default_options() {
   config.show_date = DEFAULT_DATE_CARD;
   config.display_lang = 0;
   config.face_index = 0;
+}
+
+void sanitize_config() {
+  // Ensures that the newly-loaded config parameters are within a
+  // reasonable range for the program and won't cause crashes.
+  config.draw_mode = config.draw_mode & 1;
+  config.chrono_dial = config.chrono_dial % (CDM_dual + 1);
+  config.display_lang = config.display_lang % num_langs;
+  config.face_index = config.face_index % NUM_FACES;
 }
 
 #ifdef ENABLE_LOG
@@ -51,6 +60,8 @@ void load_config() {
   } else {
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "No previous config (%d, %d): %d", PERSIST_KEY, sizeof(config), read_size);
   }
+
+  sanitize_config();
 }
 
 
@@ -122,6 +133,7 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
   if (face_index != NULL) {
     config.face_index = face_index->value->int32;
   }
+  sanitize_config();
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "New config: %s", show_config());
   if (memcmp(&orig_config, &config, sizeof(config)) == 0) {

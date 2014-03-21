@@ -24,8 +24,6 @@ BitmapWithData clock_face;
 int face_index = -1;
 BitmapLayer *clock_face_layer;
 
-BitmapWithData day_card_white;
-BitmapWithData day_card_black;
 BitmapWithData date_card_white;
 BitmapWithData date_card_black;
 
@@ -224,17 +222,17 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
     placement->second_hand_index = ((NUM_STEPS_SECOND * use_ms) / (60 * 1000));
   }
 
-#ifdef SHOW_DAY_CARD
+#ifdef ENABLE_DAY_CARD
   if (time != NULL) {
     placement->day_index = time->tm_wday;
   }
-#endif  // SHOW_DAY_CARD
+#endif  // ENABLE_DAY_CARD
 
-#ifdef SHOW_DATE_CARD
+#ifdef ENABLE_DATE_CARD
   if (time != NULL) {
     placement->date_value = time->tm_mday;
   }
-#endif  // SHOW_DATE_CARD
+#endif  // ENABLE_DATE_CARD
 
   placement->hour_buzzer = (ms / (SECONDS_PER_HOUR * 1000)) % 24;
 
@@ -271,16 +269,16 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
       }
     }
     
-#ifdef SHOW_CHRONO_MINUTE_HAND
+#ifdef ENABLE_CHRONO_MINUTE_HAND
     // The chronograph minute hand rolls completely around in 30
     // minutes (not 60).
     {
       unsigned int use_ms = chrono_ms % (1800 * 1000);
       placement->chrono_minute_hand_index = ((NUM_STEPS_CHRONO_MINUTE * use_ms) / (1800 * 1000)) % NUM_STEPS_CHRONO_MINUTE;
     }
-#endif  // SHOW_CHRONO_MINUTE_HAND
+#endif  // ENABLE_CHRONO_MINUTE_HAND
 
-#ifdef SHOW_CHRONO_SECOND_HAND
+#ifdef ENABLE_CHRONO_SECOND_HAND
     {
       // Avoid overflowing the integer arithmetic by pre-constraining
       // the ms value to the appropriate range.
@@ -291,9 +289,9 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
       }
       placement->chrono_second_hand_index = ((NUM_STEPS_CHRONO_SECOND * use_ms) / (60 * 1000));
     }
-#endif  // SHOW_CHRONO_SECOND_HAND
+#endif  // ENABLE_CHRONO_SECOND_HAND
 
-#ifdef SHOW_CHRONO_TENTH_HAND
+#ifdef ENABLE_CHRONO_TENTH_HAND
     if (config.chrono_dial == CDM_off) {
       // Don't keep updating this hand if we're not showing it anyway.
       placement->chrono_tenth_hand_index = 0;
@@ -318,7 +316,7 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 	placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * use_ms) / (12 * SECONDS_PER_HOUR * 1000)) % NUM_STEPS_CHRONO_TENTH;
       }
     }
-#endif  // SHOW_CHRONO_TENTH_HAND
+#endif  // ENABLE_CHRONO_TENTH_HAND
 
   }
 #endif  // MAKE_CHRONOGRAPH
@@ -598,7 +596,7 @@ void second_layer_update_callback(Layer *me, GContext *ctx) {
   }
 }
 
-#ifdef SHOW_CHRONO_MINUTE_HAND
+#ifdef ENABLE_CHRONO_MINUTE_HAND
 void chrono_minute_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_minute_layer");
 
@@ -614,9 +612,9 @@ void chrono_minute_layer_update_callback(Layer *me, GContext *ctx) {
 #endif
   }
 }
-#endif  // SHOW_CHRONO_MINUTE_HAND
+#endif  // ENABLE_CHRONO_MINUTE_HAND
 
-#ifdef SHOW_CHRONO_SECOND_HAND
+#ifdef ENABLE_CHRONO_SECOND_HAND
 void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_second_layer");
 
@@ -632,9 +630,9 @@ void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
 #endif
   }
 }
-#endif  // SHOW_CHRONO_SECOND_HAND
+#endif  // ENABLE_CHRONO_SECOND_HAND
 
-#ifdef SHOW_CHRONO_TENTH_HAND
+#ifdef ENABLE_CHRONO_TENTH_HAND
 void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_tenth_layer");
 
@@ -652,9 +650,9 @@ void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
     }
   }
 }
-#endif  // SHOW_CHRONO_TENTH_HAND
+#endif  // ENABLE_CHRONO_TENTH_HAND
 
-void draw_card(Layer *me, GContext *ctx, GBitmap *bitmap_black, GBitmap *bitmap_white, const char *text, GFont font, int font_vshift, bool on_black) {
+void draw_card(Layer *me, GContext *ctx, GBitmap *bitmap_black, GBitmap *bitmap_white, const char *text, GFont font, int font_vshift, bool invert) {
   GRect box;
 
   box = layer_get_frame(me);
@@ -671,7 +669,7 @@ void draw_card(Layer *me, GContext *ctx, GBitmap *bitmap_black, GBitmap *bitmap_
     graphics_draw_bitmap_in_rect(ctx, bitmap_black, box);
   }
 
-  if (on_black ^ config.draw_mode) {
+  if (invert ^ config.draw_mode) {
     graphics_context_set_text_color(ctx, GColorWhite);
   } else {
     graphics_context_set_text_color(ctx, GColorBlack);
@@ -705,23 +703,20 @@ void chrono_dial_layer_update_callback(Layer *me, GContext *ctx) {
 }
 #endif  // MAKE_CHRONOGRAPH
 
-#ifdef SHOW_DAY_CARD
+#ifdef ENABLE_DAY_CARD
 void day_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "day_layer");
 
   if (config.show_day) {
     const LangDef *lang = &lang_table[config.display_lang % num_langs];
     const char *weekday_name = lang->weekday_names[current_placement.day_index];
-#if SHARE_DATE_CARD
-    draw_card(me, ctx, date_card_black.bitmap, date_card_white.bitmap, weekday_name, day_font, day_font_vshift, DAY_CARD_ON_BLACK);
-#else
-    draw_card(me, ctx, day_card_black.bitmap, day_card_white.bitmap, weekday_name, day_font, day_font_vshift, DAY_CARD_ON_BLACK);
-#endif
+    const struct IndicatorTable *card = &day_table[config.face_index];
+    draw_card(me, ctx, date_card_black.bitmap, date_card_white.bitmap, weekday_name, day_font, day_font_vshift, card->invert);
   }
 }
-#endif  // SHOW_DAY_CARD
+#endif  // ENABLE_DAY_CARD
 
-#ifdef SHOW_DATE_CARD
+#ifdef ENABLE_DATE_CARD
 void date_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "date_layer");
 
@@ -729,10 +724,11 @@ void date_layer_update_callback(Layer *me, GContext *ctx) {
     static const int buffer_size = 16;
     char buffer[buffer_size];
     snprintf(buffer, buffer_size, "%d", current_placement.date_value);
-    draw_card(me, ctx, date_card_black.bitmap, date_card_white.bitmap, buffer, date_font, date_font_vshift, DATE_CARD_ON_BLACK);
+    const struct IndicatorTable *card = &date_table[config.face_index];
+    draw_card(me, ctx, date_card_black.bitmap, date_card_white.bitmap, buffer, date_font, date_font_vshift, card->invert);
   }
 }
-#endif  // SHOW_DATE_CARD
+#endif  // ENABLE_DATE_CARD
 
 void update_hands(struct tm *time) {
   struct HandPlacement new_placement = current_placement;
@@ -769,26 +765,26 @@ void update_hands(struct tm *time) {
 
 #ifdef MAKE_CHRONOGRAPH
 
-#ifdef SHOW_CHRONO_MINUTE_HAND
+#ifdef ENABLE_CHRONO_MINUTE_HAND
   if (new_placement.chrono_minute_hand_index != current_placement.chrono_minute_hand_index) {
     current_placement.chrono_minute_hand_index = new_placement.chrono_minute_hand_index;
     layer_mark_dirty(chrono_minute_layer);
   }
-#endif  // SHOW_CHRONO_MINUTE_HAND
+#endif  // ENABLE_CHRONO_MINUTE_HAND
 
-#ifdef SHOW_CHRONO_SECOND_HAND
+#ifdef ENABLE_CHRONO_SECOND_HAND
   if (new_placement.chrono_second_hand_index != current_placement.chrono_second_hand_index) {
     current_placement.chrono_second_hand_index = new_placement.chrono_second_hand_index;
     layer_mark_dirty(chrono_second_layer);
   }
-#endif  // SHOW_CHRONO_SECOND_HAND
+#endif  // ENABLE_CHRONO_SECOND_HAND
 
-#ifdef SHOW_CHRONO_TENTH_HAND
+#ifdef ENABLE_CHRONO_TENTH_HAND
   if (new_placement.chrono_tenth_hand_index != current_placement.chrono_tenth_hand_index) {
     current_placement.chrono_tenth_hand_index = new_placement.chrono_tenth_hand_index;
     layer_mark_dirty(chrono_tenth_layer);
   }
-#endif  // SHOW_CHRONO_TENTH_HAND
+#endif  // ENABLE_CHRONO_TENTH_HAND
 
   if (config.sweep_seconds) {
     if (chrono_data.running && !chrono_data.lap_paused && !chrono_digital_window_showing) {
@@ -802,19 +798,19 @@ void update_hands(struct tm *time) {
 
 #endif  // MAKE_CHRONOGRAPH
 
-#ifdef SHOW_DAY_CARD
+#ifdef ENABLE_DAY_CARD
   if (new_placement.day_index != current_placement.day_index) {
     current_placement.day_index = new_placement.day_index;
     layer_mark_dirty(day_layer);
   }
-#endif  // SHOW_DAY_CARD
+#endif  // ENABLE_DAY_CARD
 
-#ifdef SHOW_DATE_CARD
+#ifdef ENABLE_DATE_CARD
   if (new_placement.date_value != current_placement.date_value) {
     current_placement.date_value = new_placement.date_value;
     layer_mark_dirty(date_layer);
   }
-#endif  // SHOW_DATE_CARD
+#endif  // ENABLE_DATE_CARD
 }
 
 // Triggered at sweep_timer_ms intervals to run the sweep-second hand.
@@ -1180,8 +1176,32 @@ void apply_config() {
     // Update the face bitmap if it's changed.
     face_index = config.face_index;
     bwd_destroy(&clock_face);
-    clock_face = rle_bwd_create(clock_face_table[face_index % NUM_FACES]);
+    clock_face = rle_bwd_create(clock_face_table[face_index]);
     bitmap_layer_set_bitmap(clock_face_layer, clock_face.bitmap);
+
+    // Also move any layers to their new position on this face.
+#ifdef ENABLE_DAY_CARD
+    {
+      const struct IndicatorTable *card = &day_table[config.face_index];
+      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "day_layer moved to %d, %d", card->x, card->y);
+      layer_set_frame((Layer *)day_layer, GRect(card->x - 15, card->y - 8, 31, 19));
+    }
+#endif  // ENABLE_DAY_CARD
+
+#ifdef ENABLE_DATE_CARD
+    {
+      const struct IndicatorTable *card = &date_table[config.face_index];
+      layer_set_frame((Layer *)date_layer, GRect(card->x - 15, card->y - 8, 31, 19));
+    }
+#endif  // ENABLE_DATE_CARD
+    {
+      const struct IndicatorTable *card = &battery_table[config.face_index];
+      move_battery_gauge(card->x, card->y, card->invert, card->opaque);
+    }
+    {
+      const struct IndicatorTable *card = &bluetooth_table[config.face_index];
+      move_bluetooth_indicator(card->x, card->y, card->invert, card->opaque);
+    }
   }
 
   // Also adjust the draw mode on the clock_face_layer.  (The other
@@ -1312,36 +1332,42 @@ void handle_init() {
 
 #endif  // MAKE_CHRONOGRAPH
 
-  init_battery_gauge(window_layer, BATTERY_GAUGE_X, BATTERY_GAUGE_Y, BATTERY_GAUGE_ON_BLACK, BATTERY_GAUGE_OPAQUE);
-  init_bluetooth_indicator(window_layer, BLUETOOTH_X, BLUETOOTH_Y, BLUETOOTH_ON_BLACK, BLUETOOTH_OPAQUE);
+  {
+    const struct IndicatorTable *card = &battery_table[config.face_index];
+    init_battery_gauge(window_layer, card->x, card->y, card->invert, card->opaque);
+  }
+  {
+    const struct IndicatorTable *card = &bluetooth_table[config.face_index];
+    init_bluetooth_indicator(window_layer, card->x, card->y, card->invert, card->opaque);
+  }
 
-#ifdef SHOW_DAY_CARD
-  #if !SHARE_DATE_CARD
-  #if DAY_CARD_TRANS
-  day_card_white = rle_bwd_create(RESOURCE_ID_DAY_CARD_WHITE);
-  day_card_black = rle_bwd_create(RESOURCE_ID_DAY_CARD_BLACK);
-  #else
-  day_card_black = rle_bwd_create(RESOURCE_ID_DAY_CARD);
-  #endif
-  #endif
-
-  day_layer = layer_create(GRect(DAY_CARD_X - 15, DAY_CARD_Y - 8, 31, 19));
-  layer_set_update_proc(day_layer, &day_layer_update_callback);
-  layer_add_child(window_layer, day_layer);
-#endif  // SHOW_DAY_CARD
-
-#ifdef SHOW_DATE_CARD
-  #if DATE_CARD_TRANS
+#if defined(ENABLE_DAY_CARD) || defined(ENABLE_DATE_CARD)
+  #if DATE_CARD_OPAQUE
   date_card_white = rle_bwd_create(RESOURCE_ID_DATE_CARD_WHITE);
   date_card_black = rle_bwd_create(RESOURCE_ID_DATE_CARD_BLACK);
   #else
   date_card_black = rle_bwd_create(RESOURCE_ID_DATE_CARD);
   #endif
+#endif
 
-  date_layer = layer_create(GRect(DATE_CARD_X - 15, DATE_CARD_Y - 8, 31, 19));
-  layer_set_update_proc(date_layer, &date_layer_update_callback);
-  layer_add_child(window_layer, date_layer);
-#endif  // SHOW_DATE_CARD
+#ifdef ENABLE_DAY_CARD
+  {
+    const struct IndicatorTable *card = &day_table[config.face_index];
+    day_layer = layer_create(GRect(card->x - 15, card->y - 8, 31, 19));
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "day_layer created at %d, %d", card->x, card->y);
+    layer_set_update_proc(day_layer, &day_layer_update_callback);
+    layer_add_child(window_layer, day_layer);
+  }
+#endif  // ENABLE_DAY_CARD
+
+#ifdef ENABLE_DATE_CARD
+  {
+    const struct IndicatorTable *card = &date_table[config.face_index];
+    date_layer = layer_create(GRect(card->x - 15, card->y - 8, 31, 19));
+    layer_set_update_proc(date_layer, &date_layer_update_callback);
+    layer_add_child(window_layer, date_layer);
+  }
+#endif  // ENABLE_DATE_CARD
 
   // Init all of the hands, taking care to arrange them in the correct
   // stacking order.
@@ -1366,27 +1392,27 @@ void handle_init() {
       break;
 
     case STACKING_ORDER_CHRONO_MINUTE:
-#ifdef SHOW_CHRONO_MINUTE_HAND
+#ifdef ENABLE_CHRONO_MINUTE_HAND
       chrono_minute_layer = layer_create(window_frame);
       layer_set_update_proc(chrono_minute_layer, &chrono_minute_layer_update_callback);
       layer_add_child(window_layer, chrono_minute_layer);
-#endif  // SHOW_CHRONO_MINUTE_HAND
+#endif  // ENABLE_CHRONO_MINUTE_HAND
       break;
 
     case STACKING_ORDER_CHRONO_SECOND:
-#ifdef SHOW_CHRONO_SECOND_HAND
+#ifdef ENABLE_CHRONO_SECOND_HAND
       chrono_second_layer = layer_create(window_frame);
       layer_set_update_proc(chrono_second_layer, &chrono_second_layer_update_callback);
       layer_add_child(window_layer, chrono_second_layer);
-#endif  // SHOW_CHRONO_SECOND_HAND
+#endif  // ENABLE_CHRONO_SECOND_HAND
       break;
 
     case STACKING_ORDER_CHRONO_TENTH:
-#ifdef SHOW_CHRONO_TENTH_HAND
+#ifdef ENABLE_CHRONO_TENTH_HAND
       chrono_tenth_layer = layer_create(window_frame);
       layer_set_update_proc(chrono_tenth_layer, &chrono_tenth_layer_update_callback);
       layer_add_child(window_layer, chrono_tenth_layer);
-#endif  // SHOW_CHRONO_TENTH_HAND
+#endif  // ENABLE_CHRONO_TENTH_HAND
       break;
     }
   }
@@ -1416,17 +1442,13 @@ void handle_deinit() {
   deinit_battery_gauge();
   deinit_bluetooth_indicator();
 
-#ifdef SHOW_DAY_CARD
+#ifdef ENABLE_DAY_CARD
   layer_destroy(day_layer);
-  if (day_card_white.bitmap != NULL) {
-    bwd_destroy(&day_card_white);
-  }
-  if (day_card_black.bitmap != NULL) {
-    bwd_destroy(&day_card_black);
-  }
 #endif
-#ifdef SHOW_DATE_CARD
+#ifdef ENABLE_DATE_CARD
   layer_destroy(date_layer);
+#endif
+#if defined(ENABLE_DAY_CARD) || defined(ENABLE_DATE_CARD)
   if (date_card_white.bitmap != NULL) {
     bwd_destroy(&date_card_white);
   }
@@ -1437,13 +1459,13 @@ void handle_deinit() {
   layer_destroy(minute_layer);
   layer_destroy(hour_layer);
   layer_destroy(second_layer);
-#ifdef SHOW_CHRONO_MINUTE_HAND
+#ifdef ENABLE_CHRONO_MINUTE_HAND
   layer_destroy(chrono_minute_layer);
 #endif
-#ifdef SHOW_CHRONO_SECOND_HAND
+#ifdef ENABLE_CHRONO_SECOND_HAND
   layer_destroy(chrono_second_layer);
 #endif
-#ifdef SHOW_CHRONO_TENTH_HAND
+#ifdef ENABLE_CHRONO_TENTH_HAND
   layer_destroy(chrono_tenth_layer);
 #endif
 
