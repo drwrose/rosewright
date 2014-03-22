@@ -15,26 +15,18 @@ rootDir = os.path.dirname(__file__) or '.'
 resourcesDir = rootDir
 
 # I like ArchivoNarrow for its cleanliness, but it lacks some of the
-# extended characters for Greek and Russion, so I fill in the
-# needed characters from OpenSans.
+# extended characters for Greek and Russion, so I supply the
+# missing needed characters from Arial.
 sourceFilenames = {
     'latin' : 'ArchivoNarrow-Bold.ttf',
-    'extended' : 'OpenSans-CondBold.ttf',
+    #'extended' : 'OpenSans-CondBold.ttf',
+    'extended' : 'Arial Narrow Bold.ttf',
     }
 
 characters = {
-    'latin' : [],
-    'extended' : [],
+    'latin' : lang_characters.characters_latin,
+    'extended' : lang_characters.characters_extended,
     }
-
-for ch in lang_characters.characters:
-    if ch < 0x250:
-        characters['latin'].append(ch)
-    else:
-        characters['extended'].append(ch)
-
-target = fontforge.font()
-target.encoding = 'UnicodeBmp'
 
 for charset in ['latin', 'extended']:
     selection = [('unicode', 'singletons')] + characters[charset]
@@ -45,9 +37,13 @@ for charset in ['latin', 'extended']:
     print source
     source.selection.select(*selection)
     source.copy()
+
+    target = fontforge.font()
+    target.encoding = 'UnicodeBmp'
+
     target.selection.select(*selection)
     target.paste()
 
-print target
-targetFilename = '%s/day_font.otf' % (resourcesDir)
-target.generate(targetFilename)
+    print target
+    targetFilename = '%s/day_font_%s.otf' % (resourcesDir, charset)
+    target.generate(targetFilename)
