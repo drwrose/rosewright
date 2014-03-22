@@ -16,23 +16,23 @@ make_lang.py [opts]
 
 # This list is duplicated in html/rosewright_X_configure.js.
 langs = [
-    [ 'en_US', 'English' ],
-    [ 'fr_FR', 'French' ],
-    [ 'it_IT', 'Italian' ],
-    [ 'es_ES', 'Spanish' ],
-    [ 'pt_PT', 'Portuguese' ],
-    [ 'de_DE', 'German' ],
-    [ 'nl_NL', 'Dutch' ],
-    [ 'da_DK', 'Danish' ],
-    [ 'sv_SE', 'Swedish' ],
-    [ 'is_IS' ,'Icelandic' ],
+#    [ 'en_US', 'English' ],
+#    [ 'fr_FR', 'French' ],
+#    [ 'it_IT', 'Italian' ],
+#    [ 'es_ES', 'Spanish' ],
+#    [ 'pt_PT', 'Portuguese' ],
+#    [ 'de_DE', 'German' ],
+#    [ 'nl_NL', 'Dutch' ],
+#    [ 'da_DK', 'Danish' ],
+#    [ 'sv_SE', 'Swedish' ],
+#    [ 'is_IS' ,'Icelandic' ],
     ];
 
 # Non-standard font required for these:
 langs += [
-    [ 'el_GR', 'Greek' ],
+#    [ 'el_GR', 'Greek' ],
     [ 'hu_HU', 'Hungarian' ],
-    [ 'ru_RU', 'Russian' ],
+#    [ 'ru_RU', 'Russian' ],
     [ 'pl_PL', 'Polish' ],
     [ 'cs_CZ', 'Czech' ],
     ]

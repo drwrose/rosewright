@@ -14,16 +14,38 @@ import os
 rootDir = os.path.dirname(__file__) or '.'
 resourcesDir = rootDir
 
-selection = [('unicode', 'singletons')] + lang_characters.characters
+# I like ArchivoNarrow for its cleanliness, but it lacks some of the
+# extended characters for Greek and Russion, so I fill in the
+# needed characters from OpenSans.
+sourceFilenames = {
+    'latin' : 'ArchivoNarrow-Bold.ttf',
+    'extended' : 'OpenSans-CondBold.ttf',
+    }
 
-sourceFilename = '%s/OpenSans-CondBold.ttf' % (resourcesDir)
+characters = {
+    'latin' : [],
+    'extended' : [],
+    }
+
+for ch in lang_characters.characters:
+    if ch < 0x250:
+        characters['latin'].append(ch)
+    else:
+        characters['extended'].append(ch)
+
+target = fontforge.new()
+
+for charset in ['latin', 'extended']:
+    selection = [('unicode', 'singletons')] + characters[charset]
+
+    sourceFilename = '%s/%s' % (resourcesDir, sourceFilenames[charset])
+
+    source = fontforge.open(sourceFilename)
+    print source
+    source.selection.select(*selection)
+    source.copy()
+    target.paste()
+
+print target
 targetFilename = '%s/day_font.otf' % (resourcesDir)
-
-source = fontforge.open(sourceFilename)
-print source
-source.selection.select(*selection)
-#source.copy()
-
-source.selection.invert()
-source.clear()
-source.generate(targetFilename)
+target.generate(targetFilename)
