@@ -62,7 +62,7 @@
     },
     {
       "type": "font",
-      "name": "DAY_FONT_16",
+      "name": "DAY_FONT_8",
       "file": "day_font.otf"
     },
 %(generatedMedia)s

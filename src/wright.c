@@ -34,7 +34,7 @@ Layer *chrono_dial_layer;
 GFont date_font;
 int date_font_vshift = -3;  // Determined empirically.
 GFont day_font;
-int day_font_vshift = -1;   // Determined empirically.
+int day_font_vshift = 7;   // Determined empirically.
 
 // Number of laps preserved for the laps digital display
 #define CHRONO_MAX_LAPS 4
@@ -1309,7 +1309,7 @@ void handle_init() {
   layer_add_child(window_layer, bitmap_layer_get_layer(clock_face_layer));
 
   date_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
-  day_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_DAY_FONT_16));
+  day_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_DAY_FONT_8));
 
 #ifdef MAKE_CHRONOGRAPH
   load_chrono_dial();
