@@ -4,6 +4,7 @@
 typedef struct {
   const char *locale_name;
   const char *weekday_names[7];
+  int font_index;
 } LangDef;
 
 extern LangDef lang_table[];

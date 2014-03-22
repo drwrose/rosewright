@@ -62,8 +62,13 @@
     },
     {
       "type": "font",
-      "name": "DAY_FONT_8",
-      "file": "day_font.otf"
+      "name": "DAY_FONT_LATIN_8",
+      "file": "day_font_latin.otf"
+    },
+    {
+      "type": "font",
+      "name": "DAY_FONT_EXTENDED_8",
+      "file": "day_font_extended.otf"
     },
 %(generatedMedia)s
     ]

@@ -33,8 +33,12 @@ Layer *chrono_dial_layer;
 
 GFont date_font;
 int date_font_vshift = -3;  // Determined empirically.
-GFont day_font;
-int day_font_vshift = 7;   // Determined empirically.
+
+#define NUM_DAY_FONTS 2
+GFont day_fonts[NUM_DAY_FONTS];
+int day_font_vshifts[NUM_DAY_FONTS] = {
+  7, 7,   // Determined empirically.
+};
 
 // Number of laps preserved for the laps digital display
 #define CHRONO_MAX_LAPS 4
@@ -716,7 +720,7 @@ void day_layer_update_callback(Layer *me, GContext *ctx) {
     const LangDef *lang = &lang_table[config.display_lang % num_langs];
     const char *weekday_name = lang->weekday_names[current_placement.day_index];
     const struct IndicatorTable *card = &day_table[config.face_index];
-    draw_card(me, ctx, weekday_name, day_font, day_font_vshift, card->invert, card->opaque);
+    draw_card(me, ctx, weekday_name, day_fonts[lang->font_index], day_font_vshifts[lang->font_index], card->invert, card->opaque);
   }
 }
 #endif  // ENABLE_DAY_CARD
@@ -1309,7 +1313,8 @@ void handle_init() {
   layer_add_child(window_layer, bitmap_layer_get_layer(clock_face_layer));
 
   date_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
-  day_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_DAY_FONT_8));
+  day_fonts[0] = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_DAY_FONT_LATIN_8));
+  day_fonts[1] = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_DAY_FONT_EXTENDED_8));
 
 #ifdef MAKE_CHRONOGRAPH
   load_chrono_dial();
