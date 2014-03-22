@@ -2,7 +2,6 @@
 #include "bluetooth_indicator.h"
 #include "config_options.h"
 #include "bwd.h"
-#include "../resources/generated_config.h"
 
 // Define this to ring the buzzer when the bluetooth connection is
 // lost.

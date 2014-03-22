@@ -2,7 +2,6 @@
 #include "battery_gauge.h"
 #include "config_options.h"
 #include "bwd.h"
-#include "../resources/generated_config.h"
 
 BitmapWithData battery_gauge_empty;
 BitmapWithData battery_gauge_charging;
