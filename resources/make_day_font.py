@@ -33,7 +33,8 @@ for ch in lang_characters.characters:
     else:
         characters['extended'].append(ch)
 
-target = fontforge.new()
+target = fontforge.font()
+target.encoding = 'UnicodeBmp'
 
 for charset in ['latin', 'extended']:
     selection = [('unicode', 'singletons')] + characters[charset]
@@ -44,6 +45,7 @@ for charset in ['latin', 'extended']:
     print source
     source.selection.select(*selection)
     source.copy()
+    target.selection.select(*selection)
     target.paste()
 
 print target
