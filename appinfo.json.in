@@ -5,7 +5,7 @@
   "capabilities": [ "configurable" ],
   "companyName": "drwrose",
   "versionCode": 1,
-  "versionLabel": "2.5.0",
+  "versionLabel": "2.5.1",
   "watchapp": {
     "watchface": %(watchface)s
   },
@@ -69,6 +69,21 @@
       "type": "font",
       "name": "DAY_FONT_EXTENDED_14",
       "file": "day_font_extended.otf"
+    },
+    {
+      "type": "font",
+      "name": "DAY_FONT_ZH_16",
+      "file": "day_font_zh.otf"
+    },
+    {
+      "type": "font",
+      "name": "DAY_FONT_JA_16",
+      "file": "day_font_ja.otf"
+    },
+    {
+      "type": "font",
+      "name": "DAY_FONT_KO_16",
+      "file": "day_font_ko.otf"
     },
 %(generatedMedia)s
     ]

@@ -41,10 +41,13 @@ struct DateFont date_font = {
   0, -3, NULL
 };
 
-#define NUM_DAY_FONTS 2
+#define NUM_DAY_FONTS 5
 struct DateFont day_fonts[NUM_DAY_FONTS] = {
   { RESOURCE_ID_DAY_FONT_LATIN_16, -1, NULL },
   { RESOURCE_ID_DAY_FONT_EXTENDED_14, 1, NULL },
+  { RESOURCE_ID_DAY_FONT_ZH_16, -1, NULL },  // Chinese
+  { RESOURCE_ID_DAY_FONT_JA_16, -1, NULL },  // Japanese
+  { RESOURCE_ID_DAY_FONT_KO_16, -2, NULL },  // Korean
 };
 
 // Number of laps preserved for the laps digital display

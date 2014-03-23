@@ -14,7 +14,7 @@ the resources directory, based on the system language data.
 make_lang.py [opts]
 """
 
-fontChoices = [ 'latin', 'extended' ]
+fontChoices = [ 'latin', 'extended', 'zh', 'ja', 'ko' ]
 
 # This list is duplicated in html/rosewright_X_configure.js.
 langs = [
@@ -37,6 +37,13 @@ langs += [
     [ 'ru_RU', 'Russian', 'extended' ],
     [ 'pl_PL', 'Polish', 'latin' ],
     [ 'cs_CZ', 'Czech', 'latin' ],
+    ]
+
+# CJK is its own set of categories.
+langs += [
+    [ 'zh_CN', 'Chinese', 'zh' ],
+    [ 'ja_JP', 'Japanese', 'ja' ],
+    [ 'ko_KR', 'Korean', 'ko' ],
     ]
 
 # Attempt to determine the directory in which we're operating.
