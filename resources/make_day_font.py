@@ -20,17 +20,25 @@ resourcesDir = rootDir
 sourceFilenames = {
     'latin' : 'ArchivoNarrow-Bold.ttf',
     'extended' : 'DejaVuSansCondensed-Bold.ttf',
+    'zh' : 'wqy-microhei.ttc',     # Chinese
+    'ja' : 'TakaoPGothic.ttf',     # Japanese
+    'ko' : 'UnDotum.ttf',          # Korean
     }
 
 characters = {
     'latin' : lang_characters.characters_latin,
     'extended' : lang_characters.characters_extended,
+    'zh' : lang_characters.characters_zh,
+    'ja' : lang_characters.characters_ja,
+    'ko' : lang_characters.characters_ko,
     }
 
-for charset in ['latin', 'extended']:
+for charset in characters.keys():
     selection = [('unicode', 'singletons')] + characters[charset]
-
-    sourceFilename = '%s/%s' % (resourcesDir, sourceFilenames[charset])
+    
+    sourceFilename = sourceFilenames[charset]
+    if sourceFilename[0] != '/':
+        sourceFilename = '%s/%s' % (resourcesDir, sourceFilename)
 
     source = fontforge.open(sourceFilename)
     print source
