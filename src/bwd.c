@@ -183,7 +183,27 @@ static int rl2unpacker_getc(Rl2Unpacker *rl2) {
 
   return result;
 }
-  
+
+// Xors the image in-place a 1x1 checkerboard pattern.  The idea is to
+// eliminate this kind of noise from the source image if it happens to
+// be present.
+void unscreen_bitmap(GBitmap *image) {
+  int height = image->bounds.size.h;
+  int width = image->bounds.size.w;
+  int width_bytes = width / 8;
+  int stride = image->row_size_bytes; // multiple of 4, by Pebble convention.
+  uint8_t *data = image->addr;
+
+  uint8_t mask = 0xaa;
+  for (int y = 0; y < height; ++y) {
+    uint8_t *p = data + y * stride;
+    for (int x = 0; x < width_bytes; ++x) {
+      (*p) ^= mask;
+      ++p;
+    }
+    mask ^= 0xff;
+  }
+}
 
 // Initialize a bitmap from an rle-encoded resource.  The returned
 // bitmap must be released with bwd_destroy().  See make_rle.py for
@@ -196,6 +216,8 @@ rle_bwd_create(int resource_id) {
   int height = rbuffer_getc(&rb);
   int stride = rbuffer_getc(&rb);
   int n = rbuffer_getc(&rb);
+  int do_unscreen = (n & 0x80);
+  n = n & 0x7f;
 
   Rl2Unpacker rl2;
   rl2unpacker_init(&rl2, &rb, n);
@@ -261,6 +283,9 @@ rle_bwd_create(int resource_id) {
   rbuffer_deinit(&rb);
 
   GBitmap *image = gbitmap_create_with_data(bitmap);
+  if (do_unscreen) {
+    unscreen_bitmap(image);
+  }
   return bwd_create(image, bitmap);
 }
 #endif  // SUPPORT_RLE

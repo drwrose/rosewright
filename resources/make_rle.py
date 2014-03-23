@@ -23,6 +23,19 @@ def usage(code, msg = ''):
     print >> sys.stderr, msg
     sys.exit(code)
 
+def unscreen(image):
+    """ Returns a new copy of the indicated image xored with a 1x1
+    checkerboard pattern.  The idea is to eliminate this kind of noise
+    from the source image if it happens to be present. """
+
+    image = image.copy()
+    w, h = image.size
+    for y in range(h):
+        for x in range(w):
+            if ((x ^ y) & 1):
+                image.putpixel((x, y), 255 - image.getpixel((x, y)))
+    return image
+
 def generate_pixels(image, stride):
     """ This generator yields a sequence of 0/255 values for the pixels
     of the image.  We extend the row to stride * 8 pixels. """
@@ -69,7 +82,7 @@ def chop_rle(source, n):
     """ Separates the rle sequence into a sequence of n-bit chunks.
     If a value is too large to fit into a single chunk, a series of
     0-valued chunks will introduce it. """
-    
+
     result = ''
     for v in source:
         # Count the minimum number of chunks we need to represent v.
@@ -205,8 +218,9 @@ def make_rle_image(rleFilename, image):
         im2 = PIL.Image.new('1', (w, h), 0)
         im2.paste(image, (0, 0))
         image = im2
-                            
+
     assert w <= 0xff and h <= 0xff
+    unscreened = unscreen(image)
 
     # The number of bytes in a row.  Must be a multiple of 4, per
     # Pebble conventions.
@@ -216,17 +230,23 @@ def make_rle_image(rleFilename, image):
     # Find the best n for this image.
     result = None
     n = None
-    for n0 in [1, 2, 4, 8]:
-        result0 = pack_rle(chop_rle(generate_rle(generate_pixels(image, stride)), n0), n0)
+    for n0 in [1, 0x81, 2, 4, 8]:
+        im = image
+        if n0 & 0x80:
+            im = unscreened
+        result0 = pack_rle(chop_rle(generate_rle(generate_pixels(im, stride)), n0 & 0x7f), n0 & 0x7f)
         #print n0, len(result0)
         if result is None or len(result0) < len(result):
             result = result0
             n = n0
 
     # Verify the result matches.
-    unpacker = Rl2Unpacker(result, n)
+    im = image
+    if n & 0x80:
+        im = unscreened
+    unpacker = Rl2Unpacker(result, n & 0x7f)
     verify = unpacker.getList()
-    result0 = list(generate_rle(generate_pixels(image, stride)))
+    result0 = list(generate_rle(generate_pixels(im, stride)))
     assert verify == result0
 
     rle = open(rleFilename, 'wb')
