@@ -31,13 +31,20 @@ BitmapWithData chrono_dial_white;
 BitmapWithData chrono_dial_black;
 Layer *chrono_dial_layer;
 
-GFont date_font;
-int date_font_vshift = -3;  // Determined empirically.
+struct DateFont {
+  unsigned int resource_id;
+  int vshift;  // Determined empirically.
+  GFont font;
+};
+
+struct DateFont date_font = {
+  0, -3, NULL
+};
 
 #define NUM_DAY_FONTS 2
-GFont day_fonts[NUM_DAY_FONTS];
-int day_font_vshifts[NUM_DAY_FONTS] = {
-  7, 7,   // Determined empirically.
+struct DateFont day_fonts[NUM_DAY_FONTS] = {
+  { RESOURCE_ID_DAY_FONT_LATIN_16, -1, NULL },
+  { RESOURCE_ID_DAY_FONT_EXTENDED_14, 1, NULL },
 };
 
 // Number of laps preserved for the laps digital display
@@ -658,7 +665,7 @@ void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
 }
 #endif  // ENABLE_CHRONO_TENTH_HAND
 
-void draw_card(Layer *me, GContext *ctx, const char *text, GFont font, int font_vshift, bool invert, bool opaque_layer) {
+void draw_card(Layer *me, GContext *ctx, const char *text, struct DateFont *date_font, bool invert, bool opaque_layer) {
   GRect box;
 
   box = layer_get_frame(me);
@@ -684,14 +691,18 @@ void draw_card(Layer *me, GContext *ctx, const char *text, GFont font, int font_
 
   graphics_context_set_text_color(ctx, draw_mode_table[draw_mode].colors[1]);
 
-  box.origin.y += font_vshift;
+  box.origin.y += date_font->vshift;
 
   // Cheat for a bit more space for text
   box.origin.x -= 2;
   box.size.w += 4;
   box.size.h += 4;
 
-  graphics_draw_text(ctx, text, font, box,
+  if (date_font->font == NULL) {
+    date_font->font = fonts_load_custom_font(resource_get_handle(date_font->resource_id));
+  }
+
+  graphics_draw_text(ctx, text, date_font->font, box,
                      GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
                      NULL);
 }
@@ -720,7 +731,7 @@ void day_layer_update_callback(Layer *me, GContext *ctx) {
     const LangDef *lang = &lang_table[config.display_lang % num_langs];
     const char *weekday_name = lang->weekday_names[current_placement.day_index];
     const struct IndicatorTable *card = &day_table[config.face_index];
-    draw_card(me, ctx, weekday_name, day_fonts[lang->font_index], day_font_vshifts[lang->font_index], card->invert, card->opaque);
+    draw_card(me, ctx, weekday_name, &day_fonts[lang->font_index], card->invert, card->opaque);
   }
 }
 #endif  // ENABLE_DAY_CARD
@@ -734,7 +745,7 @@ void date_layer_update_callback(Layer *me, GContext *ctx) {
     char buffer[buffer_size];
     snprintf(buffer, buffer_size, "%d", current_placement.date_value);
     const struct IndicatorTable *card = &date_table[config.face_index];
-    draw_card(me, ctx, buffer, date_font, date_font_vshift, card->invert, card->opaque);
+    draw_card(me, ctx, buffer, &date_font, card->invert, card->opaque);
   }
 }
 #endif  // ENABLE_DATE_CARD
@@ -1312,9 +1323,7 @@ void handle_init() {
   clock_face_layer = bitmap_layer_create(window_frame);
   layer_add_child(window_layer, bitmap_layer_get_layer(clock_face_layer));
 
-  date_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
-  day_fonts[0] = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_DAY_FONT_LATIN_8));
-  day_fonts[1] = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_DAY_FONT_EXTENDED_8));
+  date_font.font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
 
 #ifdef MAKE_CHRONOGRAPH
   load_chrono_dial();
@@ -1425,6 +1434,8 @@ void handle_init() {
 
 
 void handle_deinit() {
+  int i;
+
   save_chrono_data();
   tick_timer_service_unsubscribe();
 
@@ -1472,6 +1483,12 @@ void handle_deinit() {
   hand_cache_destroy(&chrono_minute_cache);
   hand_cache_destroy(&chrono_second_cache);
   hand_cache_destroy(&chrono_tenth_cache);
+
+  for (i = 0; i < NUM_DAY_FONTS; ++i) {
+    if (day_fonts[i].font != NULL) {
+      fonts_unload_custom_font(day_fonts[i].font);
+    }
+  }
 
   window_destroy(window);
 }
