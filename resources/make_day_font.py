@@ -16,11 +16,10 @@ resourcesDir = rootDir
 
 # I like ArchivoNarrow for its cleanliness, but it lacks some of the
 # extended characters for Greek and Russion, so I supply the
-# missing needed characters from Arial.
+# missing needed characters from DejaVuSans.
 sourceFilenames = {
     'latin' : 'ArchivoNarrow-Bold.ttf',
-    #'extended' : 'OpenSans-CondBold.ttf',
-    'extended' : 'Arial Narrow Bold.ttf',
+    'extended' : 'DejaVuSansCondensed-Bold.ttf',
     }
 
 characters = {
@@ -36,13 +35,16 @@ for charset in ['latin', 'extended']:
     source = fontforge.open(sourceFilename)
     print source
     source.selection.select(*selection)
-    source.copy()
 
-    target = fontforge.font()
-    target.encoding = 'UnicodeBmp'
+    source.selection.invert()
+    source.clear()
+    target = source
 
-    target.selection.select(*selection)
-    target.paste()
+    #source.copy()
+    #target = fontforge.font()
+    #target.encoding = 'UnicodeBmp'
+    #target.selection.select(*selection)
+    #target.paste()
 
     print target
     targetFilename = '%s/day_font_%s.otf' % (resourcesDir, charset)
