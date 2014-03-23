@@ -495,7 +495,7 @@ def makeBitmapHands(generatedTable, useRle, hand, sourceFilename, colorMode, asy
     },"""    
 
     handLookupEntry = """  { RESOURCE_ID_%(symbolName)s, RESOURCE_ID_%(symbolMaskName)s, %(cx)s, %(cy)s },"""
-    handTableEntry = """  { %(lookup_index)s, %(flip_x)s, %(flip_y)s, %(paintBlack)s },"""
+    handTableEntry = """  { %(lookup_index)s, %(flip_x)s, %(flip_y)s },"""
     
     print >> generatedTable, "#define BITMAP_%s_HAND 1" % (hand.upper())
     handLookupLines = []
@@ -504,6 +504,8 @@ def makeBitmapHands(generatedTable, useRle, hand, sourceFilename, colorMode, asy
     source = PIL.Image.open('%s/clock_hands/%s' % (resourcesDir, sourceFilename))
 
     paintBlack, useTransparency, invertColors, dither = parseColorMode(colorMode)
+
+    print >> generatedTable, "#define BITMAP_%s_HAND_PAINT_BLACK %s" % (hand.upper(), int(bool(paintBlack)))
 
     if useTransparency or source.mode.endswith('A'):
         source, sourceMask = source.convert('LA').split()
@@ -696,7 +698,6 @@ def makeBitmapHands(generatedTable, useRle, hand, sourceFilename, colorMode, asy
             'lookup_index' : lookup_index,
             'flip_x' : int(flip_x),
             'flip_y' : int(flip_y),
-            'paintBlack' : int(paintBlack),
             }
         handTableLines.append(line)
 

@@ -9,10 +9,9 @@ struct __attribute__((__packed__)) BitmapHandLookupRow {
 };
 
 struct __attribute__((__packed__)) BitmapHandTableRow {
-  unsigned int lookup_index:8;
+  unsigned int lookup_index:6;
   unsigned int flip_x:1;
   unsigned int flip_y:1;
-  unsigned int paint_black:1;
 };
 
 struct __attribute__((__packed__)) VectorHandGroup {
