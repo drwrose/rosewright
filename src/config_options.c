@@ -34,8 +34,9 @@ void sanitize_config() {
 
 #ifdef ENABLE_LOG
 const char *show_config() {
-  static char buffer[100];
-  snprintf(buffer, 100, "bat: %d, bt: %d, sh: %d, hb: %d, dm: %d, cd: %d, sw: %d, day: %d, date: %d, dl: %d, fi: %d", config.keep_battery_gauge, config.keep_bluetooth_indicator, config.second_hand, config.hour_buzzer, config.draw_mode, config.chrono_dial, config.sweep_seconds, config.show_day, config.show_date, config.display_lang, config.face_index);
+#define CONFIG_BUFFER_SIZE 128
+  static char buffer[CONFIG_BUFFER_SIZE];
+  snprintf(buffer, CONFIG_BUFFER_SIZE, "bat: %d, bt: %d, sh: %d, hb: %d, dm: %d, cd: %d, sw: %d, day: %d, date: %d, dl: %d, fi: %d", config.keep_battery_gauge, config.keep_bluetooth_indicator, config.second_hand, config.hour_buzzer, config.draw_mode, config.chrono_dial, config.sweep_seconds, config.show_day, config.show_date, config.display_lang, config.face_index);
   return buffer;
 }
 #endif  // ENABLE_LOG

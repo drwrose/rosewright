@@ -31,23 +31,24 @@ BitmapWithData chrono_dial_white;
 BitmapWithData chrono_dial_black;
 Layer *chrono_dial_layer;
 
-struct DateFont {
-  unsigned int resource_id;
-  int vshift;  // Determined empirically.
-  GFont font;
+struct FontPlacement {
+  unsigned char resource_id;
+  signed char vshift;  // Value determined empirically for each font.
 };
 
-struct DateFont date_font = {
-  0, -3, NULL
+struct FontPlacement date_font_placement = {
+  0, -3
 };
+GFont date_font = NULL;
+GFont day_font = NULL;
 
 #define NUM_DAY_FONTS 5
-struct DateFont day_fonts[NUM_DAY_FONTS] = {
-  { RESOURCE_ID_DAY_FONT_LATIN_16, -1, NULL },
-  { RESOURCE_ID_DAY_FONT_EXTENDED_14, 1, NULL },
-  { RESOURCE_ID_DAY_FONT_ZH_16, -1, NULL },  // Chinese
-  { RESOURCE_ID_DAY_FONT_JA_16, -1, NULL },  // Japanese
-  { RESOURCE_ID_DAY_FONT_KO_16, -2, NULL },  // Korean
+struct FontPlacement day_font_placement[NUM_DAY_FONTS] = {
+  { RESOURCE_ID_DAY_FONT_LATIN_16, -1 },
+  { RESOURCE_ID_DAY_FONT_EXTENDED_14, 1 },
+  { RESOURCE_ID_DAY_FONT_ZH_16, -1 },  // Chinese
+  { RESOURCE_ID_DAY_FONT_JA_16, -1 },  // Japanese
+  { RESOURCE_ID_DAY_FONT_KO_16, -2 },  // Korean
 };
 
 // Number of laps preserved for the laps digital display
@@ -61,7 +62,7 @@ TextLayer *chrono_digital_current_layer = NULL;
 TextLayer *chrono_digital_laps_layer[CHRONO_MAX_LAPS];
 bool chrono_digital_window_showing = false;
 AppTimer *chrono_digital_timer = NULL;
-#define CHRONO_DIGITAL_BUFFER_SIZE 10
+#define CHRONO_DIGITAL_BUFFER_SIZE 11
 char chrono_current_buffer[CHRONO_DIGITAL_BUFFER_SIZE];
 char chrono_laps_buffer[CHRONO_MAX_LAPS][CHRONO_DIGITAL_BUFFER_SIZE];
 
@@ -160,6 +161,7 @@ typedef struct {
 } __attribute__((__packed__)) ChronoData;
 
 ChronoData chrono_data = { false, false, 0, 0, { 0, 0, 0, 0 } };
+ChronoData saved_chrono_data;
 
 // Returns the number of milliseconds since midnight.
 unsigned int get_time_ms(struct tm *time) {
@@ -279,7 +281,8 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
     if (chrono_dial_shows_tenths != chrono_dial_wants_tenths) {
       // The dial has changed states; reload and redraw it.
       chrono_dial_shows_tenths = chrono_dial_wants_tenths;
-      load_chrono_dial();
+      bwd_destroy(&chrono_dial_white);
+      bwd_destroy(&chrono_dial_black);
       if (chrono_dial_layer != NULL) {
 	layer_mark_dirty(chrono_dial_layer);
       }
@@ -668,7 +671,8 @@ void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
 }
 #endif  // ENABLE_CHRONO_TENTH_HAND
 
-void draw_card(Layer *me, GContext *ctx, const char *text, struct DateFont *date_font, bool invert, bool opaque_layer) {
+void draw_card(Layer *me, GContext *ctx, const char *text, struct FontPlacement *font_placement, 
+	       GFont *font, bool invert, bool opaque_layer) {
   GRect box;
 
   box = layer_get_frame(me);
@@ -694,18 +698,20 @@ void draw_card(Layer *me, GContext *ctx, const char *text, struct DateFont *date
 
   graphics_context_set_text_color(ctx, draw_mode_table[draw_mode].colors[1]);
 
-  box.origin.y += date_font->vshift;
+  box.origin.y += font_placement->vshift;
 
   // Cheat for a bit more space for text
   box.origin.x -= 2;
   box.size.w += 4;
   box.size.h += 4;
 
-  if (date_font->font == NULL) {
-    date_font->font = fonts_load_custom_font(resource_get_handle(date_font->resource_id));
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "drawing card %02x, font = %p, shift = %d", (unsigned int)text[0], (void *)(*font), font_placement->vshift);
+  if ((*font) == NULL) {
+    (*font) = fonts_load_custom_font(resource_get_handle(font_placement->resource_id));
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "loaded font %d, font = %p", font_placement->resource_id, (void *)(*font));
   }
 
-  graphics_draw_text(ctx, text, date_font->font, box,
+  graphics_draw_text(ctx, text, (*font), box,
                      GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
                      NULL);
 }
@@ -714,6 +720,9 @@ void draw_card(Layer *me, GContext *ctx, const char *text, struct DateFont *date
 void chrono_dial_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_dial_layer");
   if (config.chrono_dial != CDM_off) {
+    if (chrono_dial_white.bitmap == NULL) {
+      load_chrono_dial();
+    }
     GRect destination = layer_get_bounds(me);
     destination.origin.x = 0;
     destination.origin.y = 0;
@@ -734,7 +743,7 @@ void day_layer_update_callback(Layer *me, GContext *ctx) {
     const LangDef *lang = &lang_table[config.display_lang % num_langs];
     const char *weekday_name = lang->weekday_names[current_placement.day_index];
     const struct IndicatorTable *card = &day_table[config.face_index];
-    draw_card(me, ctx, weekday_name, &day_fonts[lang->font_index], card->invert, card->opaque);
+    draw_card(me, ctx, weekday_name, &day_font_placement[lang->font_index], &day_font, card->invert, card->opaque);
   }
 }
 #endif  // ENABLE_DAY_CARD
@@ -748,7 +757,7 @@ void date_layer_update_callback(Layer *me, GContext *ctx) {
     char buffer[buffer_size];
     snprintf(buffer, buffer_size, "%d", current_placement.date_value);
     const struct IndicatorTable *card = &date_table[config.face_index];
-    draw_card(me, ctx, buffer, &date_font, card->invert, card->opaque);
+    draw_card(me, ctx, buffer, &date_font_placement, &date_font, card->invert, card->opaque);
   }
 }
 #endif  // ENABLE_DATE_CARD
@@ -1227,6 +1236,12 @@ void apply_config() {
     }
   }
 
+  // Unload the day font just in case it changes with the language.
+  if (day_font != NULL) {
+    fonts_unload_custom_font(day_font);
+    day_font = NULL;
+  }
+
   // Also adjust the draw mode on the clock_face_layer.  (The other
   // layers all draw themselves interactively.)
   bitmap_layer_set_compositing_mode(clock_face_layer, draw_mode_table[config.draw_mode].paint_assign);
@@ -1240,6 +1255,7 @@ load_chrono_data() {
   ChronoData local_data;
   if (persist_read_data(PERSIST_KEY + 0x100, &local_data, sizeof(local_data)) == sizeof(local_data)) {
     chrono_data = local_data;
+    saved_chrono_data = local_data;
     // Ensure the start time is within modulo 24 hours of the current
     // day, to minimize the danger of integer overflow after 49 days.
     // As long as you launch the Chronograph at least once every 49
@@ -1262,11 +1278,16 @@ load_chrono_data() {
 
 void save_chrono_data() {
 #ifdef MAKE_CHRONOGRAPH
-  int wrote = persist_write_data(PERSIST_KEY + 0x100, &chrono_data, sizeof(chrono_data));
-  if (wrote == sizeof(chrono_data)) {
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Saved chrono_data (%d, %d)", PERSIST_KEY + 0x100, sizeof(chrono_data));
+  if (memcmp(&chrono_data, &saved_chrono_data, sizeof(chrono_data)) == 0) {
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_data unchanged.");
   } else {
-    app_log(APP_LOG_LEVEL_ERROR, __FILE__, __LINE__, "Error saving chrono_data (%d, %d): %d", PERSIST_KEY + 0x100, sizeof(chrono_data), wrote);
+    int wrote = persist_write_data(PERSIST_KEY + 0x100, &chrono_data, sizeof(chrono_data));
+    if (wrote == sizeof(chrono_data)) {
+      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Saved chrono_data (%d, %d)", PERSIST_KEY + 0x100, sizeof(chrono_data));
+      saved_chrono_data = chrono_data;
+    } else {
+      app_log(APP_LOG_LEVEL_ERROR, __FILE__, __LINE__, "Error saving chrono_data (%d, %d): %d", PERSIST_KEY + 0x100, sizeof(chrono_data), wrote);
+    }
   }
 #endif  // MAKE_CHRONOGRAPH
 }
@@ -1282,17 +1303,15 @@ void handle_init() {
   uint32_t inbox_max = app_message_inbox_size_maximum();
   uint32_t outbox_max = app_message_outbox_size_maximum();
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "available message space %u, %u", (unsigned int)inbox_max, (unsigned int)outbox_max);
-  if (inbox_max > 300) {
-    inbox_max = 300;
+  if (inbox_max > 200) {
+    inbox_max = 200;
   }
-  if (outbox_max > 300) {
-    outbox_max = 300;
+  if (outbox_max > 50) {
+    outbox_max = 50;
   }
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "app_message_open(%u, %u)", (unsigned int)inbox_max, (unsigned int)outbox_max);
   AppMessageResult open_result = app_message_open(inbox_max, outbox_max);
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "open_result = %d", open_result);
-  
-  //app_message_open(128, 128);
 
   time_t now = time(NULL);
   struct tm *startup_time = localtime(&now);
@@ -1326,14 +1345,14 @@ void handle_init() {
   clock_face_layer = bitmap_layer_create(window_frame);
   layer_add_child(window_layer, bitmap_layer_get_layer(clock_face_layer));
 
-  date_font.font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+  date_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
 
 #ifdef MAKE_CHRONOGRAPH
-  load_chrono_dial();
-
   {
-    int height = chrono_dial_white.bitmap->bounds.size.h;
-    int width = chrono_dial_white.bitmap->bounds.size.w;
+    // We defer loading the chrono dial until we actually need to render it.
+    //load_chrono_dial();
+    int height = 56;   //chrono_dial_white.bitmap->bounds.size.h;
+    int width = 56;    //chrono_dial_white.bitmap->bounds.size.w;
     int x = CHRONO_TENTH_HAND_X - width / 2;
     int y = CHRONO_TENTH_HAND_Y - height / 2;
 
@@ -1437,8 +1456,6 @@ void handle_init() {
 
 
 void handle_deinit() {
-  int i;
-
   save_chrono_data();
   tick_timer_service_unsubscribe();
 
@@ -1487,10 +1504,9 @@ void handle_deinit() {
   hand_cache_destroy(&chrono_second_cache);
   hand_cache_destroy(&chrono_tenth_cache);
 
-  for (i = 0; i < NUM_DAY_FONTS; ++i) {
-    if (day_fonts[i].font != NULL) {
-      fonts_unload_custom_font(day_fonts[i].font);
-    }
+  if (day_font != NULL) {
+    fonts_unload_custom_font(day_font);
+    day_font = NULL;
   }
 
   window_destroy(window);
