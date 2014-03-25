@@ -1,0 +1,220 @@
+    {
+      "type": "raw",
+      "name": "WEEKDAY_EN_US_NAMES",
+      "file": "weekday_en_US.raw"
+    },
+    {
+      "type": "raw",
+      "name": "MONTH_EN_US_NAMES",
+      "file": "month_en_US.raw"
+    },
+    {
+      "type": "raw",
+      "name": "WEEKDAY_FR_FR_NAMES",
+      "file": "weekday_fr_FR.raw"
+    },
+    {
+      "type": "raw",
+      "name": "MONTH_FR_FR_NAMES",
+      "file": "month_fr_FR.raw"
+    },
+    {
+      "type": "raw",
+      "name": "WEEKDAY_IT_IT_NAMES",
+      "file": "weekday_it_IT.raw"
+    },
+    {
+      "type": "raw",
+      "name": "MONTH_IT_IT_NAMES",
+      "file": "month_it_IT.raw"
+    },
+    {
+      "type": "raw",
+      "name": "WEEKDAY_ES_ES_NAMES",
+      "file": "weekday_es_ES.raw"
+    },
+    {
+      "type": "raw",
+      "name": "MONTH_ES_ES_NAMES",
+      "file": "month_es_ES.raw"
+    },
+    {
+      "type": "raw",
+      "name": "WEEKDAY_PT_PT_NAMES",
+      "file": "weekday_pt_PT.raw"
+    },
+    {
+      "type": "raw",
+      "name": "MONTH_PT_PT_NAMES",
+      "file": "month_pt_PT.raw"
+    },
+    {
+      "type": "raw",
+      "name": "WEEKDAY_DE_DE_NAMES",
+      "file": "weekday_de_DE.raw"
+    },
+    {
+      "type": "raw",
+      "name": "MONTH_DE_DE_NAMES",
+      "file": "month_de_DE.raw"
+    },
+    {
+      "type": "raw",
+      "name": "WEEKDAY_NL_NL_NAMES",
+      "file": "weekday_nl_NL.raw"
+    },
+    {
+      "type": "raw",
+      "name": "MONTH_NL_NL_NAMES",
+      "file": "month_nl_NL.raw"
+    },
+    {
+      "type": "raw",
+      "name": "WEEKDAY_DA_DK_NAMES",
+      "file": "weekday_da_DK.raw"
+    },
+    {
+      "type": "raw",
+      "name": "MONTH_DA_DK_NAMES",
+      "file": "month_da_DK.raw"
+    },
+    {
+      "type": "raw",
+      "name": "WEEKDAY_SV_SE_NAMES",
+      "file": "weekday_sv_SE.raw"
+    },
+    {
+      "type": "raw",
+      "name": "MONTH_SV_SE_NAMES",
+      "file": "month_sv_SE.raw"
+    },
+    {
+      "type": "raw",
+      "name": "WEEKDAY_IS_IS_NAMES",
+      "file": "weekday_is_IS.raw"
+    },
+    {
+      "type": "raw",
+      "name": "MONTH_IS_IS_NAMES",
+      "file": "month_is_IS.raw"
+    },
+    {
+      "type": "raw",
+      "name": "WEEKDAY_EL_GR_NAMES",
+      "file": "weekday_el_GR.raw"
+    },
+    {
+      "type": "raw",
+      "name": "MONTH_EL_GR_NAMES",
+      "file": "month_el_GR.raw"
+    },
+    {
+      "type": "raw",
+      "name": "WEEKDAY_HU_HU_NAMES",
+      "file": "weekday_hu_HU.raw"
+    },
+    {
+      "type": "raw",
+      "name": "MONTH_HU_HU_NAMES",
+      "file": "month_hu_HU.raw"
+    },
+    {
+      "type": "raw",
+      "name": "WEEKDAY_RU_RU_NAMES",
+      "file": "weekday_ru_RU.raw"
+    },
+    {
+      "type": "raw",
+      "name": "MONTH_RU_RU_NAMES",
+      "file": "month_ru_RU.raw"
+    },
+    {
+      "type": "raw",
+      "name": "WEEKDAY_PL_PL_NAMES",
+      "file": "weekday_pl_PL.raw"
+    },
+    {
+      "type": "raw",
+      "name": "MONTH_PL_PL_NAMES",
+      "file": "month_pl_PL.raw"
+    },
+    {
+      "type": "raw",
+      "name": "WEEKDAY_CS_CZ_NAMES",
+      "file": "weekday_cs_CZ.raw"
+    },
+    {
+      "type": "raw",
+      "name": "MONTH_CS_CZ_NAMES",
+      "file": "month_cs_CZ.raw"
+    },
+    {
+      "type": "raw",
+      "name": "WEEKDAY_HY_AM_NAMES",
+      "file": "weekday_hy_AM.raw"
+    },
+    {
+      "type": "raw",
+      "name": "MONTH_HY_AM_NAMES",
+      "file": "month_hy_AM.raw"
+    },
+    {
+      "type": "raw",
+      "name": "WEEKDAY_ZH_CN_NAMES",
+      "file": "weekday_zh_CN.raw"
+    },
+    {
+      "type": "raw",
+      "name": "MONTH_ZH_CN_NAMES",
+      "file": "month_zh_CN.raw"
+    },
+    {
+      "type": "raw",
+      "name": "WEEKDAY_JA_JP_NAMES",
+      "file": "weekday_ja_JP.raw"
+    },
+    {
+      "type": "raw",
+      "name": "MONTH_JA_JP_NAMES",
+      "file": "month_ja_JP.raw"
+    },
+    {
+      "type": "raw",
+      "name": "WEEKDAY_KO_KR_NAMES",
+      "file": "weekday_ko_KR.raw"
+    },
+    {
+      "type": "raw",
+      "name": "MONTH_KO_KR_NAMES",
+      "file": "month_ko_KR.raw"
+    },
+    {
+      "type": "font",
+      "characterRegex": "[\u0041-\u0048\u004a-\u0051\u0053\u0054\u0056\u0057\u005a\u0061-\u0065\u0067-\u0070\u0072-\u007a\u00c1\u00da\u00de\u00e1\u00e4\u00e5\u00e9\u00ed\u00f0\u00f3\u00f6\u00f8\u00fa-\u00fc\u010c\u011b\u0158-\u015a\u017a]",
+      "name": "DAY_FONT_LATIN_16",
+      "file": "ArchivoNarrow-Bold.ttf"
+    },
+    {
+      "type": "font",
+      "characterRegex": "[\u0391\u0394\u0399\u039a\u039c\u039d\u039f\u03a0\u03a3\u03a4\u03a6\u03b1-\u03b3\u03b5\u03b9-\u03bd\u03bf-\u03c1\u03c4\u03c5\u03ca\u0410\u0412\u0414\u0418\u041c-\u041f\u0421\u0424\u0427\u042f-\u0433\u0435\u0439-\u043b\u043d-\u0442\u044e\u044f\u0531\u0534\u0535\u053f\u0540\u0544\u0546-\u0549\u054d\u0553\u0555\u0562\u0563\u0569\u056c\u056f\u0574-\u0576\u057a\u057d-\u0580\u0582\u0584]",
+      "name": "DAY_FONT_EXTENDED_14",
+      "file": "DejaVuSansCondensed-Bold.ttf"
+    },
+    {
+      "type": "font",
+      "characterRegex": "[\u0030-\u0039\u4e00\u4e09\u4e8c\u4e94\u516d\u56db\u65e5]",
+      "name": "DAY_FONT_ZH_16",
+      "file": "wqy-microhei.ttc"
+    },
+    {
+      "type": "font",
+      "characterRegex": "[\u0030-\u0039\u571f\u65e5\u6708\u6728\u6c34\u706b\u91d1]",
+      "name": "DAY_FONT_JA_16",
+      "file": "TakaoPGothic.ttf"
+    },
+    {
+      "type": "font",
+      "characterRegex": "[\u0030-\u0039\uae08\ubaa9\uc218\uc6d4\uc77c\ud1a0\ud654]",
+      "name": "DAY_FONT_KO_16",
+      "file": "UnDotum.ttf"
+    },
