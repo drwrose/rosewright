@@ -16,3 +16,5 @@ appinfo.json
 *.pyc
 *~
 #*
+.DS_Store
+.lock-waf_*_build

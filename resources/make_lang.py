@@ -90,6 +90,9 @@ def makeDates(generatedTable, li):
         
     print >> generatedTable, """  { "%s", {%s }, %s }, // %s = %s""" % (localeName, ''.join(weekdayNames), fontIndex, li, langName)
 
+def makeHex(ch):
+    return '\\u%04x' % (ch)
+
 def makeCharacterRegex(chars):
     chars = list(chars)
     chars.sort()
@@ -110,9 +113,11 @@ def makeCharacterRegex(chars):
     s = ''
     for a, b in r:
         if a == b:
-            s += '\u%04x' % (a)
+            s += makeHex(a)
+        elif a + 1 == b:
+            s += makeHex(a) + makeHex(b)
         else:
-            s += '\u%04x-\u%04x' % (a, b)
+            s += makeHex(a) + '-' + makeHex(b)
 
     return s
 

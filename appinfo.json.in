@@ -62,14 +62,14 @@
     },
     {
       "type": "font",
-      "characterRegex": "[\u0043-\u0044\u0046-\u0048\u004a-\u0051\u0053-\u0054\u0056-\u0057\u005a\u0061-\u0062\u0064-\u0065\u0067-\u0069\u006b\u006d-\u006f\u0072-\u0075\u0077-\u0078\u007a\u00da\u00de\u00e1\u00e5\u00e9\u00f0\u00f6\u00f8\u00fc\u010c\u015a]",
+      "characterRegex": "[\u0043\u0044\u0046-\u0048\u004a-\u0051\u0053\u0054\u0056\u0057\u005a\u0061\u0062\u0064\u0065\u0067-\u0069\u006b\u006d-\u006f\u0072-\u0075\u0077\u0078\u007a\u00da\u00de\u00e1\u00e5\u00e9\u00f0\u00f6\u00f8\u00fc\u010c\u015a]",
       "name": "DAY_FONT_LATIN_16",
       "file": "ArchivoNarrow-Bold.ttf"
     },
 
     {
       "type": "font",
-      "characterRegex": "[\u0394\u039a\u03a0\u03a3-\u03a4\u03b1-\u03b2\u03b5\u03b9\u03bc\u03c1\u03c4-\u03c5\u0412\u041f\u0421\u0427\u0431\u043d\u0440-\u0442]",
+      "characterRegex": "[\u0394\u039a\u03a0\u03a3\u03a4\u03b1\u03b2\u03b5\u03b9\u03bc\u03c1\u03c4\u03c5\u0412\u041f\u0421\u0427\u0431\u043d\u0440-\u0442]",
       "name": "DAY_FONT_EXTENDED_14",
       "file": "DejaVuSansCondensed-Bold.ttf"
     },
@@ -94,6 +94,7 @@
       "name": "DAY_FONT_KO_16",
       "file": "UnDotum.ttf"
     },
+
 %(generatedMedia)s
     ]
   }
