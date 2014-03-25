@@ -14,7 +14,7 @@ the resources directory, based on the system language data.
 make_lang.py [opts]
 """
 
-fontChoices = [ 'latin', 'extended', 'zh', 'ja', 'ko' ]
+fontChoices = [ 'latin', 'extended', 'rtl', 'zh', 'ja', 'ko' ]
 
 # Duplicated from lang_table.h.
 MAX_DAY_NAME = 7
@@ -24,6 +24,7 @@ NUM_DAY_NAMES = 12
 fontNames = {
     'latin' : ('ArchivoNarrow-Bold.ttf', 16),
     'extended' : ('DejaVuSansCondensed-Bold.ttf', 14),
+    'rtl' : ('DejaVuSansCondensed-Bold.ttf', 14),
     'zh' : ('wqy-microhei.ttc', 16),
     'ja' : ('TakaoPGothic.ttf', 16),
     'ko' : ('UnDotum.ttf', 16),
@@ -51,9 +52,21 @@ langs += [
     [ 'pl_PL', 'Polish', 'latin' ],
     [ 'cs_CZ', 'Czech', 'latin' ],
     [ 'hy_AM', 'Armenian', 'extended' ],
+#    [ 'th_TH', 'Thai', 'extended' ],
+#    [ 'hi_IN.ISCII-DEV', 'Hindi', 'extended' ],
+#    [ 'ta_IN', 'Tamil', 'extended' ],
+#    [ 'tl', 'Tagalog', 'extended' ],
     ]
 
-# CJK is its own set of categories.
+# These are written right-to-left.
+langs += [
+    [ 'he_IL', 'Hebrew', 'rtl' ],
+    #[ 'tr_TR', 'Turkish', 'rtl' ],
+    #[ 'fa_IR', 'Farsi', 'rtl' ],
+    #[ 'ar_SA', 'Arabic', 'rtl' ],
+    ]
+
+# Each of CJK requires a unique source font.
 langs += [
     [ 'zh_CN', 'Chinese', 'zh' ],
     [ 'ja_JP', 'Japanese', 'ja' ],
@@ -68,12 +81,12 @@ neededChars = {}
 maxNumChars = 0
 
 def writeResourceFile(generatedJson, nameType, localeName, nameList):
-    filename = '%s_%s.raw' % (nameType, localeName)
-    resourceId = '%s_%s_NAMES' % (nameType.upper(), localeName.upper())
+    filename = '%s_%s.raw' % (localeName, nameType)
+    resourceId = '%s_%s_NAMES' % (localeName.upper(), nameType.upper())
 
     data = ''
     for i in range(len(nameList)):
-        name = (nameList[i] + '\0' * MAX_DAY_NAME)[:MAX_DAY_NAME]
+        name = (nameList[i][:MAX_DAY_NAME - 1] + '\0' * MAX_DAY_NAME)[:MAX_DAY_NAME]
         data += name
     for i in range(len(nameList), NUM_DAY_NAMES):
         data += '\0' * MAX_DAY_NAME
@@ -97,8 +110,12 @@ def makeDates(generatedTable, generatedJson, li):
     global maxNumChars
     localeName, langName, fontKey = langs[li]
     fontIndex = fontChoices.index(fontKey)
+
+    if '.' not in localeName:
+        localeName += '.UTF-8'
+    localeName, coding = localeName.split('.')
     print localeName
-    locale.setlocale(locale.LC_ALL, localeName + '.UTF-8')
+    locale.setlocale(locale.LC_ALL, localeName + '.' + coding)
 
     neededChars.setdefault(fontKey, set())
     showNames = []
@@ -107,16 +124,26 @@ def makeDates(generatedTable, generatedJson, li):
 
         # Get the day or month text from the system locale table, and decode from UTF-8.
         name = locale.nl_langinfo(sym)
-        name = name.decode('utf-8')
+        name = name.decode(coding)
 
-        # Clean up the text as needed:
+        # Strip out excess whitespace on one side or the other.
+        name = name.strip()
+
+        # Ensure the first letter is uppercase for consistency.
+        name = name[0].upper() + name[1:]
+
         if name[-1] == '.':
             # Sometimes the abbreviation ends with a dot.
             name = name[:-1]
-        # Strip out excess whitespace on one side or the other.
-        name = name.strip()
-        # Ensure the first letter is uppercase for consistency.
-        name = name[0].upper() + name[1:]
+
+        # No more than 3 characters?
+        #name = name[:3]
+
+        # Reverse text meant to be written right-to-left.
+        if fontKey == 'rtl':
+            ls = list(name)
+            ls.reverse()
+            name = ''.join(ls)
 
         # Record the total set of Unicode characters required in the font.
         for char in name:
@@ -125,6 +152,7 @@ def makeDates(generatedTable, generatedJson, li):
         # And finally, re-encode to UTF-8 for the Pebble.
         name = name.encode('utf-8')
         maxNumChars = max(maxNumChars, len(name))
+        assert maxNumChars < MAX_DAY_NAME
 
         showNames.append(name)
 

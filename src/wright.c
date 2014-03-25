@@ -42,10 +42,11 @@ struct FontPlacement date_font_placement = {
 GFont date_font = NULL;
 GFont day_font = NULL;
 
-#define NUM_DAY_FONTS 5
+#define NUM_DAY_FONTS 6
 struct FontPlacement day_font_placement[NUM_DAY_FONTS] = {
   { RESOURCE_ID_DAY_FONT_LATIN_16, -1 },
   { RESOURCE_ID_DAY_FONT_EXTENDED_14, 1 },
+  { RESOURCE_ID_DAY_FONT_RTL_14, 1 },
   { RESOURCE_ID_DAY_FONT_ZH_16, -1 },  // Chinese
   { RESOURCE_ID_DAY_FONT_JA_16, -1 },  // Japanese
   { RESOURCE_ID_DAY_FONT_KO_16, -2 },  // Korean
@@ -707,8 +708,8 @@ void draw_card(Layer *me, GContext *ctx, const char *text, struct FontPlacement 
   box.origin.y += font_placement->vshift;
 
   // Cheat for a bit more space for text
-  box.origin.x -= 4;
-  box.size.w += 8;
+  box.origin.x -= 8;
+  box.size.w += 16;
   box.size.h += 4;
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "drawing card %02x, font = %p, shift = %d", (unsigned int)text[0], (void *)(*font), font_placement->vshift);

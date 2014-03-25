@@ -1,192 +1,202 @@
     {
       "type": "raw",
-      "name": "WEEKDAY_EN_US_NAMES",
-      "file": "weekday_en_US.raw"
+      "name": "EN_US_WEEKDAY_NAMES",
+      "file": "en_US_weekday.raw"
     },
     {
       "type": "raw",
-      "name": "MONTH_EN_US_NAMES",
-      "file": "month_en_US.raw"
+      "name": "EN_US_MONTH_NAMES",
+      "file": "en_US_month.raw"
     },
     {
       "type": "raw",
-      "name": "WEEKDAY_FR_FR_NAMES",
-      "file": "weekday_fr_FR.raw"
+      "name": "FR_FR_WEEKDAY_NAMES",
+      "file": "fr_FR_weekday.raw"
     },
     {
       "type": "raw",
-      "name": "MONTH_FR_FR_NAMES",
-      "file": "month_fr_FR.raw"
+      "name": "FR_FR_MONTH_NAMES",
+      "file": "fr_FR_month.raw"
     },
     {
       "type": "raw",
-      "name": "WEEKDAY_IT_IT_NAMES",
-      "file": "weekday_it_IT.raw"
+      "name": "IT_IT_WEEKDAY_NAMES",
+      "file": "it_IT_weekday.raw"
     },
     {
       "type": "raw",
-      "name": "MONTH_IT_IT_NAMES",
-      "file": "month_it_IT.raw"
+      "name": "IT_IT_MONTH_NAMES",
+      "file": "it_IT_month.raw"
     },
     {
       "type": "raw",
-      "name": "WEEKDAY_ES_ES_NAMES",
-      "file": "weekday_es_ES.raw"
+      "name": "ES_ES_WEEKDAY_NAMES",
+      "file": "es_ES_weekday.raw"
     },
     {
       "type": "raw",
-      "name": "MONTH_ES_ES_NAMES",
-      "file": "month_es_ES.raw"
+      "name": "ES_ES_MONTH_NAMES",
+      "file": "es_ES_month.raw"
     },
     {
       "type": "raw",
-      "name": "WEEKDAY_PT_PT_NAMES",
-      "file": "weekday_pt_PT.raw"
+      "name": "PT_PT_WEEKDAY_NAMES",
+      "file": "pt_PT_weekday.raw"
     },
     {
       "type": "raw",
-      "name": "MONTH_PT_PT_NAMES",
-      "file": "month_pt_PT.raw"
+      "name": "PT_PT_MONTH_NAMES",
+      "file": "pt_PT_month.raw"
     },
     {
       "type": "raw",
-      "name": "WEEKDAY_DE_DE_NAMES",
-      "file": "weekday_de_DE.raw"
+      "name": "DE_DE_WEEKDAY_NAMES",
+      "file": "de_DE_weekday.raw"
     },
     {
       "type": "raw",
-      "name": "MONTH_DE_DE_NAMES",
-      "file": "month_de_DE.raw"
+      "name": "DE_DE_MONTH_NAMES",
+      "file": "de_DE_month.raw"
     },
     {
       "type": "raw",
-      "name": "WEEKDAY_NL_NL_NAMES",
-      "file": "weekday_nl_NL.raw"
+      "name": "NL_NL_WEEKDAY_NAMES",
+      "file": "nl_NL_weekday.raw"
     },
     {
       "type": "raw",
-      "name": "MONTH_NL_NL_NAMES",
-      "file": "month_nl_NL.raw"
+      "name": "NL_NL_MONTH_NAMES",
+      "file": "nl_NL_month.raw"
     },
     {
       "type": "raw",
-      "name": "WEEKDAY_DA_DK_NAMES",
-      "file": "weekday_da_DK.raw"
+      "name": "DA_DK_WEEKDAY_NAMES",
+      "file": "da_DK_weekday.raw"
     },
     {
       "type": "raw",
-      "name": "MONTH_DA_DK_NAMES",
-      "file": "month_da_DK.raw"
+      "name": "DA_DK_MONTH_NAMES",
+      "file": "da_DK_month.raw"
     },
     {
       "type": "raw",
-      "name": "WEEKDAY_SV_SE_NAMES",
-      "file": "weekday_sv_SE.raw"
+      "name": "SV_SE_WEEKDAY_NAMES",
+      "file": "sv_SE_weekday.raw"
     },
     {
       "type": "raw",
-      "name": "MONTH_SV_SE_NAMES",
-      "file": "month_sv_SE.raw"
+      "name": "SV_SE_MONTH_NAMES",
+      "file": "sv_SE_month.raw"
     },
     {
       "type": "raw",
-      "name": "WEEKDAY_IS_IS_NAMES",
-      "file": "weekday_is_IS.raw"
+      "name": "IS_IS_WEEKDAY_NAMES",
+      "file": "is_IS_weekday.raw"
     },
     {
       "type": "raw",
-      "name": "MONTH_IS_IS_NAMES",
-      "file": "month_is_IS.raw"
+      "name": "IS_IS_MONTH_NAMES",
+      "file": "is_IS_month.raw"
     },
     {
       "type": "raw",
-      "name": "WEEKDAY_EL_GR_NAMES",
-      "file": "weekday_el_GR.raw"
+      "name": "EL_GR_WEEKDAY_NAMES",
+      "file": "el_GR_weekday.raw"
     },
     {
       "type": "raw",
-      "name": "MONTH_EL_GR_NAMES",
-      "file": "month_el_GR.raw"
+      "name": "EL_GR_MONTH_NAMES",
+      "file": "el_GR_month.raw"
     },
     {
       "type": "raw",
-      "name": "WEEKDAY_HU_HU_NAMES",
-      "file": "weekday_hu_HU.raw"
+      "name": "HU_HU_WEEKDAY_NAMES",
+      "file": "hu_HU_weekday.raw"
     },
     {
       "type": "raw",
-      "name": "MONTH_HU_HU_NAMES",
-      "file": "month_hu_HU.raw"
+      "name": "HU_HU_MONTH_NAMES",
+      "file": "hu_HU_month.raw"
     },
     {
       "type": "raw",
-      "name": "WEEKDAY_RU_RU_NAMES",
-      "file": "weekday_ru_RU.raw"
+      "name": "RU_RU_WEEKDAY_NAMES",
+      "file": "ru_RU_weekday.raw"
     },
     {
       "type": "raw",
-      "name": "MONTH_RU_RU_NAMES",
-      "file": "month_ru_RU.raw"
+      "name": "RU_RU_MONTH_NAMES",
+      "file": "ru_RU_month.raw"
     },
     {
       "type": "raw",
-      "name": "WEEKDAY_PL_PL_NAMES",
-      "file": "weekday_pl_PL.raw"
+      "name": "PL_PL_WEEKDAY_NAMES",
+      "file": "pl_PL_weekday.raw"
     },
     {
       "type": "raw",
-      "name": "MONTH_PL_PL_NAMES",
-      "file": "month_pl_PL.raw"
+      "name": "PL_PL_MONTH_NAMES",
+      "file": "pl_PL_month.raw"
     },
     {
       "type": "raw",
-      "name": "WEEKDAY_CS_CZ_NAMES",
-      "file": "weekday_cs_CZ.raw"
+      "name": "CS_CZ_WEEKDAY_NAMES",
+      "file": "cs_CZ_weekday.raw"
     },
     {
       "type": "raw",
-      "name": "MONTH_CS_CZ_NAMES",
-      "file": "month_cs_CZ.raw"
+      "name": "CS_CZ_MONTH_NAMES",
+      "file": "cs_CZ_month.raw"
     },
     {
       "type": "raw",
-      "name": "WEEKDAY_HY_AM_NAMES",
-      "file": "weekday_hy_AM.raw"
+      "name": "HY_AM_WEEKDAY_NAMES",
+      "file": "hy_AM_weekday.raw"
     },
     {
       "type": "raw",
-      "name": "MONTH_HY_AM_NAMES",
-      "file": "month_hy_AM.raw"
+      "name": "HY_AM_MONTH_NAMES",
+      "file": "hy_AM_month.raw"
     },
     {
       "type": "raw",
-      "name": "WEEKDAY_ZH_CN_NAMES",
-      "file": "weekday_zh_CN.raw"
+      "name": "HE_IL_WEEKDAY_NAMES",
+      "file": "he_IL_weekday.raw"
     },
     {
       "type": "raw",
-      "name": "MONTH_ZH_CN_NAMES",
-      "file": "month_zh_CN.raw"
+      "name": "HE_IL_MONTH_NAMES",
+      "file": "he_IL_month.raw"
     },
     {
       "type": "raw",
-      "name": "WEEKDAY_JA_JP_NAMES",
-      "file": "weekday_ja_JP.raw"
+      "name": "ZH_CN_WEEKDAY_NAMES",
+      "file": "zh_CN_weekday.raw"
     },
     {
       "type": "raw",
-      "name": "MONTH_JA_JP_NAMES",
-      "file": "month_ja_JP.raw"
+      "name": "ZH_CN_MONTH_NAMES",
+      "file": "zh_CN_month.raw"
     },
     {
       "type": "raw",
-      "name": "WEEKDAY_KO_KR_NAMES",
-      "file": "weekday_ko_KR.raw"
+      "name": "JA_JP_WEEKDAY_NAMES",
+      "file": "ja_JP_weekday.raw"
     },
     {
       "type": "raw",
-      "name": "MONTH_KO_KR_NAMES",
-      "file": "month_ko_KR.raw"
+      "name": "JA_JP_MONTH_NAMES",
+      "file": "ja_JP_month.raw"
+    },
+    {
+      "type": "raw",
+      "name": "KO_KR_WEEKDAY_NAMES",
+      "file": "ko_KR_weekday.raw"
+    },
+    {
+      "type": "raw",
+      "name": "KO_KR_MONTH_NAMES",
+      "file": "ko_KR_month.raw"
     },
     {
       "type": "font",
@@ -198,6 +208,12 @@
       "type": "font",
       "characterRegex": "[\u0391\u0394\u0399\u039a\u039c\u039d\u039f\u03a0\u03a3\u03a4\u03a6\u03b1-\u03b3\u03b5\u03b9-\u03bd\u03bf-\u03c1\u03c4\u03c5\u03ca\u0410\u0412\u0414\u0418\u041c-\u041f\u0421\u0424\u0427\u042f-\u0433\u0435\u0439-\u043b\u043d-\u0442\u044e\u044f\u0531\u0534\u0535\u053f\u0540\u0544\u0546-\u0549\u054d\u0553\u0555\u0562\u0563\u0569\u056c\u056f\u0574-\u0576\u057a\u057d-\u0580\u0582\u0584]",
       "name": "DAY_FONT_EXTENDED_14",
+      "file": "DejaVuSansCondensed-Bold.ttf"
+    },
+    {
+      "type": "font",
+      "characterRegex": "[\u0027\u05d0-\u05d5\u05d8\u05d9\u05dc\u05de\u05e0\u05e1\u05e4-\u05e9]",
+      "name": "DAY_FONT_RTL_14",
       "file": "DejaVuSansCondensed-Bold.ttf"
     },
     {
