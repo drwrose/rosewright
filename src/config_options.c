@@ -30,6 +30,7 @@ void sanitize_config() {
   config.chrono_dial = config.chrono_dial % (CDM_dual + 1);
   config.display_lang = config.display_lang % num_langs;
   config.face_index = config.face_index % NUM_FACES;
+  config.show_day = config.show_day % (SDM_month + 1);
 }
 
 #ifdef ENABLE_LOG

@@ -26,6 +26,12 @@ typedef enum {
   CDM_dual = 3,
 } ChronoDialMode;
 
+typedef enum {
+  SDM_off = 0,
+  SDM_day = 1,
+  SDM_month = 2,
+} ShowDayMode;
+
 typedef struct {
   bool keep_battery_gauge;
   bool keep_bluetooth_indicator;
@@ -34,7 +40,7 @@ typedef struct {
   unsigned char draw_mode;
   unsigned char chrono_dial;
   bool sweep_seconds;
-  bool show_day;
+  unsigned char show_day;
   bool show_date;
   unsigned char display_lang;
   unsigned char face_index;

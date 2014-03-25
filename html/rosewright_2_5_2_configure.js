@@ -66,8 +66,8 @@ if ($.url().param("chrono_dial") != undefined) {
 // This list is duplicated in resources/make_lang.py.
 var langs = [
     [ 'hy_AM', 'Armenian', 'extended' ],
-    [ 'cs_CZ', 'Czech', 'latin' ],
     [ 'zh_CN', 'Chinese', 'cjk' ],
+    [ 'cs_CZ', 'Czech', 'latin' ],
     [ 'da_DK', 'Danish', 'latin' ],
     [ 'nl_NL', 'Dutch', 'latin' ],
     [ 'en_US', 'English', 'latin' ],
@@ -87,8 +87,9 @@ var langs = [
 ];
 
 if ($.url().param("show_day") != undefined) {
-    makeOption("show_day", "Show day of week");
-    makeOption("display_lang", "Language for day", langs, storeStringResult);
+    makeOption("show_day", "Show weekday or month",
+	       [[0, 'Off'], [1, 'Weekday'], [2, 'Month']]);
+    makeOption("display_lang", "Language for day/month", langs, storeStringResult);
 }
 
 if ($.url().param("show_date") != undefined) {

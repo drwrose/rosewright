@@ -60,7 +60,7 @@
       "file": "bluetooth_mask.png",
       "type": "png"
     },
-%(langFonts)s
+%(langData)s
 %(generatedMedia)s
     ]
   }

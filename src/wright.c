@@ -51,6 +51,11 @@ struct FontPlacement day_font_placement[NUM_DAY_FONTS] = {
   { RESOURCE_ID_DAY_FONT_KO_16, -2 },  // Korean
 };
 
+// This structure is filled in from the appropriate resource file to
+// reflect the names we are displaying in the day/month card based on
+// configuration settings.
+DayNames day_names;
+
 // Number of laps preserved for the laps digital display
 #define CHRONO_MAX_LAPS 4
 
@@ -99,6 +104,7 @@ struct HandPlacement {
   unsigned int chrono_second_hand_index;
   unsigned int chrono_tenth_hand_index;
   unsigned int day_index;
+  unsigned int month_index;
   unsigned int date_value;
 
   // Not really a hand placement, but this is used to keep track of
@@ -174,7 +180,8 @@ unsigned int get_time_ms(struct tm *time) {
 
 #ifdef FAST_TIME
   if (time != NULL) {
-    time->tm_wday = (s / 4) % 7;
+    time->tm_wday = (s / 3) % 7;
+    time->tm_mon = (s / 4) % 12;
     time->tm_mday = (s % 31) + 1;
   }
   result *= 67;
@@ -243,6 +250,7 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 #ifdef ENABLE_DAY_CARD
   if (time != NULL) {
     placement->day_index = time->tm_wday;
+    placement->month_index = time->tm_mon;
   }
 #endif  // ENABLE_DAY_CARD
 
@@ -673,11 +681,9 @@ void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
 
 void draw_card(Layer *me, GContext *ctx, const char *text, struct FontPlacement *font_placement, 
 	       GFont *font, bool invert, bool opaque_layer) {
-  GRect box;
-
-  box = layer_get_frame(me);
-  box.origin.x = 0;
-  box.origin.y = 0;
+  GRect box = {
+    { 4, 0 }, { 31, 19 }
+  };
 
   unsigned int draw_mode = invert ^ config.draw_mode;
 
@@ -701,8 +707,8 @@ void draw_card(Layer *me, GContext *ctx, const char *text, struct FontPlacement 
   box.origin.y += font_placement->vshift;
 
   // Cheat for a bit more space for text
-  box.origin.x -= 2;
-  box.size.w += 4;
+  box.origin.x -= 4;
+  box.size.w += 8;
   box.size.h += 4;
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "drawing card %02x, font = %p, shift = %d", (unsigned int)text[0], (void *)(*font), font_placement->vshift);
@@ -739,11 +745,16 @@ void chrono_dial_layer_update_callback(Layer *me, GContext *ctx) {
 void day_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "day_layer");
 
-  if (config.show_day) {
+  if (config.show_day != SDM_off) {
     const LangDef *lang = &lang_table[config.display_lang % num_langs];
-    const char *weekday_name = lang->weekday_names[current_placement.day_index];
+    const char *show_name;
+    if (config.show_day == SDM_day) {
+      show_name = day_names.day_names[current_placement.day_index];
+    } else { // SDM_month
+      show_name = day_names.day_names[current_placement.month_index];
+    }
     const struct IndicatorTable *card = &day_table[config.face_index];
-    draw_card(me, ctx, weekday_name, &day_font_placement[lang->font_index], &day_font, card->invert, card->opaque);
+    draw_card(me, ctx, show_name, &day_font_placement[lang->font_index], &day_font, card->invert, card->opaque);
   }
 }
 #endif  // ENABLE_DAY_CARD
@@ -831,8 +842,10 @@ void update_hands(struct tm *time) {
 #endif  // MAKE_CHRONOGRAPH
 
 #ifdef ENABLE_DAY_CARD
-  if (new_placement.day_index != current_placement.day_index) {
+  if (new_placement.day_index != current_placement.day_index ||
+      new_placement.month_index != current_placement.month_index) {
     current_placement.day_index = new_placement.day_index;
+    current_placement.month_index = new_placement.month_index;
     layer_mark_dirty(day_layer);
   }
 #endif  // ENABLE_DAY_CARD
@@ -1216,14 +1229,14 @@ void apply_config() {
     {
       const struct IndicatorTable *card = &day_table[config.face_index];
       app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "day_layer moved to %d, %d", card->x, card->y);
-      layer_set_frame((Layer *)day_layer, GRect(card->x - 15, card->y - 8, 31, 19));
+      layer_set_frame((Layer *)day_layer, GRect(card->x - 19, card->y - 8, 39, 19));
     }
 #endif  // ENABLE_DAY_CARD
 
 #ifdef ENABLE_DATE_CARD
     {
       const struct IndicatorTable *card = &date_table[config.face_index];
-      layer_set_frame((Layer *)date_layer, GRect(card->x - 15, card->y - 8, 31, 19));
+      layer_set_frame((Layer *)date_layer, GRect(card->x - 19, card->y - 8, 39, 19));
     }
 #endif  // ENABLE_DATE_CARD
     {
@@ -1240,6 +1253,19 @@ void apply_config() {
   if (day_font != NULL) {
     fonts_unload_custom_font(day_font);
     day_font = NULL;
+  }
+
+  // Reload the weekday or month names we will be displaying from the
+  // appropriate language resource.
+  if (config.show_day != SDM_off) {
+    int resource_id;
+    if (config.show_day == SDM_day) {
+      resource_id = lang_table[config.display_lang].weekday_name_id;
+    } else {
+      resource_id = lang_table[config.display_lang].month_name_id;
+    }
+    ResHandle rh = resource_get_handle(resource_id);
+    resource_load_byte_range(rh, 0, (void *)&day_names, sizeof(day_names));
   }
 
   // Also adjust the draw mode on the clock_face_layer.  (The other
@@ -1385,7 +1411,7 @@ void handle_init() {
 #ifdef ENABLE_DAY_CARD
   {
     const struct IndicatorTable *card = &day_table[config.face_index];
-    day_layer = layer_create(GRect(card->x - 15, card->y - 8, 31, 19));
+    day_layer = layer_create(GRect(card->x - 19, card->y - 8, 39, 19));
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "day_layer created at %d, %d", card->x, card->y);
     layer_set_update_proc(day_layer, &day_layer_update_callback);
     layer_add_child(window_layer, day_layer);
@@ -1395,7 +1421,7 @@ void handle_init() {
 #ifdef ENABLE_DATE_CARD
   {
     const struct IndicatorTable *card = &date_table[config.face_index];
-    date_layer = layer_create(GRect(card->x - 15, card->y - 8, 31, 19));
+    date_layer = layer_create(GRect(card->x - 19, card->y - 8, 39, 19));
     layer_set_update_proc(date_layer, &date_layer_update_callback);
     layer_add_child(window_layer, date_layer);
   }
