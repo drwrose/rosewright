@@ -127,7 +127,7 @@ Pebble.addEventListener("ready", function(e) {
 Pebble.addEventListener("showConfiguration", function(e) {
     console.log("showConfiguration starting");
     initialize();
-    var url = "http://www.ddrose.com/pebble/rosewright_2_5_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&keep_battery_gauge=" + keep_battery_gauge + "&keep_bluetooth_indicator=" + keep_bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&draw_mode=" + draw_mode + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces;
+    var url = "http://www.ddrose.com/pebble/rosewright_2_5_2_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&keep_battery_gauge=" + keep_battery_gauge + "&keep_bluetooth_indicator=" + keep_bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&draw_mode=" + draw_mode + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces;
     if (show_chrono_dial) {
 	url += "&chrono_dial=" + chrono_dial
     }

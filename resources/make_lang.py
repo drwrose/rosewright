@@ -46,6 +46,7 @@ langs += [
     [ 'ru_RU', 'Russian', 'extended' ],
     [ 'pl_PL', 'Polish', 'latin' ],
     [ 'cs_CZ', 'Czech', 'latin' ],
+    [ 'hy_AM', 'Armenian', 'extended' ],
     ]
 
 # CJK is its own set of categories.
@@ -142,8 +143,7 @@ def makeLang():
       "characterRegex": "[%(regex)s]",
       "name": "DAY_FONT_%(upperKey)s_%(size)s",
       "file": "%(filename)s"
-    },
-"""    
+    },"""    
 
     for fontKey in fontChoices:
         filename, size = fontNames[fontKey]

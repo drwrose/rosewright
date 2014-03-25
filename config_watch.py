@@ -793,10 +793,13 @@ def configWatch():
     if makeChronograph and enableChronoSecondHand:
         watchface = 'false'
 
+    langFonts = open('%s/lang_fonts.json' % (resourcesDir), 'r').read()
+
     print >> resource, resourceIn % {
         'uuId' : formatUuId(uuId),
         'watchName' : watchName,
         'watchface' : watchface,
+        'langFonts' : langFonts,
         'generatedMedia' : resourceStr[:-1],
         }
 
