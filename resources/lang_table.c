@@ -113,4 +113,5 @@ LangDef lang_table[27] = {
 
 int num_langs = 27;
 // maximum characters: 12
+#define DAY_NAMES_MAX_BUFFER 122
 

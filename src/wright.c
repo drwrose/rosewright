@@ -58,7 +58,10 @@ struct FontPlacement day_font_placement[NUM_DAY_FONTS] = {
 // This structure is filled in from the appropriate resource file to
 // reflect the names we are displaying in the day/month card based on
 // configuration settings.
-DayNames day_names;
+//#define DAY_NAMES_MAX_BUFFER xx // defined in lang_table.c.
+#define NUM_DAY_NAMES 12  // Enough for 12 months
+char day_names_buffer[DAY_NAMES_MAX_BUFFER + 1];
+char *day_names[NUM_DAY_NAMES];
 
 // Number of laps preserved for the laps digital display
 #define CHRONO_MAX_LAPS 4
@@ -751,12 +754,14 @@ void day_layer_update_callback(Layer *me, GContext *ctx) {
     const LangDef *lang = &lang_table[config.display_lang % num_langs];
     const char *show_name;
     if (config.show_day == SDM_day) {
-      show_name = day_names.day_names[current_placement.day_index];
+      show_name = day_names[current_placement.day_index];
     } else { // SDM_month
-      show_name = day_names.day_names[current_placement.month_index];
+      show_name = day_names[current_placement.month_index];
     }
-    const struct IndicatorTable *card = &day_table[config.face_index];
-    draw_card(me, ctx, show_name, &day_font_placement[lang->font_index], &day_font, card->invert, card->opaque);
+    if (show_name != NULL) {
+      const struct IndicatorTable *card = &day_table[config.face_index];
+      draw_card(me, ctx, show_name, &day_font_placement[lang->font_index], &day_font, card->invert, card->opaque);
+    }
   }
 }
 #endif  // ENABLE_DAY_CARD
@@ -1267,7 +1272,25 @@ void apply_config() {
       resource_id = lang_table[config.display_lang].month_name_id;
     }
     ResHandle rh = resource_get_handle(resource_id);
-    resource_load_byte_range(rh, 0, (void *)&day_names, sizeof(day_names));
+    size_t bytes_read = resource_load(rh, (void *)day_names_buffer, DAY_NAMES_MAX_BUFFER);
+    day_names_buffer[bytes_read] = '\0';
+    int i = 0;
+    char *p = day_names_buffer;
+    day_names[i] = p;
+    ++i;
+    while (i < NUM_DAY_NAMES && p < day_names_buffer + bytes_read) {
+      if (*p == '\0') {
+        ++p;
+        day_names[i] = p;
+        ++i;
+      } else {
+        ++p;
+      }
+    }
+    while (i < NUM_DAY_NAMES) {
+      day_names[i] = NULL;
+      ++i;
+    }
   }
 
   // Also adjust the draw mode on the clock_face_layer.  (The other

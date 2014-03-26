@@ -20,9 +20,7 @@ make_lang.py [opts]
 
 fontChoices = [ 'latin', 'extended', 'rtl', 'zh', 'ja', 'ko', 'th', 'ta', 'hi' ]
 
-# Duplicated from lang_table.h.
-#MAX_DAY_NAME = 7
-MAX_DAY_NAME = 13
+# Enough for 12 months.
 NUM_DAY_NAMES = 12
 
 # Font filenames and pixel sizes.
@@ -87,17 +85,15 @@ resourcesDir = rootDir
 
 neededChars = {}
 maxNumChars = 0
+maxTotalLen = 0
 
 def writeResourceFile(generatedJson, nameType, localeName, nameList):
+    global maxTotalLen
     filename = '%s_%s.raw' % (localeName, nameType)
     resourceId = '%s_%s_NAMES' % (localeName.upper(), nameType.upper())
 
-    data = ''
-    for i in range(len(nameList)):
-        name = (nameList[i][:MAX_DAY_NAME - 1] + '\0' * MAX_DAY_NAME)[:MAX_DAY_NAME]
-        data += name
-    for i in range(len(nameList), NUM_DAY_NAMES):
-        data += '\0' * MAX_DAY_NAME
+    data = '\0'.join(nameList)
+    maxTotalLen = max(maxTotalLen, len(data))
 
     open('%s/%s' % (resourcesDir, filename), 'w').write(data)
     
@@ -169,7 +165,6 @@ def makeDates(generatedTable, generatedJson, li):
         # And finally, re-encode to UTF-8 for the Pebble.
         name = name.encode('utf-8')
         maxNumChars = max(maxNumChars, len(name))
-        assert maxNumChars < MAX_DAY_NAME
 
         showNames.append(name)
 
@@ -231,7 +226,8 @@ def makeLang():
     print >> generatedTable, "};\n"
 
     print >> generatedTable, "int num_langs = %s;" % (numLangs)
-    print >> generatedTable, "// maximum characters: %s\n" % (maxNumChars)
+    print >> generatedTable, "// maximum characters: %s" % (maxNumChars)
+    print >> generatedTable, "#define DAY_NAMES_MAX_BUFFER %s\n" % (maxTotalLen)
 
     fontEntry = """    {
       "type": "font",
