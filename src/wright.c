@@ -224,6 +224,10 @@ void load_chrono_dial() {
     chrono_dial_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_HOURS_WHITE);
     chrono_dial_black = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_HOURS_BLACK);
   }
+  if (chrono_dial_white.bitmap == NULL || chrono_dial_black.bitmap == NULL) {
+    bwd_destroy(&chrono_dial_white);
+    bwd_destroy(&chrono_dial_black);
+  }
 }
 #endif  // MAKE_CHRONOGRAPH
   
@@ -467,12 +471,8 @@ void hand_cache_init(struct HandCache *hand_cache) {
 }
 
 void hand_cache_destroy(struct HandCache *hand_cache) {
-  if (hand_cache->image.bitmap != NULL) {
-    bwd_destroy(&hand_cache->image);
-  }
-  if (hand_cache->mask.bitmap != NULL) {
-    bwd_destroy(&hand_cache->mask);
-  }
+  bwd_destroy(&hand_cache->image);
+  bwd_destroy(&hand_cache->mask);
   int gi;
   for (gi = 0; gi < HAND_CACHE_MAX_GROUPS; ++gi) {
     if (hand_cache->path[gi] != NULL) {
@@ -505,6 +505,10 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandLookupRow *
 	hand_cache->image = rle_bwd_create(lookup->image_id);
       } else {
 	hand_cache->image = png_bwd_create(lookup->image_id);
+      }
+      if (hand_cache->image.bitmap == NULL) {
+        hand_cache_destroy(hand_cache);
+        return;
       }
       hand_cache->cx = lookup->cx;
       hand_cache->cy = lookup->cy;
@@ -554,6 +558,10 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandLookupRow *
       } else {
 	hand_cache->image = png_bwd_create(lookup->image_id);
 	hand_cache->mask = png_bwd_create(lookup->mask_id);
+      }
+      if (hand_cache->image.bitmap == NULL || hand_cache->mask.bitmap == NULL) {
+        hand_cache_destroy(hand_cache);
+        return;
       }
       hand_cache->cx = lookup->cx;
       hand_cache->cy = lookup->cy;
@@ -697,6 +705,9 @@ void draw_card(Layer *me, GContext *ctx, const char *text, struct FontPlacement 
   if (opaque_layer) {
     if (date_card_mask.bitmap == NULL) {
       date_card_mask = rle_bwd_create(RESOURCE_ID_DATE_CARD_MASK);
+      if (date_card_mask.bitmap == NULL) {
+        return;
+      }
     }
     graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_mask);
     graphics_draw_bitmap_in_rect(ctx, date_card_mask.bitmap, box);
@@ -704,6 +715,10 @@ void draw_card(Layer *me, GContext *ctx, const char *text, struct FontPlacement 
   
   if (date_card.bitmap == NULL) {
     date_card = rle_bwd_create(RESOURCE_ID_DATE_CARD);
+    if (date_card.bitmap == NULL) {
+      bwd_destroy(&date_card_mask);
+      return;
+    }
   }
 
   graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_fg);
@@ -733,6 +748,9 @@ void chrono_dial_layer_update_callback(Layer *me, GContext *ctx) {
   if (config.chrono_dial != CDM_off) {
     if (chrono_dial_white.bitmap == NULL) {
       load_chrono_dial();
+      if (chrono_dial_white.bitmap == NULL) {
+        return;
+      }
     }
     GRect destination = layer_get_bounds(me);
     destination.origin.x = 0;
