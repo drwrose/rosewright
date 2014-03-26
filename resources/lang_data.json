@@ -170,16 +170,6 @@
     },
     {
       "type": "raw",
-      "name": "TH_TH_WEEKDAY_NAMES",
-      "file": "th_TH_weekday.raw"
-    },
-    {
-      "type": "raw",
-      "name": "TH_TH_MONTH_NAMES",
-      "file": "th_TH_month.raw"
-    },
-    {
-      "type": "raw",
       "name": "TR_TR_WEEKDAY_NAMES",
       "file": "tr_TR_weekday.raw"
     },
@@ -250,6 +240,16 @@
     },
     {
       "type": "raw",
+      "name": "TH_TH_WEEKDAY_NAMES",
+      "file": "th_TH_weekday.raw"
+    },
+    {
+      "type": "raw",
+      "name": "TH_TH_MONTH_NAMES",
+      "file": "th_TH_month.raw"
+    },
+    {
+      "type": "raw",
       "name": "TA_IN_WEEKDAY_NAMES",
       "file": "ta_IN_weekday.raw"
     },
@@ -276,7 +276,7 @@
     },
     {
       "type": "font",
-      "characterRegex": "[\u0391\u0394\u0399\u039a\u039c\u039d\u039f\u03a0\u03a3\u03a4\u03a6\u03ac\u03ad\u03af\u03b1-\u03b3\u03b5\u03b9-\u03bd\u03bf-\u03c1\u03c4\u03c5\u03cd\u0410\u0412\u0414\u0418\u041c-\u041f\u0421\u0424\u0427\u042f-\u0433\u0435\u0439-\u043b\u043d-\u0442\u044c\u044e\u044f\u0531\u0534\u0535\u053f\u0540\u0544\u0546-\u0549\u054d\u0553\u0555\u0562\u0563\u0569\u056b\u056c\u056f\u0574-\u0576\u057a\u057d-\u0580\u0582\u0584\u0902\u0905\u0917\u091c\u0926\u0928\u092b\u092c\u092e\u0930\u0936\u0938\u093c\u093e\u093f\u0941\u0942\u094b\u0b85\u0b86\u0b8f\u0b95\u0b9a\u0b9c\u0b9e\u0b9f\u0ba4\u0ba8-\u0baa\u0bae\u0bb0\u0bb2\u0bb5\u0bbe\u0bbf\u0bc1\u0bc2\u0bc6-\u0bc8\u0bcd\u0e01\u0e04\u0e08\u0e15\u0e18\u0e1e\u0e21\u0e22\u0e24\u0e28\u0e2a\u0e2d\u0e32\u0e34\u0e35\u0e40]",
+      "characterRegex": "[\u0391\u0394\u0399\u039a\u039c\u039d\u039f\u03a0\u03a3\u03a4\u03a6\u03ac\u03ad\u03af\u03b1-\u03b3\u03b5\u03b9-\u03bd\u03bf-\u03c1\u03c4\u03c5\u03cd\u0410\u0412\u0414\u0418\u041c-\u041f\u0421\u0424\u0427\u042f-\u0433\u0435\u0439-\u043b\u043d-\u0442\u044c\u044e\u044f\u0531\u0534\u0535\u053f\u0540\u0544\u0546-\u0549\u054d\u0553\u0555\u0562\u0563\u0569\u056b\u056c\u056f\u0574-\u0576\u057a\u057d-\u0580\u0582\u0584]",
       "name": "DAY_FONT_EXTENDED_14",
       "file": "DejaVuSansCondensed-Bold.ttf"
     },
@@ -303,4 +303,22 @@
       "characterRegex": "[\u0030-\u0039\uae08\ubaa9\uc218\uc6d4\uc77c\ud1a0\ud654]",
       "name": "DAY_FONT_KO_16",
       "file": "UnDotum.ttf"
+    },
+    {
+      "type": "font",
+      "characterRegex": "[\u0e01\u0e04\u0e08\u0e15\u0e18\u0e1e\u0e21\u0e22\u0e24\u0e28\u0e2a\u0e2d\u0e32\u0e34\u0e35\u0e40]",
+      "name": "DAY_FONT_TH_16",
+      "file": "Waree.ttf"
+    },
+    {
+      "type": "font",
+      "characterRegex": "[\u0b85\u0b86\u0b8f\u0b95\u0b9a\u0b9c\u0b9e\u0b9f\u0ba4\u0ba8-\u0baa\u0bae\u0bb0\u0bb2\u0bb5\u0bbe\u0bbf\u0bc1\u0bc2\u0bc6-\u0bc8\u0bcd]",
+      "name": "DAY_FONT_TA_16",
+      "file": "TAMu_Kalyani.ttf"
+    },
+    {
+      "type": "font",
+      "characterRegex": "[\u0902\u0905\u0917\u091c\u0926\u0928\u092b\u092c\u092e\u0930\u0936\u0938\u093c\u093e\u093f\u0941\u0942\u094b]",
+      "name": "DAY_FONT_HI_16",
+      "file": "lohit_hi.ttf"
     },

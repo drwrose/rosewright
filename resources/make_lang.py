@@ -18,7 +18,7 @@ the resources directory, based on the system language data.
 make_lang.py [opts]
 """
 
-fontChoices = [ 'latin', 'extended', 'rtl', 'zh', 'ja', 'ko' ]
+fontChoices = [ 'latin', 'extended', 'rtl', 'zh', 'ja', 'ko', 'th', 'ta', 'hi' ]
 
 # Duplicated from lang_table.h.
 #MAX_DAY_NAME = 7
@@ -33,6 +33,9 @@ fontNames = {
     'zh' : ('wqy-microhei.ttc', 16),
     'ja' : ('TakaoPGothic.ttf', 16),
     'ko' : ('UnDotum.ttf', 16),
+    'th' : ('Waree.ttf', 16),
+    'ta' : ('TAMu_Kalyani.ttf', 16),
+    'hi' : ('lohit_hi.ttf', 16),
     }
 
 # This list is duplicated in html/rosewright_X_configure.js.
@@ -58,7 +61,6 @@ langs += [
     [ 'pl_PL', 'Polish', 'latin' ],
     [ 'cs_CZ', 'Czech', 'latin' ],
     [ 'hy_AM', 'Armenian', 'extended' ],
-    [ 'th_TH', 'Thai', 'extended' ],
     [ 'tr_TR', 'Turkish', 'latin' ],
     ]
 
@@ -74,8 +76,9 @@ langs += [
     [ 'zh_CN', 'Chinese', 'zh' ],
     [ 'ja_JP', 'Japanese', 'ja' ],
     [ 'ko_KR', 'Korean', 'ko' ],
-    [ 'ta_IN', 'Tamil', 'extended' ],
-    [ 'hi_IN', 'Hindi', 'extended' ],
+    [ 'th_TH', 'Thai', 'th' ],
+    [ 'ta_IN', 'Tamil', 'ta' ],
+    [ 'hi_IN', 'Hindi', 'hi' ],
     ]
 
 # Attempt to determine the directory in which we're operating.

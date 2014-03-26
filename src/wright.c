@@ -42,7 +42,7 @@ struct FontPlacement date_font_placement = {
 GFont date_font = NULL;
 GFont day_font = NULL;
 
-#define NUM_DAY_FONTS 6
+#define NUM_DAY_FONTS 9
 struct FontPlacement day_font_placement[NUM_DAY_FONTS] = {
   { RESOURCE_ID_DAY_FONT_LATIN_16, -1 },
   { RESOURCE_ID_DAY_FONT_EXTENDED_14, 1 },
@@ -50,6 +50,9 @@ struct FontPlacement day_font_placement[NUM_DAY_FONTS] = {
   { RESOURCE_ID_DAY_FONT_ZH_16, -1 },  // Chinese
   { RESOURCE_ID_DAY_FONT_JA_16, -1 },  // Japanese
   { RESOURCE_ID_DAY_FONT_KO_16, -2 },  // Korean
+  { RESOURCE_ID_DAY_FONT_TH_16, -1 },  // Thai
+  { RESOURCE_ID_DAY_FONT_TA_16, -2 },  // Tamil
+  { RESOURCE_ID_DAY_FONT_HI_16, 0 },  // Hindi
 };
 
 // This structure is filled in from the appropriate resource file to

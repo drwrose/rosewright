@@ -69,43 +69,43 @@ LangDef lang_table[27] = {
  //   Weekdays: [u'\u053f\u056b\u0580', u'\u0535\u0580\u056f', u'\u0535\u0580\u0584', u'\u0549\u0580\u0584', u'\u0540\u0576\u0563', u'\u0548\u0582\u0580', u'\u0547\u0562\u0569']
  //   Months: [u'\u0540\u0576\u057e', u'\u0553\u057f\u057e', u'\u0544\u0580\u057f', u'\u0531\u057a\u0580', u'\u0544\u0575\u057d', u'\u0540\u0576\u057d', u'\u0540\u056c\u057d', u'\u0555\u0563\u057d', u'\u054d\u057a\u057f', u'\u0540\u056f\u057f', u'\u0546\u0575\u0574', u'\u0534\u056f\u057f']
 
-  { "th_TH", 1, RESOURCE_ID_TH_TH_WEEKDAY_NAMES, RESOURCE_ID_TH_TH_MONTH_NAMES }, // 17 = Thai
- //   Weekdays: [u'\u0e2d\u0e32', u'\u0e08', u'\u0e2d', u'\u0e1e', u'\u0e1e\u0e24', u'\u0e28', u'\u0e2a']
- //   Months: [u'\u0e21\u0e04', u'\u0e01\u0e1e', u'\u0e21\u0e35\u0e04', u'\u0e40\u0e21\u0e22', u'\u0e1e\u0e04', u'\u0e21\u0e34\u0e22', u'\u0e01\u0e04', u'\u0e2a\u0e04', u'\u0e01\u0e22', u'\u0e15\u0e04', u'\u0e1e\u0e22', u'\u0e18\u0e04']
-
-  { "tr_TR", 0, RESOURCE_ID_TR_TR_WEEKDAY_NAMES, RESOURCE_ID_TR_TR_MONTH_NAMES }, // 18 = Turkish
+  { "tr_TR", 0, RESOURCE_ID_TR_TR_WEEKDAY_NAMES, RESOURCE_ID_TR_TR_MONTH_NAMES }, // 17 = Turkish
  //   Weekdays: ['Paz', 'Pzt', 'Sal', u'\xc7ar', 'Per', 'Cum', 'Cmt']
  //   Months: ['Oca', u'\u015eub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', u'A\u011fu', 'Eyl', 'Eki', 'Kas', 'Ara']
 
-  { "he_IL", 2, RESOURCE_ID_HE_IL_WEEKDAY_NAMES, RESOURCE_ID_HE_IL_MONTH_NAMES }, // 19 = Hebrew
+  { "he_IL", 2, RESOURCE_ID_HE_IL_WEEKDAY_NAMES, RESOURCE_ID_HE_IL_MONTH_NAMES }, // 18 = Hebrew
  //   Weekdays: [u'\u05f3\u05d0', u'\u05f3\u05d1', u'\u05f3\u05d2', u'\u05f3\u05d3', u'\u05f3\u05d4', u'\u05f3\u05d5', u'\u05f3\u05e9']
  //   Months: [u'\u05f3\u05d5\u05e0\u05d9', u'\u05f3\u05e8\u05d1\u05e4', u'\u05e5\u05e8\u05de', u'\u05f3\u05e8\u05e4\u05d0', u'\u05d9\u05d0\u05de', u'\u05f3\u05e0\u05d5\u05d9', u'\u05f3\u05dc\u05d5\u05d9', u'\u05f3\u05d2\u05d5\u05d0', u'\u05f3\u05d8\u05e4\u05e1', u'\u05f3\u05e7\u05d5\u05d0', u'\u05f3\u05d1\u05d5\u05e0', u'\u05f3\u05de\u05e6\u05d3']
 
-  { "fa_IR", 2, RESOURCE_ID_FA_IR_WEEKDAY_NAMES, RESOURCE_ID_FA_IR_MONTH_NAMES }, // 20 = Farsi
+  { "fa_IR", 2, RESOURCE_ID_FA_IR_WEEKDAY_NAMES, RESOURCE_ID_FA_IR_MONTH_NAMES }, // 19 = Farsi
  //   Weekdays: [u'\u06cc', u'\u062f', u'\u0633', u'\u0686', u'\u067e', u'\u062c', u'\u0634']
  //   Months: [u'\u0698', u'\u0641', u'\u0645', u'\u0622', u'\u0645', u'\u0698', u'\u0698', u'\u0627', u'\u0633', u'\u0627', u'\u0646', u'\u062f']
 
-  { "ar_SA", 2, RESOURCE_ID_AR_SA_WEEKDAY_NAMES, RESOURCE_ID_AR_SA_MONTH_NAMES }, // 21 = Arabic
+  { "ar_SA", 2, RESOURCE_ID_AR_SA_WEEKDAY_NAMES, RESOURCE_ID_AR_SA_MONTH_NAMES }, // 20 = Arabic
  //   Weekdays: [u'\u062d', u'\u0646', u'\u062b', u'\u0631', u'\u062e', u'\u062c', u'\u0633']
  //   Months: [u'\u064a', u'\u0641', u'\u0645', u'\u0623', u'\u0648', u'\u0646', u'\u0644', u'\u063a', u'\u0633', u'\u0643', u'\u0628', u'\u062f']
 
-  { "zh_CN", 3, RESOURCE_ID_ZH_CN_WEEKDAY_NAMES, RESOURCE_ID_ZH_CN_MONTH_NAMES }, // 22 = Chinese
+  { "zh_CN", 3, RESOURCE_ID_ZH_CN_WEEKDAY_NAMES, RESOURCE_ID_ZH_CN_MONTH_NAMES }, // 21 = Chinese
  //   Weekdays: [u'\u5468\u65e5', u'\u5468\u4e00', u'\u5468\u4e8c', u'\u5468\u4e09', u'\u5468\u56db', u'\u5468\u4e94', u'\u5468\u516d']
  //   Months: [u'1\u6708', u'2\u6708', u'3\u6708', u'4\u6708', u'5\u6708', u'6\u6708', u'7\u6708', u'8\u6708', u'9\u6708', u'10\u6708', u'11\u6708', u'12\u6708']
 
-  { "ja_JP", 4, RESOURCE_ID_JA_JP_WEEKDAY_NAMES, RESOURCE_ID_JA_JP_MONTH_NAMES }, // 23 = Japanese
+  { "ja_JP", 4, RESOURCE_ID_JA_JP_WEEKDAY_NAMES, RESOURCE_ID_JA_JP_MONTH_NAMES }, // 22 = Japanese
  //   Weekdays: [u'\u65e5', u'\u6708', u'\u706b', u'\u6c34', u'\u6728', u'\u91d1', u'\u571f']
  //   Months: [u'1\u6708', u'2\u6708', u'3\u6708', u'4\u6708', u'5\u6708', u'6\u6708', u'7\u6708', u'8\u6708', u'9\u6708', u'10\u6708', u'11\u6708', u'12\u6708']
 
-  { "ko_KR", 5, RESOURCE_ID_KO_KR_WEEKDAY_NAMES, RESOURCE_ID_KO_KR_MONTH_NAMES }, // 24 = Korean
+  { "ko_KR", 5, RESOURCE_ID_KO_KR_WEEKDAY_NAMES, RESOURCE_ID_KO_KR_MONTH_NAMES }, // 23 = Korean
  //   Weekdays: [u'\uc77c', u'\uc6d4', u'\ud654', u'\uc218', u'\ubaa9', u'\uae08', u'\ud1a0']
  //   Months: [u'1\uc6d4', u'2\uc6d4', u'3\uc6d4', u'4\uc6d4', u'5\uc6d4', u'6\uc6d4', u'7\uc6d4', u'8\uc6d4', u'9\uc6d4', u'10\uc6d4', u'11\uc6d4', u'12\uc6d4']
 
-  { "ta_IN", 1, RESOURCE_ID_TA_IN_WEEKDAY_NAMES, RESOURCE_ID_TA_IN_MONTH_NAMES }, // 25 = Tamil
+  { "th_TH", 6, RESOURCE_ID_TH_TH_WEEKDAY_NAMES, RESOURCE_ID_TH_TH_MONTH_NAMES }, // 24 = Thai
+ //   Weekdays: [u'\u0e2d\u0e32', u'\u0e08', u'\u0e2d', u'\u0e1e', u'\u0e1e\u0e24', u'\u0e28', u'\u0e2a']
+ //   Months: [u'\u0e21\u0e04', u'\u0e01\u0e1e', u'\u0e21\u0e35\u0e04', u'\u0e40\u0e21\u0e22', u'\u0e1e\u0e04', u'\u0e21\u0e34\u0e22', u'\u0e01\u0e04', u'\u0e2a\u0e04', u'\u0e01\u0e22', u'\u0e15\u0e04', u'\u0e1e\u0e22', u'\u0e18\u0e04']
+
+  { "ta_IN", 7, RESOURCE_ID_TA_IN_WEEKDAY_NAMES, RESOURCE_ID_TA_IN_MONTH_NAMES }, // 25 = Tamil
  //   Weekdays: [u'\u0b9e\u0bbe', u'\u0ba4\u0bbf', u'\u0b9a\u0bc6', u'\u0baa\u0bc1', u'\u0bb5\u0bbf', u'\u0bb5\u0bc6', u'\u0b9a']
  //   Months: [u'\u0b9c\u0ba9', u'\u0baa\u0bbf\u0baa\u0bcd', u'\u0bae\u0bbe\u0bb0\u0bcd', u'\u0b8f\u0baa\u0bcd', u'\u0bae\u0bc7', u'\u0b9c\u0bc2\u0ba9\u0bcd', u'\u0b9c\u0bc2\u0bb2\u0bc8', u'\u0b86\u0b95', u'\u0b9a\u0bc6\u0baa\u0bcd', u'\u0b85\u0b95\u0bcd', u'\u0ba8\u0bb5', u'\u0b9f\u0bbf\u0b9a']
 
-  { "hi_IN", 1, RESOURCE_ID_HI_IN_WEEKDAY_NAMES, RESOURCE_ID_HI_IN_MONTH_NAMES }, // 26 = Hindi
+  { "hi_IN", 8, RESOURCE_ID_HI_IN_WEEKDAY_NAMES, RESOURCE_ID_HI_IN_MONTH_NAMES }, // 26 = Hindi
  //   Weekdays: [u'\u0930', u'\u0938\u094b', u'\u092e\u0902', u'\u092c\u0941', u'\u0917\u0941', u'\u0936\u0941', u'\u0936']
  //   Months: [u'\u091c', u'\u092b\u093c', u'\u092e\u093e', u'\u0905', u'\u092e', u'\u091c\u0942', u'\u091c\u0941', u'\u0905', u'\u0938\u093f', u'\u0905', u'\u0928', u'\u0926\u093f']
 
