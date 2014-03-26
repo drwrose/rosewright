@@ -715,10 +715,8 @@ void draw_card(Layer *me, GContext *ctx, const char *text, struct FontPlacement 
   box.size.w += 8;
   box.size.h += 4;
 
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "drawing card %02x, font = %p, shift = %d", (unsigned int)text[0], (void *)(*font), font_placement->vshift);
   if ((*font) == NULL) {
     (*font) = fonts_load_custom_font(resource_get_handle(font_placement->resource_id));
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "loaded font %d, font = %p", font_placement->resource_id, (void *)(*font));
   }
 
   graphics_draw_text(ctx, text, (*font), box,

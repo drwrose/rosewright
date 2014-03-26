@@ -225,6 +225,10 @@ rle_bwd_create(int resource_id) {
   size_t data_size = height * stride;
   size_t total_size = sizeof(BitmapDataHeader) + data_size;
   uint8_t *bitmap = (uint8_t *)malloc(total_size);
+  if (bitmap == NULL) {
+    return bwd_create(NULL, NULL);
+  }
+
   assert(bitmap != NULL);
   memset(bitmap, 0, total_size);
   BitmapDataHeader *bitmap_header = (BitmapDataHeader *)bitmap;
