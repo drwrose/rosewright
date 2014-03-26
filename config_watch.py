@@ -347,7 +347,7 @@ def parseColorMode(colorMode):
 
     return paintBlack, useTransparency, invertColors, dither
         
-def makeFaces(generatedTable):
+def makeFaces(generatedTable, generatedDefs):
 
     resourceStr = ''
     
@@ -441,7 +441,7 @@ def makeFaces(generatedTable):
 
     return resourceStr
 
-def makeVectorHands(generatedTable, hand, groupList):
+def makeVectorHands(generatedTable, generatedDefs, hand, groupList):
     resourceStr = ''
 
     colorMap = {
@@ -450,7 +450,8 @@ def makeVectorHands(generatedTable, hand, groupList):
         '' : '0',
         }
 
-    print >> generatedTable, "#define VECTOR_%s_HAND 1" % (hand.upper())
+    print >> generatedDefs, "#define VECTOR_%s_HAND 1" % (hand.upper())
+    print >> generatedDefs, "extern struct VectorHandTable %s_hand_vector_table;" % (hand)
     print >> generatedTable, "struct VectorHandTable %s_hand_vector_table = {" % (hand)
 
     print >> generatedTable, "  %s, (struct VectorHandGroup[]){" % (len(groupList))
@@ -484,7 +485,7 @@ def getNumSteps(hand):
     return numStepsHand
                 
 
-def makeBitmapHands(generatedTable, useRle, hand, sourceFilename, colorMode, asymmetric, pivot, scale):
+def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename, colorMode, asymmetric, pivot, scale):
     resourceStr = ''
 
     resourceEntry = """
@@ -497,7 +498,7 @@ def makeBitmapHands(generatedTable, useRle, hand, sourceFilename, colorMode, asy
     handLookupEntry = """  { RESOURCE_ID_%(symbolName)s, RESOURCE_ID_%(symbolMaskName)s, %(cx)s, %(cy)s },"""
     handTableEntry = """  { %(lookup_index)s, %(flip_x)s, %(flip_y)s },"""
     
-    print >> generatedTable, "#define BITMAP_%s_HAND 1" % (hand.upper())
+    print >> generatedDefs, "#define BITMAP_%s_HAND 1" % (hand.upper())
     handLookupLines = []
     handTableLines = []
 
@@ -505,7 +506,7 @@ def makeBitmapHands(generatedTable, useRle, hand, sourceFilename, colorMode, asy
 
     paintBlack, useTransparency, invertColors, dither = parseColorMode(colorMode)
 
-    print >> generatedTable, "#define BITMAP_%s_HAND_PAINT_BLACK %s" % (hand.upper(), int(bool(paintBlack)))
+    print >> generatedDefs, "#define BITMAP_%s_HAND_PAINT_BLACK %s" % (hand.upper(), int(bool(paintBlack)))
 
     if useTransparency or source.mode.endswith('A'):
         source, sourceMask = source.convert('LA').split()
@@ -701,11 +702,13 @@ def makeBitmapHands(generatedTable, useRle, hand, sourceFilename, colorMode, asy
             }
         handTableLines.append(line)
 
+    print >> generatedDefs, "extern struct BitmapHandLookupRow %s_hand_bitmap_lookup[];" % (hand)
     print >> generatedTable, "struct BitmapHandLookupRow %s_hand_bitmap_lookup[] = {" % (hand)
     for line in handLookupLines:
         print >> generatedTable, line
     print >> generatedTable, "};\n"
 
+    print >> generatedDefs, "extern struct BitmapHandTableRow %s_hand_bitmap_table[NUM_STEPS_%s];" % (hand, hand.upper())
     print >> generatedTable, "struct BitmapHandTableRow %s_hand_bitmap_table[NUM_STEPS_%s] = {" % (hand, hand.upper())
     for line in handTableLines:
         print >> generatedTable, line
@@ -713,7 +716,7 @@ def makeBitmapHands(generatedTable, useRle, hand, sourceFilename, colorMode, asy
 
     return resourceStr
 
-def makeHands(generatedTable):
+def makeHands(generatedTable, generatedDefs):
     """ Generates the required resources and tables for the indicated
     hand style.  Returns resourceStr. """
     
@@ -737,9 +740,9 @@ def makeHands(generatedTable):
             enableChronoTenthHand = True
             
         if bitmapParams:
-            resourceStr += makeBitmapHands(generatedTable, useRle, hand, *bitmapParams)
+            resourceStr += makeBitmapHands(generatedTable, generatedDefs, useRle, hand, *bitmapParams)
         if vectorParams:
-            resourceStr += makeVectorHands(generatedTable, hand, vectorParams)
+            resourceStr += makeVectorHands(generatedTable, generatedDefs, hand, vectorParams)
 
     return resourceStr
 
@@ -776,10 +779,11 @@ def makeIndicatorTable(generatedTable, name, indicator):
         
 def configWatch():
     generatedTable = open('%s/generated_table.c' % (resourcesDir), 'w')
+    generatedDefs = open('%s/generated_defs.h' % (resourcesDir), 'w')
 
     resourceStr = ''
-    resourceStr += makeFaces(generatedTable)
-    resourceStr += makeHands(generatedTable)
+    resourceStr += makeFaces(generatedTable, generatedDefs)
+    resourceStr += makeHands(generatedTable, generatedDefs)
 
     makeIndicatorTable(generatedTable, 'date_table', dateCard)
     makeIndicatorTable(generatedTable, 'day_table', dayCard)

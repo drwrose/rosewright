@@ -78,8 +78,6 @@ void handle_battery(BatteryChargeState charge_state) {
 void init_battery_gauge(Layer *window_layer, int x, int y, bool invert, bool opaque_layer) {
   battery_gauge_invert = invert;
   battery_gauge_opaque_layer = opaque_layer;
-  battery_gauge_empty = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_EMPTY);
-  battery_gauge_charging = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_CHARGING);
   battery_gauge_layer = layer_create(GRect(x, y, 18, 10));
   layer_set_update_proc(battery_gauge_layer, &battery_gauge_layer_update_callback);
   layer_add_child(window_layer, battery_gauge_layer);
@@ -95,6 +93,7 @@ void move_battery_gauge(int x, int y, bool invert, bool opaque_layer) {
 void deinit_battery_gauge() {
   battery_state_service_unsubscribe();
   layer_destroy(battery_gauge_layer);
+  battery_gauge_layer = NULL;
   bwd_destroy(&battery_gauge_empty);
   bwd_destroy(&battery_gauge_charging);
   bwd_destroy(&battery_gauge_mask);

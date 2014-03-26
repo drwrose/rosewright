@@ -35,7 +35,7 @@ void sanitize_config() {
 
 #ifdef ENABLE_LOG
 const char *show_config() {
-#define CONFIG_BUFFER_SIZE 128
+#define CONFIG_BUFFER_SIZE 100
   static char buffer[CONFIG_BUFFER_SIZE];
   snprintf(buffer, CONFIG_BUFFER_SIZE, "bat: %d, bt: %d, sh: %d, hb: %d, dm: %d, cd: %d, sw: %d, day: %d, date: %d, dl: %d, fi: %d", config.keep_battery_gauge, config.keep_bluetooth_indicator, config.second_hand, config.hour_buzzer, config.draw_mode, config.chrono_dial, config.sweep_seconds, config.show_day, config.show_date, config.display_lang, config.face_index);
   return buffer;
@@ -68,7 +68,7 @@ void load_config() {
 
 
 void dropped_config_handler(AppMessageResult reason, void *context) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "dropped message: %d", reason);
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "dropped message: 0x%04x", reason);
 }
 
 void receive_config_handler(DictionaryIterator *received, void *context) {
@@ -137,7 +137,7 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
   }
   sanitize_config();
 
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "New config: %s", show_config());
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, show_config());
   if (memcmp(&orig_config, &config, sizeof(config)) == 0) {
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Config is unchanged.");
   } else {

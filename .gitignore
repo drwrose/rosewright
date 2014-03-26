@@ -9,6 +9,7 @@ resources/clock_faces/*.rle
 resources/clock_faces/*_white.png
 resources/clock_faces/*_black.png
 resources/generated_config.h
+resources/generated_defs.h
 resources/generated_table.c
 src/js/pebble-js-app.js
 appinfo.json

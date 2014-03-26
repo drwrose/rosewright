@@ -99,6 +99,7 @@ void move_bluetooth_indicator(int x, int y, bool invert, bool opaque_layer) {
 void deinit_bluetooth_indicator() {
   bluetooth_connection_service_unsubscribe();
   layer_destroy(bluetooth_layer);
+  bluetooth_layer = NULL;
   bwd_destroy(&bluetooth_disconnected);
   bwd_destroy(&bluetooth_connected);
   bwd_destroy(&bluetooth_mask);
