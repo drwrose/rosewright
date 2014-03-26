@@ -527,7 +527,7 @@ void day_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "day_layer");
 
   if (config.show_day != SDM_off) {
-    const LangDef *lang = &lang_table[config.display_lang % num_langs];
+    const LangDef *lang = &lang_table[config.display_lang];
     const char *show_name;
     if (config.show_day == SDM_day) {
       show_name = day_names[current_placement.day_index];
@@ -725,19 +725,17 @@ void apply_config() {
   }
 
   if (display_lang != config.display_lang) {
-    // Unload the day font just in case it changes with the language.
-    display_lang = config.display_lang;
-    if (day_font != NULL) {
+    // Unload the day font if it changes with the language.
+    if (day_font != NULL && (display_lang == -1 || lang_table[display_lang].font_index != lang_table[config.display_lang].font_index)) {
       app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "apply_config unload day_font %p", day_font);
       safe_unload_custom_font(&day_font);
-      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "apply_config done unload day_font");
     }
+    display_lang = config.display_lang;
   }
 
   // Reload the weekday or month names we will be displaying from the
   // appropriate language resource.
   if (config.show_day != SDM_off) {
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "apply_config reload names");
     int resource_id;
     if (config.show_day == SDM_day) {
       resource_id = lang_table[config.display_lang].weekday_name_id;
@@ -746,7 +744,6 @@ void apply_config() {
     }
     ResHandle rh = resource_get_handle(resource_id);
     size_t bytes_read = resource_load(rh, (void *)day_names_buffer, DAY_NAMES_MAX_BUFFER);
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "apply_config read %d bytes", (int)bytes_read);
     day_names_buffer[bytes_read] = '\0';
     int i = 0;
     char *p = day_names_buffer;
@@ -765,20 +762,18 @@ void apply_config() {
       day_names[i] = NULL;
       ++i;
     }
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "apply_config done reload names");
   }
 
   layer_mark_dirty(clock_face_layer);
 
   reset_tick_timer();
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "apply_config done");
 }
 
 // Creates all of the objects needed for the watch.  Normally called
 // only by handle_init(), but might be invoked midstream in a
 // memory-panic situation.
 void create_objects() {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "create_objects begin");
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "create_objects");
   window = window_create();
   assert(window != NULL);
 
@@ -892,12 +887,10 @@ void create_objects() {
       break;
     }
   }
-
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "create_objects done");
 }
 
 void destroy_objects() {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "destroy_objects begin");
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "destroy_objects");
   window_stack_pop_all(false);
   layer_destroy(clock_face_layer);
   clock_face_layer = NULL;
@@ -938,7 +931,6 @@ void destroy_objects() {
 
   window_destroy(window);
   window = NULL;
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "destroy_objects done");
 }
 
 void handle_deinit() {
@@ -951,7 +943,7 @@ void handle_deinit() {
 }
 
 void handle_init() {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "handle_init begin");
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "handle_init");
 
   // Record the fallback font pointer so we can identify if this one
   // is accidentally returned from fonts_load_custom_font().
@@ -987,8 +979,6 @@ void handle_init() {
   create_objects();
   compute_hands(startup_time, &current_placement);
   apply_config();
-
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "handle_init done");
 }
 
 void trigger_memory_panic(int line_number) {

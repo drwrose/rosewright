@@ -637,7 +637,7 @@ void save_chrono_data() {
 }
 
 void create_chrono_objects() {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "create_chrono_objects begin");
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "create_chrono_objects");
   hand_cache_init(&chrono_minute_cache);
   hand_cache_init(&chrono_second_cache);
   hand_cache_init(&chrono_tenth_cache);
@@ -659,12 +659,11 @@ void create_chrono_objects() {
   layer_add_child(window_layer, chrono_dial_layer);
 
   update_chrono_laps_time();
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "create_chrono_objects done");
 }
 
 
 void destroy_chrono_objects() {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "destroy_chrono_objects begin");
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "destroy_chrono_objects");
 
   layer_destroy(chrono_dial_layer);
   bwd_destroy(&chrono_dial_white);
@@ -687,8 +686,6 @@ void destroy_chrono_objects() {
   hand_cache_destroy(&chrono_minute_cache);
   hand_cache_destroy(&chrono_second_cache);
   hand_cache_destroy(&chrono_tenth_cache);
-
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "destroy_chrono_objects done");
 }
 
 
