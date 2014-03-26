@@ -683,7 +683,7 @@ void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
 void draw_card(Layer *me, GContext *ctx, const char *text, struct FontPlacement *font_placement, 
 	       GFont *font, bool invert, bool opaque_layer) {
   GRect box = {
-    { 4, 0 }, { 31, 19 }
+    { 2, 0 }, { 37, 19 }
   };
 
   unsigned int draw_mode = invert ^ config.draw_mode;
@@ -708,8 +708,8 @@ void draw_card(Layer *me, GContext *ctx, const char *text, struct FontPlacement 
   box.origin.y += font_placement->vshift;
 
   // Cheat for a bit more space for text
-  box.origin.x -= 8;
-  box.size.w += 16;
+  box.origin.x -= 4;
+  box.size.w += 8;
   box.size.h += 4;
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "drawing card %02x, font = %p, shift = %d", (unsigned int)text[0], (void *)(*font), font_placement->vshift);

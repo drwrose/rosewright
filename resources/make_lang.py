@@ -1,9 +1,13 @@
 #! /usr/bin/env python
 
+# This script requires PyICU; install it from
+# https://pypi.python.org/pypi/PyICU .  This may in turn require
+# ICU4C; install this from http://site.icu-project.org/download/ .
+
 import sys
 import os
 import getopt
-import locale
+import icu
 
 help = """
 make_lang.py
@@ -17,7 +21,8 @@ make_lang.py [opts]
 fontChoices = [ 'latin', 'extended', 'rtl', 'zh', 'ja', 'ko' ]
 
 # Duplicated from lang_table.h.
-MAX_DAY_NAME = 7
+#MAX_DAY_NAME = 7
+MAX_DAY_NAME = 13
 NUM_DAY_NAMES = 12
 
 # Font filenames and pixel sizes.
@@ -42,6 +47,7 @@ langs = [
     [ 'da_DK', 'Danish', 'latin' ],
     [ 'sv_SE', 'Swedish', 'latin' ],
     [ 'is_IS', 'Icelandic', 'latin' ],
+    [ 'tl', 'Tagalog', 'latin' ],
     ];
 
 # Non-standard font required for these:
@@ -52,25 +58,24 @@ langs += [
     [ 'pl_PL', 'Polish', 'latin' ],
     [ 'cs_CZ', 'Czech', 'latin' ],
     [ 'hy_AM', 'Armenian', 'extended' ],
-#    [ 'th_TH', 'Thai', 'extended' ],
-#    [ 'hi_IN.ISCII-DEV', 'Hindi', 'extended' ],
-#    [ 'ta_IN', 'Tamil', 'extended' ],
-#    [ 'tl', 'Tagalog', 'extended' ],
+    [ 'th_TH', 'Thai', 'extended' ],
+    [ 'tr_TR', 'Turkish', 'latin' ],
     ]
 
 # These are written right-to-left.
 langs += [
     [ 'he_IL', 'Hebrew', 'rtl' ],
-    #[ 'tr_TR', 'Turkish', 'rtl' ],
-    #[ 'fa_IR', 'Farsi', 'rtl' ],
-    #[ 'ar_SA', 'Arabic', 'rtl' ],
+    [ 'fa_IR', 'Farsi', 'rtl' ],
+    [ 'ar_SA', 'Arabic', 'rtl' ],
     ]
 
-# Each of CJK requires a unique source font.
+# Each of these requires its own unique source font.
 langs += [
     [ 'zh_CN', 'Chinese', 'zh' ],
     [ 'ja_JP', 'Japanese', 'ja' ],
     [ 'ko_KR', 'Korean', 'ko' ],
+    [ 'ta_IN', 'Tamil', 'extended' ],
+    [ 'hi_IN', 'Hindi', 'extended' ],
     ]
 
 # Attempt to determine the directory in which we're operating.
@@ -104,40 +109,43 @@ def writeResourceFile(generatedJson, nameType, localeName, nameList):
         }
 
     return 'RESOURCE_ID_%s' % (resourceId)
-    
+
+def getDfsNames(dfs, func):
+    """ Extracts out either the abbreviated or the narrow names from
+    the dfs, as appropriate. """
+
+    names = func(dfs.STANDALONE, dfs.ABBREVIATED)
+
+    # Remove a period for tightness.
+    for i in range(len(names)):
+        if '.' in names[i]:
+            names[i] = names[i].replace('.', '')
+
+    # If the abbreviated names go over four letters each, switch to
+    # the narrow names instead.
+    if max(map(len, names)) > 4:
+        names = func(dfs.FORMAT, dfs.NARROW)
+
+    return names
 
 def makeDates(generatedTable, generatedJson, li):
     global maxNumChars
     localeName, langName, fontKey = langs[li]
     fontIndex = fontChoices.index(fontKey)
 
-    if '.' not in localeName:
-        localeName += '.UTF-8'
-    localeName, coding = localeName.split('.')
-    print localeName
-    locale.setlocale(locale.LC_ALL, localeName + '.' + coding)
+    locale = icu.Locale(localeName)
+    print '%s/%s/%s' % (localeName, langName, locale.getDisplayName())
+    dfs = icu.DateFormatSymbols(locale)
 
+    weekdays = getDfsNames(dfs, dfs.getWeekdays)
+    months = getDfsNames(dfs, dfs.getMonths)
+    
     neededChars.setdefault(fontKey, set())
     showNames = []
-    for sym in [locale.ABDAY_1, locale.ABDAY_2, locale.ABDAY_3, locale.ABDAY_4, locale.ABDAY_5, locale.ABDAY_6, locale.ABDAY_7,
-                locale.ABMON_1, locale.ABMON_2, locale.ABMON_3, locale.ABMON_4, locale.ABMON_5, locale.ABMON_6, locale.ABMON_7, locale.ABMON_8, locale.ABMON_9, locale.ABMON_10, locale.ABMON_11, locale.ABMON_12]:
-
-        # Get the day or month text from the system locale table, and decode from UTF-8.
-        name = locale.nl_langinfo(sym)
-        name = name.decode(coding)
-
-        # Strip out excess whitespace on one side or the other.
-        name = name.strip()
-
+    showNamesUnicode = []
+    for name in weekdays[1:] + months:
         # Ensure the first letter is uppercase for consistency.
         name = name[0].upper() + name[1:]
-
-        if name[-1] == '.':
-            # Sometimes the abbreviation ends with a dot.
-            name = name[:-1]
-
-        # No more than 3 characters?
-        #name = name[:3]
 
         # Reverse text meant to be written right-to-left.
         if fontKey == 'rtl':
@@ -148,6 +156,12 @@ def makeDates(generatedTable, generatedJson, li):
         # Record the total set of Unicode characters required in the font.
         for char in name:
             neededChars[fontKey].add(ord(char))
+
+        try:
+            uname = name.encode('ascii')
+        except UnicodeEncodeError:
+            uname = name
+        showNamesUnicode.append(uname)
 
         # And finally, re-encode to UTF-8 for the Pebble.
         name = name.encode('utf-8')
@@ -160,8 +174,14 @@ def makeDates(generatedTable, generatedJson, li):
     monthNames = showNames[7:]
     weekdayNameId = writeResourceFile(generatedJson, 'weekday', localeName, weekdayNames)
     monthNameId = writeResourceFile(generatedJson, 'month', localeName, monthNames)
+
+    weekdayNamesUnicode = showNamesUnicode[:7]
+    monthNamesUnicode = showNamesUnicode[7:]
     
     print >> generatedTable, """  { "%s", %s, %s, %s }, // %s = %s""" % (localeName, fontIndex, weekdayNameId, monthNameId, li, langName)
+    print >> generatedTable, """ //   Weekdays: %s""" % (repr(weekdayNamesUnicode))
+    print >> generatedTable, """ //   Months: %s""" % (repr(monthNamesUnicode))
+    print >> generatedTable, ""
 
 def makeHex(ch):
     return '\\u%04x' % (ch)
