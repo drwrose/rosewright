@@ -44,12 +44,12 @@ struct HandPlacement {
 // hand, so we don't need to do as much work if we're redrawing a hand
 // in the same position as last time.
 #define HAND_CACHE_MAX_GROUPS 2
-struct HandCache {
-  int bitmap_hand_index;
+__attribute__((__packed__)) struct HandCache {
+  unsigned char bitmap_hand_index;
   BitmapWithData image;
   BitmapWithData mask;
-  int vector_hand_index;
-  int cx, cy;
+  unsigned char vector_hand_index;
+  short cx, cy;
   GPath *path[HAND_CACHE_MAX_GROUPS];
 };
 
@@ -60,7 +60,7 @@ typedef struct {
   GCompOp paint_fg;
   GCompOp paint_mask;
   GColor colors[3];
-} DrawModeTable;
+} __attribute__((__packed__)) DrawModeTable;
 
 extern DrawModeTable draw_mode_table[2];
 extern int sweep_timer_ms;

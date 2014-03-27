@@ -18,7 +18,8 @@ TextLayer *chrono_digital_current_layer = NULL;
 TextLayer *chrono_digital_laps_layer[CHRONO_MAX_LAPS];
 bool chrono_digital_window_showing = false;
 AppTimer *chrono_digital_timer = NULL;
-#define CHRONO_DIGITAL_BUFFER_SIZE 11
+
+#define CHRONO_DIGITAL_BUFFER_SIZE 11 // Enough space for "hh:mm:ss.d" plus a null byte
 char chrono_current_buffer[CHRONO_DIGITAL_BUFFER_SIZE];
 char chrono_laps_buffer[CHRONO_MAX_LAPS][CHRONO_DIGITAL_BUFFER_SIZE];
 

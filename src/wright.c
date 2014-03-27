@@ -74,8 +74,8 @@ DrawModeTable draw_mode_table[2] = {
   { GCompOpOr, GCompOpClear, GCompOpAssignInverted, GCompOpSet, GCompOpAnd, { GColorClear, GColorWhite, GColorBlack } },
 };
 
-int stacking_order[] = {
-STACKING_ORDER_LIST
+unsigned char stacking_order[] = {
+  STACKING_ORDER_LIST
 };
 
 // Returns the number of milliseconds since midnight.
@@ -176,7 +176,7 @@ uint8_t reverse_bits(uint8_t b) {
 
 // Horizontally flips the indicated GBitmap in-place.  Requires
 // that the width be a multiple of 8 pixels.
-void flip_bitmap_x(GBitmap *image, int *cx) {
+void flip_bitmap_x(GBitmap *image, short *cx) {
   int height = image->bounds.size.h;
   int width = image->bounds.size.w;  // multiple of 8, by our convention.
   int width_bytes = width / 8;
@@ -199,7 +199,7 @@ void flip_bitmap_x(GBitmap *image, int *cx) {
 }
 
 // Vertically flips the indicated GBitmap in-place.
-void flip_bitmap_y(GBitmap *image, int *cy) {
+void flip_bitmap_y(GBitmap *image, short *cy) {
   int height = image->bounds.size.h;
   int stride = image->row_size_bytes; // multiple of 4.
   uint8_t *data = image->addr;
@@ -547,9 +547,9 @@ void date_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "date_layer");
 
   if (config.show_date) {
-    static const int buffer_size = 16;
-    char buffer[buffer_size];
-    snprintf(buffer, buffer_size, "%d", current_placement.date_value);
+#define DATE_CARD_BUFFER_SIZE 16
+    char buffer[DATE_CARD_BUFFER_SIZE];
+    snprintf(buffer, DATE_CARD_BUFFER_SIZE, "%d", current_placement.date_value);
     const struct IndicatorTable *card = &date_table[config.face_index];
     draw_card(me, ctx, buffer, &date_font_placement, &date_font, card->invert, card->opaque);
   }
@@ -958,18 +958,26 @@ void handle_init() {
   app_message_register_inbox_received(receive_config_handler);
   app_message_register_inbox_dropped(dropped_config_handler);
 
+#define INBOX_MESSAGE_SIZE 200
+#define OUTBOX_MESSAGE_SIZE 50
+
+#ifdef ENABLE_LOG
   uint32_t inbox_max = app_message_inbox_size_maximum();
   uint32_t outbox_max = app_message_outbox_size_maximum();
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "available message space %u, %u", (unsigned int)inbox_max, (unsigned int)outbox_max);
-  if (inbox_max > 200) {
-    inbox_max = 200;
+  if (inbox_max > INBOX_MESSAGE_SIZE) {
+    inbox_max = INBOX_MESSAGE_SIZE;
   }
-  if (outbox_max > 50) {
-    outbox_max = 50;
+  if (outbox_max > OUTBOX_MESSAGE_SIZE) {
+    outbox_max = OUTBOX_MESSAGE_SIZE;
   }
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "app_message_open(%u, %u)", (unsigned int)inbox_max, (unsigned int)outbox_max);
   AppMessageResult open_result = app_message_open(inbox_max, outbox_max);
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "open_result = %d", open_result);
+
+#else  // ENABLE_LOG
+  app_message_open(INBOX_MESSAGE_SIZE, OUTBOX_MESSAGE_SIZE);
+#endif  // ENABLE_LOG
 
   time_t now = time(NULL);
   struct tm *startup_time = localtime(&now);
