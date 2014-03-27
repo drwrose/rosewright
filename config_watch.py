@@ -296,6 +296,8 @@ numSteps = {
     'chrono_tenth' : 24,
     }
 
+# If you use the -w option to enable sweep seconds, it means we need a
+# greater number of second-hand subdivisions.
 numStepsSweep = {
     'second' : 180,
     'chrono_second' : 180,

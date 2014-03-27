@@ -99,17 +99,10 @@ unsigned int get_time_ms(struct tm *time) {
   return result;
 }
 
-void safe_unload_custom_font(GFont *font) {
-  // Since the font pointer returned by fonts_load_custom_font() might
-  // actually be a pointer ot the fallback font, and since
-  // fonts_unload_custom_font() will *crash* if we try to pass in the
-  // fallback font, we have to detect that case and avoid it.
-  if ((*font) != fallback_font) {
-    fonts_unload_custom_font(*font);
-  }
-  (*font) = NULL;
-}
-
+// Loads a font from the resource and returns it.  It may return
+// either the intended font, or the fallback font.  If it returns
+// the fallback font, this function automatically triggers a memory
+// panic alert.
 GFont safe_load_custom_font(int resource_id) {
   ResHandle resource = resource_get_handle(resource_id);
   GFont font = fonts_load_custom_font(resource);
@@ -118,6 +111,38 @@ GFont safe_load_custom_font(int resource_id) {
     trigger_memory_panic(__LINE__);
   }
   return font;
+}
+
+// Unloads a font pointer returned by fonts_load_custom_font()
+// without crashing.
+void safe_unload_custom_font(GFont *font) {
+  // (Since the font pointer returned by fonts_load_custom_font()
+  // might actually be a pointer to the fallback font instead of to an
+  // actual custom font, and since fonts_unload_custom_font() will
+  // *crash* if we try to pass in the fallback font, we have to detect
+  // that case and avoid it.)
+  if ((*font) != fallback_font) {
+    fonts_unload_custom_font(*font);
+  }
+  (*font) = NULL;
+}
+
+// Initialize a HandCache structure.
+void hand_cache_init(struct HandCache *hand_cache) {
+  memset(hand_cache, 0, sizeof(struct HandCache));
+}
+
+// Release any memory held within a HandCache structure.
+void hand_cache_destroy(struct HandCache *hand_cache) {
+  bwd_destroy(&hand_cache->image);
+  bwd_destroy(&hand_cache->mask);
+  int gi;
+  for (gi = 0; gi < HAND_CACHE_MAX_GROUPS; ++gi) {
+    if (hand_cache->path[gi] != NULL) {
+      gpath_destroy(hand_cache->path[gi]);
+      hand_cache->path[gi] = NULL;
+    }
+  }
 }
   
 // Determines the specific hand bitmaps that should be displayed based
@@ -278,22 +303,6 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
   }
 }
 
-void hand_cache_init(struct HandCache *hand_cache) {
-  memset(hand_cache, 0, sizeof(struct HandCache));
-}
-
-void hand_cache_destroy(struct HandCache *hand_cache) {
-  bwd_destroy(&hand_cache->image);
-  bwd_destroy(&hand_cache->mask);
-  int gi;
-  for (gi = 0; gi < HAND_CACHE_MAX_GROUPS; ++gi) {
-    if (hand_cache->path[gi] != NULL) {
-      gpath_destroy(hand_cache->path[gi]);
-      hand_cache->path[gi] = NULL;
-    }
-  }
-}
-
 // Draws a given hand on the face, using the bitmap structures.
 void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, int hand_index, GContext *ctx) {
   if (hand_cache->bitmap_hand_index != hand_index) {
@@ -412,7 +421,9 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
   }
 }
 
-// Draws a given hand on the face, using the vector and/or bitmap structures.
+// Draws a given hand on the face, using the vector and/or bitmap
+// structures.  A given hand may be represented by a bitmap or a
+// vector, or a combination of both.
 void draw_hand(struct HandCache *hand_cache, struct HandDef *hand_def, int hand_index, GContext *ctx) {
   if (hand_def->vector_hand != NULL) {
     draw_vector_hand(hand_cache, hand_def, hand_index, ctx);
@@ -426,9 +437,13 @@ void draw_hand(struct HandCache *hand_cache, struct HandDef *hand_def, int hand_
 void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_face_layer");
   if (memory_panic_count > 5) {
+    // In case we're in extreme memory panic mode--too little
+    // available memory to even keep the clock face resident--we do
+    // nothing in this function.
     return;
   }
 
+  // Load the clock face from the resource file if we haven't already.
   if (clock_face.bitmap == NULL) {
     clock_face = rle_bwd_create(clock_face_table[config.face_index]);
     if (clock_face.bitmap == NULL) {
@@ -437,6 +452,7 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
     }
   }
 
+  // Draw the clock face into the layer.
   GRect destination = layer_get_bounds(me);
   destination.origin.x = 0;
   destination.origin.y = 0;
@@ -464,8 +480,11 @@ void second_layer_update_callback(Layer *me, GContext *ctx) {
   }
 }
 
+// Draws a day/date card with the specified contents.  Usually this is
+// either the weekday or month card, or it is the numeric date card.
 void draw_card(Layer *me, GContext *ctx, const char *text, struct FontPlacement *font_placement, 
 	       GFont *font, bool invert, bool opaque_layer) {
+  // For now, the size of the card is hardcoded.
   GRect box = {
     { 2, 0 }, { 37, 19 }
   };
@@ -500,7 +519,11 @@ void draw_card(Layer *me, GContext *ctx, const char *text, struct FontPlacement 
 
   box.origin.y += font_placement->vshift;
 
-  // Cheat for a bit more space for text
+  // The Pebble text routines seem to be a bit too conservative when
+  // deciding whether a given bit of text will fit within its assigned
+  // box, meaning the text is likely to be trimmed even if it would
+  // have fit.  We avoid this problem by cheating and expanding the
+  // box a bit wider and taller than we actually intend it to be.
   box.origin.x -= 4;
   box.size.w += 8;
   box.size.h += 4;
@@ -548,6 +571,12 @@ void date_layer_update_callback(Layer *me, GContext *ctx) {
 }
 #endif  // ENABLE_DATE_CARD
 
+// Called once per epoch (e.g. once per second, or once per minute) to
+// compute the new positions for all of the hands on the watch based
+// on the current time.  This does not actually draw the hands; it
+// only computes which position each hand should hold, and it marks
+// the appropriate layers dirty, to eventually redraw the hands that
+// have moved since the last call.
 void update_hands(struct tm *time) {
   struct HandPlacement new_placement = current_placement;
 
@@ -570,6 +599,7 @@ void update_hands(struct tm *time) {
   if (new_placement.hour_buzzer != current_placement.hour_buzzer) {
     current_placement.hour_buzzer = new_placement.hour_buzzer;
     if (config.hour_buzzer) {
+      // The hour has changed; ring the buzzer if it's enabled.
       vibes_short_pulse();
     }
   }
@@ -602,7 +632,9 @@ void update_hands(struct tm *time) {
 #endif  // ENABLE_DATE_CARD
 }
 
-// Triggered at sweep_timer_ms intervals to run the sweep-second hand.
+// Triggered at sweep_timer_ms intervals to run the sweep-second hand
+// (that is, when sweep_seconds is enabled, this timer runs faster
+// than 1 second to update the second hand smoothly).
 void handle_sweep(void *data) {
   sweep_timer = NULL;  // When the timer is handled, it is implicitly canceled.
   if (sweep_timer_ms < 1000) {
@@ -611,6 +643,10 @@ void handle_sweep(void *data) {
   }
 }
 
+// Reset the sweep_timer according to the configured settings.  If
+// sweep_seconds is enabled, this sets the sweep_timer to wake us up
+// at the next sub-second interval.  If sweep_seconds is not enabled,
+// the sweep_timer is not used.
 void reset_sweep() {
   if (sweep_timer != NULL) {
     app_timer_cancel(sweep_timer);
@@ -621,7 +657,8 @@ void reset_sweep() {
   }
 }
 
-// Compute new hand positions once a minute (or once a second).
+// The callback on the per-second (or per-minute) system timer that
+// handles most mundane tasks.
 void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
   if (memory_panic_flag) {
     reset_memory_panic();
@@ -852,7 +889,7 @@ void create_objects() {
       break;
 
     case STACKING_ORDER_CHRONO_MINUTE:
-#ifdef ENABLE_CHRONO_MINUTE_HAND
+#if defined(ENABLE_CHRONO_MINUTE_HAND) && defined(MAKE_CHRONOGRAPH)
       chrono_minute_layer = layer_create(window_frame);
       assert(chrono_minute_layer != NULL);
       layer_set_update_proc(chrono_minute_layer, &chrono_minute_layer_update_callback);
@@ -861,7 +898,7 @@ void create_objects() {
       break;
 
     case STACKING_ORDER_CHRONO_SECOND:
-#ifdef ENABLE_CHRONO_SECOND_HAND
+#if defined(ENABLE_CHRONO_SECOND_HAND) && defined(MAKE_CHRONOGRAPH)
       chrono_second_layer = layer_create(window_frame);
       assert(chrono_second_layer != NULL);
       layer_set_update_proc(chrono_second_layer, &chrono_second_layer_update_callback);
@@ -870,7 +907,7 @@ void create_objects() {
       break;
 
     case STACKING_ORDER_CHRONO_TENTH:
-#ifdef ENABLE_CHRONO_TENTH_HAND
+#if defined(ENABLE_CHRONO_TENTH_HAND) && defined(MAKE_CHRONOGRAPH)
       chrono_tenth_layer = layer_create(window_frame);
       assert(chrono_tenth_layer != NULL);
       layer_set_update_proc(chrono_tenth_layer, &chrono_tenth_layer_update_callback);
@@ -881,6 +918,7 @@ void create_objects() {
   }
 }
 
+// Destroys the objects created by create_objects().
 void destroy_objects() {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "destroy_objects");
   window_stack_pop_all(false);
@@ -925,6 +963,7 @@ void destroy_objects() {
   window = NULL;
 }
 
+// Called at program exit to cleanly shut everything down.
 void handle_deinit() {
 #ifdef MAKE_CHRONOGRAPH
   save_chrono_data();
@@ -934,6 +973,7 @@ void handle_deinit() {
   destroy_objects();
 }
 
+// Called at program start to bootstrap everything.
 void handle_init() {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "handle_init");
 

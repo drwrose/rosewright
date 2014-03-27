@@ -1,5 +1,9 @@
 #include "wright_chrono.h"
 
+// The code in this file is used only when enabling Chronograph
+// features, including start/stop and lap buttons on the chrono dials.
+// Specifically, this code is used only for Rosewright Chronograph.
+
 #ifdef MAKE_CHRONOGRAPH
 
 struct HandCache chrono_minute_cache;
