@@ -1,11 +1,9 @@
 #ifndef HAND_TABLE_H
 #define HAND_TABLE_H
 
-struct __attribute__((__packed__)) BitmapHandLookupRow {
+struct __attribute__((__packed__)) BitmapHandCenterRow {
   signed int cx:8;
   signed int cy:8;
-  //  unsigned int image_id:8;
-  //  unsigned int mask_id:8;
 };
 
 struct __attribute__((__packed__)) BitmapHandTableRow {
@@ -23,6 +21,17 @@ struct __attribute__((__packed__)) VectorHandGroup {
 struct __attribute__((__packed__)) VectorHandTable {
   unsigned int num_groups:8;
   struct VectorHandGroup *group;
+};
+
+struct __attribute__((__packed__)) HandDef {
+  unsigned char num_steps;
+  unsigned char resource_id, resource_mask_id;
+  signed short place_x, place_y;
+  bool use_rle;
+  bool paint_black;
+  struct BitmapHandCenterRow *bitmap_centers;
+  struct BitmapHandTableRow *bitmap_table;
+  struct VectorHandTable *vector_hand;
 };
 
 // These symbols are used to define the stacking order for hands.

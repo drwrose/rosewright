@@ -166,17 +166,7 @@ void chrono_minute_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_minute_layer");
 
   if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
-#ifdef VECTOR_CHRONO_MINUTE_HAND
-    draw_vector_hand(&chrono_minute_cache, &chrono_minute_hand_vector_table, current_placement.chrono_minute_hand_index,
-		     NUM_STEPS_CHRONO_MINUTE, CHRONO_MINUTE_HAND_X, CHRONO_MINUTE_HAND_Y, ctx);
-#endif
-    
-#ifdef BITMAP_CHRONO_MINUTE_HAND
-    draw_bitmap_hand(&chrono_minute_cache, chrono_minute_hand_bitmap_lookup, chrono_minute_hand_bitmap_table, 
-                     BITMAP_CHRONO_MINUTE_HAND_RESOURCE_ID, BITMAP_CHRONO_MINUTE_HAND_MASK_RESOURCE_ID, 
-                     current_placement.chrono_minute_hand_index,
-		     true, CHRONO_MINUTE_HAND_X, CHRONO_MINUTE_HAND_Y, BITMAP_CHRONO_MINUTE_HAND_PAINT_BLACK, ctx);
-#endif
+    draw_hand(&chrono_minute_cache, &chrono_minute_hand_def, current_placement.chrono_minute_hand_index, ctx);
   }
 }
 #endif  // ENABLE_CHRONO_MINUTE_HAND
@@ -186,17 +176,7 @@ void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_second_layer");
 
   if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
-#ifdef VECTOR_CHRONO_SECOND_HAND
-    draw_vector_hand(&chrono_second_cache, &chrono_second_hand_vector_table, current_placement.chrono_second_hand_index,
-		     NUM_STEPS_CHRONO_SECOND, CHRONO_SECOND_HAND_X, CHRONO_SECOND_HAND_Y, ctx);
-#endif
-    
-#ifdef BITMAP_CHRONO_SECOND_HAND
-    draw_bitmap_hand(&chrono_second_cache, chrono_second_hand_bitmap_lookup, chrono_second_hand_bitmap_table, 
-                     BITMAP_CHRONO_SECOND_HAND_RESOURCE_ID, BITMAP_CHRONO_SECOND_HAND_MASK_RESOURCE_ID, 
-                     current_placement.chrono_second_hand_index,
-		     false, CHRONO_SECOND_HAND_X, CHRONO_SECOND_HAND_Y, BITMAP_CHRONO_SECOND_HAND_PAINT_BLACK, ctx);
-#endif
+    draw_hand(&chrono_second_cache, &chrono_second_hand_def, current_placement.chrono_second_hand_index, ctx);
   }
 }
 #endif  // ENABLE_CHRONO_SECOND_HAND
@@ -207,17 +187,7 @@ void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
 
   if (config.chrono_dial != CDM_off) {
     if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
-#ifdef VECTOR_CHRONO_TENTH_HAND
-      draw_vector_hand(&chrono_tenth_cache, &chrono_tenth_hand_vector_table, current_placement.chrono_tenth_hand_index,
-		       NUM_STEPS_CHRONO_TENTH, CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, ctx);
-#endif
-      
-#ifdef BITMAP_CHRONO_TENTH_HAND
-      draw_bitmap_hand(&chrono_tenth_cache, chrono_tenth_hand_bitmap_lookup, chrono_tenth_hand_bitmap_table, 
-                       BITMAP_CHRONO_TENTH_HAND_RESOURCE_ID, BITMAP_CHRONO_TENTH_HAND_MASK_RESOURCE_ID, 
-                       current_placement.chrono_tenth_hand_index,
-		       true, CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, BITMAP_CHRONO_TENTH_HAND_PAINT_BLACK, ctx);
-#endif
+      draw_hand(&chrono_tenth_cache, &chrono_tenth_hand_def, current_placement.chrono_tenth_hand_index, ctx);
     }
   }
 }
@@ -655,8 +625,8 @@ void create_chrono_objects() {
     //load_chrono_dial();
     int height = 56;   //chrono_dial_white.bitmap->bounds.size.h;
     int width = 56;    //chrono_dial_white.bitmap->bounds.size.w;
-    int x = CHRONO_TENTH_HAND_X - width / 2;
-    int y = CHRONO_TENTH_HAND_Y - height / 2;
+    int x = chrono_tenth_hand_def.place_x - width / 2;
+    int y = chrono_tenth_hand_def.place_y - height / 2;
 
     chrono_dial_layer = layer_create(GRect(x, y, width, height));
     assert(chrono_dial_layer != NULL);

@@ -450,8 +450,6 @@ def makeVectorHands(generatedTable, generatedDefs, hand, groupList):
         '' : '0',
         }
 
-    print >> generatedDefs, "#define VECTOR_%s_HAND 1" % (hand.upper())
-    print >> generatedDefs, "extern struct VectorHandTable %s_hand_vector_table;" % (hand)
     print >> generatedTable, "struct VectorHandTable %s_hand_vector_table = {" % (hand)
 
     print >> generatedTable, "  %s, (struct VectorHandGroup[]){" % (len(groupList))
@@ -499,7 +497,6 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
     handLookupEntry = """  { %(cx)s, %(cy)s },  // %(symbolName)s"""
     handTableEntry = """  { %(lookup_index)s, %(flip_x)s, %(flip_y)s },"""
     
-    print >> generatedDefs, "#define BITMAP_%s_HAND 1" % (hand.upper())
     handLookupLines = {}
     maxLookupIndex = -1
     handTableLines = []
@@ -507,13 +504,6 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
     source = PIL.Image.open('%s/clock_hands/%s' % (resourcesDir, sourceFilename))
 
     paintBlack, useTransparency, invertColors, dither = parseColorMode(colorMode)
-    print >> generatedDefs, "#define BITMAP_%s_HAND_RESOURCE_ID RESOURCE_ID_%s_0" % (hand.upper(), hand.upper())
-    if useTransparency:
-        print >> generatedDefs, "#define BITMAP_%s_HAND_MASK_RESOURCE_ID RESOURCE_ID_%s_0_mask" % (hand.upper(), hand.upper())
-    else:
-        print >> generatedDefs, "#define BITMAP_%s_HAND_MASK_RESOURCE_ID RESOURCE_ID_%s_0" % (hand.upper(), hand.upper())
-
-    print >> generatedDefs, "#define BITMAP_%s_HAND_PAINT_BLACK %s" % (hand.upper(), int(bool(paintBlack)))
 
     if useTransparency or source.mode.endswith('A'):
         source, sourceMask = source.convert('LA').split()
@@ -603,40 +593,47 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
         if useTransparency:
             symbolMaskName = '%s_%s_mask' % (hand.upper(), i)
 
-        # Now we are ready to continue.  We might have decided to
-        # flip this image from another image i, but we still need
-        # to scale and rotate the source image now, if for no
-        # other reason than to compute cx, cy.
+        if i not in handLookupLines:
+            # Here we have a new rotation of the bitmap image to
+            # generate.  We might have decided to flip this image from
+            # another image i, but we still need to scale and rotate
+            # the source image now, if for no other reason than to
+            # compute cx, cy.
 
-        p = large.rotate(-angle, PIL.Image.BICUBIC, True)
-        scaledSize = (int(p.size[0] * scale + 0.5), int(p.size[1] * scale + 0.5))
-        p = p.resize(scaledSize, PIL.Image.ANTIALIAS)
-        if not dither:
-            p = p.point(thresholdMap)
-        p = p.convert('1')
+            # We expect to encounter each i the first time in an
+            # unflipped state, because we visit quadrant I first.
+            assert not flip_x and not flip_y
 
-        cx, cy = p.size[0] / 2, p.size[1] / 2
-        cropbox = p.getbbox()
-        if useTransparency:
-            pm = largeMask.rotate(-angle, PIL.Image.BICUBIC, True)
-            pm = pm.resize(scaledSize, PIL.Image.ANTIALIAS)
-            pm = pm.point(thresholdMap)
-            pm = pm.convert('1')
-            # In the useTransparency case, it's important to take
-            # the crop from the alpha mask, not from the color.
-            cropbox = pm.getbbox() 
-            pm = pm.crop(cropbox)
-        p = p.crop(cropbox)
+            p = large.rotate(-angle, PIL.Image.BICUBIC, True)
+            scaledSize = (int(p.size[0] * scale + 0.5), int(p.size[1] * scale + 0.5))
+            p = p.resize(scaledSize, PIL.Image.ANTIALIAS)
+            if not dither:
+                p = p.point(thresholdMap)
+            p = p.convert('1')
 
-        cx, cy = cx - cropbox[0], cy - cropbox[1]
+            cx, cy = p.size[0] / 2, p.size[1] / 2
+            cropbox = p.getbbox()
+            if useTransparency:
+                pm = largeMask.rotate(-angle, PIL.Image.BICUBIC, True)
+                pm = pm.resize(scaledSize, PIL.Image.ANTIALIAS)
+                pm = pm.point(thresholdMap)
+                pm = pm.convert('1')
+                # In the useTransparency case, it's important to take
+                # the crop from the alpha mask, not from the color.
+                cropbox = pm.getbbox() 
+                pm = pm.crop(cropbox)
+            p = p.crop(cropbox)
 
-        if not flip_x and not flip_y:
-            # If this is not a flipped image, actually write it out.
+            cx, cy = cx - cropbox[0], cy - cropbox[1]
 
-            # We also require our images to be an even multiple of
-            # 8 pixels wide, to make it easier to reverse the bits
-            # horizontally.  This doesn't consume any extra
-            # memory, however.
+            # Now that we have scaled and rotated image i, write it
+            # out.
+
+            # We require our images to be an even multiple of 8 pixels
+            # wide, to make it easier to reverse the bits
+            # horizontally.  This doesn't consume any extra memory,
+            # however, since the bits are there whether we use them or
+            # not.
             w = 8 * ((p.size[0] + 7) / 8)
             if w != p.size[0]:
                 p1 = PIL.Image.new('1', (w, p.size[1]), 0)
@@ -646,12 +643,6 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
                     p1 = PIL.Image.new('1', (w, p.size[1]), 0)
                     p1.paste(pm, (0, 0))
                     pm = p1
-
-            # It's nice to show a hole in the center pivot.
-            ## if cx >= 0 and cx < p.size[0] and cy >= 0 and cy < p.size[1]:
-            ##     p.putpixel((cx, cy), 0)
-            ##     if useTransparency:
-            ##         pm.putpixel((cx, cy), 0)
 
             if useRle:
                 targetFilename = 'flat_%s_%s_%s.rle' % (handStyle, hand, i)
@@ -690,13 +681,13 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
                         'ptype' : 'png',
                         }
 
-        line = handLookupEntry % {
-            'symbolName' : symbolName,
-            'cx' : cx,
-            'cy' : cy,
-            }
-        handLookupLines[i] = line
-        maxLookupIndex = max(maxLookupIndex, i)
+            line = handLookupEntry % {
+                'symbolName' : symbolName,
+                'cx' : cx,
+                'cy' : cy,
+                }
+            handLookupLines[i] = line
+            maxLookupIndex = max(maxLookupIndex, i)
 
         line = handTableEntry % {
             'lookup_index' : i,
@@ -705,14 +696,12 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
             }
         handTableLines.append(line)
 
-    print >> generatedDefs, "extern struct BitmapHandLookupRow %s_hand_bitmap_lookup[];" % (hand)
-    print >> generatedTable, "struct BitmapHandLookupRow %s_hand_bitmap_lookup[] = {" % (hand)
+    print >> generatedTable, "struct BitmapHandCenterRow %s_hand_bitmap_lookup[] = {" % (hand)
     for i in range(maxLookupIndex + 1):
         line = handLookupLines.get(i, "  {},");
         print >> generatedTable, line
     print >> generatedTable, "};\n"
 
-    print >> generatedDefs, "extern struct BitmapHandTableRow %s_hand_bitmap_table[NUM_STEPS_%s];" % (hand, hand.upper())
     print >> generatedTable, "struct BitmapHandTableRow %s_hand_bitmap_table[NUM_STEPS_%s] = {" % (hand, hand.upper())
     for line in handTableLines:
         print >> generatedTable, line
@@ -725,6 +714,18 @@ def makeHands(generatedTable, generatedDefs):
     hand style.  Returns resourceStr. """
     
     resourceStr = ''
+
+    handDefEntry = """struct HandDef %(hand)s_hand_def = {
+    NUM_STEPS_%(handUpper)s,
+    %(resourceId)s, %(resourceMaskId)s,
+    %(placeX)s, %(placeY)s,
+    %(useRle)s,
+    %(paintBlack)s,
+    %(bitmapCenters)s,
+    %(bitmapTable)s,
+    %(vectorTable)s,
+};
+"""    
 
     for hand, bitmapParams, vectorParams in hands[handStyle]:
         useRle = supportRle
@@ -742,11 +743,44 @@ def makeHands(generatedTable, generatedDefs):
         elif hand == 'chrono_tenth':
             global enableChronoTenthHand
             enableChronoTenthHand = True
+
+        resourceId = '0'
+        resourceMaskId = resourceId
+        paintBlack = False
+        bitmapCenters = 'NULL'
+        bitmapTable = 'NULL'
+        vectorTable = 'NULL'
             
         if bitmapParams:
             resourceStr += makeBitmapHands(generatedTable, generatedDefs, useRle, hand, *bitmapParams)
+            colorMode = bitmapParams[1]
+            paintBlack, useTransparency, invertColors, dither = parseColorMode(colorMode)
+            resourceId = 'RESOURCE_ID_%s_0' % (hand.upper())
+            resourceMaskId = resourceId
+            if useTransparency:
+                resourceMaskId = 'RESOURCE_ID_%s_0_mask' % (hand.upper())
+            bitmapCenters = '%s_hand_bitmap_lookup' % (hand)
+            bitmapTable = '%s_hand_bitmap_table' % (hand)
+            
         if vectorParams:
             resourceStr += makeVectorHands(generatedTable, generatedDefs, hand, vectorParams)
+            vectorTable = '&%s_hand_vector_table' % (hand)
+    
+        handDef = handDefEntry % {
+            'hand' : hand,
+            'handUpper' : hand.upper(),
+            'resourceId' : resourceId,
+            'resourceMaskId' : resourceMaskId,
+            'placeX' : cxd.get(hand, centerX),
+            'placeY' : cyd.get(hand, centerY),
+            'useRle' : int(bool(useRle)),
+            'paintBlack' : int(bool(paintBlack)),
+            'bitmapCenters' : bitmapCenters,
+            'bitmapTable' : bitmapTable,
+            'vectorTable' : vectorTable,
+        }
+        print >> generatedTable, handDef
+        print >> generatedDefs, 'extern struct HandDef %s_hand_def;' % (hand)
 
     return resourceStr
 
@@ -832,10 +866,6 @@ def configWatch():
     configIn = open('%s/generated_config.h.in' % (resourcesDir), 'r').read()
     config = open('%s/generated_config.h' % (resourcesDir), 'w')
 
-    # Map the centers tuple into a dictionary of points for x and y.
-    cxd = dict(map(lambda (hand, x, y): (hand, x), centers))
-    cyd = dict(map(lambda (hand, x, y): (hand, y), centers))
-
     # Get the stacking orders of the hands too.
     implicitStackingOrder = ['hour', 'minute', 'second', 'chrono_minute', 'chrono_second', 'chrono_tenth']
     explicitStackingOrder = []
@@ -856,18 +886,6 @@ def configWatch():
         'numStepsChronoMinute' : numSteps['chrono_minute'],
         'numStepsChronoSecond' : getNumSteps('chrono_second'),
         'numStepsChronoTenth' : numSteps['chrono_tenth'],
-        'hourHandX' : cxd.get('hour', centerX),
-        'hourHandY' : cyd.get('hour', centerY),
-        'minuteHandX' : cxd.get('minute', centerX),
-        'minuteHandY' : cyd.get('minute', centerY),
-        'secondHandX' : cxd.get('second', centerX),
-        'secondHandY' : cyd.get('second', centerY),
-        'chronoMinuteHandX' : cxd.get('chrono_minute', centerX),
-        'chronoMinuteHandY' : cyd.get('chrono_minute', centerY),
-        'chronoSecondHandX' : cxd.get('chrono_second', centerX),
-        'chronoSecondHandY' : cyd.get('chrono_second', centerY),
-        'chronoTenthHandX' : cxd.get('chrono_tenth', centerX),
-        'chronoTenthHandY' : cyd.get('chrono_tenth', centerY),
         'compileDebugging' : int(compileDebugging),
         'enableDayCard' : int(bool(dayCard[0])),
         'enableDateCard' : int(bool(dateCard[0])),
@@ -959,5 +977,9 @@ bluetooth = getIndicator(fd, 'bluetooth')
 battery = getIndicator(fd, 'battery')
 defaults = fd.get('defaults', [])
 centers = fd.get('centers', ())
+
+# Map the centers tuple into a dictionary of points for x and y.
+cxd = dict(map(lambda (hand, x, y): (hand, x), centers))
+cyd = dict(map(lambda (hand, x, y): (hand, y), centers))
 
 configWatch()

@@ -234,12 +234,13 @@ void flip_bitmap_y(GBitmap *image, short *cy) {
 }
 
 // Draws a given hand on the face, using the vector structures.
-void draw_vector_hand(struct HandCache *hand_cache, struct VectorHandTable *hand, int hand_index, int num_steps,
-                      int place_x, int place_y, GContext *ctx) {
+void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, int hand_index, GContext *ctx) {
+  struct VectorHandTable *vector_hand = hand_def->vector_hand;
+
   int gi;
   if (hand_cache->vector_hand_index != hand_index) {
     // Force a new path.
-    for (gi = 0; gi < hand->num_groups; ++gi) {
+    for (gi = 0; gi < vector_hand->num_groups; ++gi) {
       if (hand_cache->path[gi] != NULL) {
         gpath_destroy(hand_cache->path[gi]);
         hand_cache->path[gi] = NULL;
@@ -248,12 +249,12 @@ void draw_vector_hand(struct HandCache *hand_cache, struct VectorHandTable *hand
     hand_cache->vector_hand_index = hand_index;
   }
 
-  GPoint center = { place_x, place_y };
-  int32_t angle = TRIG_MAX_ANGLE * hand_index / num_steps;
+  GPoint center = { hand_def->place_x, hand_def->place_y };
+  int32_t angle = TRIG_MAX_ANGLE * hand_index / hand_def->num_steps;
 
-  assert(hand->num_groups <= HAND_CACHE_MAX_GROUPS);
-  for (gi = 0; gi < hand->num_groups; ++gi) {
-    struct VectorHandGroup *group = &hand->group[gi];
+  assert(vector_hand->num_groups <= HAND_CACHE_MAX_GROUPS);
+  for (gi = 0; gi < vector_hand->num_groups; ++gi) {
+    struct VectorHandGroup *group = &vector_hand->group[gi];
 
     if (hand_cache->path[gi] == NULL) {
       hand_cache->path[gi] = gpath_create(&group->path_info);
@@ -294,7 +295,7 @@ void hand_cache_destroy(struct HandCache *hand_cache) {
 }
 
 // Draws a given hand on the face, using the bitmap structures.
-void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandLookupRow *lookup_table, struct BitmapHandTableRow *hand_table, int resource_id, int resource_mask_id, int hand_index, bool use_rle, int place_x, int place_y, bool paint_black, GContext *ctx) {
+void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, int hand_index, GContext *ctx) {
   if (hand_cache->bitmap_hand_index != hand_index) {
     // Force a new bitmap.
     if (hand_cache->image.bitmap != NULL) {
@@ -306,22 +307,17 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandLookupRow *
     hand_cache->bitmap_hand_index = hand_index;
   }
 
-  struct BitmapHandTableRow *hand = &hand_table[hand_index];
+  struct BitmapHandTableRow *hand = &hand_def->bitmap_table[hand_index];
   int lookup_index = hand->lookup_index;
-  struct BitmapHandLookupRow *lookup = &lookup_table[lookup_index];
+  struct BitmapHandCenterRow *lookup = &hand_def->bitmap_centers[lookup_index];
 
-  int hand_resource_id = resource_id + lookup_index;
-  int hand_resource_mask_id = resource_mask_id + lookup_index;
-
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "%d %d for %d, %d gives %d %d", resource_id, resource_mask_id, hand_index, lookup_index, hand_resource_id, hand_resource_mask_id);
-
-  //  hand_resource_id = lookup->image_id;
-  //  hand_resource_mask_id = lookup->mask_id;
+  int hand_resource_id = hand_def->resource_id + lookup_index;
+  int hand_resource_mask_id = hand_def->resource_mask_id + lookup_index;
  
-  if (resource_id == resource_mask_id) {
+  if (hand_def->resource_id == hand_def->resource_mask_id) {
     // The hand does not have a mask.  Draw the hand on top of the scene.
     if (hand_cache->image.bitmap == NULL) {
-      if (use_rle) {
+      if (hand_def->use_rle) {
 	hand_cache->image = rle_bwd_create(hand_resource_id);
       } else {
 	hand_cache->image = png_bwd_create(hand_resource_id);
@@ -353,14 +349,14 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandLookupRow *
     GRect destination = hand_cache->image.bitmap->bounds;
     
     // Place the hand's center point at place_x, place_y.
-    destination.origin.x = place_x - hand_cache->cx;
-    destination.origin.y = place_y - hand_cache->cy;
+    destination.origin.x = hand_def->place_x - hand_cache->cx;
+    destination.origin.y = hand_def->place_y - hand_cache->cy;
     
     // Specify a compositing mode to make the hands overlay on top of
     // each other, instead of the background parts of the bitmaps
     // blocking each other.
 
-    if (paint_black) {
+    if (hand_def->paint_black) {
       // Painting foreground ("white") pixels as black.
       graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
     } else {
@@ -373,7 +369,7 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandLookupRow *
   } else {
     // The hand has a mask, so use it to draw the hand opaquely.
     if (hand_cache->image.bitmap == NULL) {
-      if (use_rle) {
+      if (hand_def->use_rle) {
 	hand_cache->image = rle_bwd_create(hand_resource_id);
 	hand_cache->mask = rle_bwd_create(hand_resource_mask_id);
       } else {
@@ -405,14 +401,25 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandLookupRow *
     
     GRect destination = hand_cache->image.bitmap->bounds;
     
-    destination.origin.x = place_x - hand_cache->cx;
-    destination.origin.y = place_y - hand_cache->cy;
+    destination.origin.x = hand_def->place_x - hand_cache->cx;
+    destination.origin.y = hand_def->place_y - hand_cache->cy;
 
     graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
     graphics_draw_bitmap_in_rect(ctx, hand_cache->mask.bitmap, destination);
     
     graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
     graphics_draw_bitmap_in_rect(ctx, hand_cache->image.bitmap, destination);
+  }
+}
+
+// Draws a given hand on the face, using the vector and/or bitmap structures.
+void draw_hand(struct HandCache *hand_cache, struct HandDef *hand_def, int hand_index, GContext *ctx) {
+  if (hand_def->vector_hand != NULL) {
+    draw_vector_hand(hand_cache, hand_def, hand_index, ctx);
+  }
+
+  if (hand_def->bitmap_table != NULL) {
+    draw_bitmap_hand(hand_cache, hand_def, hand_index, ctx);
   }
 }
 
@@ -440,50 +447,20 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
 void hour_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "hour_layer");
 
-#ifdef VECTOR_HOUR_HAND
-  draw_vector_hand(&hour_cache, &hour_hand_vector_table, current_placement.hour_hand_index,
-		   NUM_STEPS_HOUR, HOUR_HAND_X, HOUR_HAND_Y, ctx);
-#endif
-
-#ifdef BITMAP_HOUR_HAND
-  draw_bitmap_hand(&hour_cache, hour_hand_bitmap_lookup, hour_hand_bitmap_table,
-                   BITMAP_HOUR_HAND_RESOURCE_ID, BITMAP_HOUR_HAND_MASK_RESOURCE_ID, 
-                   current_placement.hour_hand_index,
-                   true, HOUR_HAND_X, HOUR_HAND_Y, BITMAP_HOUR_HAND_PAINT_BLACK, ctx);
-#endif
+  draw_hand(&hour_cache, &hour_hand_def, current_placement.hour_hand_index, ctx);
 }
 
 void minute_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "minute_layer");
 
-#ifdef VECTOR_MINUTE_HAND
-  draw_vector_hand(&minute_cache, &minute_hand_vector_table, current_placement.minute_hand_index,
-                   NUM_STEPS_MINUTE, MINUTE_HAND_X, MINUTE_HAND_Y, ctx);
-#endif
-
-#ifdef BITMAP_MINUTE_HAND
-  draw_bitmap_hand(&minute_cache, minute_hand_bitmap_lookup, minute_hand_bitmap_table, 
-                   BITMAP_MINUTE_HAND_RESOURCE_ID, BITMAP_MINUTE_HAND_MASK_RESOURCE_ID, 
-                   current_placement.minute_hand_index,
-                   true, MINUTE_HAND_X, MINUTE_HAND_Y, BITMAP_MINUTE_HAND_PAINT_BLACK, ctx);
-#endif
+  draw_hand(&minute_cache, &minute_hand_def, current_placement.minute_hand_index, ctx);
 }
 
 void second_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "second_layer");
 
   if (config.second_hand) {
-#ifdef VECTOR_SECOND_HAND
-    draw_vector_hand(&second_cache, &second_hand_vector_table, current_placement.second_hand_index,
-		     NUM_STEPS_SECOND, SECOND_HAND_X, SECOND_HAND_Y, ctx);
-#endif
-    
-#ifdef BITMAP_SECOND_HAND
-    draw_bitmap_hand(&second_cache, second_hand_bitmap_lookup, second_hand_bitmap_table, 
-                     BITMAP_SECOND_HAND_RESOURCE_ID, BITMAP_SECOND_HAND_MASK_RESOURCE_ID, 
-                     current_placement.second_hand_index,
-		     false, SECOND_HAND_X, SECOND_HAND_Y, BITMAP_SECOND_HAND_PAINT_BLACK, ctx);
-#endif
+    draw_hand(&second_cache, &second_hand_def, current_placement.second_hand_index, ctx);
   }
 }
 

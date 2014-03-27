@@ -18,13 +18,6 @@
 #define NUM_STEPS_CHRONO_SECOND %(numStepsChronoSecond)s
 #define NUM_STEPS_CHRONO_TENTH %(numStepsChronoTenth)s
 
-// The location of the hands on the face.
-#define HOUR_HAND_X %(hourHandX)s
-#define HOUR_HAND_Y %(hourHandY)s
-
-#define MINUTE_HAND_X %(minuteHandX)s
-#define MINUTE_HAND_Y %(minuteHandY)s
-
 // The order in which the hands are layered on top of each other.
 #define STACKING_ORDER_LIST  %(stackingOrder)s
 
@@ -53,8 +46,6 @@
 #define DEFAULT_BATTERY_GAUGE %(defaultBattery)s
 
 #define ENABLE_SECOND_HAND %(enableSecondHand)s
-#define SECOND_HAND_X %(secondHandX)s
-#define SECOND_HAND_Y %(secondHandY)s
 #define ENABLE_SWEEP_SECONDS %(enableSweepSeconds)s
 
 #define ENABLE_HOUR_BUZZER %(enableHourBuzzer)s
@@ -65,18 +56,12 @@
 
 #if %(enableChronoMinuteHand)s
   #define ENABLE_CHRONO_MINUTE_HAND 1
-  #define CHRONO_MINUTE_HAND_X %(chronoMinuteHandX)s
-  #define CHRONO_MINUTE_HAND_Y %(chronoMinuteHandY)s
 #endif
 
 #if %(enableChronoSecondHand)s
   #define ENABLE_CHRONO_SECOND_HAND 1
-  #define CHRONO_SECOND_HAND_X %(chronoSecondHandX)s
-  #define CHRONO_SECOND_HAND_Y %(chronoSecondHandY)s
 #endif
 
 #if %(enableChronoTenthHand)s
   #define ENABLE_CHRONO_TENTH_HAND 1
-  #define CHRONO_TENTH_HAND_X %(chronoTenthHandX)s
-  #define CHRONO_TENTH_HAND_Y %(chronoTenthHandY)s
 #endif
