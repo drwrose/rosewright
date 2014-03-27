@@ -961,7 +961,7 @@ void handle_init() {
 #define INBOX_MESSAGE_SIZE 200
 #define OUTBOX_MESSAGE_SIZE 50
 
-#ifdef ENABLE_LOG
+#ifndef NDEBUG
   uint32_t inbox_max = app_message_inbox_size_maximum();
   uint32_t outbox_max = app_message_outbox_size_maximum();
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "available message space %u, %u", (unsigned int)inbox_max, (unsigned int)outbox_max);
@@ -975,9 +975,9 @@ void handle_init() {
   AppMessageResult open_result = app_message_open(inbox_max, outbox_max);
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "open_result = %d", open_result);
 
-#else  // ENABLE_LOG
+#else  // NDEBUG
   app_message_open(INBOX_MESSAGE_SIZE, OUTBOX_MESSAGE_SIZE);
-#endif  // ENABLE_LOG
+#endif  // NDEBUG
 
   time_t now = time(NULL);
   struct tm *startup_time = localtime(&now);

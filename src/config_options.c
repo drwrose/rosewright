@@ -1,7 +1,5 @@
 #include "config_options.h"
-#include "hand_table.h"
-#include "lang_table.h"
-#include "../resources/generated_config.h"
+#include "wright.h"
 
 ConfigOptions config;
 
@@ -33,14 +31,14 @@ void sanitize_config() {
   config.show_day = config.show_day % (SDM_month + 1);
 }
 
-#ifdef ENABLE_LOG
+#ifndef NDEBUG
 const char *show_config() {
 #define CONFIG_BUFFER_SIZE 100
   static char buffer[CONFIG_BUFFER_SIZE];
   snprintf(buffer, CONFIG_BUFFER_SIZE, "bat: %d, bt: %d, sh: %d, hb: %d, dm: %d, cd: %d, sw: %d, day: %d, date: %d, dl: %d, fi: %d", config.keep_battery_gauge, config.keep_bluetooth_indicator, config.second_hand, config.hour_buzzer, config.draw_mode, config.chrono_dial, config.sweep_seconds, config.show_day, config.show_date, config.display_lang, config.face_index);
   return buffer;
 }
-#endif  // ENABLE_LOG
+#endif  // NDEBUG
 
 void save_config() {
   int wrote = persist_write_data(PERSIST_KEY, &config, sizeof(config));

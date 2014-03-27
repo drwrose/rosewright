@@ -35,12 +35,9 @@
   // face.
   #define FAST_TIME 1
 
-  // Allow log calls to remain in the code.
-  #define ENABLE_LOG 1
-  #define app_log app_log
 #else
-  // Eliminate log calls from even appearing in the code.
-  #define app_log(...)
+  // Declare full optimizations.
+  #define NDEBUG 1
 #endif
 
 #define ENABLE_DAY_CARD %(enableDayCard)s
