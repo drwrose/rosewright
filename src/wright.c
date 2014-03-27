@@ -294,7 +294,7 @@ void hand_cache_destroy(struct HandCache *hand_cache) {
 }
 
 // Draws a given hand on the face, using the bitmap structures.
-void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandLookupRow *lookup_table, struct BitmapHandTableRow *hand_table, int hand_index, bool use_rle, int place_x, int place_y, bool paint_black, GContext *ctx) {
+void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandLookupRow *lookup_table, struct BitmapHandTableRow *hand_table, int resource_id, int resource_mask_id, int hand_index, bool use_rle, int place_x, int place_y, bool paint_black, GContext *ctx) {
   if (hand_cache->bitmap_hand_index != hand_index) {
     // Force a new bitmap.
     if (hand_cache->image.bitmap != NULL) {
@@ -307,15 +307,24 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandLookupRow *
   }
 
   struct BitmapHandTableRow *hand = &hand_table[hand_index];
-  struct BitmapHandLookupRow *lookup = &lookup_table[hand->lookup_index];
-  
-  if (lookup->mask_id == lookup->image_id) {
+  int lookup_index = hand->lookup_index;
+  struct BitmapHandLookupRow *lookup = &lookup_table[lookup_index];
+
+  int hand_resource_id = resource_id + lookup_index;
+  int hand_resource_mask_id = resource_mask_id + lookup_index;
+
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "%d %d for %d, %d gives %d %d", resource_id, resource_mask_id, hand_index, lookup_index, hand_resource_id, hand_resource_mask_id);
+
+  //  hand_resource_id = lookup->image_id;
+  //  hand_resource_mask_id = lookup->mask_id;
+ 
+  if (resource_id == resource_mask_id) {
     // The hand does not have a mask.  Draw the hand on top of the scene.
     if (hand_cache->image.bitmap == NULL) {
       if (use_rle) {
-	hand_cache->image = rle_bwd_create(lookup->image_id);
+	hand_cache->image = rle_bwd_create(hand_resource_id);
       } else {
-	hand_cache->image = png_bwd_create(lookup->image_id);
+	hand_cache->image = png_bwd_create(hand_resource_id);
       }
       if (hand_cache->image.bitmap == NULL) {
         hand_cache_destroy(hand_cache);
@@ -365,11 +374,11 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandLookupRow *
     // The hand has a mask, so use it to draw the hand opaquely.
     if (hand_cache->image.bitmap == NULL) {
       if (use_rle) {
-	hand_cache->image = rle_bwd_create(lookup->image_id);
-	hand_cache->mask = rle_bwd_create(lookup->mask_id);
+	hand_cache->image = rle_bwd_create(hand_resource_id);
+	hand_cache->mask = rle_bwd_create(hand_resource_mask_id);
       } else {
-	hand_cache->image = png_bwd_create(lookup->image_id);
-	hand_cache->mask = png_bwd_create(lookup->mask_id);
+	hand_cache->image = png_bwd_create(hand_resource_id);
+	hand_cache->mask = png_bwd_create(hand_resource_mask_id);
       }
       if (hand_cache->image.bitmap == NULL || hand_cache->mask.bitmap == NULL) {
         hand_cache_destroy(hand_cache);
@@ -437,7 +446,9 @@ void hour_layer_update_callback(Layer *me, GContext *ctx) {
 #endif
 
 #ifdef BITMAP_HOUR_HAND
-  draw_bitmap_hand(&hour_cache, hour_hand_bitmap_lookup, hour_hand_bitmap_table, current_placement.hour_hand_index,
+  draw_bitmap_hand(&hour_cache, hour_hand_bitmap_lookup, hour_hand_bitmap_table,
+                   BITMAP_HOUR_HAND_RESOURCE_ID, BITMAP_HOUR_HAND_MASK_RESOURCE_ID, 
+                   current_placement.hour_hand_index,
                    true, HOUR_HAND_X, HOUR_HAND_Y, BITMAP_HOUR_HAND_PAINT_BLACK, ctx);
 #endif
 }
@@ -451,7 +462,9 @@ void minute_layer_update_callback(Layer *me, GContext *ctx) {
 #endif
 
 #ifdef BITMAP_MINUTE_HAND
-  draw_bitmap_hand(&minute_cache, minute_hand_bitmap_lookup, minute_hand_bitmap_table, current_placement.minute_hand_index,
+  draw_bitmap_hand(&minute_cache, minute_hand_bitmap_lookup, minute_hand_bitmap_table, 
+                   BITMAP_MINUTE_HAND_RESOURCE_ID, BITMAP_MINUTE_HAND_MASK_RESOURCE_ID, 
+                   current_placement.minute_hand_index,
                    true, MINUTE_HAND_X, MINUTE_HAND_Y, BITMAP_MINUTE_HAND_PAINT_BLACK, ctx);
 #endif
 }
@@ -466,7 +479,9 @@ void second_layer_update_callback(Layer *me, GContext *ctx) {
 #endif
     
 #ifdef BITMAP_SECOND_HAND
-    draw_bitmap_hand(&second_cache, second_hand_bitmap_lookup, second_hand_bitmap_table, current_placement.second_hand_index,
+    draw_bitmap_hand(&second_cache, second_hand_bitmap_lookup, second_hand_bitmap_table, 
+                     BITMAP_SECOND_HAND_RESOURCE_ID, BITMAP_SECOND_HAND_MASK_RESOURCE_ID, 
+                     current_placement.second_hand_index,
 		     false, SECOND_HAND_X, SECOND_HAND_Y, BITMAP_SECOND_HAND_PAINT_BLACK, ctx);
 #endif
   }

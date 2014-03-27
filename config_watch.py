@@ -487,6 +487,7 @@ def getNumSteps(hand):
 
 def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename, colorMode, asymmetric, pivot, scale):
     resourceStr = ''
+    maskResourceStr = ''
 
     resourceEntry = """
     {
@@ -495,16 +496,22 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
       "type": "%(ptype)s"
     },"""    
 
-    handLookupEntry = """  { RESOURCE_ID_%(symbolName)s, RESOURCE_ID_%(symbolMaskName)s, %(cx)s, %(cy)s },"""
+    handLookupEntry = """  { %(cx)s, %(cy)s },  // %(symbolName)s"""
     handTableEntry = """  { %(lookup_index)s, %(flip_x)s, %(flip_y)s },"""
     
     print >> generatedDefs, "#define BITMAP_%s_HAND 1" % (hand.upper())
-    handLookupLines = []
+    handLookupLines = {}
+    maxLookupIndex = -1
     handTableLines = []
 
     source = PIL.Image.open('%s/clock_hands/%s' % (resourcesDir, sourceFilename))
 
     paintBlack, useTransparency, invertColors, dither = parseColorMode(colorMode)
+    print >> generatedDefs, "#define BITMAP_%s_HAND_RESOURCE_ID RESOURCE_ID_%s_0" % (hand.upper(), hand.upper())
+    if useTransparency:
+        print >> generatedDefs, "#define BITMAP_%s_HAND_MASK_RESOURCE_ID RESOURCE_ID_%s_0_mask" % (hand.upper(), hand.upper())
+    else:
+        print >> generatedDefs, "#define BITMAP_%s_HAND_MASK_RESOURCE_ID RESOURCE_ID_%s_0" % (hand.upper(), hand.upper())
 
     print >> generatedDefs, "#define BITMAP_%s_HAND_PAINT_BLACK %s" % (hand.upper(), int(bool(paintBlack)))
 
@@ -668,7 +675,7 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
                 if useRle:
                     targetMaskFilename = 'flat_%s_%s_%s_mask.rle' % (handStyle, hand, i)
                     make_rle_image('%s/clock_hands/%s' % (resourcesDir, targetMaskFilename), pm)
-                    resourceStr += resourceEntry % {
+                    maskResourceStr += resourceEntry % {
                         'defName' : symbolMaskName,
                         'targetFilename' : targetMaskFilename,
                         'ptype' : 'raw',
@@ -677,7 +684,7 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
                     targetMaskFilename = 'flat_%s_%s_%s_mask.png' % (handStyle, hand, i)
                     print targetMaskFilename
                     pm.save('%s/clock_hands/%s' % (resourcesDir, targetMaskFilename))
-                    resourceStr += resourceEntry % {
+                    maskResourceStr += resourceEntry % {
                         'defName' : symbolMaskName,
                         'targetFilename' : targetMaskFilename,
                         'ptype' : 'png',
@@ -685,18 +692,14 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
 
         line = handLookupEntry % {
             'symbolName' : symbolName,
-            'symbolMaskName' : symbolMaskName,
             'cx' : cx,
             'cy' : cy,
             }
-        if line in handLookupLines:
-            lookup_index = handLookupLines.index(line)
-        else:
-            lookup_index = len(handLookupLines)
-            handLookupLines.append(line)
+        handLookupLines[i] = line
+        maxLookupIndex = max(maxLookupIndex, i)
 
         line = handTableEntry % {
-            'lookup_index' : lookup_index,
+            'lookup_index' : i,
             'flip_x' : int(flip_x),
             'flip_y' : int(flip_y),
             }
@@ -704,7 +707,8 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
 
     print >> generatedDefs, "extern struct BitmapHandLookupRow %s_hand_bitmap_lookup[];" % (hand)
     print >> generatedTable, "struct BitmapHandLookupRow %s_hand_bitmap_lookup[] = {" % (hand)
-    for line in handLookupLines:
+    for i in range(maxLookupIndex + 1):
+        line = handLookupLines.get(i, "  {},");
         print >> generatedTable, line
     print >> generatedTable, "};\n"
 
@@ -714,7 +718,7 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
         print >> generatedTable, line
     print >> generatedTable, "};\n"
 
-    return resourceStr
+    return resourceStr + maskResourceStr
 
 def makeHands(generatedTable, generatedDefs):
     """ Generates the required resources and tables for the indicated

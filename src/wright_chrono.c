@@ -172,7 +172,9 @@ void chrono_minute_layer_update_callback(Layer *me, GContext *ctx) {
 #endif
     
 #ifdef BITMAP_CHRONO_MINUTE_HAND
-    draw_bitmap_hand(&chrono_minute_cache, chrono_minute_hand_bitmap_lookup, chrono_minute_hand_bitmap_table, current_placement.chrono_minute_hand_index,
+    draw_bitmap_hand(&chrono_minute_cache, chrono_minute_hand_bitmap_lookup, chrono_minute_hand_bitmap_table, 
+                     BITMAP_CHRONO_MINUTE_HAND_RESOURCE_ID, BITMAP_CHRONO_MINUTE_HAND_MASK_RESOURCE_ID, 
+                     current_placement.chrono_minute_hand_index,
 		     true, CHRONO_MINUTE_HAND_X, CHRONO_MINUTE_HAND_Y, BITMAP_CHRONO_MINUTE_HAND_PAINT_BLACK, ctx);
 #endif
   }
@@ -190,7 +192,9 @@ void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
 #endif
     
 #ifdef BITMAP_CHRONO_SECOND_HAND
-    draw_bitmap_hand(&chrono_second_cache, chrono_second_hand_bitmap_lookup, chrono_second_hand_bitmap_table, current_placement.chrono_second_hand_index,
+    draw_bitmap_hand(&chrono_second_cache, chrono_second_hand_bitmap_lookup, chrono_second_hand_bitmap_table, 
+                     BITMAP_CHRONO_SECOND_HAND_RESOURCE_ID, BITMAP_CHRONO_SECOND_HAND_MASK_RESOURCE_ID, 
+                     current_placement.chrono_second_hand_index,
 		     false, CHRONO_SECOND_HAND_X, CHRONO_SECOND_HAND_Y, BITMAP_CHRONO_SECOND_HAND_PAINT_BLACK, ctx);
 #endif
   }
@@ -209,7 +213,9 @@ void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
 #endif
       
 #ifdef BITMAP_CHRONO_TENTH_HAND
-      draw_bitmap_hand(&chrono_tenth_cache, chrono_tenth_hand_bitmap_lookup, chrono_tenth_hand_bitmap_table, current_placement.chrono_tenth_hand_index,
+      draw_bitmap_hand(&chrono_tenth_cache, chrono_tenth_hand_bitmap_lookup, chrono_tenth_hand_bitmap_table, 
+                       BITMAP_CHRONO_TENTH_HAND_RESOURCE_ID, BITMAP_CHRONO_TENTH_HAND_MASK_RESOURCE_ID, 
+                       current_placement.chrono_tenth_hand_index,
 		       true, CHRONO_TENTH_HAND_X, CHRONO_TENTH_HAND_Y, BITMAP_CHRONO_TENTH_HAND_PAINT_BLACK, ctx);
 #endif
     }
@@ -240,7 +246,6 @@ void chrono_dial_layer_update_callback(Layer *me, GContext *ctx) {
 
 
 void update_chrono_hands(struct HandPlacement *new_placement) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "update_chrono_hands");
 #ifdef ENABLE_CHRONO_MINUTE_HAND
   if (new_placement->chrono_minute_hand_index != current_placement.chrono_minute_hand_index) {
     current_placement.chrono_minute_hand_index = new_placement->chrono_minute_hand_index;

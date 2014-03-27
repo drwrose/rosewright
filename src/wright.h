@@ -86,6 +86,6 @@ void hand_cache_destroy(struct HandCache *hand_cache);
 void reset_tick_timer();
 void draw_vector_hand(struct HandCache *hand_cache, struct VectorHandTable *hand, int hand_index, int num_steps,
                       int place_x, int place_y, GContext *ctx);
-void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandLookupRow *lookup_table, struct BitmapHandTableRow *hand_table, int hand_index, bool use_rle, int place_x, int place_y, bool paint_black, GContext *ctx);
+void draw_bitmap_hand(struct HandCache *hand_cache, struct BitmapHandLookupRow *lookup_table, struct BitmapHandTableRow *hand_table, int resource_id, int resource_mask_id, int hand_index, bool use_rle, int place_x, int place_y, bool paint_black, GContext *ctx);
 
 #endif
