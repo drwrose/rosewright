@@ -452,7 +452,7 @@ def makeVectorHands(generatedTable, generatedDefs, hand, groupList):
         '' : '0',
         }
 
-    print >> generatedTable, "struct VectorHandTable %s_hand_vector_table = {" % (hand)
+    print >> generatedTable, "struct VectorHand %s_hand_vector_table = {" % (hand)
 
     print >> generatedTable, "  %s, (struct VectorHandGroup[]){" % (len(groupList))
     for fillType, points in groupList:

@@ -260,7 +260,7 @@ void flip_bitmap_y(GBitmap *image, short *cy) {
 
 // Draws a given hand on the face, using the vector structures.
 void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, int hand_index, GContext *ctx) {
-  struct VectorHandTable *vector_hand = hand_def->vector_hand;
+  struct VectorHand *vector_hand = hand_def->vector_hand;
 
   int gi;
   if (hand_cache->vector_hand_index != hand_index) {
@@ -292,11 +292,11 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
       gpath_move_to(hand_cache->path[gi], center);
     }
 
-    if (group->fill != GColorClear) {
+    if (group->fill != 0) {
       graphics_context_set_fill_color(ctx, draw_mode_table[config.draw_mode].colors[group->fill]);
       gpath_draw_filled(ctx, hand_cache->path[gi]);
     }
-    if (group->outline != GColorClear) {
+    if (group->outline != 0) {
       graphics_context_set_stroke_color(ctx, draw_mode_table[config.draw_mode].colors[group->outline]);
       gpath_draw_outline(ctx, hand_cache->path[gi]);
     }
@@ -317,11 +317,11 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
   }
 
   struct BitmapHandTableRow *hand = &hand_def->bitmap_table[hand_index];
-  int lookup_index = hand->lookup_index;
-  struct BitmapHandCenterRow *lookup = &hand_def->bitmap_centers[lookup_index];
+  int bitmap_index = hand->bitmap_index;
+  struct BitmapHandCenterRow *lookup = &hand_def->bitmap_centers[bitmap_index];
 
-  int hand_resource_id = hand_def->resource_id + lookup_index;
-  int hand_resource_mask_id = hand_def->resource_mask_id + lookup_index;
+  int hand_resource_id = hand_def->resource_id + bitmap_index;
+  int hand_resource_mask_id = hand_def->resource_mask_id + bitmap_index;
  
   if (hand_def->resource_id == hand_def->resource_mask_id) {
     // The hand does not have a mask.  Draw the hand on top of the scene.
