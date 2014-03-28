@@ -1,9 +1,9 @@
-// This name is displayed on the configuration title card.
+// This name is displayed on the configuration title window.
 var watch_name = "%(watchName)s";
 var show_chrono_dial = %(enableChronoDial)s;
 var enable_sweep_seconds = %(enableSweepSeconds)s;
-var enable_show_day = %(enableDayCard)s;
-var enable_show_date = %(enableDateCard)s;
+var enable_show_day = %(enableDayWindow)s;
+var enable_show_date = %(enableDateWindow)s;
 var num_faces = %(numFaces)s;
 
 // Define the initial config default values.  These defaults are used
@@ -16,8 +16,8 @@ var default_hour_buzzer = %(enableHourBuzzer)s;
 var default_draw_mode = 0;
 var default_chrono_dial = 1;
 var default_sweep_seconds = 0;
-var default_show_day = %(defaultDayCard)s;
-var default_show_date = %(defaultDateCard)s;
+var default_show_day = %(defaultDayWindow)s;
+var default_show_date = %(defaultDateWindow)s;
 var default_display_lang = 'en_US';
 var default_face_index = 0;
 

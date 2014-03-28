@@ -60,7 +60,7 @@ def generate_rle(source):
     current = 0
     count = 0
     # We start with an implicit black pixel, which isn't actually part
-    # of the image.  The decoder must discard this pixel.  This
+    # of the image.  The decoder must diswindow this pixel.  This
     # implicit black pixel ensures that there are no 0 counts anywhere
     # in the resulting data.
     next = 0

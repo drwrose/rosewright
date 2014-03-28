@@ -15,8 +15,8 @@ void init_default_options() {
   config.draw_mode = 0;
   config.chrono_dial = CDM_tenths;
   config.sweep_seconds = 0;
-  config.show_day = DEFAULT_DAY_CARD;
-  config.show_date = DEFAULT_DATE_CARD;
+  config.show_day = DEFAULT_DAY_WINDOW;
+  config.show_date = DEFAULT_DATE_WINDOW;
   config.display_lang = 0;
   config.face_index = 0;
 }

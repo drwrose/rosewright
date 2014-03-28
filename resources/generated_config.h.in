@@ -33,11 +33,11 @@
   #define NDEBUG 1
 #endif
 
-#define ENABLE_DAY_CARD %(enableDayCard)s
-#define DEFAULT_DAY_CARD %(defaultDayCard)s
+#define ENABLE_DAY_WINDOW %(enableDayWindow)s
+#define DEFAULT_DAY_WINDOW %(defaultDayWindow)s
 
-#define ENABLE_DATE_CARD %(enableDateCard)s
-#define DEFAULT_DATE_CARD %(defaultDateCard)s
+#define ENABLE_DATE_WINDOW %(enableDateWindow)s
+#define DEFAULT_DATE_WINDOW %(defaultDateWindow)s
  
 #define ENABLE_BLUETOOTH %(enableBluetooth)s
 #define DEFAULT_BLUETOOTH %(defaultBluetooth)s

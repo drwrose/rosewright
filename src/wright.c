@@ -14,8 +14,8 @@ BitmapWithData clock_face;
 int face_index = -1;
 Layer *clock_face_layer;
 
-BitmapWithData date_card;
-BitmapWithData date_card_mask;
+BitmapWithData date_window;
+BitmapWithData date_window_mask;
 
 struct FontPlacement {
   unsigned char resource_id;
@@ -42,7 +42,7 @@ struct FontPlacement day_font_placement[NUM_DAY_FONTS] = {
 };
 
 // This structure is filled in from the appropriate resource file to
-// reflect the names we are displaying in the day/month card based on
+// reflect the names we are displaying in the day/month window based on
 // configuration settings.
 //#define DAY_NAMES_MAX_BUFFER xx // defined in lang_table.c.
 #define NUM_DAY_NAMES 12  // Enough for 12 months
@@ -172,18 +172,18 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
     placement->second_hand_index = ((NUM_STEPS_SECOND * use_ms) / (60 * 1000));
   }
 
-#ifdef ENABLE_DAY_CARD
+#ifdef ENABLE_DAY_WINDOW
   if (time != NULL) {
     placement->day_index = time->tm_wday;
     placement->month_index = time->tm_mon;
   }
-#endif  // ENABLE_DAY_CARD
+#endif  // ENABLE_DAY_WINDOW
 
-#ifdef ENABLE_DATE_CARD
+#ifdef ENABLE_DATE_WINDOW
   if (time != NULL) {
     placement->date_value = time->tm_mday;
   }
-#endif  // ENABLE_DATE_CARD
+#endif  // ENABLE_DATE_WINDOW
 
   placement->hour_buzzer = (ms / (SECONDS_PER_HOUR * 1000)) % 24;
 
@@ -480,11 +480,11 @@ void second_layer_update_callback(Layer *me, GContext *ctx) {
   }
 }
 
-// Draws a day/date card with the specified contents.  Usually this is
-// either the weekday or month card, or it is the numeric date card.
-void draw_card(Layer *me, GContext *ctx, const char *text, struct FontPlacement *font_placement, 
+// Draws a day/date window with the specified contents.  Usually this is
+// either the weekday or month window, or it is the numeric date window.
+void draw_window(Layer *me, GContext *ctx, const char *text, struct FontPlacement *font_placement, 
 	       GFont *font, bool invert, bool opaque_layer) {
-  // For now, the size of the card is hardcoded.
+  // For now, the size of the window is hardcoded.
   GRect box = {
     { 2, 0 }, { 37, 19 }
   };
@@ -492,28 +492,28 @@ void draw_card(Layer *me, GContext *ctx, const char *text, struct FontPlacement 
   unsigned int draw_mode = invert ^ config.draw_mode;
 
   if (opaque_layer) {
-    if (date_card_mask.bitmap == NULL) {
-      date_card_mask = rle_bwd_create(RESOURCE_ID_DATE_CARD_MASK);
-      if (date_card_mask.bitmap == NULL) {
+    if (date_window_mask.bitmap == NULL) {
+      date_window_mask = rle_bwd_create(RESOURCE_ID_DATE_WINDOW_MASK);
+      if (date_window_mask.bitmap == NULL) {
 	trigger_memory_panic(__LINE__);
         return;
       }
     }
     graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_mask);
-    graphics_draw_bitmap_in_rect(ctx, date_card_mask.bitmap, box);
+    graphics_draw_bitmap_in_rect(ctx, date_window_mask.bitmap, box);
   }
   
-  if (date_card.bitmap == NULL) {
-    date_card = rle_bwd_create(RESOURCE_ID_DATE_CARD);
-    if (date_card.bitmap == NULL) {
-      bwd_destroy(&date_card_mask);
+  if (date_window.bitmap == NULL) {
+    date_window = rle_bwd_create(RESOURCE_ID_DATE_WINDOW);
+    if (date_window.bitmap == NULL) {
+      bwd_destroy(&date_window_mask);
       trigger_memory_panic(__LINE__);
       return;
     }
   }
 
   graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_fg);
-  graphics_draw_bitmap_in_rect(ctx, date_card.bitmap, box);
+  graphics_draw_bitmap_in_rect(ctx, date_window.bitmap, box);
 
   graphics_context_set_text_color(ctx, draw_mode_table[draw_mode].colors[1]);
 
@@ -537,7 +537,7 @@ void draw_card(Layer *me, GContext *ctx, const char *text, struct FontPlacement 
                      NULL);
 }
 
-#ifdef ENABLE_DAY_CARD
+#ifdef ENABLE_DAY_WINDOW
 void day_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "day_layer");
 
@@ -550,26 +550,26 @@ void day_layer_update_callback(Layer *me, GContext *ctx) {
       show_name = day_names[current_placement.month_index];
     }
     if (show_name != NULL) {
-      const struct IndicatorTable *card = &day_table[config.face_index];
-      draw_card(me, ctx, show_name, &day_font_placement[lang->font_index], &day_font, card->invert, card->opaque);
+      const struct IndicatorTable *window = &day_table[config.face_index];
+      draw_window(me, ctx, show_name, &day_font_placement[lang->font_index], &day_font, window->invert, window->opaque);
     }
   }
 }
-#endif  // ENABLE_DAY_CARD
+#endif  // ENABLE_DAY_WINDOW
 
-#ifdef ENABLE_DATE_CARD
+#ifdef ENABLE_DATE_WINDOW
 void date_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "date_layer");
 
   if (config.show_date) {
-#define DATE_CARD_BUFFER_SIZE 16
-    char buffer[DATE_CARD_BUFFER_SIZE];
-    snprintf(buffer, DATE_CARD_BUFFER_SIZE, "%d", current_placement.date_value);
-    const struct IndicatorTable *card = &date_table[config.face_index];
-    draw_card(me, ctx, buffer, &date_font_placement, &date_font, card->invert, card->opaque);
+#define DATE_WINDOW_BUFFER_SIZE 16
+    char buffer[DATE_WINDOW_BUFFER_SIZE];
+    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", current_placement.date_value);
+    const struct IndicatorTable *window = &date_table[config.face_index];
+    draw_window(me, ctx, buffer, &date_font_placement, &date_font, window->invert, window->opaque);
   }
 }
-#endif  // ENABLE_DATE_CARD
+#endif  // ENABLE_DATE_WINDOW
 
 // Called once per epoch (e.g. once per second, or once per minute) to
 // compute the new positions for all of the hands on the watch based
@@ -615,21 +615,21 @@ void update_hands(struct tm *time) {
   update_chrono_hands(&new_placement);
 #endif  // MAKE_CHRONOGRAPH
 
-#ifdef ENABLE_DAY_CARD
+#ifdef ENABLE_DAY_WINDOW
   if (new_placement.day_index != current_placement.day_index ||
       new_placement.month_index != current_placement.month_index) {
     current_placement.day_index = new_placement.day_index;
     current_placement.month_index = new_placement.month_index;
     layer_mark_dirty(day_layer);
   }
-#endif  // ENABLE_DAY_CARD
+#endif  // ENABLE_DAY_WINDOW
 
-#ifdef ENABLE_DATE_CARD
+#ifdef ENABLE_DATE_WINDOW
   if (new_placement.date_value != current_placement.date_value) {
     current_placement.date_value = new_placement.date_value;
     layer_mark_dirty(date_layer);
   }
-#endif  // ENABLE_DATE_CARD
+#endif  // ENABLE_DATE_WINDOW
 }
 
 // Triggered at sweep_timer_ms intervals to run the sweep-second hand
@@ -730,26 +730,26 @@ void apply_config() {
     bwd_destroy(&clock_face);
 
     // Also move any layers to their new position on this face.
-#ifdef ENABLE_DAY_CARD
+#ifdef ENABLE_DAY_WINDOW
     {
-      const struct IndicatorTable *card = &day_table[config.face_index];
-      layer_set_frame((Layer *)day_layer, GRect(card->x - 19, card->y - 8, 39, 19));
+      const struct IndicatorTable *window = &day_table[config.face_index];
+      layer_set_frame((Layer *)day_layer, GRect(window->x - 19, window->y - 8, 39, 19));
     }
-#endif  // ENABLE_DAY_CARD
+#endif  // ENABLE_DAY_WINDOW
 
-#ifdef ENABLE_DATE_CARD
+#ifdef ENABLE_DATE_WINDOW
     {
-      const struct IndicatorTable *card = &date_table[config.face_index];
-      layer_set_frame((Layer *)date_layer, GRect(card->x - 19, card->y - 8, 39, 19));
+      const struct IndicatorTable *window = &date_table[config.face_index];
+      layer_set_frame((Layer *)date_layer, GRect(window->x - 19, window->y - 8, 39, 19));
     }
-#endif  // ENABLE_DATE_CARD
+#endif  // ENABLE_DATE_WINDOW
     {
-      const struct IndicatorTable *card = &battery_table[config.face_index];
-      move_battery_gauge(card->x, card->y, card->invert, card->opaque);
+      const struct IndicatorTable *window = &battery_table[config.face_index];
+      move_battery_gauge(window->x, window->y, window->invert, window->opaque);
     }
     {
-      const struct IndicatorTable *card = &bluetooth_table[config.face_index];
-      move_bluetooth_indicator(card->x, card->y, card->invert, card->opaque);
+      const struct IndicatorTable *window = &bluetooth_table[config.face_index];
+      move_bluetooth_indicator(window->x, window->y, window->invert, window->opaque);
     }
   }
 
@@ -830,33 +830,33 @@ void create_objects() {
   layer_add_child(window_layer, clock_face_layer);
 
   {
-    const struct IndicatorTable *card = &battery_table[config.face_index];
-    init_battery_gauge(window_layer, card->x, card->y, card->invert, card->opaque);
+    const struct IndicatorTable *window = &battery_table[config.face_index];
+    init_battery_gauge(window_layer, window->x, window->y, window->invert, window->opaque);
   }
   {
-    const struct IndicatorTable *card = &bluetooth_table[config.face_index];
-    init_bluetooth_indicator(window_layer, card->x, card->y, card->invert, card->opaque);
+    const struct IndicatorTable *window = &bluetooth_table[config.face_index];
+    init_bluetooth_indicator(window_layer, window->x, window->y, window->invert, window->opaque);
   }
 
-#ifdef ENABLE_DAY_CARD
+#ifdef ENABLE_DAY_WINDOW
   {
-    const struct IndicatorTable *card = &day_table[config.face_index];
-    day_layer = layer_create(GRect(card->x - 19, card->y - 8, 39, 19));
+    const struct IndicatorTable *window = &day_table[config.face_index];
+    day_layer = layer_create(GRect(window->x - 19, window->y - 8, 39, 19));
     assert(day_layer != NULL);
     layer_set_update_proc(day_layer, &day_layer_update_callback);
     layer_add_child(window_layer, day_layer);
   }
-#endif  // ENABLE_DAY_CARD
+#endif  // ENABLE_DAY_WINDOW
 
-#ifdef ENABLE_DATE_CARD
+#ifdef ENABLE_DATE_WINDOW
   {
-    const struct IndicatorTable *card = &date_table[config.face_index];
-    date_layer = layer_create(GRect(card->x - 19, card->y - 8, 39, 19));
+    const struct IndicatorTable *window = &date_table[config.face_index];
+    date_layer = layer_create(GRect(window->x - 19, window->y - 8, 39, 19));
     assert(date_layer != NULL);
     layer_set_update_proc(date_layer, &date_layer_update_callback);
     layer_add_child(window_layer, date_layer);
   }
-#endif  // ENABLE_DATE_CARD
+#endif  // ENABLE_DATE_WINDOW
 
 #ifdef MAKE_CHRONOGRAPH
   create_chrono_objects();
@@ -934,17 +934,17 @@ void destroy_objects() {
   deinit_battery_gauge();
   deinit_bluetooth_indicator();
 
-#ifdef ENABLE_DAY_CARD
+#ifdef ENABLE_DAY_WINDOW
   layer_destroy(day_layer);
   day_layer = NULL;
 #endif
-#ifdef ENABLE_DATE_CARD
+#ifdef ENABLE_DATE_WINDOW
   layer_destroy(date_layer);
   date_layer = NULL;
 #endif
-#if defined(ENABLE_DAY_CARD) || defined(ENABLE_DATE_CARD)
-  bwd_destroy(&date_card);
-  bwd_destroy(&date_card_mask);
+#if defined(ENABLE_DAY_WINDOW) || defined(ENABLE_DATE_WINDOW)
+  bwd_destroy(&date_window);
+  bwd_destroy(&date_window_mask);
 #endif
   layer_destroy(minute_layer);
   layer_destroy(hour_layer);

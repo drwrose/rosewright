@@ -191,9 +191,9 @@ hands = {
 #
 #   filename  - the background image for the face, or a list of optional faces.
 #   chrono    - the (tenths, hours) images for the two chrono dials, if used.
-#   dateCard  - the (x, y, c) position, color, background of the "date of month" card, or None.
-#   dayCard   - the (x, y, c) position, color, background of the "day of week" card, or None.
-#   dateCardFilename - the (card, mask) images shared by all day and date cards.  The mask is used only if one of the dateCard or dayCard colors includes t for transparency.
+#   dateWindow  - the (x, y, c) position, color, background of the "date of month" window, or None.
+#   dayWindow   - the (x, y, c) position, color, background of the "day of week" window, or None.
+#   dateWindowFilename - the (window, mask) images shared by all day and date windows.  The mask is used only if one of the dateWindow or dayWindow colors includes t for transparency.
 #   battery   - the (x, y, c) position and color of the battery gauge, or None.
 #   bluetooth - the (x, y, c) position and color of the bluetooth indicator, or None.
 #   defaults  - a list of things enabled by default: one or more of 'date', 'day', 'battery', 'bluetooth', 'second'
@@ -209,28 +209,28 @@ hands = {
 # Note that filename may be a single string if the face style supports
 # a single watchface background, or it may be a list of strings if the
 # face style supports multiple background options.  If it is a list of
-# strings, then dayCard, dateCard, bluetooth, and battery may also be
+# strings, then dayWindow, dateWindow, bluetooth, and battery may also be
 # lists, in which case their definitions are applied separately for
 # each background option.  (But they don't have to be lists, in which
 # case their definitions are the same for all background options.)
 
-# Currently, all day/date cards must share the same (card, mask) images.
+# Currently, all day/date windows must share the same (window, mask) images.
 
 faces = {
     'a' : {
         'filename': ['a_face.png', 'a_face_unrotated.png'],
-        'dateCard': (106, 82, 'b'), 
-        'dayCard': (38, 82, 'b'),
-        'dateCardFilename' : ('date_card.png', 'date_card_mask.png'),
+        'dateWindow': (106, 82, 'b'), 
+        'dayWindow': (38, 82, 'b'),
+        'dateWindowFilename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : (51, 113, 'b'),
         'battery' : (77, 117, 'b'),
         'defaults' : [ 'date' ],
         },
     'b' : {
         'filename' : ['b_face_rect.png', 'b_face.png'],
-        'dateCard' : (92, 109, 'b'), 
-        'dayCard' : (52, 109, 'b'), 
-        'dateCardFilename' : ('date_card.png', 'date_card_mask.png'),
+        'dateWindow' : (92, 109, 'b'), 
+        'dayWindow' : (52, 109, 'b'), 
+        'dateWindowFilename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : (0, 0, 'bt'),
         'battery' : (125, 3, 'bt'),
         'defaults' : [ 'day', 'date' ],
@@ -239,20 +239,20 @@ faces = {
         'filename' : 'c_face.png',
         'chrono' : ('c_face_chrono_tenths.png', 'c_face_chrono_hours.png'),
         'centers' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
-        'dateCard' : (92, 45, 'wt'), 
-        'dayCard' : (52, 45, 'wt'),
-        'dateCardFilename' : ('date_card.png', 'date_card_mask.png'),
+        'dateWindow' : (92, 45, 'wt'), 
+        'dayWindow' : (52, 45, 'wt'),
+        'dateWindowFilename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : (0, 0, 'w'),
         'battery' : (125, 3, 'w'),
         'defaults' : [ 'second' ],
         },
     'd' : {
         'filename' : ['d_face_rect.png', 'd_face_rect_clean.png', 'd_face.png', 'd_face_clean.png'],
-        'dateCard' : [ (95, 121, 'wt'), (95, 121, 'b'),
+        'dateWindow' : [ (95, 121, 'wt'), (95, 121, 'b'),
                        (91, 107, 'wt'), (91, 107, 'b'), ],
-        'dayCard' : [ (49, 121, 'wt'), (49, 121, 'b'),
+        'dayWindow' : [ (49, 121, 'wt'), (49, 121, 'b'),
                       (53, 107, 'wt'), (53, 107, 'b'), ],
-        'dateCardFilename' : ('date_card.png', 'date_card_mask.png'),
+        'dateWindowFilename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : [ (49, 45, 'bt'), (49, 45, 'b'),
                         (0, 0, 'w'), (0, 0, 'w'), ],
         'battery' : [ (79, 49, 'bt'), (79, 49, 'bt'),
@@ -261,9 +261,9 @@ faces = {
         },
     'e' : {
         'filename' : ['e_face.png', 'e_face_white.png'],
-        'dateCard' : (123, 82, 'bt'), 
-        'dayCard' : (21, 82, 'bt'),
-        'dateCardFilename' : ('date_card.png', 'date_card_mask.png'),
+        'dateWindow' : (123, 82, 'bt'), 
+        'dayWindow' : (21, 82, 'bt'),
+        'dateWindowFilename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : [ (11, 12, 'w'), (11, 12, 'b'), ],
         'battery' : [ (113, 16, 'w'), (113, 16, 'b'), ],
         'defaults' : [ 'date' ],
@@ -277,9 +277,9 @@ enableHourBuzzer = False
 enableChronoMinuteHand = False
 enableChronoSecondHand = False
 enableChronoTenthHand = False
-dayCard = [None]
-dateCard = [None]
-dateCardFilename = None
+dayWindow = [None]
+dateWindow = [None]
+dateWindowFilename = None
 bluetooth = [None]
 battery = [None]
 defaults = []
@@ -360,7 +360,7 @@ def makeFaces(generatedTable, generatedDefs):
       "type": "%(ptype)s"
     },"""    
     
-    dateCardEntry = """
+    dateWindowEntry = """
     {
       "name": "%(name)s",
       "file": "%(rleFilename)s",
@@ -412,20 +412,20 @@ def makeFaces(generatedTable, generatedDefs):
             }
     print >> generatedTable, "};\n"
 
-    if (dateCard[0] or dayCard[0]) and dateCardFilename:
-        card, mask = dateCardFilename
+    if (dateWindow[0] or dayWindow[0]) and dateWindowFilename:
+        window, mask = dateWindowFilename
 
-        rleFilename, ptype = make_rle('clock_faces/' + card, useRle = supportRle)
-        resourceStr += dateCardEntry % {
-            'name' : 'DATE_CARD',
+        rleFilename, ptype = make_rle('clock_faces/' + window, useRle = supportRle)
+        resourceStr += dateWindowEntry % {
+            'name' : 'DATE_WINDOW',
             'rleFilename' : rleFilename,
             'ptype' : ptype,
             }
 
         if mask:
             rleFilename, ptype = make_rle('clock_faces/' + mask, useRle = supportRle)
-            resourceStr += dateCardEntry % {
-                'name' : 'DATE_CARD_MASK',
+            resourceStr += dateWindowEntry % {
+                'name' : 'DATE_WINDOW_MASK',
                 'rleFilename' : rleFilename,
                 'ptype' : ptype,
                 }
@@ -800,7 +800,7 @@ def getIndicator(fd, indicator):
 def makeIndicatorTable(generatedTable, name, indicator):
     """ Makes an array of IndicatorTable values to define how a given
     indicator (that is, a bluetooth or battery indicator, or a
-    day/date card) is meant to be rendered for each of the alternate
+    day/date window) is meant to be rendered for each of the alternate
     faces. """
 
     if not indicator[0]:
@@ -825,8 +825,8 @@ def configWatch():
     resourceStr += makeFaces(generatedTable, generatedDefs)
     resourceStr += makeHands(generatedTable, generatedDefs)
 
-    makeIndicatorTable(generatedTable, 'date_table', dateCard)
-    makeIndicatorTable(generatedTable, 'day_table', dayCard)
+    makeIndicatorTable(generatedTable, 'date_table', dateWindow)
+    makeIndicatorTable(generatedTable, 'day_table', dayWindow)
     makeIndicatorTable(generatedTable, 'battery_table', battery)
     makeIndicatorTable(generatedTable, 'bluetooth_table', bluetooth)
 
@@ -859,10 +859,10 @@ def configWatch():
         'enableSecondHand' : int(enableSecondHand and not suppressSecondHand),
         'enableHourBuzzer' : int(enableHourBuzzer),
         'enableSweepSeconds' : int(enableSecondHand and supportSweep),
-        'enableDayCard' : int(bool(dayCard[0])),
-        'enableDateCard' : int(bool(dateCard[0])),
-        'defaultDayCard' : int(bool('day' in defaults)),
-        'defaultDateCard' : int(bool('date' in defaults)),
+        'enableDayWindow' : int(bool(dayWindow[0])),
+        'enableDateWindow' : int(bool(dateWindow[0])),
+        'defaultDayWindow' : int(bool('day' in defaults)),
+        'defaultDateWindow' : int(bool('date' in defaults)),
         }
 
     configIn = open('%s/generated_config.h.in' % (resourcesDir), 'r').read()
@@ -889,14 +889,14 @@ def configWatch():
         'numStepsChronoSecond' : getNumSteps('chrono_second'),
         'numStepsChronoTenth' : numSteps['chrono_tenth'],
         'compileDebugging' : int(compileDebugging),
-        'enableDayCard' : int(bool(dayCard[0])),
-        'enableDateCard' : int(bool(dateCard[0])),
+        'enableDayWindow' : int(bool(dayWindow[0])),
+        'enableDateWindow' : int(bool(dateWindow[0])),
         'enableBluetooth' : int(bool(bluetooth[0])),
         'defaultBluetooth' : int(bool('bluetooth' in defaults)),
         'enableBatteryGauge' : int(bool(battery[0])),
         'defaultBattery' : int(bool('battery' in defaults)),
-        'defaultDayCard' : int(bool('day' in defaults)),
-        'defaultDateCard' : int(bool('date' in defaults)),
+        'defaultDayWindow' : int(bool('day' in defaults)),
+        'defaultDateWindow' : int(bool('date' in defaults)),
         'enableSecondHand' : int(enableSecondHand and not suppressSecondHand),
         'enableSweepSeconds' : int(enableSecondHand and supportSweep),
         'enableHourBuzzer' : int(enableHourBuzzer),
@@ -972,9 +972,9 @@ if isinstance(faceFilenames, type('')):
     faceFilenames = [faceFilenames]
 numFaces = len(faceFilenames)
 
-dayCard = getIndicator(fd, 'dayCard')
-dateCard = getIndicator(fd, 'dateCard')
-dateCardFilename = fd.get('dateCardFilename', None)
+dayWindow = getIndicator(fd, 'dayWindow')
+dateWindow = getIndicator(fd, 'dateWindow')
+dateWindowFilename = fd.get('dateWindowFilename', None)
 bluetooth = getIndicator(fd, 'bluetooth')
 battery = getIndicator(fd, 'battery')
 defaults = fd.get('defaults', [])
