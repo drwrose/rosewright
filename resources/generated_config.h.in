@@ -36,8 +36,7 @@
   #define NDEBUG 1
 #endif
 
-#define DEFAULT_DAY_WINDOW %(defaultDayWindow)s
-#define DEFAULT_DATE_WINDOW %(defaultDateWindow)s
+#define DEFAULT_DATE_WINDOWS %(defaultDateWindows)s
  
 #define ENABLE_BLUETOOTH %(enableBluetooth)s
 #define DEFAULT_BLUETOOTH %(defaultBluetooth)s

@@ -8,18 +8,20 @@ void init_default_options() {
   // that these defaults are used only if the Pebble is not connected
   // to the phone at the time of launch; otherwise, the defaults in
   // pebble-js-app.js are used instead.
-  config.keep_battery_gauge = DEFAULT_BATTERY_GAUGE;
-  config.keep_bluetooth_indicator = DEFAULT_BLUETOOTH;
-  config.second_hand = ENABLE_SECOND_HAND;
-  config.hour_buzzer = ENABLE_HOUR_BUZZER;
-  config.draw_mode = 0;
-  config.chrono_dial = CDM_tenths;
-  config.sweep_seconds = 0;
-  config.display_lang = 0;
-  config.face_index = 0;
-  for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
-    config.date_windows[i] = DWM_identify;
-  }
+  static ConfigOptions default_options = {
+    DEFAULT_BATTERY_GAUGE,
+    DEFAULT_BLUETOOTH,
+    ENABLE_SECOND_HAND,
+    ENABLE_HOUR_BUZZER,
+    false,
+    CDM_tenths,
+    false,
+    0,
+    0,
+    { DEFAULT_DATE_WINDOWS },
+  };
+  
+  config = default_options;
 }
 
 void sanitize_config() {
@@ -44,7 +46,7 @@ const char *show_config() {
     char b2[12];
     snprintf(b2, 12, "%d", config.date_windows[0]);
     strncat(buffer, b2, CONFIG_BUFFER_SIZE);
-    for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
+    for (int i = 1; i < NUM_DATE_WINDOWS; ++i) {
       snprintf(b2, 12, ",%d", config.date_windows[i]);
       strncat(buffer, b2, CONFIG_BUFFER_SIZE);
     }

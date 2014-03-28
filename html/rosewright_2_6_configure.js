@@ -112,7 +112,7 @@ if (num_date_windows) {
 	makeOption(sym, label, date_window_options);
     }
 
-    makeOption("display_lang", "Language for day/month", langs, storeStringResult);
+    makeOption("display_lang", "Language for date windows", langs, storeStringResult);
 }
 
 makeOption("hour_buzzer", "Vibrate at each hour");

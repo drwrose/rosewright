@@ -197,7 +197,7 @@ hands = {
 #   date_window_filename - the (window, mask) images shared by all date windows.  The mask is used only if one of the date_window_* colors includes t for transparency.
 #   battery   - the (x, y, c) position and color of the battery gauge, or None.
 #   bluetooth - the (x, y, c) position and color of the bluetooth indicator, or None.
-#   defaults  - a list of things enabled by default: one or more of 'date_window_a', 'date_window_b', 'battery', 'bluetooth', 'second'
+#   defaults  - a list of things enabled by default: one or more of 'date:X', 'day:X', 'battery', 'bluetooth', 'second'
 #   centers   - a tuple of ((hand, x, y), ...) to indicate the position for
 #               each kind of watch hand.  If the tuple is empty or a
 #               hand is omitted, the default is the center.  This also
@@ -224,19 +224,22 @@ faces = {
         'filename': ['a_face.png', 'a_face_unrotated.png'],
         'date_window_a': (38, 82, 'b'),
         'date_window_b': (106, 82, 'b'), 
+        'date_window_c' : (52, 109, 'b'), 
+        'date_window_d' : (92, 109, 'b'), 
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : (51, 113, 'b'),
         'battery' : (77, 117, 'b'),
-        'defaults' : [ 'date_window_b' ],
+        'defaults' : [ 'date:b' ],
         },
     'b' : {
         'filename' : ['b_face_rect.png', 'b_face.png'],
-        'date_window_a' : (52, 109, 'b'), 
-        'date_window_b' : (92, 109, 'b'), 
+        'date_window_a' : (72, 54, 'bt'), 
+        'date_window_b' : (52, 109, 'b'), 
+        'date_window_c' : (92, 109, 'b'), 
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : (0, 0, 'bt'),
         'battery' : (125, 3, 'bt'),
-        'defaults' : [ 'date_window_a', 'date_window_b' ],
+        'defaults' : [ 'day:b', 'date:c' ],
         },
     'c' : {
         'filename' : 'c_face.png',
@@ -251,25 +254,31 @@ faces = {
         },
     'd' : {
         'filename' : ['d_face_rect.png', 'd_face_rect_clean.png', 'd_face.png', 'd_face_clean.png'],
-        'date_window_a' : [ (49, 121, 'wt'), (49, 121, 'b'),
-                            (53, 107, 'wt'), (53, 107, 'b'), ],
-        'date_window_b' : [ (95, 121, 'wt'), (95, 121, 'b'),
-                            (91, 107, 'wt'), (91, 107, 'b'), ],
+        'date_window_a': [ (49, 102, 'wt'), (49, 102, 'b'),
+                           (41, 82, 'wt'), (41, 82, 'b'), ],
+        'date_window_b': [ (95, 102, 'wt'), (95, 102, 'b'),
+                           (103, 82, 'wt'), (103, 82, 'b'), ],
+        'date_window_c' : [ (49, 125, 'wt'), (49, 125, 'b'),
+                            (52, 107, 'wt'), (52, 107, 'b'), ],
+        'date_window_d' : [ (95, 125, 'wt'), (95, 125, 'b'),
+                            (92, 107, 'wt'), (92, 107, 'b'), ],
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : [ (49, 45, 'bt'), (49, 45, 'b'),
                         (0, 0, 'w'), (0, 0, 'w'), ],
         'battery' : [ (79, 49, 'bt'), (79, 49, 'bt'),
                       (125, 3, 'w'), (125, 3, 'w'), ],
-        'defaults' : [ 'date_window_a', 'date_window_b', 'bluetooth', 'battery' ],
+        'defaults' : [ 'day:c', 'date:d', 'bluetooth', 'battery' ],
         },
     'e' : {
         'filename' : ['e_face.png', 'e_face_white.png'],
-        'date_window_a' : (21, 82, 'bt'),
-        'date_window_b' : (123, 82, 'bt'), 
+        'date_window_a' : (72, 21, 'bt'),
+        'date_window_b' : (21, 82, 'bt'), 
+        'date_window_c' : (123, 82, 'bt'), 
+        'date_window_d' : (72, 146, 'bt'), 
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : [ (11, 12, 'w'), (11, 12, 'b'), ],
         'battery' : [ (113, 16, 'w'), (113, 16, 'b'), ],
-        'defaults' : [ 'date_window_b' ],
+        'defaults' : [ 'date:c' ],
         },
     }
 
@@ -878,7 +887,7 @@ def configWatch():
         'enableSecondHand' : int(enableSecondHand and not suppressSecondHand),
         'enableHourBuzzer' : int(enableHourBuzzer),
         'enableSweepSeconds' : int(enableSecondHand and supportSweep),
-        'defaultDateWindows' : repr([0] * len(date_windows)),
+        'defaultDateWindows' : repr(defaultDateWindows),
         }
 
     configIn = open('%s/generated_config.h.in' % (resourcesDir), 'r').read()
@@ -906,12 +915,11 @@ def configWatch():
         'numStepsChronoSecond' : getNumSteps('chrono_second'),
         'numStepsChronoTenth' : numSteps['chrono_tenth'],
         'compileDebugging' : int(compileDebugging),
+        'defaultDateWindows' : repr(defaultDateWindows)[1:-1],
         'enableBluetooth' : int(bool(bluetooth[0])),
         'defaultBluetooth' : int(bool('bluetooth' in defaults)),
         'enableBatteryGauge' : int(bool(battery[0])),
         'defaultBattery' : int(bool('battery' in defaults)),
-        'defaultDayWindow' : int(bool('date_window_a' in defaults)),
-        'defaultDateWindow' : int(bool('date_window_b' in defaults)),
         'enableSecondHand' : int(enableSecondHand and not suppressSecondHand),
         'enableSweepSeconds' : int(enableSecondHand and supportSweep),
         'enableHourBuzzer' : int(enableHourBuzzer),
@@ -1002,6 +1010,18 @@ bluetooth = getIndicator(fd, 'bluetooth')
 battery = getIndicator(fd, 'battery')
 defaults = fd.get('defaults', [])
 centers = fd.get('centers', ())
+
+# Look for 'day' and 'date' prefixes in the defaults.
+defaultDateWindows = [0] * len(date_windows)
+for keyword in defaults:
+    if keyword.startswith('day:'):
+        ch = keyword.split(':', 1)[1]
+        i = ord(ch) - 97
+        defaultDateWindows[i] = 4  # == DWM_weekday
+    elif keyword.startswith('date:'):
+        ch = keyword.split(':', 1)[1]
+        i = ord(ch) - 97
+        defaultDateWindows[i] = 2  # == date
 
 # Map the centers tuple into a dictionary of points for x and y.
 cxd = dict(map(lambda (hand, x, y): (hand, x), centers))

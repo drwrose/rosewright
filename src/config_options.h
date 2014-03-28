@@ -49,7 +49,7 @@ typedef struct {
   bool second_hand;
   bool hour_buzzer;
   unsigned char draw_mode;
-  unsigned char chrono_dial;
+  ChronoDialMode chrono_dial;
   bool sweep_seconds;
   unsigned char display_lang;
   unsigned char face_index;

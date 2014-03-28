@@ -555,7 +555,7 @@ void draw_window(Layer *me, GContext *ctx, const char *text, struct FontPlacemen
 void date_window_layer_update_callback(Layer *me, GContext *ctx) {
   DateWindowData *data = (DateWindowData *)layer_get_data(me);
   unsigned int date_window_index = data->date_window_index;
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "date_window_layer %c", date_window_index + 'a');
+  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "date_window_layer %c", date_window_index + 'a');
 
   DateWindowMode dwm = config.date_windows[date_window_index];
   if (dwm == DWM_off) {

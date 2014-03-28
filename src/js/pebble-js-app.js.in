@@ -112,7 +112,7 @@ function initialize() {
 	    'display_lang' : display_lang,
 	    'face_index' : face_index,
 	};
-	for (var i in date_windows) {
+	for (var i = 0; i < num_date_windows; ++i) {
 	    var sym = 'date_window_' + String.fromCharCode(97 + i);
 	    configuration[sym] = date_windows[i];
 	}
