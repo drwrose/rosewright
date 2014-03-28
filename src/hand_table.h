@@ -103,7 +103,7 @@ struct __attribute__((__packed__)) HandDef {
 #define STACKING_ORDER_CHRONO_TENTH 6
 #define STACKING_ORDER_DONE 0
 
-// A table for bluetooth and battery icons, as well as day/date windows.
+// A table for bluetooth and battery icons, as well as date windows.
 struct __attribute__((__packed__)) IndicatorTable {
   unsigned char x, y;
   bool invert;

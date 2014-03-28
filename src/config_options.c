@@ -15,10 +15,11 @@ void init_default_options() {
   config.draw_mode = 0;
   config.chrono_dial = CDM_tenths;
   config.sweep_seconds = 0;
-  config.show_day = DEFAULT_DAY_WINDOW;
-  config.show_date = DEFAULT_DATE_WINDOW;
   config.display_lang = 0;
   config.face_index = 0;
+  for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
+    config.date_windows[i] = DWM_identify;
+  }
 }
 
 void sanitize_config() {
@@ -29,13 +30,27 @@ void sanitize_config() {
   config.display_lang = config.display_lang % num_langs;
   config.face_index = config.face_index % NUM_FACES;
   config.show_day = config.show_day % (SDM_month + 1);
+  for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
+    config.date_windows[i] = config_date_windows[i] % (DWM_ampm + 1)
+  }
 }
 
 #ifndef NDEBUG
 const char *show_config() {
 #define CONFIG_BUFFER_SIZE 100
   static char buffer[CONFIG_BUFFER_SIZE];
-  snprintf(buffer, CONFIG_BUFFER_SIZE, "bat: %d, bt: %d, sh: %d, hb: %d, dm: %d, cd: %d, sw: %d, day: %d, date: %d, dl: %d, fi: %d", config.keep_battery_gauge, config.keep_bluetooth_indicator, config.second_hand, config.hour_buzzer, config.draw_mode, config.chrono_dial, config.sweep_seconds, config.show_day, config.show_date, config.display_lang, config.face_index);
+  snprintf(buffer, CONFIG_BUFFER_SIZE, "bat: %d, bt: %d, sh: %d, hb: %d, dm: %d, cd: %d, sw: %d, dl: %d, fi: %d, dw: ", config.keep_battery_gauge, config.keep_bluetooth_indicator, config.second_hand, config.hour_buzzer, config.draw_mode, config.chrono_dial, config.sweep_seconds, config.display_lang, config.face_index);
+
+  if (NUM_DATE_WINDOWS > 0) {
+    char b2[12];
+    snprintf(b2, 12, "%d", config.date_windows[0]);
+    strncat(buffer, b2, CONFIG_BUFFER_SIZE);
+    for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
+      snprintf(b2, 12, ",%d", config.date_windows[i]);
+      strncat(buffer, b2, CONFIG_BUFFER_SIZE);
+    }
+  }
+  
   return buffer;
 }
 #endif  // NDEBUG
@@ -108,16 +123,6 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
     config.sweep_seconds = sweep_seconds->value->int32;
   }
 
-  Tuple *show_day = dict_find(received, CK_show_day);
-  if (show_day != NULL) {
-    config.show_day = show_day->value->int32;
-  }
-
-  Tuple *show_date = dict_find(received, CK_show_date);
-  if (show_date != NULL) {
-    config.show_date = show_date->value->int32;
-  }
-
   Tuple *display_lang = dict_find(received, CK_display_lang);
   if (display_lang != NULL) {
     // Look for the matching language name in our table of known languages.
@@ -133,6 +138,14 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
   if (face_index != NULL) {
     config.face_index = face_index->value->int32;
   }
+
+  for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
+    Tuple *date_window_x = dict_find(received, CK_date_window_a + i);
+    if (date_window_x != NULL) {
+      config.date_windows[i] = date_window_x->value->int32;
+    }
+  }
+
   sanitize_config();
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, show_config());

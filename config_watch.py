@@ -191,12 +191,13 @@ hands = {
 #
 #   filename  - the background image for the face, or a list of optional faces.
 #   chrono    - the (tenths, hours) images for the two chrono dials, if used.
-#   dateWindow  - the (x, y, c) position, color, background of the "date of month" window, or None.
-#   dayWindow   - the (x, y, c) position, color, background of the "day of week" window, or None.
-#   dateWindowFilename - the (window, mask) images shared by all day and date windows.  The mask is used only if one of the dateWindow or dayWindow colors includes t for transparency.
+#   date_window_a - the (x, y, c) position, color, background of the first date window.
+#   date_window_b - the (x, y, c) position, color, background of the second date window.
+#   date_window_c - etc.  All date windows must be consecutively named.
+#   date_window_filename - the (window, mask) images shared by all date windows.  The mask is used only if one of the date_window_* colors includes t for transparency.
 #   battery   - the (x, y, c) position and color of the battery gauge, or None.
 #   bluetooth - the (x, y, c) position and color of the bluetooth indicator, or None.
-#   defaults  - a list of things enabled by default: one or more of 'date', 'day', 'battery', 'bluetooth', 'second'
+#   defaults  - a list of things enabled by default: one or more of 'date_window_a', 'date_window_b', 'battery', 'bluetooth', 'second'
 #   centers   - a tuple of ((hand, x, y), ...) to indicate the position for
 #               each kind of watch hand.  If the tuple is empty or a
 #               hand is omitted, the default is the center.  This also
@@ -209,64 +210,66 @@ hands = {
 # Note that filename may be a single string if the face style supports
 # a single watchface background, or it may be a list of strings if the
 # face style supports multiple background options.  If it is a list of
-# strings, then dayWindow, dateWindow, bluetooth, and battery may also be
+# strings, then date_window_*, bluetooth, and battery may also be
 # lists, in which case their definitions are applied separately for
 # each background option.  (But they don't have to be lists, in which
 # case their definitions are the same for all background options.)
 
-# Currently, all day/date windows must share the same (window, mask) images.
+# Al date windows must share the same (window, mask) images.  They
+# must all be the same standard size, which is hardcoded in the source
+# code at 39 x 19 pixels.
 
 faces = {
     'a' : {
         'filename': ['a_face.png', 'a_face_unrotated.png'],
-        'dateWindow': (106, 82, 'b'), 
-        'dayWindow': (38, 82, 'b'),
-        'dateWindowFilename' : ('date_window.png', 'date_window_mask.png'),
+        'date_window_a': (38, 82, 'b'),
+        'date_window_b': (106, 82, 'b'), 
+        'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : (51, 113, 'b'),
         'battery' : (77, 117, 'b'),
-        'defaults' : [ 'date' ],
+        'defaults' : [ 'date_window_b' ],
         },
     'b' : {
         'filename' : ['b_face_rect.png', 'b_face.png'],
-        'dateWindow' : (92, 109, 'b'), 
-        'dayWindow' : (52, 109, 'b'), 
-        'dateWindowFilename' : ('date_window.png', 'date_window_mask.png'),
+        'date_window_a' : (52, 109, 'b'), 
+        'date_window_b' : (92, 109, 'b'), 
+        'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : (0, 0, 'bt'),
         'battery' : (125, 3, 'bt'),
-        'defaults' : [ 'day', 'date' ],
+        'defaults' : [ 'date_window_a', 'date_window_b' ],
         },
     'c' : {
         'filename' : 'c_face.png',
         'chrono' : ('c_face_chrono_tenths.png', 'c_face_chrono_hours.png'),
         'centers' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
-        'dateWindow' : (92, 45, 'wt'), 
-        'dayWindow' : (52, 45, 'wt'),
-        'dateWindowFilename' : ('date_window.png', 'date_window_mask.png'),
+        'date_window_a' : (52, 45, 'wt'),
+        'date_window_b' : (92, 45, 'wt'), 
+        'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : (0, 0, 'w'),
         'battery' : (125, 3, 'w'),
         'defaults' : [ 'second' ],
         },
     'd' : {
         'filename' : ['d_face_rect.png', 'd_face_rect_clean.png', 'd_face.png', 'd_face_clean.png'],
-        'dateWindow' : [ (95, 121, 'wt'), (95, 121, 'b'),
-                       (91, 107, 'wt'), (91, 107, 'b'), ],
-        'dayWindow' : [ (49, 121, 'wt'), (49, 121, 'b'),
-                      (53, 107, 'wt'), (53, 107, 'b'), ],
-        'dateWindowFilename' : ('date_window.png', 'date_window_mask.png'),
+        'date_window_a' : [ (49, 121, 'wt'), (49, 121, 'b'),
+                            (53, 107, 'wt'), (53, 107, 'b'), ],
+        'date_window_b' : [ (95, 121, 'wt'), (95, 121, 'b'),
+                            (91, 107, 'wt'), (91, 107, 'b'), ],
+        'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : [ (49, 45, 'bt'), (49, 45, 'b'),
                         (0, 0, 'w'), (0, 0, 'w'), ],
         'battery' : [ (79, 49, 'bt'), (79, 49, 'bt'),
                       (125, 3, 'w'), (125, 3, 'w'), ],
-        'defaults' : [ 'day', 'date', 'bluetooth', 'battery' ],
+        'defaults' : [ 'date_window_a', 'date_window_b', 'bluetooth', 'battery' ],
         },
     'e' : {
         'filename' : ['e_face.png', 'e_face_white.png'],
-        'dateWindow' : (123, 82, 'bt'), 
-        'dayWindow' : (21, 82, 'bt'),
-        'dateWindowFilename' : ('date_window.png', 'date_window_mask.png'),
+        'date_window_a' : (21, 82, 'bt'),
+        'date_window_b' : (123, 82, 'bt'), 
+        'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : [ (11, 12, 'w'), (11, 12, 'b'), ],
         'battery' : [ (113, 16, 'w'), (113, 16, 'b'), ],
-        'defaults' : [ 'date' ],
+        'defaults' : [ 'date_window_b' ],
         },
     }
 
@@ -277,9 +280,8 @@ enableHourBuzzer = False
 enableChronoMinuteHand = False
 enableChronoSecondHand = False
 enableChronoTenthHand = False
-dayWindow = [None]
-dateWindow = [None]
-dateWindowFilename = None
+date_windows = []
+date_window_filename = None
 bluetooth = [None]
 battery = [None]
 defaults = []
@@ -412,8 +414,8 @@ def makeFaces(generatedTable, generatedDefs):
             }
     print >> generatedTable, "};\n"
 
-    if (dateWindow[0] or dayWindow[0]) and dateWindowFilename:
-        window, mask = dateWindowFilename
+    if date_windows and date_window_filename:
+        window, mask = date_window_filename
 
         rleFilename, ptype = make_rle('clock_faces/' + window, useRle = supportRle)
         resourceStr += dateWindowEntry % {
@@ -797,7 +799,7 @@ def getIndicator(fd, indicator):
 
     return list
 
-def makeIndicatorTable(generatedTable, name, indicator):
+def makeIndicatorTable(generatedTable, generatedDefs, name, indicator, anonymous = False):
     """ Makes an array of IndicatorTable values to define how a given
     indicator (that is, a bluetooth or battery indicator, or a
     day/date window) is meant to be rendered for each of the alternate
@@ -809,12 +811,23 @@ def makeIndicatorTable(generatedTable, name, indicator):
         indicator = [indicator[0]] * numFaces
         
     assert len(indicator) == numFaces
-    
-    print >> generatedTable, "struct IndicatorTable %s[NUM_FACES] = {" % (name)
+
+    if anonymous:
+        # Anonymous structure within a table
+        print >> generatedTable, "  { // %s" % (name)
+    else:
+        # Standalone named structure
+        print >> generatedDefs, "extern struct IndicatorTable %s[NUM_FACES];" % (name)
+        print >> generatedTable, "struct IndicatorTable %s[NUM_FACES] = {" % (name)
     for x, y, c in indicator:
-        print >> generatedTable, "  { %s, %s, %s, %s }," % (
+        print >> generatedTable, "   { %s, %s, %s, %s }," % (
             x, y, int(c[0] == 'w'), int(c[-1] == 't'))
-    print >> generatedTable, "};\n";
+
+    if anonymous:
+        # Anonymous structure within a table
+        print >> generatedTable, "  },";
+    else:
+        print >> generatedTable, "};\n";
         
         
 def configWatch():
@@ -825,10 +838,15 @@ def configWatch():
     resourceStr += makeFaces(generatedTable, generatedDefs)
     resourceStr += makeHands(generatedTable, generatedDefs)
 
-    makeIndicatorTable(generatedTable, 'date_table', dateWindow)
-    makeIndicatorTable(generatedTable, 'day_table', dayWindow)
-    makeIndicatorTable(generatedTable, 'battery_table', battery)
-    makeIndicatorTable(generatedTable, 'bluetooth_table', bluetooth)
+    print >> generatedDefs, "extern struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_FACES];"
+    print >> generatedTable, "struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_FACES] = {"
+    for i in range(len(date_windows)):
+        ch = chr(97 + i)
+        makeIndicatorTable(generatedTable, generatedDefs, ch, date_windows[i], anonymous = True)
+    print >> generatedTable, "};\n"
+        
+    makeIndicatorTable(generatedTable, generatedDefs, 'battery_table', battery)
+    makeIndicatorTable(generatedTable, generatedDefs, 'bluetooth_table', bluetooth)
 
     resourceIn = open('%s/appinfo.json.in' % (rootDir), 'r').read()
     resource = open('%s/appinfo.json' % (rootDir), 'w')
@@ -853,16 +871,15 @@ def configWatch():
     print >> js, jsIn % {
         'watchName' : watchName,
         'numFaces' : numFaces,
+        'numDateWindows' : len(date_windows),
         'enableChronoDial' : int(makeChronograph),
         'defaultBluetooth' : int(bool('bluetooth' in defaults)),
         'defaultBattery' : int(bool('battery' in defaults)),
         'enableSecondHand' : int(enableSecondHand and not suppressSecondHand),
         'enableHourBuzzer' : int(enableHourBuzzer),
         'enableSweepSeconds' : int(enableSecondHand and supportSweep),
-        'enableDayWindow' : int(bool(dayWindow[0])),
-        'enableDateWindow' : int(bool(dateWindow[0])),
-        'defaultDayWindow' : int(bool('day' in defaults)),
-        'defaultDateWindow' : int(bool('date' in defaults)),
+        'defaultDayWindow' : int(bool('date_window_a' in defaults)),
+        'defaultDateWindow' : int(bool('date_window_b' in defaults)),
         }
 
     configIn = open('%s/generated_config.h.in' % (resourcesDir), 'r').read()
@@ -882,6 +899,7 @@ def configWatch():
         'persistKey' : 0x5151 + uuId[-1],
         'supportRle' : int(bool(supportRle)),
         'numFaces' : numFaces,
+        'numDateWindows' : len(date_windows),
         'numStepsHour' : numSteps['hour'],
         'numStepsMinute' : numSteps['minute'],
         'numStepsSecond' : getNumSteps('second'),
@@ -889,14 +907,12 @@ def configWatch():
         'numStepsChronoSecond' : getNumSteps('chrono_second'),
         'numStepsChronoTenth' : numSteps['chrono_tenth'],
         'compileDebugging' : int(compileDebugging),
-        'enableDayWindow' : int(bool(dayWindow[0])),
-        'enableDateWindow' : int(bool(dateWindow[0])),
         'enableBluetooth' : int(bool(bluetooth[0])),
         'defaultBluetooth' : int(bool('bluetooth' in defaults)),
         'enableBatteryGauge' : int(bool(battery[0])),
         'defaultBattery' : int(bool('battery' in defaults)),
-        'defaultDayWindow' : int(bool('day' in defaults)),
-        'defaultDateWindow' : int(bool('date' in defaults)),
+        'defaultDayWindow' : int(bool('date_window_a' in defaults)),
+        'defaultDateWindow' : int(bool('date_window_b' in defaults)),
         'enableSecondHand' : int(enableSecondHand and not suppressSecondHand),
         'enableSweepSeconds' : int(enableSecondHand and supportSweep),
         'enableHourBuzzer' : int(enableHourBuzzer),
@@ -972,9 +988,17 @@ if isinstance(faceFilenames, type('')):
     faceFilenames = [faceFilenames]
 numFaces = len(faceFilenames)
 
-dayWindow = getIndicator(fd, 'dayWindow')
-dateWindow = getIndicator(fd, 'dateWindow')
-dateWindowFilename = fd.get('dateWindowFilename', None)
+date_windows = []
+i = 0
+ch = chr(97 + i)
+dw = getIndicator(fd, 'date_window_%s' % (ch))
+while dw[0]:
+    date_windows.append(dw)
+    i += 1
+    ch = chr(97 + i)
+    dw = getIndicator(fd, 'date_window_%s' % (ch))
+
+date_window_filename = fd.get('date_window_filename', None)
 bluetooth = getIndicator(fd, 'bluetooth')
 battery = getIndicator(fd, 'battery')
 defaults = fd.get('defaults', [])

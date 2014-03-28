@@ -10,6 +10,9 @@
 // The number of different clock faces available.
 #define NUM_FACES %(numFaces)s
 
+// The number of date windows provided.
+#define NUM_DATE_WINDOWS %(numDateWindows)s
+
 // The number of subdivisions around the face for each kind of hand.
 #define NUM_STEPS_HOUR %(numStepsHour)s
 #define NUM_STEPS_MINUTE %(numStepsMinute)s
@@ -33,10 +36,7 @@
   #define NDEBUG 1
 #endif
 
-#define ENABLE_DAY_WINDOW %(enableDayWindow)s
 #define DEFAULT_DAY_WINDOW %(defaultDayWindow)s
-
-#define ENABLE_DATE_WINDOW %(enableDateWindow)s
 #define DEFAULT_DATE_WINDOW %(defaultDateWindow)s
  
 #define ENABLE_BLUETOOTH %(enableBluetooth)s

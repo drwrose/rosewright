@@ -17,10 +17,12 @@
     "draw_mode": 4,
     "chrono_dial": 5,
     "sweep_seconds": 6,
-    "show_day": 7,
-    "show_date": 8,
-    "display_lang": 9,
-    "face_index" : 10
+    "display_lang": 7,
+    "face_index" : 8,
+    "date_window_a": 9,
+    "date_window_b": 10,
+    "date_window_c": 11,
+    "date_window_d": 12
   },
   "resources": {
   "media": [

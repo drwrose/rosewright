@@ -17,19 +17,26 @@ Layer *clock_face_layer;
 BitmapWithData date_window;
 BitmapWithData date_window_mask;
 
+// This structure is the data associated with a date window layer.
+typedef struct __attribute__((__packed__)) {
+  unsigned char date_window_index;
+} DateWindowData;
+
+GFont date_numeric_font = NULL;
+GFont date_text_font = NULL;
+
+// This structure specifies how to load, and how to shift each
+// different font to appear properly within the date window.
 struct FontPlacement {
   unsigned char resource_id;
   signed char vshift;  // Value determined empirically for each font.
 };
 
-struct FontPlacement date_font_placement = {
+struct FontPlacement date_numeric_font_placement = {
   0, -3
 };
-GFont date_font = NULL;
-GFont day_font = NULL;
-
-#define NUM_DAY_FONTS 9
-struct FontPlacement day_font_placement[NUM_DAY_FONTS] = {
+#define NUM_DATE_TEXT_FONTS 9
+struct FontPlacement date_text_font_placement[NUM_DATE_TEXT_FONTS] = {
   { RESOURCE_ID_DAY_FONT_LATIN_16, -1 },
   { RESOURCE_ID_DAY_FONT_EXTENDED_14, 1 },
   { RESOURCE_ID_DAY_FONT_RTL_14, 1 },
@@ -60,8 +67,7 @@ Layer *hour_layer;
 Layer *minute_layer;
 Layer *second_layer;
 
-Layer *day_layer;  // day of the week (abbr)
-Layer *date_layer; // numeric date of the month
+Layer *date_window_layers[NUM_DATE_WINDOWS];
 
 struct HandCache hour_cache;
 struct HandCache minute_cache;
@@ -172,18 +178,12 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
     placement->second_hand_index = ((NUM_STEPS_SECOND * use_ms) / (60 * 1000));
   }
 
-#ifdef ENABLE_DAY_WINDOW
+  // Record data for date windows.
   if (time != NULL) {
     placement->day_index = time->tm_wday;
     placement->month_index = time->tm_mon;
-  }
-#endif  // ENABLE_DAY_WINDOW
-
-#ifdef ENABLE_DATE_WINDOW
-  if (time != NULL) {
     placement->date_value = time->tm_mday;
   }
-#endif  // ENABLE_DATE_WINDOW
 
   placement->hour_buzzer = (ms / (SECONDS_PER_HOUR * 1000)) % 24;
 
@@ -537,9 +537,10 @@ void draw_window(Layer *me, GContext *ctx, const char *text, struct FontPlacemen
                      NULL);
 }
 
-#ifdef ENABLE_DAY_WINDOW
-void day_layer_update_callback(Layer *me, GContext *ctx) {
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "day_layer");
+void date_window_layer_update_callback(Layer *me, GContext *ctx) {
+  DateWindowData *data = (DateWindowData *)layer_get_data(me);
+  unsigned int date_window_index = data->date_window_index;
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "date_window_layer %c", date_window_index + 'a');
 
   if (config.show_day != SDM_off) {
     const LangDef *lang = &lang_table[config.display_lang];
@@ -550,26 +551,21 @@ void day_layer_update_callback(Layer *me, GContext *ctx) {
       show_name = day_names[current_placement.month_index];
     }
     if (show_name != NULL) {
-      const struct IndicatorTable *window = &day_table[config.face_index];
-      draw_window(me, ctx, show_name, &day_font_placement[lang->font_index], &day_font, window->invert, window->opaque);
+      const struct IndicatorTable *window = &date_windows[date_window_index][config.face_index];
+      draw_window(me, ctx, show_name, &date_text_font_placement[lang->font_index], &date_text_font, window->invert, window->opaque);
     }
   }
-}
-#endif  // ENABLE_DAY_WINDOW
 
-#ifdef ENABLE_DATE_WINDOW
-void date_layer_update_callback(Layer *me, GContext *ctx) {
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "date_layer");
-
+  /*
   if (config.show_date) {
 #define DATE_WINDOW_BUFFER_SIZE 16
     char buffer[DATE_WINDOW_BUFFER_SIZE];
     snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", current_placement.date_value);
     const struct IndicatorTable *window = &date_table[config.face_index];
-    draw_window(me, ctx, buffer, &date_font_placement, &date_font, window->invert, window->opaque);
+    draw_window(me, ctx, buffer, &date_numeric_font_placement, &date_numeric_font, window->invert, window->opaque);
   }
+  */
 }
-#endif  // ENABLE_DATE_WINDOW
 
 // Called once per epoch (e.g. once per second, or once per minute) to
 // compute the new positions for all of the hands on the watch based
@@ -615,21 +611,19 @@ void update_hands(struct tm *time) {
   update_chrono_hands(&new_placement);
 #endif  // MAKE_CHRONOGRAPH
 
-#ifdef ENABLE_DAY_WINDOW
+  // If any of the date window properties changes, update all of the
+  // date windows.
   if (new_placement.day_index != current_placement.day_index ||
-      new_placement.month_index != current_placement.month_index) {
+      new_placement.month_index != current_placement.month_index ||
+      new_placement.date_value != current_placement.date_value) {
     current_placement.day_index = new_placement.day_index;
     current_placement.month_index = new_placement.month_index;
-    layer_mark_dirty(day_layer);
-  }
-#endif  // ENABLE_DAY_WINDOW
-
-#ifdef ENABLE_DATE_WINDOW
-  if (new_placement.date_value != current_placement.date_value) {
     current_placement.date_value = new_placement.date_value;
-    layer_mark_dirty(date_layer);
+
+    for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
+      layer_mark_dirty(date_window_layers[i]);
+    }
   }
-#endif  // ENABLE_DATE_WINDOW
 }
 
 // Triggered at sweep_timer_ms intervals to run the sweep-second hand
@@ -730,19 +724,11 @@ void apply_config() {
     bwd_destroy(&clock_face);
 
     // Also move any layers to their new position on this face.
-#ifdef ENABLE_DAY_WINDOW
-    {
-      const struct IndicatorTable *window = &day_table[config.face_index];
-      layer_set_frame((Layer *)day_layer, GRect(window->x - 19, window->y - 8, 39, 19));
+    for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
+      const struct IndicatorTable *window = &date_windows[i][config.face_index];
+      layer_set_frame((Layer *)date_window_layers[i], GRect(window->x - 19, window->y - 8, 39, 19));
     }
-#endif  // ENABLE_DAY_WINDOW
 
-#ifdef ENABLE_DATE_WINDOW
-    {
-      const struct IndicatorTable *window = &date_table[config.face_index];
-      layer_set_frame((Layer *)date_layer, GRect(window->x - 19, window->y - 8, 39, 19));
-    }
-#endif  // ENABLE_DATE_WINDOW
     {
       const struct IndicatorTable *window = &battery_table[config.face_index];
       move_battery_gauge(window->x, window->y, window->invert, window->opaque);
@@ -755,9 +741,9 @@ void apply_config() {
 
   if (display_lang != config.display_lang) {
     // Unload the day font if it changes with the language.
-    if (day_font != NULL && (display_lang == -1 || lang_table[display_lang].font_index != lang_table[config.display_lang].font_index)) {
-      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "apply_config unload day_font %p", day_font);
-      safe_unload_custom_font(&day_font);
+    if (date_text_font != NULL && (display_lang == -1 || lang_table[display_lang].font_index != lang_table[config.display_lang].font_index)) {
+      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "apply_config unload date_text_font %p", date_text_font);
+      safe_unload_custom_font(&date_text_font);
     }
     display_lang = config.display_lang;
   }
@@ -838,25 +824,17 @@ void create_objects() {
     init_bluetooth_indicator(window_layer, window->x, window->y, window->invert, window->opaque);
   }
 
-#ifdef ENABLE_DAY_WINDOW
-  {
-    const struct IndicatorTable *window = &day_table[config.face_index];
-    day_layer = layer_create(GRect(window->x - 19, window->y - 8, 39, 19));
-    assert(day_layer != NULL);
-    layer_set_update_proc(day_layer, &day_layer_update_callback);
-    layer_add_child(window_layer, day_layer);
-  }
-#endif  // ENABLE_DAY_WINDOW
+  for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
+    const struct IndicatorTable *window = &date_windows[i][config.face_index];
+    Layer *layer = layer_create_with_data(GRect(window->x - 19, window->y - 8, 39, 19), sizeof(DateWindowData));
+    assert(layer != NULL);
+    date_window_layers[i] = layer;
+    DateWindowData *data = (DateWindowData *)layer_get_data(layer);
+    data->date_window_index = i;
 
-#ifdef ENABLE_DATE_WINDOW
-  {
-    const struct IndicatorTable *window = &date_table[config.face_index];
-    date_layer = layer_create(GRect(window->x - 19, window->y - 8, 39, 19));
-    assert(date_layer != NULL);
-    layer_set_update_proc(date_layer, &date_layer_update_callback);
-    layer_add_child(window_layer, date_layer);
+    layer_set_update_proc(layer, &date_window_layer_update_callback);
+    layer_add_child(window_layer, layer);
   }
-#endif  // ENABLE_DATE_WINDOW
 
 #ifdef MAKE_CHRONOGRAPH
   create_chrono_objects();
@@ -934,18 +912,14 @@ void destroy_objects() {
   deinit_battery_gauge();
   deinit_bluetooth_indicator();
 
-#ifdef ENABLE_DAY_WINDOW
-  layer_destroy(day_layer);
-  day_layer = NULL;
-#endif
-#ifdef ENABLE_DATE_WINDOW
-  layer_destroy(date_layer);
-  date_layer = NULL;
-#endif
-#if defined(ENABLE_DAY_WINDOW) || defined(ENABLE_DATE_WINDOW)
+  for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
+    layer_destroy(date_window_layers[i]);
+    date_window_layers[i] = NULL;
+  }
+
   bwd_destroy(&date_window);
   bwd_destroy(&date_window_mask);
-#endif
+
   layer_destroy(minute_layer);
   layer_destroy(hour_layer);
   layer_destroy(second_layer);
@@ -954,8 +928,8 @@ void destroy_objects() {
   hand_cache_destroy(&minute_cache);
   hand_cache_destroy(&second_cache);
 
-  if (day_font != NULL) {
-    safe_unload_custom_font(&day_font);
+  if (date_text_font != NULL) {
+    safe_unload_custom_font(&date_text_font);
   }
   display_lang = -1;
 
@@ -1014,7 +988,7 @@ void handle_init() {
   time_t now = time(NULL);
   struct tm *startup_time = localtime(&now);
 
-  date_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+  date_numeric_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
 
   create_objects();
   compute_hands(startup_time, &current_placement);

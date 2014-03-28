@@ -27,10 +27,14 @@ typedef enum {
 } ChronoDialMode;
 
 typedef enum {
-  SDM_off = 0,
-  SDM_day = 1,
-  SDM_month = 2,
-} ShowDayMode;
+  DWM_off = 0,
+  DWM_identify = 1,
+  DWM_date = 2,
+  DWM_day = 3,
+  DWM_month = 4,
+  DWM_year = 5,
+  DWM_ampm = 6,
+} DateWindowMode;
 
 typedef struct {
   bool keep_battery_gauge;
@@ -40,10 +44,9 @@ typedef struct {
   unsigned char draw_mode;
   unsigned char chrono_dial;
   bool sweep_seconds;
-  unsigned char show_day;
-  bool show_date;
   unsigned char display_lang;
   unsigned char face_index;
+  unsigned char date_window[NUM_DATE_WINDOWS];
 } __attribute__((__packed__)) ConfigOptions;
 
 extern ConfigOptions config;
