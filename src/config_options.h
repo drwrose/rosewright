@@ -2,6 +2,7 @@
 #define CONFIG_OPTIONS_H
 
 #include <pebble.h>
+#include "../resources/generated_config.h"
 
 // These keys are used to communicate with Javascript and must match
 // the corresponding index numbers in appinfo.json.in.
@@ -13,10 +14,12 @@ typedef enum {
   CK_draw_mode = 4,
   CK_chrono_dial = 5,
   CK_sweep_seconds = 6,
-  CK_show_day = 7,
-  CK_show_date = 8,
-  CK_display_lang = 9,
-  CK_face_index = 10,
+  CK_display_lang = 7,
+  CK_face_index = 8,
+  CK_date_window_a = 9,
+  CK_date_window_b = 10,
+  CK_date_window_c = 11,
+  CK_date_window_d = 12,
 } ConfigKey;
 
 typedef enum {
@@ -28,11 +31,15 @@ typedef enum {
 
 typedef enum {
   DWM_off = 0,
+
+  // Uses date_numeric_font.
   DWM_identify = 1,
   DWM_date = 2,
-  DWM_day = 3,
-  DWM_month = 4,
-  DWM_year = 5,
+  DWM_year = 3,
+
+  // Uses date_lang_font.
+  DWM_weekday = 4,
+  DWM_month = 5,
   DWM_ampm = 6,
 } DateWindowMode;
 
@@ -46,7 +53,7 @@ typedef struct {
   bool sweep_seconds;
   unsigned char display_lang;
   unsigned char face_index;
-  unsigned char date_window[NUM_DATE_WINDOWS];
+  DateWindowMode date_windows[NUM_DATE_WINDOWS];
 } __attribute__((__packed__)) ConfigOptions;
 
 extern ConfigOptions config;

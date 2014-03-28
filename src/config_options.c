@@ -29,9 +29,8 @@ void sanitize_config() {
   config.chrono_dial = config.chrono_dial % (CDM_dual + 1);
   config.display_lang = config.display_lang % num_langs;
   config.face_index = config.face_index % NUM_FACES;
-  config.show_day = config.show_day % (SDM_month + 1);
   for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
-    config.date_windows[i] = config_date_windows[i] % (DWM_ampm + 1)
+    config.date_windows[i] = config.date_windows[i] % (DWM_ampm + 1);
   }
 }
 

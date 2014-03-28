@@ -28,29 +28,33 @@
 
 // This structure keeps track of the things that change on the visible
 // watch face and their current state.
-struct HandPlacement {
-  unsigned int hour_hand_index;
-  unsigned int minute_hand_index;
-  unsigned int second_hand_index;
+struct __attribute__((__packed__)) HandPlacement {
+  unsigned char hour_hand_index;
+  unsigned char minute_hand_index;
+  unsigned char second_hand_index;
 #ifdef MAKE_CHRONOGRAPH
-  unsigned int chrono_minute_hand_index;
-  unsigned int chrono_second_hand_index;
-  unsigned int chrono_tenth_hand_index;
+  unsigned char chrono_minute_hand_index;
+  unsigned char chrono_second_hand_index;
+  unsigned char chrono_tenth_hand_index;
 #endif  // MAKE_CHRONOGRAPH
-  unsigned int day_index;
-  unsigned int month_index;
-  unsigned int date_value;
+
+  // These are values that might be displayed in date windows.
+  unsigned char day_index;
+  unsigned char month_index;
+  unsigned char date_value;
+  unsigned char year_value;  // less 1900.
+  bool ampm_value;
 
   // Not really a hand placement, but this is used to keep track of
   // whether we have buzzed for the top of the hour or not.
-  unsigned int hour_buzzer;
+  bool hour_buzzer;
 };
 
 // Keeps track of the current bitmap and/or path for a particular
 // hand, so we don't need to do as much work if we're redrawing a hand
 // in the same position as last time.
 #define HAND_CACHE_MAX_GROUPS 2
-__attribute__((__packed__)) struct HandCache {
+struct __attribute__((__packed__)) HandCache {
   unsigned char bitmap_hand_index;
   BitmapWithData image;
   BitmapWithData mask;

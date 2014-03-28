@@ -94,14 +94,25 @@ var langs = [
     [ 'tr_TR', 'Turkish', 'extended' ],
 ];
 
-if ($.url().param("show_day") != undefined) {
-    makeOption("show_day", "Show weekday or month",
-	       [[0, 'Off'], [1, 'Weekday'], [2, 'Month']]);
-    makeOption("display_lang", "Language for day/month", langs, storeStringResult);
-}
+var date_window_options = [
+    [0, 'Off'], 
+    [1, 'Identify window'], 
+    [2, 'Numeric date'],
+    [4, 'Weekday'],
+    [5, 'Month'],
+    [3, 'Year'],
+    [6, 'am/pm'],
+];
 
-if ($.url().param("show_date") != undefined) {
-    makeOption("show_date", "Show numeric date");
+var num_date_windows = $.url().param("num_date_windows");
+if (num_date_windows) {
+    for (var i = 0; i < num_date_windows; ++i) {
+	var sym = 'date_window_' + String.fromCharCode(97 + i);
+	var label = 'Date window ' + String.fromCharCode(65 + i);
+	makeOption(sym, label, date_window_options);
+    }
+
+    makeOption("display_lang", "Language for day/month", langs, storeStringResult);
 }
 
 makeOption("hour_buzzer", "Vibrate at each hour");

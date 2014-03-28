@@ -20,9 +20,6 @@ make_lang.py [opts]
 
 fontChoices = [ 'latin', 'extended', 'rtl', 'zh', 'ja', 'ko', 'th', 'ta', 'hi' ]
 
-# Enough for 12 months.
-NUM_DAY_NAMES = 12
-
 # Font filenames and pixel sizes.
 fontNames = {
     'latin' : ('ArchivoNarrow-Bold.ttf', 16),
@@ -79,21 +76,35 @@ langs += [
     [ 'hi_IN', 'Hindi', 'hi' ],
     ]
 
+specialCases = {
+    ('es_ES', 'ampm') : ['am', 'pm'],    # Removed silly space
+    ('he_IL', 'ampm') : ['ma', 'mp'],    # Reversed for rtl re-reversal
+    ('de_DE', 'ampm') : ['vorm', 'nach'],
+    ('ru_RU', 'month') : [u'\u042f\u043d\u0432', u'\u0424\u0435\u0432', u'\u041c\u0430\u0440', u'\u0410\u043f\u0440', u'\u041c\u0430\u0439', u'\u0418\u044e\u043d', u'\u0418\u044e\u043b', u'\u0410\u0432\u0433', u'\u0421\u0435\u043d', u'\u041e\u043a\u0442', u'\u041d\u043e\u044f', u'\u0414\u0435\u043a'],
+    ('ru_RU', 'ampm') : [u'\u0434\u043e', u'\u043f\u043e\u0441\u043b'],
+    ('hy_AM', 'ampm') : [u'\u0561\u057c\u0561\u057b', u'\u0570\u0565\u057f\u0578'],
+    ('fa_IR', 'ampm') : [u'\u0635', u'\u0645'],  # copied from Arabic, does that work?
+    ('ta_IN', 'ampm') : [u'\u0bae\u0bc1', u'\u0baa\u0bbf'], # Shortened to unique prefix
+    ('th_TH', 'ampm') : [u'\u0e01\u0e48\u0e2d\u0e19', u'\u0e2b\u0e25\u0e31\u0e07'], # Shortened to unique prefix
+    ('hi_IN', 'ampm') : [u'\u092a\u0942\u0930\u094d\u0935', u'\u0905\u092a\u0930'],
+    }
+
 # Attempt to determine the directory in which we're operating.
 rootDir = os.path.dirname(__file__) or '.'
 resourcesDir = rootDir
 
+nameTypes = [ 'weekday', 'month', 'ampm' ]
+
 neededChars = {}
-maxNumChars = 0
-maxTotalLen = 0
+maxNumChars = {}
+maxTotalLen = {}
 
 def writeResourceFile(generatedJson, nameType, localeName, nameList):
-    global maxTotalLen
     filename = '%s_%s.raw' % (localeName, nameType)
     resourceId = '%s_%s_NAMES' % (localeName.upper(), nameType.upper())
 
     data = '\0'.join(nameList)
-    maxTotalLen = max(maxTotalLen, len(data))
+    maxTotalLen[nameType] = max(maxTotalLen.get(nameType, 0), len(data))
 
     open('%s/%s' % (resourcesDir, filename), 'w').write(data)
     
@@ -109,26 +120,41 @@ def writeResourceFile(generatedJson, nameType, localeName, nameList):
 
     return 'RESOURCE_ID_%s' % (resourceId)
 
-def getDfsNames(dfs, func):
+def getDfsNames(dfs, localeName, nameType, *funcs):
     """ Extracts out either the abbreviated or the narrow names from
     the dfs, as appropriate. """
 
-    names = func(dfs.STANDALONE, dfs.ABBREVIATED)
+    special = specialCases.get((localeName, nameType), None)
+    if special:
+        return special
 
-    # Remove a period for tightness.
-    for i in range(len(names)):
-        if '.' in names[i]:
-            names[i] = names[i].replace('.', '')
+    for func in funcs:
+        for width in [dfs.ABBREVIATED, dfs.NARROW]:
+            try:
+                names = func(dfs.STANDALONE, width)
+            except TypeError:
+                names = func()
 
-    # If the abbreviated names go over four letters each, switch to
-    # the narrow names instead.
-    if max(map(len, names)) > 4:
-        names = func(dfs.FORMAT, dfs.NARROW)
+            # Remove a period for tightness.
+            for i in range(len(names)):
+                if '.' in names[i]:
+                    names[i] = names[i].replace('.', '')
+
+            # If the resulting names are short enough (we arbitrarily
+            # declare 4 letters or less is short enough) then return
+            # them.
+            if max(map(len, names)) <= 4:
+                return names
+
+            # Otherwise, carry on to the next function attempt.
 
     return names
 
+def getDefaultAmPm():
+    """ Returns the default am/pm strings if the language-specific strings are too long. """
+    return ['am', 'pm']
+
 def makeDates(generatedTable, generatedJson, li):
-    global maxNumChars
     localeName, langName, fontKey = langs[li]
     fontIndex = fontChoices.index(fontKey)
 
@@ -136,49 +162,55 @@ def makeDates(generatedTable, generatedJson, li):
     print '%s/%s/%s' % (localeName, langName, locale.getDisplayName())
     dfs = icu.DateFormatSymbols(locale)
 
-    weekdays = getDfsNames(dfs, dfs.getWeekdays)
-    months = getDfsNames(dfs, dfs.getMonths)
+    names = {
+        'weekday': getDfsNames(dfs, localeName, 'weekday', dfs.getWeekdays)[1:],
+        'month' : getDfsNames(dfs, localeName, 'month', dfs.getShortMonths, dfs.getMonths),
+        'ampm' : getDfsNames(dfs, localeName, 'ampm', dfs.getAmPmStrings, getDefaultAmPm),
+        }
     
     neededChars.setdefault(fontKey, set())
-    showNames = []
-    showNamesUnicode = []
-    for name in weekdays[1:] + months:
-        # Ensure the first letter is uppercase for consistency.
-        name = name[0].upper() + name[1:]
+    showNames = {}
+    showNamesUnicode = {}
+    nameIds = {}
+    for nameType in nameTypes:
+        showNames[nameType] = []
+        showNamesUnicode[nameType] = []
+        for name in names[nameType]:
+            if nameType == 'ampm':
+                # For am/pm, force lowercase because I like that.
+                name = name.lower()
+            else:
+                # For month and weekday, ensure the first letter is
+                # uppercase for consistency.
+                name = name[0].upper() + name[1:]
 
-        # Reverse text meant to be written right-to-left.
-        if fontKey == 'rtl':
-            ls = list(name)
-            ls.reverse()
-            name = ''.join(ls)
+            # Reverse text meant to be written right-to-left.
+            if fontKey == 'rtl':
+                ls = list(name)
+                ls.reverse()
+                name = ''.join(ls)
 
-        # Record the total set of Unicode characters required in the font.
-        for char in name:
-            neededChars[fontKey].add(ord(char))
+            # Record the total set of Unicode characters required in the font.
+            for char in name:
+                neededChars[fontKey].add(ord(char))
 
-        try:
-            uname = name.encode('ascii')
-        except UnicodeEncodeError:
-            uname = name
-        showNamesUnicode.append(uname)
+            try:
+                uname = name.encode('ascii')
+            except UnicodeEncodeError:
+                uname = name
+            showNamesUnicode[nameType].append(uname)
 
-        # And finally, re-encode to UTF-8 for the Pebble.
-        name = name.encode('utf-8')
-        maxNumChars = max(maxNumChars, len(name))
+            # And finally, re-encode to UTF-8 for the Pebble.
+            name = name.encode('utf-8')
+            maxNumChars[nameType] = max(maxNumChars.get(nameType, 0), len(name))
 
-        showNames.append(name)
+            showNames[nameType].append(name)
 
-    weekdayNames = showNames[:7]
-    monthNames = showNames[7:]
-    weekdayNameId = writeResourceFile(generatedJson, 'weekday', localeName, weekdayNames)
-    monthNameId = writeResourceFile(generatedJson, 'month', localeName, monthNames)
+        nameIds[nameType] = writeResourceFile(generatedJson, nameType, localeName, showNames[nameType])
 
-    weekdayNamesUnicode = showNamesUnicode[:7]
-    monthNamesUnicode = showNamesUnicode[7:]
-    
-    print >> generatedTable, """  { "%s", %s, %s, %s }, // %s = %s""" % (localeName, fontIndex, weekdayNameId, monthNameId, li, langName)
-    print >> generatedTable, """ //   Weekdays: %s""" % (repr(weekdayNamesUnicode))
-    print >> generatedTable, """ //   Months: %s""" % (repr(monthNamesUnicode))
+    print >> generatedTable, """  { "%s", %s, %s, %s, %s }, // %s = %s""" % (localeName, fontIndex, nameIds['weekday'], nameIds['month'], nameIds['ampm'], li, langName)
+    for nameType in nameTypes:
+        print >> generatedTable, """ //   %s: %s""" % (nameType, repr(showNamesUnicode[nameType]))
     print >> generatedTable, ""
 
 def makeHex(ch):
@@ -226,8 +258,9 @@ def makeLang():
     print >> generatedTable, "};\n"
 
     print >> generatedTable, "int num_langs = %s;" % (numLangs)
-    print >> generatedTable, "// maximum characters: %s" % (maxNumChars)
-    print >> generatedTable, "#define DAY_NAMES_MAX_BUFFER %s\n" % (maxTotalLen)
+    for nameType in nameTypes:
+        print >> generatedTable, "// %s maximum characters: %s" % (nameType, maxNumChars[nameType])
+        print >> generatedTable, "#define %s_NAMES_MAX_BUFFER %s\n" % (nameType.upper(), maxTotalLen[nameType])
 
     fontEntry = """    {
       "type": "font",

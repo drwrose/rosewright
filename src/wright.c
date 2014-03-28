@@ -23,7 +23,7 @@ typedef struct __attribute__((__packed__)) {
 } DateWindowData;
 
 GFont date_numeric_font = NULL;
-GFont date_text_font = NULL;
+GFont date_lang_font = NULL;
 
 // This structure specifies how to load, and how to shift each
 // different font to appear properly within the date window.
@@ -35,8 +35,8 @@ struct FontPlacement {
 struct FontPlacement date_numeric_font_placement = {
   0, -3
 };
-#define NUM_DATE_TEXT_FONTS 9
-struct FontPlacement date_text_font_placement[NUM_DATE_TEXT_FONTS] = {
+#define NUM_DATE_LANG_FONTS 9
+struct FontPlacement date_lang_font_placement[NUM_DATE_LANG_FONTS] = {
   { RESOURCE_ID_DAY_FONT_LATIN_16, -1 },
   { RESOURCE_ID_DAY_FONT_EXTENDED_14, 1 },
   { RESOURCE_ID_DAY_FONT_RTL_14, 1 },
@@ -48,13 +48,25 @@ struct FontPlacement date_text_font_placement[NUM_DATE_TEXT_FONTS] = {
   { RESOURCE_ID_DAY_FONT_HI_16, 0 },  // Hindi
 };
 
-// This structure is filled in from the appropriate resource file to
-// reflect the names we are displaying in the day/month window based on
-// configuration settings.
-//#define DAY_NAMES_MAX_BUFFER xx // defined in lang_table.c.
-#define NUM_DAY_NAMES 12  // Enough for 12 months
-char day_names_buffer[DAY_NAMES_MAX_BUFFER + 1];
-char *day_names[NUM_DAY_NAMES];
+// These structures are filled in from the appropriate resource file
+// to reflect the names we are displaying in the weekday/month window
+// based on configuration settings.
+
+//#define WEEKDAY_NAMES_MAX_BUFFER xx // defined in lang_table.c.
+#define NUM_WEEKDAY_NAMES 7  // Enough for 7 days
+char weekday_names_buffer[WEEKDAY_NAMES_MAX_BUFFER + 1];
+char *weekday_names[NUM_WEEKDAY_NAMES];
+
+//#define MONTH_NAMES_MAX_BUFFER xx // defined in lang_table.c.
+#define NUM_MONTH_NAMES 12  // Enough for 12 months
+char month_names_buffer[MONTH_NAMES_MAX_BUFFER + 1];
+char *month_names[NUM_MONTH_NAMES];
+
+//#define AMPM_NAMES_MAX_BUFFER xx // defined in lang_table.c.
+#define NUM_AMPM_NAMES 2  // Enough for am and pm
+char ampm_names_buffer[AMPM_NAMES_MAX_BUFFER + 1];
+char *ampm_names[NUM_AMPM_NAMES];
+
 int display_lang = -1;
 
 // Triggered at regular intervals to implement sweep seconds.
@@ -98,6 +110,7 @@ unsigned int get_time_ms(struct tm *time) {
     time->tm_wday = (s / 3) % 7;
     time->tm_mon = (s / 4) % 12;
     time->tm_mday = (s % 31) + 1;
+    time->tm_hour = s % 24;
   }
   result *= 67;
 #endif  // FAST_TIME
@@ -161,7 +174,7 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
   {
     // Avoid overflowing the integer arithmetic by pre-constraining
     // the ms value to the appropriate range.
-    unsigned int use_ms = ms % (SECONDS_PER_HOUR * 12* 1000);
+    unsigned int use_ms = ms % (SECONDS_PER_HOUR * 12 * 1000);
     placement->hour_hand_index = ((NUM_STEPS_HOUR * use_ms) / (SECONDS_PER_HOUR * 12 * 1000)) % NUM_STEPS_HOUR;
   }
   {
@@ -183,6 +196,8 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
     placement->day_index = time->tm_wday;
     placement->month_index = time->tm_mon;
     placement->date_value = time->tm_mday;
+    placement->year_value = time->tm_year;
+    placement->ampm_value = (time->tm_hour >= 12);
   }
 
   placement->hour_buzzer = (ms / (SECONDS_PER_HOUR * 1000)) % 24;
@@ -480,10 +495,10 @@ void second_layer_update_callback(Layer *me, GContext *ctx) {
   }
 }
 
-// Draws a day/date window with the specified contents.  Usually this is
-// either the weekday or month window, or it is the numeric date window.
+// Draws a date window with the specified contents.  Usually this is
+// something like a numeric date or the weekday name.
 void draw_window(Layer *me, GContext *ctx, const char *text, struct FontPlacement *font_placement, 
-	       GFont *font, bool invert, bool opaque_layer) {
+		 GFont *font, bool invert, bool opaque_layer) {
   // For now, the size of the window is hardcoded.
   GRect box = {
     { 2, 0 }, { 37, 19 }
@@ -542,29 +557,58 @@ void date_window_layer_update_callback(Layer *me, GContext *ctx) {
   unsigned int date_window_index = data->date_window_index;
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "date_window_layer %c", date_window_index + 'a');
 
-  if (config.show_day != SDM_off) {
-    const LangDef *lang = &lang_table[config.display_lang];
-    const char *show_name;
-    if (config.show_day == SDM_day) {
-      show_name = day_names[current_placement.day_index];
-    } else { // SDM_month
-      show_name = day_names[current_placement.month_index];
-    }
-    if (show_name != NULL) {
-      const struct IndicatorTable *window = &date_windows[date_window_index][config.face_index];
-      draw_window(me, ctx, show_name, &date_text_font_placement[lang->font_index], &date_text_font, window->invert, window->opaque);
-    }
+  DateWindowMode dwm = config.date_windows[date_window_index];
+  if (dwm == DWM_off) {
+    // Do nothing.
+    return;
   }
 
-  /*
-  if (config.show_date) {
+  // Format the date or weekday or whatever text for display.
 #define DATE_WINDOW_BUFFER_SIZE 16
-    char buffer[DATE_WINDOW_BUFFER_SIZE];
-    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", current_placement.date_value);
-    const struct IndicatorTable *window = &date_table[config.face_index];
-    draw_window(me, ctx, buffer, &date_numeric_font_placement, &date_numeric_font, window->invert, window->opaque);
+  char buffer[DATE_WINDOW_BUFFER_SIZE];
+
+  GFont *font = &date_numeric_font;
+  struct FontPlacement *font_placement = &date_numeric_font_placement;
+  if (dwm >= DWM_weekday) {
+    // Draw text using date_lang_font.
+    const LangDef *lang = &lang_table[config.display_lang];
+    font = &date_lang_font;
+    font_placement = &date_lang_font_placement[lang->font_index];
   }
-  */
+
+  char *text = buffer;
+
+  switch (dwm) {
+  case DWM_identify:
+    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%c", 'A' + date_window_index);
+    break;
+
+  case DWM_date:
+    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", current_placement.date_value);
+    break;
+
+  case DWM_year:
+    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", current_placement.year_value + 1900);
+    break;
+
+  case DWM_weekday:
+    text = weekday_names[current_placement.day_index];
+    break;
+    
+  case DWM_month:
+    text = month_names[current_placement.month_index];
+    break;
+
+  case DWM_ampm:
+    text = ampm_names[current_placement.ampm_value];
+    break;
+
+  default:
+    buffer[0] = '\0';
+  }
+
+  const struct IndicatorTable *window = &date_windows[date_window_index][config.face_index];
+  draw_window(me, ctx, text, font_placement, font, window->invert, window->opaque);
 }
 
 // Called once per epoch (e.g. once per second, or once per minute) to
@@ -612,13 +656,16 @@ void update_hands(struct tm *time) {
 #endif  // MAKE_CHRONOGRAPH
 
   // If any of the date window properties changes, update all of the
-  // date windows.
-  if (new_placement.day_index != current_placement.day_index ||
-      new_placement.month_index != current_placement.month_index ||
+  // date windows.  (We cheat and only check the fastest changing
+  // element, and the date value just in case someone's playing games
+  // with the clock.)
+  if (new_placement.ampm_value != current_placement.ampm_value ||
       new_placement.date_value != current_placement.date_value) {
     current_placement.day_index = new_placement.day_index;
     current_placement.month_index = new_placement.month_index;
     current_placement.date_value = new_placement.date_value;
+    current_placement.year_value = new_placement.year_value;
+    current_placement.ampm_value = new_placement.ampm_value;
 
     for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
       layer_mark_dirty(date_window_layers[i]);
@@ -710,6 +757,30 @@ void reset_tick_timer() {
 void reset_clock_face() {
 }
 
+// Populates a table of names, like weekday or month names, from the language resource.
+void fill_date_names(char *date_names[], int num_date_names, char date_names_buffer[], int date_names_max_buffer, int resource_id) {
+  ResHandle rh = resource_get_handle(resource_id);
+  size_t bytes_read = resource_load(rh, (void *)date_names_buffer, date_names_max_buffer);
+  date_names_buffer[bytes_read] = '\0';
+  int i = 0;
+  char *p = date_names_buffer;
+  date_names[i] = p;
+  ++i;
+  while (i < num_date_names && p < date_names_buffer + bytes_read) {
+    if (*p == '\0') {
+      ++p;
+      date_names[i] = p;
+      ++i;
+    } else {
+      ++p;
+    }
+  }
+  while (i < num_date_names) {
+    date_names[i] = NULL;
+    ++i;
+  }
+}
+
 // Updates any runtime settings as needed when the config changes.
 void apply_config() {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "apply_config");
@@ -741,42 +812,18 @@ void apply_config() {
 
   if (display_lang != config.display_lang) {
     // Unload the day font if it changes with the language.
-    if (date_text_font != NULL && (display_lang == -1 || lang_table[display_lang].font_index != lang_table[config.display_lang].font_index)) {
-      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "apply_config unload date_text_font %p", date_text_font);
-      safe_unload_custom_font(&date_text_font);
+    if (date_lang_font != NULL && (display_lang == -1 || lang_table[display_lang].font_index != lang_table[config.display_lang].font_index)) {
+      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "apply_config unload date_lang_font %p", date_lang_font);
+      safe_unload_custom_font(&date_lang_font);
     }
-    display_lang = config.display_lang;
-  }
 
-  // Reload the weekday or month names we will be displaying from the
-  // appropriate language resource.
-  if (config.show_day != SDM_off) {
-    int resource_id;
-    if (config.show_day == SDM_day) {
-      resource_id = lang_table[config.display_lang].weekday_name_id;
-    } else {
-      resource_id = lang_table[config.display_lang].month_name_id;
-    }
-    ResHandle rh = resource_get_handle(resource_id);
-    size_t bytes_read = resource_load(rh, (void *)day_names_buffer, DAY_NAMES_MAX_BUFFER);
-    day_names_buffer[bytes_read] = '\0';
-    int i = 0;
-    char *p = day_names_buffer;
-    day_names[i] = p;
-    ++i;
-    while (i < NUM_DAY_NAMES && p < day_names_buffer + bytes_read) {
-      if (*p == '\0') {
-        ++p;
-        day_names[i] = p;
-        ++i;
-      } else {
-        ++p;
-      }
-    }
-    while (i < NUM_DAY_NAMES) {
-      day_names[i] = NULL;
-      ++i;
-    }
+    // Reload the weekday or month names from the appropriate language
+    // resource.
+    fill_date_names(weekday_names, NUM_WEEKDAY_NAMES, weekday_names_buffer, WEEKDAY_NAMES_MAX_BUFFER, lang_table[config.display_lang].weekday_name_id);
+    fill_date_names(month_names, NUM_MONTH_NAMES, month_names_buffer, MONTH_NAMES_MAX_BUFFER, lang_table[config.display_lang].month_name_id);
+    fill_date_names(ampm_names, NUM_AMPM_NAMES, ampm_names_buffer, AMPM_NAMES_MAX_BUFFER, lang_table[config.display_lang].ampm_name_id);
+
+    display_lang = config.display_lang;
   }
 
   layer_mark_dirty(clock_face_layer);
@@ -928,8 +975,8 @@ void destroy_objects() {
   hand_cache_destroy(&minute_cache);
   hand_cache_destroy(&second_cache);
 
-  if (date_text_font != NULL) {
-    safe_unload_custom_font(&date_text_font);
+  if (date_lang_font != NULL) {
+    safe_unload_custom_font(&date_lang_font);
   }
   display_lang = -1;
 
@@ -1025,8 +1072,9 @@ void reset_memory_panic() {
     config.second_hand = false;
   } 
   if (memory_panic_count > 3) {
-    config.show_day = 0;
-    config.show_date = false;
+    for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
+      config.date_windows[i] = DWM_off;
+    }
   } 
   if (memory_panic_count > 4) {
     config.chrono_dial = 0;

@@ -3,7 +3,7 @@ var watch_name = "%(watchName)s";
 var show_chrono_dial = %(enableChronoDial)s;
 var enable_sweep_seconds = %(enableSweepSeconds)s;
 var num_faces = %(numFaces)s;
-var num_date_windows = %(numFaces)s;
+var num_date_windows = %(numDateWindows)s;
 
 // Define the initial config default values.  These defaults are used
 // only if the Pebble is connected to the phone at the time of launch;
@@ -17,7 +17,7 @@ var default_chrono_dial = 1;
 var default_sweep_seconds = 0;
 var default_display_lang = 'en_US';
 var default_face_index = 0;
-var default_date_windows = '0,0';
+var default_date_windows = %(defaultDateWindows)s;
 
 var keep_battery_gauge;
 var keep_bluetooth_indicator;
@@ -26,10 +26,9 @@ var hour_buzzer;
 var draw_mode;
 var chrono_dial;
 var sweep_seconds;
-var show_day;
-var show_date;
 var display_lang;
 var face_index;
+var date_windows;
 
 function sent_ack(e) {
     console.log("Message sent");
@@ -57,23 +56,6 @@ function getIntFromStorage(keyword, default_value) {
     value = parseInt(value);
     if (isNaN(value)) {
 	value = default_value;
-    }
-
-    console.log("   " + keyword + ": " + value);
-    return value;
-}
-
-function getIntArrayFromStorage(keyword, default_value) {
-    var value = localStorage.getItem(watch_name + ":" + keyword);
-    if (!value) {
-	value = default_value;
-    }
-    value = value.split(',');
-    for (i in value) {
-	value[i] = parseInt(value[i]);
-	if (isNaN(value[i])) {
-	    value[i] = 0;
-	}
     }
 
     console.log("   " + keyword + ": " + value);
@@ -108,7 +90,11 @@ function initialize() {
     sweep_seconds = getIntFromStorage('sweep_seconds', default_sweep_seconds);
     display_lang = getStringFromStorage('display_lang', default_display_lang);
     face_index = getIntFromStorage('face_index', default_face_index);
-    date_windows = getIntArrayFromStorage('date_windows', default_date_windows);
+    date_windows = [];
+    for (var i = 0; i < num_date_windows; ++i) {
+	var sym = 'date_window_' + String.fromCharCode(97 + i);
+	date_windows.push(getIntFromStorage(sym, default_date_windows[i]));
+    }
 
     // At startup, send the current configuration to the Pebble--the
     // phone storage keeps the authoritative state.  We delay by 1
@@ -123,14 +109,13 @@ function initialize() {
 	    'draw_mode' : draw_mode,
 	    'chrono_dial' : chrono_dial,
 	    'sweep_seconds' : sweep_seconds,
-	    'show_day' : show_day,
-	    'show_date' : show_date,
 	    'display_lang' : display_lang,
 	    'face_index' : face_index,
 	};
-	for (i in date_windows) {
-	    key = 'date_window_' + (
-	    configuration['date_window
+	for (var i in date_windows) {
+	    var sym = 'date_window_' + String.fromCharCode(97 + i);
+	    configuration[sym] = date_windows[i];
+	}
    	console.log("sending init config: " + JSON.stringify(configuration));
 	Pebble.sendAppMessage(configuration, sent_ack, sent_nack);
     }, 1000)
@@ -150,6 +135,10 @@ Pebble.addEventListener("showConfiguration", function(e) {
     }
     if (enable_sweep_seconds) {
 	url += "&sweep_seconds=" + sweep_seconds
+    }
+    for (var i = 0; i < num_date_windows; ++i) {
+	var sym = 'date_window_' + String.fromCharCode(97 + i);
+	url += "&" + sym + "=" + date_windows[i];
     }
     console.log("showConfiguration: " + url);
     var result = Pebble.openURL(url);
@@ -187,17 +176,18 @@ Pebble.addEventListener("webviewclosed", function(e) {
 	sweep_seconds = configuration["sweep_seconds"];
 	localStorage.setItem(watch_name + ":sweep_seconds", sweep_seconds);
 	
-	show_day = configuration["show_day"];
-	localStorage.setItem(watch_name + ":show_day", show_day);
-
-	show_date = configuration["show_date"];
-	localStorage.setItem(watch_name + ":show_date", show_date);
-	
 	display_lang = configuration["display_lang"];
 	localStorage.setItem(watch_name + ":display_lang", display_lang);
 
 	face_index = configuration["face_index"];
 	localStorage.setItem(watch_name + ":face_index", face_index);
+
+	date_windows = [];
+	for (var i = 0; i < num_date_windows; ++i) {
+	    var sym = 'date_window_' + String.fromCharCode(97 + i);
+	    date_windows.push(configuration[sym]);
+	    localStorage.setItem(watch_name + ":" + sym, date_windows[i]);
+	}
 
 	logLocalStorage();
     }

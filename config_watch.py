@@ -878,8 +878,7 @@ def configWatch():
         'enableSecondHand' : int(enableSecondHand and not suppressSecondHand),
         'enableHourBuzzer' : int(enableHourBuzzer),
         'enableSweepSeconds' : int(enableSecondHand and supportSweep),
-        'defaultDayWindow' : int(bool('date_window_a' in defaults)),
-        'defaultDateWindow' : int(bool('date_window_b' in defaults)),
+        'defaultDateWindows' : repr([0] * len(date_windows)),
         }
 
     configIn = open('%s/generated_config.h.in' % (resourcesDir), 'r').read()
