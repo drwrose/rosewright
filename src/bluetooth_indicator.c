@@ -3,10 +3,6 @@
 #include "config_options.h"
 #include "bwd.h"
 
-// Define this to ring the buzzer when the bluetooth connection is
-// lost.
-#define BLUETOOTH_BUZZER 1
-
 BitmapWithData bluetooth_disconnected;
 BitmapWithData bluetooth_connected;
 BitmapWithData bluetooth_mask;
@@ -35,12 +31,10 @@ void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
   bool new_state = bluetooth_connection_service_peek();
   if (new_state != bluetooth_state) {
     bluetooth_state = new_state;
-#ifdef BLUETOOTH_BUZZER
-    if (!bluetooth_state) {
+    if (config.bluetooth_buzzer && !bluetooth_state) {
       // We just lost the bluetooth connection.  Ring the buzzer.
       vibes_short_pulse();
     }
-#endif
   }
 
   if (bluetooth_state) {

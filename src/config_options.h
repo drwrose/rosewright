@@ -20,6 +20,7 @@ typedef enum {
   CK_date_window_b = 10,
   CK_date_window_c = 11,
   CK_date_window_d = 12,
+  CK_bluetooth_buzzer = 13,
 } ConfigKey;
 
 typedef enum {
@@ -48,6 +49,7 @@ typedef struct {
   bool keep_bluetooth_indicator;
   bool second_hand;
   bool hour_buzzer;
+  bool bluetooth_buzzer;
   unsigned char draw_mode;
   ChronoDialMode chrono_dial;
   bool sweep_seconds;

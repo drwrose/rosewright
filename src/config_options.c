@@ -13,6 +13,7 @@ void init_default_options() {
     DEFAULT_BLUETOOTH,
     ENABLE_SECOND_HAND,
     ENABLE_HOUR_BUZZER,
+    true,
     false,
     CDM_tenths,
     false,
@@ -40,7 +41,7 @@ void sanitize_config() {
 const char *show_config() {
 #define CONFIG_BUFFER_SIZE 100
   static char buffer[CONFIG_BUFFER_SIZE];
-  snprintf(buffer, CONFIG_BUFFER_SIZE, "bat: %d, bt: %d, sh: %d, hb: %d, dm: %d, cd: %d, sw: %d, dl: %d, fi: %d, dw: ", config.keep_battery_gauge, config.keep_bluetooth_indicator, config.second_hand, config.hour_buzzer, config.draw_mode, config.chrono_dial, config.sweep_seconds, config.display_lang, config.face_index);
+  snprintf(buffer, CONFIG_BUFFER_SIZE, "bat: %d, bt: %d, sh: %d, hb: %d, bb: %d, dm: %d, cd: %d, sw: %d, dl: %d, fi: %d, dw: ", config.keep_battery_gauge, config.keep_bluetooth_indicator, config.second_hand, config.hour_buzzer, config.bluetooth_buzzer, config.draw_mode, config.chrono_dial, config.sweep_seconds, config.display_lang, config.face_index);
 
   if (NUM_DATE_WINDOWS > 0) {
     char b2[12];
@@ -107,6 +108,11 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
   Tuple *hour_buzzer = dict_find(received, CK_hour_buzzer);
   if (hour_buzzer != NULL) {
     config.hour_buzzer = hour_buzzer->value->int32;
+  }
+
+  Tuple *bluetooth_buzzer = dict_find(received, CK_bluetooth_buzzer);
+  if (bluetooth_buzzer != NULL) {
+    config.bluetooth_buzzer = bluetooth_buzzer->value->int32;
   }
 
   Tuple *draw_mode = dict_find(received, CK_draw_mode);

@@ -12,6 +12,7 @@ var default_keep_battery_gauge = %(defaultBattery)s;
 var default_keep_bluetooth_indicator = %(defaultBluetooth)s;
 var default_second_hand = %(enableSecondHand)s;
 var default_hour_buzzer = %(enableHourBuzzer)s;
+var default_bluetooth_buzzer = 1;
 var default_draw_mode = 0;
 var default_chrono_dial = 1;
 var default_sweep_seconds = 0;
@@ -23,6 +24,7 @@ var keep_battery_gauge;
 var keep_bluetooth_indicator;
 var second_hand;
 var hour_buzzer;
+var bluetooth_buzzer;
 var draw_mode;
 var chrono_dial;
 var sweep_seconds;
@@ -85,6 +87,7 @@ function initialize() {
     keep_bluetooth_indicator = getIntFromStorage('keep_bluetooth_indicator', default_keep_bluetooth_indicator);
     second_hand = getIntFromStorage('second_hand', default_second_hand);
     hour_buzzer = getIntFromStorage('hour_buzzer', default_hour_buzzer);
+    bluetooth_buzzer = getIntFromStorage('bluetooth_buzzer', default_bluetooth_buzzer);
     draw_mode = getIntFromStorage('draw_mode', default_draw_mode);
     chrono_dial = getIntFromStorage('chrono_dial', default_chrono_dial);
     sweep_seconds = getIntFromStorage('sweep_seconds', default_sweep_seconds);
@@ -106,6 +109,7 @@ function initialize() {
 	    'keep_bluetooth_indicator' : keep_bluetooth_indicator,
 	    'second_hand' : second_hand,
 	    'hour_buzzer' : hour_buzzer,
+	    'bluetooth_buzzer' : bluetooth_buzzer,
 	    'draw_mode' : draw_mode,
 	    'chrono_dial' : chrono_dial,
 	    'sweep_seconds' : sweep_seconds,
@@ -129,7 +133,7 @@ Pebble.addEventListener("ready", function(e) {
 Pebble.addEventListener("showConfiguration", function(e) {
     console.log("showConfiguration starting");
     initialize();
-    var url = "http://www.ddrose.com/pebble/rosewright_2_6_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&keep_battery_gauge=" + keep_battery_gauge + "&keep_bluetooth_indicator=" + keep_bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&draw_mode=" + draw_mode + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_date_windows=" + num_date_windows;
+    var url = "http://www.ddrose.com/pebble/rosewright_2_6_2_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&keep_battery_gauge=" + keep_battery_gauge + "&keep_bluetooth_indicator=" + keep_bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_date_windows=" + num_date_windows;
     if (show_chrono_dial) {
 	url += "&chrono_dial=" + chrono_dial
     }
@@ -166,6 +170,9 @@ Pebble.addEventListener("webviewclosed", function(e) {
 	
 	hour_buzzer = configuration["hour_buzzer"];
 	localStorage.setItem(watch_name + ":hour_buzzer", hour_buzzer);
+	
+	bluetooth_buzzer = configuration["bluetooth_buzzer"];
+	localStorage.setItem(watch_name + ":bluetooth_buzzer", bluetooth_buzzer);
 	
 	draw_mode = configuration["draw_mode"];
 	localStorage.setItem(watch_name + ":draw_mode", draw_mode);
