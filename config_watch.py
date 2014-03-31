@@ -227,8 +227,8 @@ faces = {
         'date_window_c' : (52, 109, 'b'), 
         'date_window_d' : (92, 109, 'b'), 
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
-        'bluetooth' : (51, 113, 'b'),
-        'battery' : (77, 117, 'b'),
+        'bluetooth' : (39, 47, 'b'),
+        'battery' : (89, 51, 'b'),
         'defaults' : [ 'date:b' ],
         },
     'b' : {

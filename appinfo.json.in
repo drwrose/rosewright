@@ -5,7 +5,7 @@
   "capabilities": [ "configurable" ],
   "companyName": "drwrose",
   "versionCode": 1,
-  "versionLabel": "2.6",
+  "versionLabel": "2.6.1",
   "watchapp": {
     "watchface": %(watchface)s
   },
