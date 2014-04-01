@@ -60,7 +60,7 @@ def generate_rle(source):
     current = 0
     count = 0
     # We start with an implicit black pixel, which isn't actually part
-    # of the image.  The decoder must diswindow this pixel.  This
+    # of the image.  The decoder must discard this pixel.  This
     # implicit black pixel ensures that there are no 0 counts anywhere
     # in the resulting data.
     next = 0
@@ -256,20 +256,20 @@ def make_rle_image(rleFilename, image):
     
     print '%s: %s vs. %s' % (rleFilename, 4 + len(result), fullSize)
 
-def make_rle(filename, useRle = True):
+def make_rle(filename, prefix = 'resources/', useRle = True):
     if useRle:
-        image = PIL.Image.open('resources/' + filename)
+        image = PIL.Image.open(prefix + filename)
         basename = os.path.splitext(filename)[0]
         rleFilename = basename + '.rle'
-        make_rle_image('resources/' + rleFilename, image)
+        make_rle_image(prefix + rleFilename, image)
         return rleFilename, 'raw'
     else:
         ptype = 'png'
         print filename
         return filename, 'png'
 
-def make_rle_trans(filename, useRle = True):
-    image = PIL.Image.open('resources/' + filename)
+def make_rle_trans(filename, prefix = 'resources/', useRle = True):
+    image = PIL.Image.open(prefix + filename)
     bits, alpha = image.convert('LA').split()
     bits = bits.convert('1')
     alpha = alpha.convert('1')
@@ -285,17 +285,17 @@ def make_rle_trans(filename, useRle = True):
     if useRle:
         basename = os.path.splitext(filename)[0]
         rleWhiteFilename = basename + '_white.rle'
-        make_rle_image('resources/' + rleWhiteFilename, white)
+        make_rle_image(prefix + rleWhiteFilename, white)
         rleBlackFilename = basename + '_black.rle'
-        make_rle_image('resources/' + rleBlackFilename, black)
+        make_rle_image(prefix + rleBlackFilename, black)
         
         return rleWhiteFilename, rleBlackFilename, 'raw'
     else:
         basename = os.path.splitext(filename)[0]
         rleWhiteFilename = basename + '_white.png'
-        white.save('resources/' + rleWhiteFilename)
+        white.save(prefix + rleWhiteFilename)
         rleBlackFilename = basename + '_black.png'
-        black.save('resources/' + rleBlackFilename)
+        black.save(prefix + rleBlackFilename)
         print filename
         return rleWhiteFilename, rleBlackFilename, 'png'
 
@@ -317,10 +317,8 @@ if __name__ == '__main__':
 
     print args
     for filename in args:
-        if filename.startswith('resources/'):
-            filename = filename[10:]
         if makeTrans:
-            make_rle_trans(filename)
+            make_rle_trans(filename, prefix = '')
         else:
-            make_rle(filename)
+            make_rle(filename, prefix = '')
             
