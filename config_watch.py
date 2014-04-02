@@ -242,14 +242,14 @@ faces = {
         'defaults' : [ 'day:b', 'date:c' ],
         },
     'c' : {
-        'filename' : 'c_face.png',
+        'filename' : ['c_face.png', 'c_face_rect.png'],
         'chrono' : ('c_face_chrono_tenths.png', 'c_face_chrono_hours.png'),
         'centers' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
         'date_window_a' : (52, 45, 'wt'),
         'date_window_b' : (92, 45, 'wt'), 
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
-        'bluetooth' : (0, 0, 'w'),
-        'battery' : (125, 3, 'w'),
+        'bluetooth' : [ (0, 0, 'w'), (16, 18, 'w'), ],
+        'battery' : [ (125, 3, 'w'), (109, 21, 'w'), ],
         'defaults' : [ 'second' ],
         },
     'd' : {
