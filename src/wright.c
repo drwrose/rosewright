@@ -1065,8 +1065,8 @@ void reset_memory_panic() {
 
   // Start resetting some options if the memory panic count grows too high.
   if (memory_panic_count > 1) {
-    config.battery_gauge = BGM_off;
-    config.keep_bluetooth_indicator = false;
+    config.battery_gauge = IM_off;
+    config.bluetooth_indicator = IM_off;
   }
   if (memory_panic_count > 2) {
     config.second_hand = false;

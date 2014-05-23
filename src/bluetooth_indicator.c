@@ -13,6 +13,10 @@ bool bluetooth_invert = false;
 bool bluetooth_opaque_layer = false;
 
 void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
+  if (config.bluetooth_indicator == IM_off) {
+    return;
+  }
+
   GRect box = layer_get_frame(me);
   box.origin.x = 0;
   box.origin.y = 0;
@@ -38,9 +42,9 @@ void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
   }
 
   if (bluetooth_state) {
-    if (config.keep_bluetooth_indicator) {
-      // We only draw the "connected" bitmap if
-      // keep_bluetooth_indicator is configured true.
+    if (config.bluetooth_indicator != IM_when_needed) {
+      // We don't draw the "connected" bitmap if bluetooth_indicator
+      // is set to IM_when_needed; only on IM_always.
       if (bluetooth_opaque_layer) {
 	if (bluetooth_mask.bitmap == NULL) {
 	  bluetooth_mask = png_bwd_create(RESOURCE_ID_BLUETOOTH_MASK);
@@ -55,6 +59,8 @@ void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
       graphics_draw_bitmap_in_rect(ctx, bluetooth_connected.bitmap, box);
     }
   } else {
+    // We always draw the disconnected bitmap (except in the IM_off
+    // case, of course).
     if (bluetooth_opaque_layer) {
       if (bluetooth_mask.bitmap == NULL) {
 	bluetooth_mask = png_bwd_create(RESOURCE_ID_BLUETOOTH_MASK);

@@ -117,7 +117,8 @@ if (num_date_windows) {
 
 makeOption("hour_buzzer", "Vibrate at each hour");
 makeOption("bluetooth_buzzer", "Vibrate on disconnect");
-makeOption("keep_bluetooth_indicator", "Keep bluetooth visible");
+makeOption("bluetooth_indicator", "Connection indicator",
+	   [[0, 'Off'], [1, 'When needed'], [2, 'Always']]);
 makeOption("battery_gauge", "Battery gauge",
 	   [[0, 'Off'], [1, 'When needed'], [2, 'Always'], [3, 'Digital']]);
 

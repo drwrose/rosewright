@@ -28,7 +28,8 @@ void init_default_options() {
 void sanitize_config() {
   // Ensures that the newly-loaded config parameters are within a
   // reasonable range for the program and won't cause crashes.
-  config.battery_gauge = config.battery_gauge % (BGM_digital + 1);
+  config.battery_gauge = config.battery_gauge % (IM_digital + 1);
+  config.bluetooth_indicator = config.bluetooth_indicator % (IM_always + 1);
   config.draw_mode = config.draw_mode & 1;
   config.chrono_dial = config.chrono_dial % (CDM_dual + 1);
   config.display_lang = config.display_lang % num_langs;
@@ -42,7 +43,7 @@ void sanitize_config() {
 const char *show_config() {
 #define CONFIG_BUFFER_SIZE 100
   static char buffer[CONFIG_BUFFER_SIZE];
-  snprintf(buffer, CONFIG_BUFFER_SIZE, "bat: %d, bt: %d, sh: %d, hb: %d, bb: %d, dm: %d, cd: %d, sw: %d, dl: %d, fi: %d, dw: ", config.battery_gauge, config.keep_bluetooth_indicator, config.second_hand, config.hour_buzzer, config.bluetooth_buzzer, config.draw_mode, config.chrono_dial, config.sweep_seconds, config.display_lang, config.face_index);
+  snprintf(buffer, CONFIG_BUFFER_SIZE, "bat: %d, bt: %d, sh: %d, hb: %d, bb: %d, dm: %d, cd: %d, sw: %d, dl: %d, fi: %d, dw: ", config.battery_gauge, config.bluetooth_indicator, config.second_hand, config.hour_buzzer, config.bluetooth_buzzer, config.draw_mode, config.chrono_dial, config.sweep_seconds, config.display_lang, config.face_index);
 
   if (NUM_DATE_WINDOWS > 0) {
     char b2[12];
@@ -93,12 +94,12 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
 
   Tuple *battery_gauge = dict_find(received, CK_battery_gauge);
   if (battery_gauge != NULL) {
-    config.battery_gauge = (BatteryGaugeMode)battery_gauge->value->int32;
+    config.battery_gauge = (IndicatorMode)battery_gauge->value->int32;
   }
 
-  Tuple *keep_bluetooth_indicator = dict_find(received, CK_keep_bluetooth_indicator);
-  if (keep_bluetooth_indicator != NULL) {
-    config.keep_bluetooth_indicator = keep_bluetooth_indicator->value->int32;
+  Tuple *bluetooth_indicator = dict_find(received, CK_bluetooth_indicator);
+  if (bluetooth_indicator != NULL) {
+    config.bluetooth_indicator = (IndicatorMode)bluetooth_indicator->value->int32;
   }
 
   Tuple *second_hand = dict_find(received, CK_second_hand);

@@ -881,13 +881,17 @@ def configWatch():
         defaultBattery = 2
     else:
         defaultBattery = 1
+    if 'bluetooth' in defaults:
+        defaultBluetooth = 2
+    else:
+        defaultBluetooth = 1
 
     print >> js, jsIn % {
         'watchName' : watchName,
         'numFaces' : numFaces,
         'numDateWindows' : len(date_windows),
         'enableChronoDial' : int(makeChronograph),
-        'defaultBluetooth' : int(bool('bluetooth' in defaults)),
+        'defaultBluetooth' : defaultBluetooth,
         'defaultBattery' : defaultBattery,
         'enableSecondHand' : int(enableSecondHand and not suppressSecondHand),
         'enableHourBuzzer' : int(enableHourBuzzer),

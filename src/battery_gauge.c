@@ -12,7 +12,7 @@ bool battery_gauge_invert = false;
 bool battery_gauge_opaque_layer = false;
 
 void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
-  if (config.battery_gauge == BGM_off) {
+  if (config.battery_gauge == IM_off) {
     return;
   }
 
@@ -23,7 +23,7 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
   charge_state.charge_percent = 100 - ((now / 2) % 11) * 10;
 #endif  // BATTERY_HACK
 
-  bool show_gauge = (config.battery_gauge != BGM_when_needed) || charge_state.is_charging || (charge_state.is_plugged || charge_state.charge_percent <= 20);
+  bool show_gauge = (config.battery_gauge != IM_when_needed) || charge_state.is_charging || (charge_state.is_plugged || charge_state.charge_percent <= 20);
   if (!show_gauge) {
     return;
   }
@@ -50,7 +50,7 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
 
   if (battery_gauge_opaque_layer) {
     // Draw the background of the layer.
-    if (charge_state.is_charging || config.battery_gauge != BGM_digital) {
+    if (charge_state.is_charging || config.battery_gauge != IM_digital) {
       // Erase just the battery gauge shape.
       if (battery_gauge_mask.bitmap == NULL) {
 	battery_gauge_mask = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_MASK);
@@ -72,7 +72,7 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
     graphics_context_set_compositing_mode(ctx, fg_mode);
     graphics_draw_bitmap_in_rect(ctx, battery_gauge_charging.bitmap, box);
 
-  } else if (config.battery_gauge != BGM_digital) {
+  } else if (config.battery_gauge != IM_digital) {
     // Draw the analog battery icon.
     if (battery_gauge_empty.bitmap == NULL) {
       battery_gauge_empty = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_EMPTY);
