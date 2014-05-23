@@ -877,13 +877,18 @@ def configWatch():
     jsIn = open('%s/src/js/pebble-js-app.js.in' % (rootDir), 'r').read()
     js = open('%s/src/js/pebble-js-app.js' % (rootDir), 'w')
 
+    if 'battery' in defaults:
+        defaultBattery = 2
+    else:
+        defaultBattery = 1
+
     print >> js, jsIn % {
         'watchName' : watchName,
         'numFaces' : numFaces,
         'numDateWindows' : len(date_windows),
         'enableChronoDial' : int(makeChronograph),
         'defaultBluetooth' : int(bool('bluetooth' in defaults)),
-        'defaultBattery' : int(bool('battery' in defaults)),
+        'defaultBattery' : defaultBattery,
         'enableSecondHand' : int(enableSecondHand and not suppressSecondHand),
         'enableHourBuzzer' : int(enableHourBuzzer),
         'enableSweepSeconds' : int(enableSecondHand and supportSweep),

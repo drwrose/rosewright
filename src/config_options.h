@@ -7,7 +7,7 @@
 // These keys are used to communicate with Javascript and must match
 // the corresponding index numbers in appinfo.json.in.
 typedef enum {
-  CK_keep_battery_gauge = 0,
+  CK_battery_gauge = 0,
   CK_keep_bluetooth_indicator = 1,
   CK_second_hand = 2,
   CK_hour_buzzer = 3,
@@ -22,6 +22,13 @@ typedef enum {
   CK_date_window_d = 12,
   CK_bluetooth_buzzer = 13,
 } ConfigKey;
+
+typedef enum {
+  BGM_off = 0,
+  BGM_when_needed = 1,
+  BGM_always = 2,
+  BGM_digital = 3,
+} BatteryGaugeMode;
 
 typedef enum {
   CDM_off = 0,
@@ -45,7 +52,7 @@ typedef enum {
 } DateWindowMode;
 
 typedef struct {
-  bool keep_battery_gauge;
+  BatteryGaugeMode battery_gauge;
   bool keep_bluetooth_indicator;
   bool second_hand;
   bool hour_buzzer;
