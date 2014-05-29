@@ -35,7 +35,7 @@ void sanitize_config() {
   config.display_lang = config.display_lang % num_langs;
   config.face_index = config.face_index % NUM_FACES;
   for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
-    config.date_windows[i] = config.date_windows[i] % (DWM_ampm + 1);
+    config.date_windows[i] = config.date_windows[i] % (DWM_moon + 1);
   }
 }
 

@@ -64,3 +64,7 @@
 #if %(enableChronoTenthHand)s
   #define ENABLE_CHRONO_TENTH_HAND 1
 #endif
+
+#if %(supportMoon)s
+  #define SUPPORT_MOON 1
+#endif

@@ -17,6 +17,9 @@ Layer *clock_face_layer;
 BitmapWithData date_window;
 BitmapWithData date_window_mask;
 
+BitmapWithData moon_phase_bitmap;
+int current_moon_phase = -1;
+
 // This structure is the data associated with a date window layer.
 typedef struct __attribute__((__packed__)) {
   unsigned char date_window_index;
@@ -495,7 +498,7 @@ void second_layer_update_callback(Layer *me, GContext *ctx) {
   }
 }
 
-// Draws a date window with the specified contents.  Usually this is
+// Draws a date window with the specified text contents.  Usually this is
 // something like a numeric date or the weekday name.
 void draw_window(Layer *me, GContext *ctx, const char *text, struct FontPlacement *font_placement, 
 		 GFont *font, bool invert, bool opaque_layer) {
@@ -552,6 +555,95 @@ void draw_window(Layer *me, GContext *ctx, const char *text, struct FontPlacemen
                      NULL);
 }
 
+#ifdef SUPPORT_MOON
+// Moon_phase function from http://www.voidware.com/moon_phase.htm
+int Moon_phase(int year, int month, int day)
+{
+    /*k
+      Calculates the moon phase (0-7), accurate to 1 segment.
+      0 = > new moon.
+      4 => Full moon.
+    */
+    
+    int g, e;
+
+    if (month == 1) --day;
+    else if (month == 2) day += 30;
+    else // m >= 3
+    {
+        day += 28 + (month-2)*3059/100;
+
+        // adjust for leap years
+        if (!(year & 3)) ++day;
+        if ((year%100) == 0) --day;
+    }
+    
+    g = (year-1900)%19 + 1;
+    e = (11*g + 18) % 30;
+    if ((e == 25 && g > 11) || e == 24) e++;
+    return ((((e + day)*6+11)%177)/22 & 7);
+}
+
+// Draws a date window with the current lunar phase.
+void draw_lunar_window(Layer *me, GContext *ctx, bool invert, bool opaque_layer) {
+  // For now, the size of the window is hardcoded.
+  GRect box = {
+    { 2, 0 }, { 37, 19 }
+  };
+
+  // The mode in which we draw the date window's frame.  This depends
+  // on the watchface and the config settings (inverted or not).
+  unsigned int frame_mode = invert ^ config.draw_mode;
+
+  // The mode in which we draw the lunar phase icons within the date
+  // window.  This is always the same mode, because we always want to
+  // draw the full moon as light on a dark background, regardless of
+  // the watchface and the config settings.
+  unsigned int fill_mode = 0;
+
+  // The lunar phase window is always opaque; we always draw the background.
+  if (date_window_mask.bitmap == NULL) {
+    date_window_mask = rle_bwd_create(RESOURCE_ID_DATE_WINDOW_MASK);
+    if (date_window_mask.bitmap == NULL) {
+      trigger_memory_panic(__LINE__);
+      return;
+    }
+  }
+  graphics_context_set_compositing_mode(ctx, draw_mode_table[fill_mode].paint_fg);
+  graphics_draw_bitmap_in_rect(ctx, date_window_mask.bitmap, box);
+  
+  if (date_window.bitmap == NULL) {
+    date_window = rle_bwd_create(RESOURCE_ID_DATE_WINDOW);
+    if (date_window.bitmap == NULL) {
+      bwd_destroy(&date_window_mask);
+      trigger_memory_panic(__LINE__);
+      return;
+    }
+  }
+
+  graphics_context_set_compositing_mode(ctx, draw_mode_table[frame_mode].paint_fg);
+  graphics_draw_bitmap_in_rect(ctx, date_window.bitmap, box);
+
+  if (current_moon_phase < 0) {
+    // Recompute the moon phase, it might have changed.
+    bwd_destroy(&moon_phase_bitmap);
+    current_moon_phase = Moon_phase(current_placement.year_value + 1900, current_placement.month_index + 1, current_placement.date_value);
+  }
+
+  if (moon_phase_bitmap.bitmap == NULL) {
+    assert(current_moon_phase >= 0 && current_moon_phase <= 7);
+    moon_phase_bitmap = rle_bwd_create(RESOURCE_ID_MOON_PHASE_0 + current_moon_phase);
+    if (moon_phase_bitmap.bitmap == NULL) {
+      trigger_memory_panic(__LINE__);
+      return;
+    }
+  }
+
+  graphics_context_set_compositing_mode(ctx, draw_mode_table[fill_mode].paint_white);
+  graphics_draw_bitmap_in_rect(ctx, moon_phase_bitmap.bitmap, box);
+}
+#endif  // SUPPORT_MOON
+
 void date_window_layer_update_callback(Layer *me, GContext *ctx) {
   DateWindowData *data = (DateWindowData *)layer_get_data(me);
   unsigned int date_window_index = data->date_window_index;
@@ -562,6 +654,16 @@ void date_window_layer_update_callback(Layer *me, GContext *ctx) {
     // Do nothing.
     return;
   }
+
+  const struct IndicatorTable *window = &date_windows[date_window_index][config.face_index];
+
+#ifdef SUPPORT_MOON
+  if (dwm == DWM_moon) {
+    // Draw the lunar phase.
+    draw_lunar_window(me, ctx, window->invert, window->opaque);
+    return;
+  }
+#endif  // SUPPORT_MOON
 
   // Format the date or weekday or whatever text for display.
 #define DATE_WINDOW_BUFFER_SIZE 16
@@ -603,11 +705,11 @@ void date_window_layer_update_callback(Layer *me, GContext *ctx) {
     text = ampm_names[current_placement.ampm_value];
     break;
 
+  case DWM_moon:
   default:
     buffer[0] = '\0';
   }
 
-  const struct IndicatorTable *window = &date_windows[date_window_index][config.face_index];
   draw_window(me, ctx, text, font_placement, font, window->invert, window->opaque);
 }
 
@@ -666,6 +768,7 @@ void update_hands(struct tm *time) {
     current_placement.date_value = new_placement.date_value;
     current_placement.year_value = new_placement.year_value;
     current_placement.ampm_value = new_placement.ampm_value;
+    current_moon_phase = -1;
 
     for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
       layer_mark_dirty(date_window_layers[i]);

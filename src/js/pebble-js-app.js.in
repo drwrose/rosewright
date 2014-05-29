@@ -4,6 +4,7 @@ var show_chrono_dial = %(enableChronoDial)s;
 var enable_sweep_seconds = %(enableSweepSeconds)s;
 var num_faces = %(numFaces)s;
 var num_date_windows = %(numDateWindows)s;
+var support_moon = %(supportMoon)s;
 
 // Define the initial config default values.  These defaults are used
 // only if the Pebble is connected to the phone at the time of launch;
@@ -133,12 +134,15 @@ Pebble.addEventListener("ready", function(e) {
 Pebble.addEventListener("showConfiguration", function(e) {
     console.log("showConfiguration starting");
     initialize();
-    var url = "http://www.ddrose.com/pebble/rosewright_2_7_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_date_windows=" + num_date_windows;
+    var url = "http://www.ddrose.com/pebble/rosewright_2_8_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_date_windows=" + num_date_windows;
     if (show_chrono_dial) {
-	url += "&chrono_dial=" + chrono_dial
+	url += "&chrono_dial=" + chrono_dial;
+    }
+    if (support_moon) {
+	url += "&support_moon=1";
     }
     if (enable_sweep_seconds) {
-	url += "&sweep_seconds=" + sweep_seconds
+	url += "&sweep_seconds=" + sweep_seconds;
     }
     for (var i = 0; i < num_date_windows; ++i) {
 	var sym = 'date_window_' + String.fromCharCode(97 + i);
