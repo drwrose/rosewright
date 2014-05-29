@@ -844,22 +844,27 @@ def makeIndicatorTable(generatedTable, generatedDefs, name, indicator, anonymous
 def makeMoon():
     """ Returns the resource strings needed to include the moon phase icons. """
     
-    moonEntry = """
+    moonPhaseEntry = """
     {
-      "name": "MOON_PHASE_%(index)s",
+      "name": "MOON_%(cat)s_%(index)s",
       "file": "%(rleFilename)s",
       "type": "%(ptype)s"
-    },"""    
+    },"""
 
     resourceStr = ''
 
-    for index in range(8):
-        rleFilename, ptype = make_rle('clock_faces/moon_phase_%s.png' % (index), useRle = supportRle)
-        resourceStr += moonEntry % {
-            'index' : index,
-            'rleFilename' : rleFilename,
-            'ptype' : ptype,
-            }
+    # moon_white_*.png is for when the moon is to be drawn as white pixels on black.
+    # moon_black_*.png is for when the moon is to be drawn as black pixels on white.
+    
+    for cat in ['white', 'black']:
+        for index in range(8):
+            rleFilename, ptype = make_rle('clock_faces/moon_%s_%s.png' % (cat, index), useRle = supportRle)
+            resourceStr += moonPhaseEntry % {
+                'cat' : cat.upper(),
+                'index' : index,
+                'rleFilename' : rleFilename,
+                'ptype' : ptype,
+                }
 
     return resourceStr
         

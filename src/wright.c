@@ -17,8 +17,15 @@ Layer *clock_face_layer;
 BitmapWithData date_window;
 BitmapWithData date_window_mask;
 
-BitmapWithData moon_phase_bitmap;
+// For now, the size of the date window is hardcoded.
+const GRect date_window_box = {
+  { 2, 0 }, { 37, 19 }
+};
+
+#ifdef SUPPORT_MOON
+BitmapWithData moon_bitmap;
 int current_moon_phase = -1;
+#endif // SUPPORT_MOON
 
 // This structure is the data associated with a date window layer.
 typedef struct __attribute__((__packed__)) {
@@ -71,6 +78,7 @@ char ampm_names_buffer[AMPM_NAMES_MAX_BUFFER + 1];
 char *ampm_names[NUM_AMPM_NAMES];
 
 int display_lang = -1;
+int draw_mode = -1;
 
 // Triggered at regular intervals to implement sweep seconds.
 AppTimer *sweep_timer = NULL;
@@ -498,17 +506,8 @@ void second_layer_update_callback(Layer *me, GContext *ctx) {
   }
 }
 
-// Draws a date window with the specified text contents.  Usually this is
-// something like a numeric date or the weekday name.
-void draw_window(Layer *me, GContext *ctx, const char *text, struct FontPlacement *font_placement, 
-		 GFont *font, bool invert, bool opaque_layer) {
-  // For now, the size of the window is hardcoded.
-  GRect box = {
-    { 2, 0 }, { 37, 19 }
-  };
-
-  unsigned int draw_mode = invert ^ config.draw_mode;
-
+// Draws the frame and optionally fills the background of the current date window.
+void draw_date_window_background(GContext *ctx, unsigned int draw_mode, bool opaque_layer) {
   if (opaque_layer) {
     if (date_window_mask.bitmap == NULL) {
       date_window_mask = rle_bwd_create(RESOURCE_ID_DATE_WINDOW_MASK);
@@ -518,7 +517,7 @@ void draw_window(Layer *me, GContext *ctx, const char *text, struct FontPlacemen
       }
     }
     graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_mask);
-    graphics_draw_bitmap_in_rect(ctx, date_window_mask.bitmap, box);
+    graphics_draw_bitmap_in_rect(ctx, date_window_mask.bitmap, date_window_box);
   }
   
   if (date_window.bitmap == NULL) {
@@ -531,7 +530,17 @@ void draw_window(Layer *me, GContext *ctx, const char *text, struct FontPlacemen
   }
 
   graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_fg);
-  graphics_draw_bitmap_in_rect(ctx, date_window.bitmap, box);
+  graphics_draw_bitmap_in_rect(ctx, date_window.bitmap, date_window_box);
+}
+
+// Draws a date window with the specified text contents.  Usually this is
+// something like a numeric date or the weekday name.
+void draw_window(Layer *me, GContext *ctx, const char *text, struct FontPlacement *font_placement, 
+		 GFont *font, bool invert, bool opaque_layer) {
+  GRect box = date_window_box;
+
+  unsigned int draw_mode = invert ^ config.draw_mode;
+  draw_date_window_background(ctx, draw_mode, opaque_layer);
 
   graphics_context_set_text_color(ctx, draw_mode_table[draw_mode].colors[1]);
 
@@ -586,61 +595,32 @@ int Moon_phase(int year, int month, int day)
 
 // Draws a date window with the current lunar phase.
 void draw_lunar_window(Layer *me, GContext *ctx, bool invert, bool opaque_layer) {
-  // For now, the size of the window is hardcoded.
-  GRect box = {
-    { 2, 0 }, { 37, 19 }
-  };
-
-  // The mode in which we draw the date window's frame.  This depends
-  // on the watchface and the config settings (inverted or not).
-  unsigned int frame_mode = invert ^ config.draw_mode;
-
-  // The mode in which we draw the lunar phase icons within the date
-  // window.  This is always the same mode, because we always want to
-  // draw the full moon as light on a dark background, regardless of
-  // the watchface and the config settings.
-  unsigned int fill_mode = 0;
-
-  // The lunar phase window is always opaque; we always draw the background.
-  if (date_window_mask.bitmap == NULL) {
-    date_window_mask = rle_bwd_create(RESOURCE_ID_DATE_WINDOW_MASK);
-    if (date_window_mask.bitmap == NULL) {
-      trigger_memory_panic(__LINE__);
-      return;
-    }
-  }
-  graphics_context_set_compositing_mode(ctx, draw_mode_table[fill_mode].paint_fg);
-  graphics_draw_bitmap_in_rect(ctx, date_window_mask.bitmap, box);
-  
-  if (date_window.bitmap == NULL) {
-    date_window = rle_bwd_create(RESOURCE_ID_DATE_WINDOW);
-    if (date_window.bitmap == NULL) {
-      bwd_destroy(&date_window_mask);
-      trigger_memory_panic(__LINE__);
-      return;
-    }
-  }
-
-  graphics_context_set_compositing_mode(ctx, draw_mode_table[frame_mode].paint_fg);
-  graphics_draw_bitmap_in_rect(ctx, date_window.bitmap, box);
+  unsigned int draw_mode = invert ^ config.draw_mode;
+  draw_date_window_background(ctx, draw_mode, opaque_layer);
 
   if (current_moon_phase < 0) {
     // Recompute the moon phase, it might have changed.
-    bwd_destroy(&moon_phase_bitmap);
+    bwd_destroy(&moon_bitmap);
     current_moon_phase = Moon_phase(current_placement.year_value + 1900, current_placement.month_index + 1, current_placement.date_value);
   }
 
-  if (moon_phase_bitmap.bitmap == NULL) {
+  if (moon_bitmap.bitmap == NULL) {
     assert(current_moon_phase >= 0 && current_moon_phase <= 7);
-    moon_phase_bitmap = rle_bwd_create(RESOURCE_ID_MOON_PHASE_0 + current_moon_phase);
-    if (moon_phase_bitmap.bitmap == NULL) {
+    if (draw_mode == 0) {
+      moon_bitmap = rle_bwd_create(RESOURCE_ID_MOON_BLACK_0 + current_moon_phase);
+    } else {
+      moon_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHITE_0 + current_moon_phase);
+    }
+    if (moon_bitmap.bitmap == NULL) {
       trigger_memory_panic(__LINE__);
       return;
     }
   }
 
-  graphics_context_set_compositing_mode(ctx, draw_mode_table[fill_mode].paint_white);
-  graphics_draw_bitmap_in_rect(ctx, moon_phase_bitmap.bitmap, box);
+  // Draw the moon in the fg color.  This will be black-on-white if
+  // draw_mode = 0, or white-on-black if draw_mode = 1.
+  graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_black);
+  graphics_draw_bitmap_in_rect(ctx, moon_bitmap.bitmap, date_window_box);
 }
 #endif  // SUPPORT_MOON
 
@@ -768,7 +748,9 @@ void update_hands(struct tm *time) {
     current_placement.date_value = new_placement.date_value;
     current_placement.year_value = new_placement.year_value;
     current_placement.ampm_value = new_placement.ampm_value;
+#ifdef SUPPORT_MOON
     current_moon_phase = -1;
+#endif  // SUPPORT_MOON
 
     for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
       layer_mark_dirty(date_window_layers[i]);
@@ -929,6 +911,14 @@ void apply_config() {
     display_lang = config.display_lang;
   }
 
+  if (draw_mode != config.draw_mode) {
+    // If the draw mode changes, we need to reload the moon bitmap.
+#ifdef SUPPORT_MOON
+    bwd_destroy(&moon_bitmap);
+#endif  // SUPPORT_MOON
+    draw_mode = config.draw_mode;
+  }
+
   layer_mark_dirty(clock_face_layer);
 
   reset_tick_timer();
@@ -1070,6 +1060,10 @@ void destroy_objects() {
   bwd_destroy(&date_window);
   bwd_destroy(&date_window_mask);
 
+#ifdef SUPPORT_MOON
+  bwd_destroy(&moon_bitmap);
+#endif  // SUPPORT_MOON
+  
   layer_destroy(minute_layer);
   layer_destroy(hour_layer);
   layer_destroy(second_layer);
@@ -1082,6 +1076,7 @@ void destroy_objects() {
     safe_unload_custom_font(&date_lang_font);
   }
   display_lang = -1;
+  draw_mode = -1;
 
   window_destroy(window);
   window = NULL;
