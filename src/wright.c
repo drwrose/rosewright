@@ -750,15 +750,26 @@ void update_hands(struct tm *time) {
     current_placement.date_value = new_placement.date_value;
     current_placement.year_value = new_placement.year_value;
     current_placement.ampm_value = new_placement.ampm_value;
-#ifdef SUPPORT_MOON
-    current_placement.lunar_phase = new_placement.lunar_phase;
-    bwd_destroy(&moon_bitmap);
-#endif  // SUPPORT_MOON
 
+    // Shorthand for the below for loop.  This achieves the same thing.
+    layer_mark_dirty(clock_face_layer);
+    /*
     for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
       layer_mark_dirty(date_window_layers[i]);
     }
+    */
   }
+
+#ifdef SUPPORT_MOON
+  // Also check the lunar phase, in a separate check from the other
+  // date windows, so it doesn't necessarily have to wait till
+  // midnight to flip over to the next phase.
+  if (new_placement.lunar_phase != current_placement.lunar_phase) {
+    current_placement.lunar_phase = new_placement.lunar_phase;
+    bwd_destroy(&moon_bitmap);
+    layer_mark_dirty(clock_face_layer);
+  }
+#endif  // SUPPORT_MOON
 }
 
 // Triggered at sweep_timer_ms intervals to run the sweep-second hand
