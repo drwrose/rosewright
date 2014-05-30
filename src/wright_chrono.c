@@ -48,6 +48,21 @@ VibePattern tap = {
   1,
 };
 
+// Returns the number of milliseconds since midnight.
+unsigned int get_time_ms() {
+  time_t s;
+  uint16_t ms;
+  unsigned int result;
+
+  time_ms(&s, &ms);
+  result = (unsigned int)((s % SECONDS_PER_DAY) * 1000 + ms);
+
+#ifdef FAST_TIME
+  result *= 67;
+#endif  // FAST_TIME
+
+  return result;
+}
 
 // Returns the time showing on the chronograph, given the ms returned
 // by get_time_ms().  Returns the current lap time if the lap is
@@ -254,7 +269,7 @@ void update_chrono_hands(struct HandPlacement *new_placement) {
 
 void chrono_start_stop_handler(ClickRecognizerRef recognizer, void *context) {
   Window *window = (Window *)context;
-  unsigned int ms = get_time_ms(NULL);
+  unsigned int ms = get_time_ms();
 
   // The start/stop button was pressed.
   if (chrono_data.running) {
@@ -298,7 +313,7 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, void *context) {
 void chrono_lap_button() {
   unsigned int ms;
  
-  ms = get_time_ms(NULL);
+  ms = get_time_ms();
 
   if (chrono_data.lap_paused) {
     // If we were already paused, this resumes the motion, jumping
@@ -545,7 +560,7 @@ void record_chrono_lap(int chrono_ms) {
 }
 
 void update_chrono_current_time() {
-  unsigned int ms = get_time_ms(NULL);
+  unsigned int ms = get_time_ms();
   unsigned int chrono_ms = get_chrono_ms(ms);
   unsigned int chrono_h = chrono_ms / (1000 * 60 * 60);
   unsigned int chrono_m = (chrono_ms / (1000 * 60)) % 60;
@@ -590,7 +605,7 @@ load_chrono_data() {
     // show modulo 24 hours).
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Loaded chrono_data");
     if (chrono_data.running) {
-      unsigned int ms = get_time_ms(NULL);
+      unsigned int ms = get_time_ms();
       unsigned int chrono_ms = (ms - chrono_data.start_ms + MS_PER_DAY) % MS_PER_DAY;
       app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Modulated start_ms from %u to %u", chrono_data.start_ms, ms - chrono_ms);
       chrono_data.start_ms = ms - chrono_ms;

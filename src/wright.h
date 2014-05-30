@@ -45,6 +45,10 @@ struct __attribute__((__packed__)) HandPlacement {
   unsigned char year_value;  // less 1900.
   bool ampm_value;
 
+#ifdef SUPPORT_MOON
+  unsigned char lunar_phase;
+#endif  // SUPPORT_MOON
+
   // Not really a hand placement, but this is used to keep track of
   // whether we have buzzed for the top of the hour or not.
   bool hour_buzzer;
@@ -88,7 +92,6 @@ void started_click_config_provider(void *context);
 
 void trigger_memory_panic(int line_number);
 void reset_memory_panic();
-unsigned int get_time_ms(struct tm *time);
 void update_hands(struct tm *time);
 void hand_cache_init(struct HandCache *hand_cache);
 void hand_cache_destroy(struct HandCache *hand_cache);
