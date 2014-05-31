@@ -21,6 +21,10 @@ BitmapWithData date_window_mask;
 const GRect date_window_box = {
   { 2, 0 }, { 37, 19 }
 };
+// This is the position to draw the lunar image if it's inverted.
+const GRect date_window_box_offset = {
+  { -1, 0 }, { 40, 19 }
+};
 
 #ifdef SUPPORT_MOON
 BitmapWithData moon_bitmap;
@@ -77,7 +81,6 @@ char ampm_names_buffer[AMPM_NAMES_MAX_BUFFER + 1];
 char *ampm_names[NUM_AMPM_NAMES];
 
 int display_lang = -1;
-int draw_mode = -1;
 
 // Triggered at regular intervals to implement sweep seconds.
 AppTimer *sweep_timer = NULL;
@@ -598,7 +601,7 @@ void draw_window(Layer *me, GContext *ctx, const char *text, struct FontPlacemen
 #ifdef SUPPORT_MOON
 
 // Draws a date window with the current lunar phase.
-void draw_lunar_window(Layer *me, GContext *ctx, bool invert, bool opaque_layer) {
+void draw_lunar_window(Layer *me, GContext *ctx, DateWindowMode dwm, bool invert, bool opaque_layer) {
   unsigned int draw_mode = invert ^ config.draw_mode;
   draw_date_window_background(ctx, draw_mode, opaque_layer);
 
@@ -613,6 +616,14 @@ void draw_lunar_window(Layer *me, GContext *ctx, bool invert, bool opaque_layer)
       trigger_memory_panic(__LINE__);
       return;
     }
+
+    if (dwm == DWM_moon_south) {
+      // Draw the moon phases animating from left-to-right, as seen in
+      // the southern hemisphere.  (This really means drawing the moon
+      // upside-down, as it would be seen by someone facing north.)
+      flip_bitmap_x(moon_bitmap.bitmap, NULL);
+      flip_bitmap_y(moon_bitmap.bitmap, NULL);
+    }
   }
 
   // Draw the moon in the fg color.  This will be black-on-white if
@@ -622,7 +633,12 @@ void draw_lunar_window(Layer *me, GContext *ctx, bool invert, bool opaque_layer)
   // looks like the moon.  (Drawing the moon in the inverted color
   // would look weird.)
   graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_black);
-  graphics_draw_bitmap_in_rect(ctx, moon_bitmap.bitmap, date_window_box);
+
+  if (dwm == DWM_moon_south) {
+    graphics_draw_bitmap_in_rect(ctx, moon_bitmap.bitmap, date_window_box_offset);
+  } else {
+    graphics_draw_bitmap_in_rect(ctx, moon_bitmap.bitmap, date_window_box);
+  }
 }
 #endif  // SUPPORT_MOON
 
@@ -640,9 +656,9 @@ void date_window_layer_update_callback(Layer *me, GContext *ctx) {
   const struct IndicatorTable *window = &date_windows[date_window_index][config.face_index];
 
 #ifdef SUPPORT_MOON
-  if (dwm == DWM_moon) {
+  if (dwm == DWM_moon_north || dwm == DWM_moon_south) {
     // Draw the lunar phase.
-    draw_lunar_window(me, ctx, window->invert, window->opaque);
+    draw_lunar_window(me, ctx, dwm, window->invert, window->opaque);
     return;
   }
 #endif  // SUPPORT_MOON
@@ -687,7 +703,8 @@ void date_window_layer_update_callback(Layer *me, GContext *ctx) {
     text = ampm_names[current_placement.ampm_value];
     break;
 
-  case DWM_moon:
+  case DWM_moon_north:
+  case DWM_moon_south:
   default:
     buffer[0] = '\0';
   }
@@ -925,13 +942,11 @@ void apply_config() {
     display_lang = config.display_lang;
   }
 
-  if (draw_mode != config.draw_mode) {
-    // If the draw mode changes, we need to reload the moon bitmap.
 #ifdef SUPPORT_MOON
-    bwd_destroy(&moon_bitmap);
+  // Reload the moon bitmap just for good measure.  Maybe the user
+  // changed the draw mode or the lunar direction.
+  bwd_destroy(&moon_bitmap);
 #endif  // SUPPORT_MOON
-    draw_mode = config.draw_mode;
-  }
 
   layer_mark_dirty(clock_face_layer);
 
@@ -1090,7 +1105,6 @@ void destroy_objects() {
     safe_unload_custom_font(&date_lang_font);
   }
   display_lang = -1;
-  draw_mode = -1;
 
   window_destroy(window);
   window = NULL;

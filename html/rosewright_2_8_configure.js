@@ -105,7 +105,8 @@ var date_window_options = [
 ];
 
 if ($.url().param("support_moon")) {
-    date_window_options.push([7, 'Lunar phase']);
+    date_window_options.push([7, 'Lunar phase, right-to-left (northern hemisphere)']);
+    date_window_options.push([8, 'Lunar phase, left-to-right (southern hemisphere)']);
 }
 
 var num_date_windows = $.url().param("num_date_windows");

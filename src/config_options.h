@@ -51,7 +51,8 @@ typedef enum {
   DWM_ampm = 6,
   
   // Special case.
-  DWM_moon = 7,
+  DWM_moon_north = 7,
+  DWM_moon_south = 8,
 } DateWindowMode;
 
 typedef struct {
