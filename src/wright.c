@@ -233,8 +233,9 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
       // That gives the age of the moon in seconds.  We really want it
       // in the range 0 .. 7, so we divide by (2551443 / 8) to give us
       // that, rounding to the nearest integer; and then we take
-      // modulo 8 again (to account for the rounding).
-      unsigned int lunar_phase = (8 * lunar_age_s + 1275721) / 2551443;
+      // modulo 8 again (to account for the rounding).  Edit: no
+      // longer rounding, truncating now.  Maybe this is more natural.
+      unsigned int lunar_phase = (8 * lunar_age_s) / 2551443;
 
 #ifdef FAST_TIME
       lunar_phase = s;

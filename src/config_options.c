@@ -157,7 +157,7 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
 
   sanitize_config();
 
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, show_config());
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "New config: %s", show_config());
   if (memcmp(&orig_config, &config, sizeof(config)) == 0) {
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Config is unchanged.");
   } else {
