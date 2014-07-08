@@ -232,15 +232,16 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 
       // That gives the age of the moon in seconds.  We really want it
       // in the range 0 .. 7, so we divide by (2551443 / 8) to give us
-      // that, rounding to the nearest integer; and then we take
-      // modulo 8 again (to account for the rounding).  Edit: no
-      // longer rounding, truncating now.  Maybe this is more natural.
+      // that.
       unsigned int lunar_phase = (8 * lunar_age_s) / 2551443;
 
 #ifdef FAST_TIME
       lunar_phase = s;
 #endif  // FAST_TIME
-    
+
+      // We shouldn't need to take modulo 8 here (since we already
+      // computed modulo 2551443 above), but we do it anyway just in
+      // case there's an unexpected edge condition.
       placement->lunar_phase = lunar_phase % 8;
     }
 #endif  // SUPPORT_MOON
@@ -542,8 +543,8 @@ void second_layer_update_callback(Layer *me, GContext *ctx) {
 }
 
 // Draws the frame and optionally fills the background of the current date window.
-void draw_date_window_background(GContext *ctx, unsigned int draw_mode, bool opaque_layer) {
-  if (opaque_layer) {
+void draw_date_window_background(GContext *ctx, unsigned int fg_draw_mode, unsigned int bg_draw_mode, bool opaque_layer) {
+  if (opaque_layer || bg_draw_mode != fg_draw_mode) {
     if (date_window_mask.bitmap == NULL) {
       date_window_mask = rle_bwd_create(RESOURCE_ID_DATE_WINDOW_MASK);
       if (date_window_mask.bitmap == NULL) {
@@ -551,7 +552,7 @@ void draw_date_window_background(GContext *ctx, unsigned int draw_mode, bool opa
         return;
       }
     }
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_mask);
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[bg_draw_mode].paint_mask);
     graphics_draw_bitmap_in_rect(ctx, date_window_mask.bitmap, date_window_box);
   }
   
@@ -564,7 +565,7 @@ void draw_date_window_background(GContext *ctx, unsigned int draw_mode, bool opa
     }
   }
 
-  graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_fg);
+  graphics_context_set_compositing_mode(ctx, draw_mode_table[fg_draw_mode].paint_fg);
   graphics_draw_bitmap_in_rect(ctx, date_window.bitmap, date_window_box);
 }
 
@@ -575,7 +576,7 @@ void draw_window(Layer *me, GContext *ctx, const char *text, struct FontPlacemen
   GRect box = date_window_box;
 
   unsigned int draw_mode = invert ^ config.draw_mode;
-  draw_date_window_background(ctx, draw_mode, opaque_layer);
+  draw_date_window_background(ctx, draw_mode, draw_mode, opaque_layer);
 
   graphics_context_set_text_color(ctx, draw_mode_table[draw_mode].colors[1]);
 
@@ -604,11 +605,13 @@ void draw_window(Layer *me, GContext *ctx, const char *text, struct FontPlacemen
 // Draws a date window with the current lunar phase.
 void draw_lunar_window(Layer *me, GContext *ctx, DateWindowMode dwm, bool invert, bool opaque_layer) {
   unsigned int draw_mode = invert ^ config.draw_mode;
-  draw_date_window_background(ctx, draw_mode, opaque_layer);
+  //unsigned int moon_draw_mode = 1;  // hack
+  unsigned int moon_draw_mode = draw_mode;  // hack
+  draw_date_window_background(ctx, draw_mode, moon_draw_mode, opaque_layer);
 
   if (moon_bitmap.bitmap == NULL) {
     assert(current_placement.lunar_phase <= 7);
-    if (draw_mode == 0) {
+    if (moon_draw_mode == 0) {
       moon_bitmap = rle_bwd_create(RESOURCE_ID_MOON_BLACK_0 + current_placement.lunar_phase);
     } else {
       moon_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHITE_0 + current_placement.lunar_phase);
@@ -628,12 +631,12 @@ void draw_lunar_window(Layer *me, GContext *ctx, DateWindowMode dwm, bool invert
   }
 
   // Draw the moon in the fg color.  This will be black-on-white if
-  // draw_mode = 0, or white-on-black if draw_mode = 1.  Since we have
-  // selected the particular moon resource above based on draw_mode,
-  // we will always draw the moon in the correct color, so that it
-  // looks like the moon.  (Drawing the moon in the inverted color
-  // would look weird.)
-  graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_black);
+  // moon_draw_mode = 0, or white-on-black if moon_draw_mode = 1.
+  // Since we have selected the particular moon resource above based
+  // on draw_mode, we will always draw the moon in the correct color,
+  // so that it looks like the moon.  (Drawing the moon in the
+  // inverted color would look weird.)
+  graphics_context_set_compositing_mode(ctx, draw_mode_table[moon_draw_mode].paint_black);
 
   if (dwm == DWM_moon_south) {
     graphics_draw_bitmap_in_rect(ctx, moon_bitmap.bitmap, date_window_box_offset);
