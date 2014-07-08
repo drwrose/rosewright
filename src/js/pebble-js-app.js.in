@@ -20,6 +20,8 @@ var default_sweep_seconds = 0;
 var default_display_lang = 'en_US';
 var default_face_index = 0;
 var default_date_windows = %(defaultDateWindows)s;
+var default_lunar_background = 0;
+var default_lunar_direction = 0;
 
 var battery_gauge;
 var bluetooth_indicator;
@@ -32,6 +34,8 @@ var sweep_seconds;
 var display_lang;
 var face_index;
 var date_windows;
+var lunar_background;
+var lunar_direction;
 
 function sent_ack(e) {
     console.log("Message sent");
@@ -99,6 +103,8 @@ function initialize() {
 	var sym = 'date_window_' + String.fromCharCode(97 + i);
 	date_windows.push(getIntFromStorage(sym, default_date_windows[i]));
     }
+    lunar_background = getIntFromStorage('lunar_background', default_lunar_background);
+    lunar_direction = getIntFromStorage('lunar_direction', default_lunar_direction);
 
     // At startup, send the current configuration to the Pebble--the
     // phone storage keeps the authoritative state.  We delay by 1
@@ -116,6 +122,8 @@ function initialize() {
 	    'sweep_seconds' : sweep_seconds,
 	    'display_lang' : display_lang,
 	    'face_index' : face_index,
+	    'lunar_background' : lunar_background,
+	    'lunar_direction' : lunar_direction,
 	};
 	for (var i = 0; i < num_date_windows; ++i) {
 	    var sym = 'date_window_' + String.fromCharCode(97 + i);
@@ -134,12 +142,12 @@ Pebble.addEventListener("ready", function(e) {
 Pebble.addEventListener("showConfiguration", function(e) {
     console.log("showConfiguration starting");
     initialize();
-    var url = "http://www.ddrose.com/pebble/rosewright_2_8_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_date_windows=" + num_date_windows;
+    var url = "http://www.ddrose.com/pebble/rosewright_2_9_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_date_windows=" + num_date_windows;
     if (show_chrono_dial) {
 	url += "&chrono_dial=" + chrono_dial;
     }
     if (support_moon) {
-	url += "&support_moon=1";
+	url += "&support_moon=1&lunar_background=" + lunar_background + "&lunar_direction=" + lunar_direction;
     }
     if (enable_sweep_seconds) {
 	url += "&sweep_seconds=" + sweep_seconds;
@@ -199,6 +207,12 @@ Pebble.addEventListener("webviewclosed", function(e) {
 	    date_windows.push(configuration[sym]);
 	    localStorage.setItem(watch_name + ":" + sym, date_windows[i]);
 	}
+
+	lunar_background = configuration["lunar_background"];
+	localStorage.setItem(watch_name + ":lunar_background", lunar_background);
+
+	lunar_direction = configuration["lunar_direction"];
+	localStorage.setItem(watch_name + ":lunar_direction", lunar_direction);
 
 	logLocalStorage();
     }

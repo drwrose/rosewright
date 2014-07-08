@@ -5,7 +5,7 @@
   "capabilities": [ "configurable" ],
   "companyName": "drwrose",
   "versionCode": 1,
-  "versionLabel": "2.8",
+  "versionLabel": "2.9",
   "watchapp": {
     "watchface": %(watchface)s
   },
@@ -23,7 +23,9 @@
     "date_window_b": 10,
     "date_window_c": 11,
     "date_window_d": 12,
-    "bluetooth_buzzer": 13
+    "bluetooth_buzzer": 13,
+    "lunar_background": 14,
+    "lunar_direction": 15
   },
   "resources": {
   "media": [
