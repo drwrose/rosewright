@@ -46,6 +46,11 @@
       "type": "png"
     },
     {
+      "name": "BATTERY_GAUGE_CHARGED",
+      "file": "battery_gauge_charged.png",
+      "type": "png"
+    },
+    {
       "name": "BATTERY_GAUGE_MASK",
       "file": "battery_gauge_mask.png",
       "type": "png"

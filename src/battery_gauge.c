@@ -5,6 +5,7 @@
 
 BitmapWithData battery_gauge_empty;
 BitmapWithData battery_gauge_charging;
+BitmapWithData battery_gauge_charged;
 BitmapWithData battery_gauge_mask;
 Layer *battery_gauge_layer;
 
@@ -65,15 +66,23 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
   }
 
   if (charge_state.is_charging) {
-    // Draw the charging icon.
+    // Actively charging.  Draw the charging icon.
     if (battery_gauge_charging.bitmap == NULL) {
       battery_gauge_charging = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_CHARGING);
     }
     graphics_context_set_compositing_mode(ctx, fg_mode);
     graphics_draw_bitmap_in_rect(ctx, battery_gauge_charging.bitmap, box);
 
+  } else if (charge_state.is_plugged && charge_state.charge_percent >= 80) {
+    // Plugged in but not charging.  Draw the fully-charged icon.
+    if (battery_gauge_charged.bitmap == NULL) {
+      battery_gauge_charged = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_CHARGED);
+    }
+    graphics_context_set_compositing_mode(ctx, fg_mode);
+    graphics_draw_bitmap_in_rect(ctx, battery_gauge_charged.bitmap, box);
+
   } else if (config.battery_gauge != IM_digital) {
-    // Draw the analog battery icon.
+    // Not plugged in.  Draw the analog battery icon.
     if (battery_gauge_empty.bitmap == NULL) {
       battery_gauge_empty = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_EMPTY);
     }
@@ -121,6 +130,7 @@ void deinit_battery_gauge() {
   battery_gauge_layer = NULL;
   bwd_destroy(&battery_gauge_empty);
   bwd_destroy(&battery_gauge_charging);
+  bwd_destroy(&battery_gauge_charged);
   bwd_destroy(&battery_gauge_mask);
 }
 
