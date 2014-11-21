@@ -89,7 +89,8 @@ static void rbuffer_init(int resource_id, RBuffer *rb) {
 // Gets the next byte from the rbuffer.  Returns EOF at end.
 static int rbuffer_getc(RBuffer *rb) {
   if (rb->_i >= RBUFFER_SIZE) {
-    rb->_filled_size = resource_load_byte_range(rb->_rh, rb->_bytes_read, rb->_buffer, RBUFFER_SIZE);
+    ssize_t bytes_read = resource_load_byte_range(rb->_rh, rb->_bytes_read, rb->_buffer, RBUFFER_SIZE);
+    rb->_filled_size = (bytes_read < 0) ? 0 : (size_t)bytes_read;
     rb->_bytes_read += rb->_filled_size;
     rb->_i = 0;
   }
@@ -245,7 +246,7 @@ rle_bwd_create(int resource_id) {
   int count = rl2unpacker_getc(&rl2);
   if (count != EOF) {
     assert(count > 0);
-    // We diswindow the first, implicit black pixel; it's not part of the image.
+    // We discard the first, implicit black pixel; it's not part of the image.
     --count;
   }
   while (count != EOF) {

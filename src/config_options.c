@@ -45,7 +45,7 @@ void sanitize_config() {
 const char *show_config() {
 #define CONFIG_BUFFER_SIZE 100
   static char buffer[CONFIG_BUFFER_SIZE];
-  snprintf(buffer, CONFIG_BUFFER_SIZE, "bat: %d, bt: %d, sh: %d, hb: %d, bb: %d, dm: %d, cd: %d, sw: %d, dl: %d, fi: %d, lb: %d, ld: %s, dw: ", config.battery_gauge, config.bluetooth_indicator, config.second_hand, config.hour_buzzer, config.bluetooth_buzzer, config.draw_mode, config.chrono_dial, config.sweep_seconds, config.display_lang, config.face_index, config.lunar_background, config.lunar_direction);
+  snprintf(buffer, CONFIG_BUFFER_SIZE, "bat: %d, bt: %d, sh: %d, hb: %d, bb: %d, dm: %d, cd: %d, sw: %d, dl: %d, fi: %d, lb: %d, ld: %d, dw: ", config.battery_gauge, config.bluetooth_indicator, config.second_hand, config.hour_buzzer, config.bluetooth_buzzer, config.draw_mode, config.chrono_dial, config.sweep_seconds, config.display_lang, config.face_index, config.lunar_background, config.lunar_direction);
 
   if (NUM_DATE_WINDOWS > 0) {
     char b2[12];
