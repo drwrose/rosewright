@@ -65,20 +65,16 @@ struct FontPlacement date_lang_font_placement[NUM_DATE_LANG_FONTS] = {
 // to reflect the names we are displaying in the weekday/month window
 // based on configuration settings.
 
-//#define WEEKDAY_NAMES_MAX_BUFFER xx // defined in lang_table.c.
+// The date_names array contains three sets of strings, in the order:
+// all weekday names, then all month names, then all ampm names.
 #define NUM_WEEKDAY_NAMES 7  // Enough for 7 days
-char weekday_names_buffer[WEEKDAY_NAMES_MAX_BUFFER + 1];
-char *weekday_names[NUM_WEEKDAY_NAMES];
+#define NUM_MONTH_NAMES 12   // Enough for 12 months
+#define NUM_AMPM_NAMES 2     // Enough for am and pm
 
-//#define MONTH_NAMES_MAX_BUFFER xx // defined in lang_table.c.
-#define NUM_MONTH_NAMES 12  // Enough for 12 months
-char month_names_buffer[MONTH_NAMES_MAX_BUFFER + 1];
-char *month_names[NUM_MONTH_NAMES];
-
-//#define AMPM_NAMES_MAX_BUFFER xx // defined in lang_table.c.
-#define NUM_AMPM_NAMES 2  // Enough for am and pm
-char ampm_names_buffer[AMPM_NAMES_MAX_BUFFER + 1];
-char *ampm_names[NUM_AMPM_NAMES];
+#define NUM_DATE_NAMES (NUM_WEEKDAY_NAMES + NUM_MONTH_NAMES + NUM_AMPM_NAMES)
+//#define DATE_NAMES_MAX_BUFFER xx // defined in lang_table.c.
+char date_names_buffer[DATE_NAMES_MAX_BUFFER + 1];
+char *date_names[NUM_DATE_NAMES];
 
 int display_lang = -1;
 
@@ -703,15 +699,15 @@ void date_window_layer_update_callback(Layer *me, GContext *ctx) {
     break;
 
   case DWM_weekday:
-    text = weekday_names[current_placement.day_index];
+    text = date_names[current_placement.day_index];
     break;
     
   case DWM_month:
-    text = month_names[current_placement.month_index];
+    text = date_names[current_placement.month_index + NUM_WEEKDAY_NAMES];
     break;
 
   case DWM_ampm:
-    text = ampm_names[current_placement.ampm_value];
+    text = date_names[current_placement.ampm_value + NUM_WEEKDAY_NAMES + NUM_MONTH_NAMES];
     break;
 
   case DWM_moon:
@@ -943,11 +939,9 @@ void apply_config() {
       safe_unload_custom_font(&date_lang_font);
     }
 
-    // Reload the weekday or month names from the appropriate language
-    // resource.
-    fill_date_names(weekday_names, NUM_WEEKDAY_NAMES, weekday_names_buffer, WEEKDAY_NAMES_MAX_BUFFER, lang_table[config.display_lang].weekday_name_id);
-    fill_date_names(month_names, NUM_MONTH_NAMES, month_names_buffer, MONTH_NAMES_MAX_BUFFER, lang_table[config.display_lang].month_name_id);
-    fill_date_names(ampm_names, NUM_AMPM_NAMES, ampm_names_buffer, AMPM_NAMES_MAX_BUFFER, lang_table[config.display_lang].ampm_name_id);
+    // Reload the weekday, month, and ampm names from the appropriate
+    // language resource.
+    fill_date_names(date_names, NUM_DATE_NAMES, date_names_buffer, DATE_NAMES_MAX_BUFFER, lang_table[config.display_lang].date_name_id);
 
     display_lang = config.display_lang;
   }

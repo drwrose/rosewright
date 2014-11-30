@@ -97,18 +97,21 @@ specialCases = {
 rootDir = os.path.dirname(__file__) or '.'
 resourcesDir = rootDir
 
+# We generate the date_names array with three sets of strings, in the
+# order: all weekday names, then all month names, then all ampm names.
 nameTypes = [ 'weekday', 'month', 'ampm' ]
 
 neededChars = {}
-maxNumChars = {}
-maxTotalLen = {}
+maxNumChars = 0
+maxTotalLen = 0
 
-def writeResourceFile(generatedJson, nameType, localeName, nameList):
-    filename = '%s_%s.raw' % (localeName, nameType)
-    resourceId = '%s_%s_NAMES' % (localeName.upper(), nameType.upper())
+def writeResourceFile(generatedJson, localeName, nameList):
+    global maxTotalLen
+    filename = '%s.raw' % (localeName)
+    resourceId = '%s_NAMES' % (localeName.upper())
 
     data = '\0'.join(nameList)
-    maxTotalLen[nameType] = max(maxTotalLen.get(nameType, 0), len(data))
+    maxTotalLen = max(maxTotalLen, len(data))
 
     open('%s/%s' % (resourcesDir, filename), 'w').write(data)
     
@@ -159,6 +162,7 @@ def getDefaultAmPm():
     return ['am', 'pm']
 
 def makeDates(generatedTable, generatedJson, langRow, li):
+    global maxNumChars
     localeName, langName, fontKey = langRow
     fontIndex = fontChoices.index(fontKey)
 
@@ -173,12 +177,10 @@ def makeDates(generatedTable, generatedJson, langRow, li):
         }
     
     neededChars.setdefault(fontKey, set())
-    showNames = {}
-    showNamesUnicode = {}
-    nameIds = {}
+    showNames = []
+    showNamesUnicode = []
+    nameIds = None
     for nameType in nameTypes:
-        showNames[nameType] = []
-        showNamesUnicode[nameType] = []
         for name in names[nameType]:
             if nameType == 'ampm':
                 # For am/pm, force lowercase because I like that.
@@ -202,20 +204,19 @@ def makeDates(generatedTable, generatedJson, langRow, li):
                 uname = name.encode('ascii')
             except UnicodeEncodeError:
                 uname = name
-            showNamesUnicode[nameType].append(uname)
+            showNamesUnicode.append(uname)
 
             # And finally, re-encode to UTF-8 for the Pebble.
             name = name.encode('utf-8')
-            maxNumChars[nameType] = max(maxNumChars.get(nameType, 0), len(name))
+            maxNumChars = max(maxNumChars, len(name))
 
-            showNames[nameType].append(name)
+            showNames.append(name)
 
-        nameIds[nameType] = writeResourceFile(generatedJson, nameType, localeName, showNames[nameType])
+    nameIds = writeResourceFile(generatedJson, localeName, showNames)
 
     print >> generatedTable, """ // %s""" % (localeName)
-    print >> generatedTable, """  { %s, %s, %s, %s }, // %s = %s""" % (fontIndex, nameIds['weekday'], nameIds['month'], nameIds['ampm'], li, langName)
-    for nameType in nameTypes:
-        print >> generatedTable, """ //   %s: %s""" % (nameType, repr(showNamesUnicode[nameType]))
+    print >> generatedTable, """  { %s, %s }, // %s = %s""" % (fontIndex, nameIds, li, langName)
+    print >> generatedTable, """ // %s""" % (repr(showNamesUnicode))
     print >> generatedTable, ""
 
 def makeHex(ch):
@@ -274,9 +275,8 @@ def makeLang():
     print >> generatedTable, "};\n"
 
     print >> generatedTable, "int num_langs = %s;" % (numLangs)
-    for nameType in nameTypes:
-        print >> generatedTable, "// %s maximum characters: %s" % (nameType, maxNumChars[nameType])
-        print >> generatedTable, "#define %s_NAMES_MAX_BUFFER %s\n" % (nameType.upper(), maxTotalLen[nameType])
+    print >> generatedTable, "// maximum characters: %s" % (maxNumChars)
+    print >> generatedTable, "#define DATE_NAMES_MAX_BUFFER %s\n" % (maxTotalLen)
 
     fontEntry = """    {
       "type": "font",

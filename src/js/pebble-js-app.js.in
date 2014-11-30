@@ -171,10 +171,10 @@ Pebble.addEventListener("webviewclosed", function(e) {
     console.log(e.response);
 
     if (e.response && e.response != 'CANCELLED') {
+	// Get the configuration from the webpage
 	var configuration = JSON.parse(e.response);
-	console.log("sending runtime config: " + JSON.stringify(configuration));
-	Pebble.sendAppMessage(configuration, sent_ack, sent_nack);
-	
+
+	// And record the longterm storage in the phone app.
 	battery_gauge = configuration["battery_gauge"];
 	localStorage.setItem(watch_name + ":battery_gauge", battery_gauge);
 	
@@ -217,6 +217,16 @@ Pebble.addEventListener("webviewclosed", function(e) {
 
 	lunar_direction = configuration["lunar_direction"];
 	localStorage.setItem(watch_name + ":lunar_direction", lunar_direction);
+
+	// Finally, massage any elements as needed for Pebble's
+	// storage conventions (which are slightly different than the
+	// JS conventions--in particular, the display_lang string
+	// id is converted to a one-byte integer).
+	configuration['display_lang'] = display_lang_lookup[display_lang]
+
+	// And send it on to Pebble.
+	console.log("sending runtime config: " + JSON.stringify(configuration));
+	Pebble.sendAppMessage(configuration, sent_ack, sent_nack);
 
 	logLocalStorage();
     }
