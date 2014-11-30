@@ -907,6 +907,8 @@ def configWatch():
         'generatedMedia' : generatedMedia,
         }
 
+    displayLangLookup = open('%s/displayLangLookup.txt' % (resourcesDir), 'r').read()
+
     jsIn = open('%s/src/js/pebble-js-app.js.in' % (rootDir), 'r').read()
     js = open('%s/src/js/pebble-js-app.js' % (rootDir), 'w')
 
@@ -931,6 +933,7 @@ def configWatch():
         'enableHourBuzzer' : int(enableHourBuzzer),
         'enableSweepSeconds' : int(enableSecondHand and supportSweep),
         'defaultDateWindows' : repr(defaultDateWindows),
+        'displayLangLookup' : displayLangLookup,
         }
 
     configIn = open('%s/generated_config.h.in' % (resourcesDir), 'r').read()

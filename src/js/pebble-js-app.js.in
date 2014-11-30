@@ -37,6 +37,10 @@ var date_windows;
 var lunar_background;
 var lunar_direction;
 
+var display_lang_lookup = {
+%(displayLangLookup)s
+};
+
 function sent_ack(e) {
     console.log("Message sent");
 }
@@ -120,7 +124,7 @@ function initialize() {
 	    'draw_mode' : draw_mode,
 	    'chrono_dial' : chrono_dial,
 	    'sweep_seconds' : sweep_seconds,
-	    'display_lang' : display_lang,
+	    'display_lang' : display_lang_lookup[display_lang],
 	    'face_index' : face_index,
 	    'lunar_background' : lunar_background,
 	    'lunar_direction' : lunar_direction,

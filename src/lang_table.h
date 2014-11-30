@@ -2,7 +2,6 @@
 #define LANG_TABLE_H
 
 typedef struct {
-  const char *locale_name;
   unsigned char font_index;
   unsigned char weekday_name_id;
   unsigned char month_name_id;

@@ -136,13 +136,7 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
 
   Tuple *display_lang = dict_find(received, CK_display_lang);
   if (display_lang != NULL) {
-    // Look for the matching language name in our table of known languages.
-    for (int li = 0; li < num_langs; ++li) {
-      if (strcmp(display_lang->value->cstring, lang_table[li].locale_name) == 0) {
-	config.display_lang = li;
-	break;
-      }
-    }
+    config.display_lang = display_lang->value->int32;
   }
 
   Tuple *face_index = dict_find(received, CK_face_index);
