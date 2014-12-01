@@ -41,11 +41,6 @@
       "type": "png"
     },
     {
-      "name": "BATTERY_GAUGE_CHARGING",
-      "file": "battery_gauge_charging.png",
-      "type": "png"
-    },
-    {
       "name": "BATTERY_GAUGE_CHARGED",
       "file": "battery_gauge_charged.png",
       "type": "png"
@@ -53,6 +48,16 @@
     {
       "name": "BATTERY_GAUGE_MASK",
       "file": "battery_gauge_mask.png",
+      "type": "png"
+    },
+    {
+      "name": "CHARGING",
+      "file": "charging.png",
+      "type": "png"
+    },
+    {
+      "name": "CHARGING_MASK",
+      "file": "charging_mask.png",
       "type": "png"
     },
     {
