@@ -6,9 +6,9 @@ var num_faces = %(numFaces)s;
 var num_date_windows = %(numDateWindows)s;
 var support_moon = %(supportMoon)s;
 
-// Define the initial config default values.  These defaults are used
-// only if the Pebble is connected to the phone at the time of launch;
-// otherwise, the defaults in init_default_options() are used instead.
+// Define the initial config default values.  These defaults override
+// the similar default values built directly into the watchapp in
+// config_options.c.
 var default_battery_gauge = %(defaultBattery)s;
 var default_bluetooth_indicator = %(defaultBluetooth)s;
 var default_second_hand = %(enableSecondHand)s;
@@ -17,7 +17,7 @@ var default_bluetooth_buzzer = 1;
 var default_draw_mode = 0;
 var default_chrono_dial = 1;
 var default_sweep_seconds = 0;
-var default_display_lang = 'en_US';
+var default_display_lang = null;  // determined from navigator.language, below
 var default_face_index = 0;
 var default_date_windows = %(defaultDateWindows)s;
 var default_lunar_background = 0;
@@ -37,9 +37,7 @@ var date_windows;
 var lunar_background;
 var lunar_direction;
 
-var display_lang_lookup = {
 %(displayLangLookup)s
-};
 
 function sent_ack(e) {
     console.log("Message sent");
@@ -57,6 +55,10 @@ function logLocalStorage() {
 	console.log('      "' + keys[key] + '" : ' + localStorage[keys[key]] + ',');
     }
     console.log("  }");
+}
+
+function writeToStorage(keyword, value) {
+    localStorage.setItem(watch_name + ":" + keyword, value);
 }
 
 function getIntFromStorage(keyword, default_value) {
@@ -90,6 +92,21 @@ function initialize() {
 	return;
     }
 
+    // Massage the default_display_lang variable to ensure it is one of
+    // the supported language options.
+    default_display_lang = navigator.language;
+    if (!(default_display_lang in display_lang_lookup)) {
+	default_display_lang = default_display_lang.replace('-', '_');
+    }
+    if (!(default_display_lang in display_lang_lookup)) {
+	default_display_lang = default_display_lang.split('_')[0];
+    }
+    if (!(default_display_lang in display_lang_lookup)) {
+	default_display_lang = 'en_US';  // Fallback value.
+    }
+    default_display_lang = display_lang_reverse[display_lang_lookup[default_display_lang]];
+    console.log("navigator.language = " + navigator.language + ", default_display_lang = " + default_display_lang);
+
     logLocalStorage();
 
     battery_gauge = getIntFromStorage('battery_gauge', default_battery_gauge);
@@ -100,7 +117,7 @@ function initialize() {
     draw_mode = getIntFromStorage('draw_mode', default_draw_mode);
     chrono_dial = getIntFromStorage('chrono_dial', default_chrono_dial);
     sweep_seconds = getIntFromStorage('sweep_seconds', default_sweep_seconds);
-    display_lang = getStringFromStorage('display_lang', default_display_lang);
+    display_lang = getStringFromStorage('display_lang_' + default_display_lang, default_display_lang);
     face_index = getIntFromStorage('face_index', default_face_index);
     date_windows = [];
     for (var i = 0; i < num_date_windows; ++i) {
@@ -146,7 +163,7 @@ Pebble.addEventListener("ready", function(e) {
 Pebble.addEventListener("showConfiguration", function(e) {
     console.log("showConfiguration starting");
     initialize();
-    var url = "http://www.ddrose.com/pebble/rosewright_2_9_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_date_windows=" + num_date_windows;
+    var url = "http://www.ddrose.com/pebble/rosewright_2_13_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&default_display_lang=" + default_display_lang + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_date_windows=" + num_date_windows;
     if (show_chrono_dial) {
 	url += "&chrono_dial=" + chrono_dial;
     }
@@ -176,47 +193,47 @@ Pebble.addEventListener("webviewclosed", function(e) {
 
 	// And record the longterm storage in the phone app.
 	battery_gauge = configuration["battery_gauge"];
-	localStorage.setItem(watch_name + ":battery_gauge", battery_gauge);
+	writeToStorage("battery_gauge", battery_gauge);
 	
 	bluetooth_indicator = configuration["bluetooth_indicator"];
-	localStorage.setItem(watch_name + ":bluetooth_indicator", bluetooth_indicator);
+	writeToStorage("bluetooth_indicator", bluetooth_indicator);
 	
 	second_hand = configuration["second_hand"];
-	localStorage.setItem(watch_name + ":second_hand", second_hand);
+	writeToStorage("second_hand", second_hand);
 	
 	hour_buzzer = configuration["hour_buzzer"];
-	localStorage.setItem(watch_name + ":hour_buzzer", hour_buzzer);
+	writeToStorage("hour_buzzer", hour_buzzer);
 	
 	bluetooth_buzzer = configuration["bluetooth_buzzer"];
-	localStorage.setItem(watch_name + ":bluetooth_buzzer", bluetooth_buzzer);
+	writeToStorage("bluetooth_buzzer", bluetooth_buzzer);
 	
 	draw_mode = configuration["draw_mode"];
-	localStorage.setItem(watch_name + ":draw_mode", draw_mode);
+	writeToStorage("draw_mode", draw_mode);
 	
 	chrono_dial = configuration["chrono_dial"];
-	localStorage.setItem(watch_name + ":chrono_dial", chrono_dial);
+	writeToStorage("chrono_dial", chrono_dial);
 	
 	sweep_seconds = configuration["sweep_seconds"];
-	localStorage.setItem(watch_name + ":sweep_seconds", sweep_seconds);
+	writeToStorage("sweep_seconds", sweep_seconds);
 	
 	display_lang = configuration["display_lang"];
-	localStorage.setItem(watch_name + ":display_lang", display_lang);
+	writeToStorage("display_lang_" + default_display_lang, display_lang);
 
 	face_index = configuration["face_index"];
-	localStorage.setItem(watch_name + ":face_index", face_index);
+	writeToStorage("face_index", face_index);
 
 	date_windows = [];
 	for (var i = 0; i < num_date_windows; ++i) {
 	    var sym = 'date_window_' + String.fromCharCode(97 + i);
 	    date_windows.push(configuration[sym]);
-	    localStorage.setItem(watch_name + ":" + sym, date_windows[i]);
+	    writeToStorage("" + sym, date_windows[i]);
 	}
 
 	lunar_background = configuration["lunar_background"];
-	localStorage.setItem(watch_name + ":lunar_background", lunar_background);
+	writeToStorage("lunar_background", lunar_background);
 
 	lunar_direction = configuration["lunar_direction"];
-	localStorage.setItem(watch_name + ":lunar_direction", lunar_direction);
+	writeToStorage("lunar_direction", lunar_direction);
 
 	// Finally, massage any elements as needed for Pebble's
 	// storage conventions (which are slightly different than the

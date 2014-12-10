@@ -35,33 +35,33 @@ fontNames = {
 
 # This list is duplicated in html/rosewright_X_configure.js.
 langs = [
-    [ 'ar_SA', 'Arabic', 'rtl', 20 ],
-    [ 'hy_AM', 'Armenian', 'extended', 16 ],
-    [ 'zh_CN', 'Chinese', 'zh', 21 ],
-    [ 'cs_CZ', 'Czech', 'latin', 15 ],
-    [ 'da_DK', 'Danish', 'latin', 7 ],
-    [ 'nl_NL', 'Dutch', 'latin', 6 ],
     [ 'en_US', 'English', 'latin', 0 ],
-    [ 'fa_IR', 'Farsi', 'rtl', 19 ],
     [ 'fr_FR', 'French', 'latin', 1 ],
-    [ 'de_DE', 'German', 'latin', 5 ],
-    [ 'el_GR', 'Greek', 'extended', 11 ],
-    [ 'he_IL', 'Hebrew', 'rtl', 18 ],
-    [ 'hi_IN', 'Hindi', 'hi', 26 ],
-    [ 'hu_HU', 'Hungarian', 'latin', 12 ],
-    [ 'is_IS', 'Icelandic', 'latin', 9 ],
     [ 'it_IT', 'Italian', 'latin', 2 ],
+    [ 'es_ES', 'Spanish', 'latin', 3 ],
+    [ 'pt_PT', 'Portuguese', 'latin', 4 ],
+    [ 'de_DE', 'German', 'latin', 5 ],
+    [ 'nl_NL', 'Dutch', 'latin', 6 ],
+    [ 'da_DK', 'Danish', 'latin', 7 ],
+    [ 'sv_SE', 'Swedish', 'latin', 8 ],
+    [ 'is_IS', 'Icelandic', 'latin', 9 ],
+    [ 'tl', 'Tagalog', 'latin', 10 ],
+    [ 'el_GR', 'Greek', 'extended', 11 ],
+    [ 'hu_HU', 'Hungarian', 'latin', 12 ],
+    [ 'ru_RU', 'Russian', 'extended', 13 ],
+    [ 'pl_PL', 'Polish', 'latin', 14 ],
+    [ 'cs_CZ', 'Czech', 'latin', 15 ],
+    [ 'hy_AM', 'Armenian', 'extended', 16 ],
+    [ 'tr_TR', 'Turkish', 'latin', 17 ],
+    [ 'he_IL', 'Hebrew', 'rtl', 18 ],
+    [ 'fa_IR', 'Farsi', 'rtl', 19 ],
+    [ 'ar_SA', 'Arabic', 'rtl', 20 ],
+    [ 'zh_CN', 'Chinese', 'zh', 21 ],
     [ 'ja_JP', 'Japanese', 'ja', 22 ],
     [ 'ko_KR', 'Korean', 'ko', 23 ],
-    [ 'pl_PL', 'Polish', 'latin', 14 ],
-    [ 'pt_PT', 'Portuguese', 'latin', 4 ],
-    [ 'ru_RU', 'Russian', 'extended', 13 ],
-    [ 'es_ES', 'Spanish', 'latin', 3 ],
-    [ 'sv_SE', 'Swedish', 'latin', 8 ],
-    [ 'tl', 'Tagalog', 'latin', 10 ],
-    [ 'ta_IN', 'Tamil', 'ta', 25 ],
     [ 'th_TH', 'Thai', 'th', 24 ],
-    [ 'tr_TR', 'Turkish', 'latin', 17 ],
+    [ 'ta_IN', 'Tamil', 'ta', 25 ],
+    [ 'hi_IN', 'Hindi', 'hi', 26 ],
     ]
 
 # In the above list, the third parameter is the font code:
@@ -76,9 +76,9 @@ langs = [
 
 # The remaining codes are for language-specific fonts.
 
-# The fourth parameter is the index into lang_table, which probably
-# shouldn't change for a particular language over the lifetime of this
-# app.
+# The fourth parameter is the index into lang_table, which should be
+# unique to each language and probably shouldn't change for a
+# particular language over the lifetime of this app.
 
 specialCases = {
     ('es_ES', 'ampm') : ['am', 'pm'],    # Removed silly space
@@ -253,8 +253,20 @@ def makeCharacterRegex(chars):
 def makeLang():
     # Generate the displayLangLookup table for pebble-js-app.js.
     displayLangLookup = open('%s/displayLangLookup.txt' % (resourcesDir), 'w')
+    print >> displayLangLookup, "var display_lang_lookup = {"
     for localeName, langName, fontKey, index in langs:
         print >> displayLangLookup, "  '%s' : %s," % (localeName, index)
+        if '_' in localeName:
+            prefix = localeName.split('_')[0]
+            print >> displayLangLookup, "  '%s' : %s," % (prefix, index)
+            hyphened = localeName.replace('_', '-')
+            print >> displayLangLookup, "  '%s' : %s," % (hyphened, index)
+            
+    print >> displayLangLookup, "};"
+    print >> displayLangLookup, "var display_lang_reverse = {"
+    for localeName, langName, fontKey, index in langs:
+        print >> displayLangLookup, "  %s : '%s'," % (index, localeName)
+    print >> displayLangLookup, "};"
     displayLangLookup.close()
 
     # Generate lang_table.c.

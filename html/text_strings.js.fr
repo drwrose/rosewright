@@ -1,0 +1,79 @@
+__Save = 'Noter'
+__Cancel = 'Annuler'
+
+__Off = 'Éteint'
+__On = 'Activé'
+__WhenNeeded = "Si nécessaire"
+__Always = "Toujours"
+__DigitalBattery = "Numérique"
+
+__One = "Un"
+__Two = "Deux"
+__Three = "Trois"
+__Four = "Quatre"
+__Five = "Cinq"
+__Six = "Six"
+
+__LunarPhase = "Phase lunaire"
+
+__SecondHand = "Trotteuse"
+__SweepSeconds = "Trotteuse mouvement fluide (utilisation de la batterie lourde)"
+__FaceIndex = "Variante de visage"
+__DrawMode = "Inverser les couleurs"
+
+__ChronoDial = "Chrono ligne indique"
+__ChronoTenths = "Dixièmes"
+__ChronoHours = "Heures"
+__ChronoDual = "Double (dixièmes, puis heure)"
+
+__DateIdentifyWindow = "Identifier fenêtre"
+__DateNumericDate = "Date numérique"
+__DateWeekday = "Jour de la semaine"
+__DateMonth = "Mois"
+__DateYear = "Année"
+__DateAmPm = "Am / pm"
+
+__DateWindowNamePrefix = "Fenêtre "
+__DateWindowNameSuffix = ""
+
+__DisplayLang = "Langue pour les fenêtres"
+__LunarBackground = "Couleur de fond de la lune"
+__LunarBackgroundMatch = "Même que montre fond"
+__LunarBackgroundBlack = "Toujours noire"
+
+__LunarDirection = "Direction de phase de la lune"
+__LunarDirectionNorth = "De droite à gauche (hémisphère nord)"
+__LunarDirectionSouth = "De gauche à droite (hémisphère sud)"
+
+__HourBuzzer = "Vibrer à chaque heure"
+__BluetoothBuzzer = "Vibrer à la déconnexion"
+__BluetoothIndicator = "Indicateur de connexion"
+__BatteryGauge = "Jauge de la batterie"
+
+__lang_ar_SA = "arabe"
+__lang_cs_CZ = "tchèque"
+__lang_da_DK = "danois"
+__lang_de_DE = "allemand"
+__lang_el_GR = "grecque"
+__lang_en_US = "anglais"
+__lang_es_ES = "espagnol"
+__lang_fa_IR = "farsi"
+__lang_fr_FR = "français"
+__lang_he_IL = "hébreu"
+__lang_hi_IN = "hindi"
+__lang_hu_HU = "hongrois"
+__lang_hy_AM = "arménien"
+__lang_is_IS = "islandais"
+__lang_it_IT = "italien"
+__lang_ja_JP = "japonais"
+__lang_ko_KR = "coréen"
+__lang_nl_NL = "hollandais"
+__lang_pl_PL = "polonaise"
+__lang_pt_PT = "portugaise"
+__lang_ru_RU = "russe"
+__lang_sv_SE = "suédois"
+__lang_ta_IN = "tamoul"
+__lang_th_TH = "thaï"
+__lang_tl = "tagalog"
+__lang_tr_TR = "turque"
+__lang_zh_CN = "chinois"
