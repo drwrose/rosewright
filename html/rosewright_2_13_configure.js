@@ -38,7 +38,7 @@ function makeOption(keyword, label, options, storeResult) {
     if (options) {
 	role = "select";
     } else {
-	options = [[0, __Off], [1, __On]];
+	options = [[0, __No], [1, __Yes]];
     }
     if (!storeResult) {
 	storeResult = storeIntResult;

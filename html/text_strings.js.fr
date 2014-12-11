@@ -1,6 +1,8 @@
 __Save = 'Noter'
 __Cancel = 'Annuler'
 
+__No = 'Non'
+__Yes = 'Oui'
 __Off = 'Éteint'
 __On = 'Activé'
 __WhenNeeded = "Si nécessaire"
@@ -17,7 +19,7 @@ __Six = "Six"
 __LunarPhase = "Phase lunaire"
 
 __SecondHand = "Trotteuse"
-__SweepSeconds = "Trotteuse mouvement fluide (utilisation de la batterie lourde)"
+__SweepSeconds = "Mouvement fluide de trotteuse (utilisation de la batterie lourde)"
 __FaceIndex = "Variante de visage"
 __DrawMode = "Inverser les couleurs"
 

@@ -1,6 +1,8 @@
 __Save = "Save"
 __Cancel = "Cancel"
 
+__No = 'No'
+__Yes = 'Yes'
 __Off = "Off"
 __On = "On"
 __WhenNeeded = "When needed"
