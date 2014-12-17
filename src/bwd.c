@@ -71,6 +71,7 @@ typedef struct {
   size_t _i;
   size_t _filled_size;
   size_t _bytes_read;
+  size_t _total_size;
   uint8_t _buffer[RBUFFER_SIZE];
 } RBuffer;
 
@@ -81,6 +82,7 @@ static void rbuffer_init(int resource_id, RBuffer *rb) {
   //  assert(rb->_buffer != NULL);
   
   rb->_rh = resource_get_handle(resource_id);
+  rb->_total_size = resource_size(rb->_rh);
   rb->_i = 0;
   rb->_filled_size = resource_load_byte_range(rb->_rh, 0, rb->_buffer, RBUFFER_SIZE);
   rb->_bytes_read = rb->_filled_size;
@@ -89,12 +91,27 @@ static void rbuffer_init(int resource_id, RBuffer *rb) {
 // Gets the next byte from the rbuffer.  Returns EOF at end.
 static int rbuffer_getc(RBuffer *rb) {
   if (rb->_i >= RBUFFER_SIZE) {
-    ssize_t bytes_read = resource_load_byte_range(rb->_rh, rb->_bytes_read, rb->_buffer, RBUFFER_SIZE);
-    rb->_filled_size = (bytes_read < 0) ? 0 : (size_t)bytes_read;
-    rb->_bytes_read += rb->_filled_size;
+    // We've read past the end of the in-memory buffer.  Go fill the
+    // buffer with more bytes from the resource.
+    if (rb->_total_size > rb->_bytes_read) {
+      // More bytes available to read; read them now.
+      size_t bytes_remaining = rb->_total_size - rb->_bytes_read;
+      size_t try_to_read = (bytes_remaining < RBUFFER_SIZE) ? bytes_remaining : (size_t)RBUFFER_SIZE;
+      size_t bytes_read = resource_load_byte_range(rb->_rh, rb->_bytes_read, rb->_buffer, try_to_read);
+      //assert((ssize_t)bytes_read >= 0);
+      if ((ssize_t)bytes_read < 0) {
+        bytes_read = 0;
+      }
+      rb->_filled_size = bytes_read;
+      rb->_bytes_read += bytes_read;
+    } else {
+      // No more bytes to read.
+      rb->_filled_size = 0;
+    }
     rb->_i = 0;
   }
   if (rb->_i >= rb->_filled_size) {
+    // We've reached the end of the resource.
     return EOF;
   }
 
