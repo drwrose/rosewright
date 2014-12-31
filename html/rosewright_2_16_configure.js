@@ -1,15 +1,3 @@
-// Load in the language strings file.  Start with the fallback case.
-//var text_strings_js = 'text_strings.js.en';
-//$("head").append('<script type="text/javascript" src="' + text_strings_js + '"></script>');
-
-// Then override with the custom case, if defined and available.
-var default_display_lang = $.url().param('default_display_lang');
-if (default_display_lang) {
-    var prefix = default_display_lang.split('_')[0];
-    var text_strings_js = 'text_strings.js.' + prefix;
-//    $("head").append('<script type="text/javascript" src="' + text_strings_js + '"></script>');
-}
-
 function makeButtons(suffix) {
     document.write('<div class="ui-grid-a">');
     document.write('<div class="ui-block-a"><input id="cancel_' + suffix + '" value="' + __Cancel + '" type="submit"></div>')

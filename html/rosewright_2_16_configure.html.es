@@ -21,8 +21,8 @@
       
     <div data-role="content">
 
-<script src="text_strings.js.en"></script>
-<script src="rosewright_2_13_configure.js"></script>
+<script src="text_strings.js.es"></script>
+<script src="rosewright_2_16_configure.js"></script>
         
     </div>
   </div>

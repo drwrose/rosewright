@@ -37,6 +37,8 @@ var date_windows;
 var lunar_background;
 var lunar_direction;
 
+var config_langs = [ 'en', 'es', 'de', 'fr' ];
+
 %(displayLangLookup)s
 
 function sent_ack(e) {
@@ -126,6 +128,11 @@ function initialize() {
     }
     lunar_background = getIntFromStorage('lunar_background', default_lunar_background);
     lunar_direction = getIntFromStorage('lunar_direction', default_lunar_direction);
+}
+
+Pebble.addEventListener("ready", function(e) {
+    console.log("ready");
+    initialize();
 
     // At startup, send the current configuration to the Pebble--the
     // phone storage keeps the authoritative state.  We delay by 1
@@ -153,17 +160,18 @@ function initialize() {
    	console.log("sending init config: " + JSON.stringify(configuration));
 	Pebble.sendAppMessage(configuration, sent_ack, sent_nack);
     }, 1000)
-}
-
-Pebble.addEventListener("ready", function(e) {
-    console.log("ready");
-    initialize();
 });
 
 Pebble.addEventListener("showConfiguration", function(e) {
     console.log("showConfiguration starting");
     initialize();
-    var url = "http://www.ddrose.com/pebble/rosewright_2_13_configure.html?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&default_display_lang=" + default_display_lang + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_date_windows=" + num_date_windows;
+
+    var prefix = default_display_lang.split('_')[0];
+    var lang_extension = '';
+    if (config_langs.indexOf(prefix) >= 0) {
+	lang_extension = '.' + prefix;
+    }
+    var url = "http://www.ddrose.com/pebble/rosewright_2_16_configure.html" + lang_extension + "?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&default_display_lang=" + default_display_lang + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_date_windows=" + num_date_windows;
     if (show_chrono_dial) {
 	url += "&chrono_dial=" + chrono_dial;
     }
