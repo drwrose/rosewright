@@ -52,6 +52,9 @@ Options:
     -x
         Perform no RLE compression of images.
 
+    -p platform[,platform]
+        Specifies the build platform (aplite and/or basalt).
+
     -d
         Compile for debugging.  Specifically this enables "fast time",
         so the hands move quickly about the face of the watch.  It
@@ -675,7 +678,7 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
                 resourceStr += resourceEntry % {
                     'defName' : symbolName,
                     'targetFilename' : targetFilename,
-                    'ptype' : 'png',
+                    'ptype' : 'pbi',
                     }
 
             if useTransparency:
@@ -694,7 +697,7 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
                     maskResourceStr += resourceEntry % {
                         'defName' : symbolMaskName,
                         'targetFilename' : targetMaskFilename,
-                        'ptype' : 'png',
+                        'ptype' : 'pbi',
                         }
 
             line = handLookupEntry % {
@@ -867,6 +870,14 @@ def makeMoon():
                 }
 
     return resourceStr
+
+def enquoteStrings(strings):
+    """ Accepts a list of strings, returns a list of strings with
+    embedded quotation marks. """
+    quoted = []
+    for str in strings:
+        quoted.append('"%s"' % (str))
+    return quoted
         
 def configWatch():
     generatedTable = open('%s/generated_table.c' % (resourcesDir), 'w')
@@ -904,6 +915,7 @@ def configWatch():
         'watchName' : watchName,
         'watchface' : watchface,
         'langData' : langData,
+        'targetPlatforms' : ', '.join(enquoteStrings(targetPlatforms)),
         'generatedMedia' : generatedMedia,
         }
 
@@ -980,7 +992,7 @@ def configWatch():
 
 # Main.
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:Sbciwmxdh')
+    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:Sbciwmxp:dh')
 except getopt.error, msg:
     usage(1, msg)
 
@@ -993,6 +1005,7 @@ compileDebugging = False
 supportMoon = True
 #supportRle = True
 supportRle = False
+targetPlatforms = [ ]
 for opt, arg in opts:
     if opt == '-s':
         watchStyle = arg
@@ -1023,6 +1036,8 @@ for opt, arg in opts:
         supportMoon = False
     elif opt == '-x':
         supportRle = False
+    elif opt == '-p':
+        targetPlatforms += arg.split(',')
     elif opt == '-d':
         compileDebugging = True
     elif opt == '-h':
@@ -1031,6 +1046,9 @@ for opt, arg in opts:
 if not watchStyle:
     print >> sys.stderr, "You must specify a desired watch style."
     sys.exit(1)
+
+if not targetPlatforms:
+    targetPlatforms = [ "aplite", "basalt" ]
 
 watchName, defaultHandStyle, defaultFaceStyle, uuId = watches[watchStyle]
 

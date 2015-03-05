@@ -2,7 +2,7 @@
 #define WRIGHT_H
 
 #include <pebble.h>
-
+#include "pebble_compat.h"
 #include "hand_table.h"
 #include "lang_table.h"
 #include "../resources/generated_config.h"

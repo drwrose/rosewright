@@ -97,8 +97,8 @@ struct HandCache second_cache;
 struct HandPlacement current_placement;
 
 DrawModeTable draw_mode_table[2] = {
-  { GCompOpClear, GCompOpOr, GCompOpAssign, GCompOpAnd, GCompOpSet, { GColorClear, GColorBlack, GColorWhite } },
-  { GCompOpOr, GCompOpClear, GCompOpAssignInverted, GCompOpSet, GCompOpAnd, { GColorClear, GColorWhite, GColorBlack } },
+  { GCompOpClear, GCompOpOr, GCompOpAssign, GCompOpAnd, GCompOpSet, { GColorClearInit, GColorBlackInit, GColorWhiteInit } },
+  { GCompOpOr, GCompOpClear, GCompOpAssignInverted, GCompOpSet, GCompOpAnd, { GColorClearInit, GColorWhiteInit, GColorBlackInit } },
 };
 
 unsigned char stacking_order[] = {
@@ -260,11 +260,11 @@ uint8_t reverse_bits(uint8_t b) {
 // Horizontally flips the indicated GBitmap in-place.  Requires
 // that the width be a multiple of 8 pixels.
 void flip_bitmap_x(GBitmap *image, short *cx) {
-  int height = image->bounds.size.h;
-  int width = image->bounds.size.w;  // multiple of 8, by our convention.
+  int height = gbitmap_get_bounds(image).size.h;
+  int width = gbitmap_get_bounds(image).size.w;  // multiple of 8, by our convention.
   int width_bytes = width / 8;
-  int stride = image->row_size_bytes; // multiple of 4, by Pebble.
-  uint8_t *data = image->addr;
+  int stride = gbitmap_get_bytes_per_row(image); // multiple of 4, by Pebble.
+  uint8_t *data = gbitmap_get_data(image);
 
   for (int y = 0; y < height; ++y) {
     uint8_t *row = data + y * stride;
@@ -283,9 +283,9 @@ void flip_bitmap_x(GBitmap *image, short *cx) {
 
 // Vertically flips the indicated GBitmap in-place.
 void flip_bitmap_y(GBitmap *image, short *cy) {
-  int height = image->bounds.size.h;
-  int stride = image->row_size_bytes; // multiple of 4.
-  uint8_t *data = image->addr;
+  int height = gbitmap_get_bounds(image).size.h;
+  int stride = gbitmap_get_bytes_per_row(image); // multiple of 4.
+  uint8_t *data = gbitmap_get_data(image);
 
 #if 1
   /* This is the slightly slower flip, that requires less RAM on the
@@ -413,7 +413,7 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
     // We make sure the dimensions of the GRect to draw into
     // are equal to the size of the bitmap--otherwise the image
     // will automatically tile.
-    GRect destination = hand_cache->image.bitmap->bounds;
+    GRect destination = gbitmap_get_bounds(hand_cache->image.bitmap);
     
     // Place the hand's center point at place_x, place_y.
     destination.origin.x = hand_def->place_x - hand_cache->cx;
@@ -466,7 +466,7 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
       }
     }
     
-    GRect destination = hand_cache->image.bitmap->bounds;
+    GRect destination = gbitmap_get_bounds(hand_cache->image.bitmap);
     
     destination.origin.x = hand_def->place_x - hand_cache->cx;
     destination.origin.y = hand_def->place_y - hand_cache->cy;
