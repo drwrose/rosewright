@@ -19,12 +19,13 @@ class FaceMaker:
     often complex, I often find it easier to write a program to
     generate them rather than to paint them by hand.
 
-    The is, of course, no requirement to generate clock faces with a
-    program.
+    There is, of course, no requirement to generate clock faces with a
+    program.  It's perfectly possible to paint them by hand as well,
+    or some combination of auto-generated and hand-painted.
 
     This tool generates content into a large buffer then downsamples
     and filters it into the final results on the call to flush().
-    
+
     """
 
     standardLabels = [(30, '1'), (60, '2'), (90, '3'), (120, '4'),
@@ -34,8 +35,12 @@ class FaceMaker:
                    (150, 'V'), (180, 'VI'), (210, 'VII'), (240, 'VIII'),
                    (270, 'IX'), (300, 'X'), (330, 'XI'), (0, 'XII')]
 
+    defaultMode = '8bit'
+    #defaultMode = '1bit'
+    defaultFormat = { '1bit' : '1', '8bit' : 'L' }
+
     def __init__(self, filter = 4.0, zoom = 1.0, origin = (0.5, 0.5),
-                 bg = 255, fg = 0, upscale = 1.0, format = '1'):
+                 bg = 255, fg = 0, upscale = 1.0, format = None, mode = None):
         """ Sets up the buffers to generate a face.
 
         filter - the scale factor to enlarge the internal buffer.
@@ -54,9 +59,15 @@ class FaceMaker:
 
         upscale - generates an extra-big image for debugging clarity.
         format - specifies the output format, for debugging clarity.
-        
+
         """
-        
+
+        if mode is None:
+            mode = self.defaultMode
+        self.mode = mode
+        if format is None:
+            format = self.defaultFormat[self.mode]
+
         self.filter = filter
         self.zoom = zoom
         self.origin = origin
@@ -70,7 +81,7 @@ class FaceMaker:
         self.maxTargetSize = max(self.targetSize)
         self.cropOrigin = ((self.maxTargetSize - self.targetSize[0]) / 2,
                            (self.maxTargetSize - self.targetSize[1]) / 2)
-        
+
         # Size of the internal buffer.  Square.
         self.maxSize = round(self.maxTargetSize * self.filter)
         self.size = (self.maxSize, self.maxSize)
@@ -86,12 +97,12 @@ class FaceMaker:
     def setFg(self, fg):
         """ Changes the foreground color for future draw operations.
         This requires a flush. """
-        
+
         self.flush()
         self.fg = fg
 
         self.fullFg = PIL.Image.new('L', self.targetSize, self.fg)
-        self.fullFg = self.fullFg.convert('1')
+        self.fullFg = self.fullFg.convert(self.format)
 
         ## if fg == 128:
         ##     # Special case.
@@ -105,10 +116,10 @@ class FaceMaker:
     def fill(self):
         """ Fills the entire face with the current foreground color.
         Requires a flush."""
-        
+
         self.flush()
         self.target.paste(self.fullFg, (0, 0))
-        
+
     def flush(self, dither = True):
         """ Copies the recently-drawn buffer to the target and clears
         the buffer for more drawing. """
@@ -118,11 +129,11 @@ class FaceMaker:
                     self.cropOrigin[1],
                     self.cropOrigin[0] + self.targetSize[0],
                     self.cropOrigin[1] + self.targetSize[1]))
-        if not dither:
+        if not dither and self.format == '1':
             b = b.point(thresholdMap)
         b = b.convert(self.format)
         self.target.paste(self.fullFg, (0, 0), b)
-        
+
         self.buffer = PIL.Image.new('L', self.size, 0)
         self.draw = PIL.ImageDraw.Draw(self.buffer)
 
@@ -144,7 +155,7 @@ class FaceMaker:
     def p2b(self, *p):
         """ Scales the floating-point point (or list of points) into a
         buffer pixel. """
-        
+
         result = []
         for pi in range(0, len(p), 2):
             result += [self.d2b(p[pi] + self.origin[0] / self.zoom),
@@ -161,7 +172,7 @@ class FaceMaker:
 
     def s2p(self, *p):
         """ Scales screen point into face coordinates. """
-        
+
         result = []
         for pi in range(0, len(p), 2):
             result += [self.s2d(p[pi] + self.cropOrigin[0]) - self.origin[0] * self.zoom,
@@ -171,7 +182,7 @@ class FaceMaker:
     def pixelScaleToHandScale(self, s):
         """ Converts a scale into screen units without rounding, for
         computing the hand scale in config_watch.py. """
-        
+
         return (self.zoom * self.maxTargetSize / self.upscale) / s
 
     def handScaleToPixelScale(self, s):
@@ -204,7 +215,7 @@ class FaceMaker:
         """ Draws a filled circle with a thin or thick ring into the
         buffer.  The circle is always filled, so draw concentric rings
         from the outside in. """
-        
+
         r = diameter / 2.0
         outer = self.p2b(center[0] - r, center[1] - r, center[0] + r, center[1] + r)
         self.draw.ellipse(outer, fill = 255)
@@ -231,7 +242,7 @@ class FaceMaker:
 
         if not ticks:
             return
-        
+
         r1 = ring1 / 2.0
         r2 = ring2 / 2.0
 
@@ -299,7 +310,7 @@ class FaceMaker:
             sp = (sp[0] - w, sp[1])
 
         self.tdraw.text(sp, text, fill = self.fg, font = font)
-            
+
     def drawCircularLabels(self, labels, diameter, font, center = (0, 0), align = 'c', rotate = False, scale = None, directDraw = True):
         """ Draws text in a circle.  labels is a list of (angle,
         text).
@@ -308,7 +319,7 @@ class FaceMaker:
         according to align: 'c' to center on the ring, 'i' to place
         the label just inside the ring, and 'o' to place it just
         outside.
- 
+
         If directDraw is True, then the text is drawn directly into
         the target screen, rather than into the offscreen buffer, in
         an attempt to minimize scaling artifacts. """
@@ -419,8 +430,10 @@ class FaceMaker:
         if pixelScale is None:
             p = self.p2s(*p)
             color, mask = im.split()
+            if self.format == '1':
+                mask = mask.point(thresholdMap)
             self.target.paste(color, (p[0] - pivot[0], p[1] - pivot[1]), mask)
-            
+
         else:
             pixelScale = float(pixelScale)
             size = (self.d2b(im.size[0] / pixelScale),
@@ -437,4 +450,4 @@ class FaceMaker:
         """ Saves the resulting face. """
         self.flush()
         self.target.save(filename)
-        
+
