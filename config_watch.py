@@ -5,7 +5,7 @@ import PIL.ImageChops
 import sys
 import os
 import getopt
-from resources.make_rle import make_rle, make_rle_trans, make_rle_image
+from resources.make_rle import make_rle, make_rle_trans
 
 help = """
 config_watch.py
@@ -320,9 +320,8 @@ numStepsSweep = {
     'chrono_second' : 180,
     }
 
-# The threshold level for dropping to 1-bit images.
-threshold = 127
-thresholdMap = [0] * (256 - threshold) + [255] * (threshold)
+threshold1Bit = [0] * 128 + [255] * 128
+threshold2Bit = [0] * 64 + [85] * 64 + [170] * 64 + [255] * 64
 
 # Attempt to determine the directory in which we're operating.
 rootDir = os.path.dirname(__file__) or '.'
@@ -509,7 +508,7 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
     resourceEntry = """
     {
       "name": "%(defName)s",
-      "file": "clock_hands/%(targetFilename)s",
+      "file": "%(targetFilename)s",
       "type": "%(ptype)s"
     },"""    
 
@@ -626,22 +625,34 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
             p = large.rotate(-angle, PIL.Image.BICUBIC, True)
             scaledSize = (int(p.size[0] * scale + 0.5), int(p.size[1] * scale + 0.5))
             p = p.resize(scaledSize, PIL.Image.ANTIALIAS)
-            if not dither:
-                p = p.point(thresholdMap)
-            p = p.convert('1')
 
-            cx, cy = p.size[0] / 2, p.size[1] / 2
-            cropbox = p.getbbox()
+            # Now make the 1-bit version for Aplite and the 2-bit
+            # version for Basalt.
+            if not dither:
+                p1 = p.point(threshold1Bit).convert('1')
+            else:
+                p1 = p.convert('1')
+            p2 = p.point(threshold2Bit).convert('L')
+
+            cx, cy = p2.size[0] / 2, p2.size[1] / 2
+            cropbox = p2.getbbox()
             if useTransparency:
                 pm = largeMask.rotate(-angle, PIL.Image.BICUBIC, True)
                 pm = pm.resize(scaledSize, PIL.Image.ANTIALIAS)
-                pm = pm.point(thresholdMap)
-                pm = pm.convert('1')
+
+                # And the 1-bit version and 2-bit versions of the
+                # mask.
+                pm1 = pm.point(threshold1Bit).convert('1')
+                pm2 = pm.point(threshold2Bit).convert('L')
+                
                 # In the useTransparency case, it's important to take
                 # the crop from the alpha mask, not from the color.
-                cropbox = pm.getbbox() 
-                pm = pm.crop(cropbox)
-            p = p.crop(cropbox)
+                cropbox = pm2.getbbox() 
+                pm1 = pm1.crop(cropbox)
+                pm2 = pm2.crop(cropbox)
+                
+            p1 = p1.crop(cropbox)
+            p2 = p2.crop(cropbox)
 
             cx, cy = cx - cropbox[0], cy - cropbox[1]
 
@@ -653,52 +664,49 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
             # horizontally.  This doesn't consume any extra memory,
             # however, since the bits are there whether we use them or
             # not.
-            w = 8 * ((p.size[0] + 7) / 8)
-            if w != p.size[0]:
-                p1 = PIL.Image.new('1', (w, p.size[1]), 0)
-                p1.paste(p, (0, 0))
-                p = p1
+            w = 8 * ((p2.size[0] + 7) / 8)
+            if w != p2.size[0]:
+                pt = PIL.Image.new('1', (w, p1.size[1]), 0)
+                pt.paste(p1, (0, 0))
+                p1 = pt
+                pt = PIL.Image.new('L', (w, p2.size[1]), 0)
+                pt.paste(p2, (0, 0))
+                p2 = pt
                 if useTransparency:
-                    p1 = PIL.Image.new('1', (w, p.size[1]), 0)
-                    p1.paste(pm, (0, 0))
-                    pm = p1
-
-            if useRle:
-                targetFilename = 'flat_%s_%s_%s.rle' % (handStyle, hand, i)
-                make_rle_image('%s/clock_hands/%s' % (resourcesDir, targetFilename), p)
-                resourceStr += resourceEntry % {
-                    'defName' : symbolName,
-                    'targetFilename' : targetFilename,
-                    'ptype' : 'raw',
-                    }
-            else:
-                targetFilename = 'flat_%s_%s_%s.png' % (handStyle, hand, i)
-                print targetFilename
-                p.save('%s/clock_hands/%s' % (resourcesDir, targetFilename))
-                resourceStr += resourceEntry % {
-                    'defName' : symbolName,
-                    'targetFilename' : targetFilename,
-                    'ptype' : 'pbi',
-                    }
+                    pt = PIL.Image.new('1', (w, pm1.size[1]), 0)
+                    pt.paste(pm1, (0, 0))
+                    pm1 = pt
 
             if useTransparency:
-                if useRle:
-                    targetMaskFilename = 'flat_%s_%s_%s_mask.rle' % (handStyle, hand, i)
-                    make_rle_image('%s/clock_hands/%s' % (resourcesDir, targetMaskFilename), pm)
-                    maskResourceStr += resourceEntry % {
-                        'defName' : symbolMaskName,
-                        'targetFilename' : targetMaskFilename,
-                        'ptype' : 'raw',
-                        }
-                else:
-                    targetMaskFilename = 'flat_%s_%s_%s_mask.png' % (handStyle, hand, i)
-                    print targetMaskFilename
-                    pm.save('%s/clock_hands/%s' % (resourcesDir, targetMaskFilename))
-                    maskResourceStr += resourceEntry % {
-                        'defName' : symbolMaskName,
-                        'targetFilename' : targetMaskFilename,
-                        'ptype' : 'pbi',
-                        }
+                # In the Basalt transparency case, we apply the mask
+                # as the alpha channel.
+                p2 = PIL.Image.merge('LA', [p2, pm2])
+            else:
+                # In the Basalt non-transparency case, the grayscale
+                # color of the hand becomes the alpha channel.
+                black = PIL.Image.new('L', p2.size, 0)
+                p2 = PIL.Image.merge('LA', [black, p2])
+
+            if useTransparency:
+                targetMaskFilename = 'clock_hands/flat_%s_%s_%s_mask.png' % (handStyle, hand, i)
+                pm1.save('%s/%s' % (resourcesDir, targetMaskFilename))
+                rleFilename, ptype = make_rle(targetMaskFilename, useRle = supportRle)
+                maskResourceStr += resourceEntry % {
+                    'defName' : symbolMaskName,
+                    'targetFilename' : rleFilename,
+                    'ptype' : ptype,
+                    }
+
+            targetBasename = 'clock_hands/flat_%s_%s_%s' % (handStyle, hand, i)
+            p1.save('%s/%s~bw.png' % (resourcesDir, targetBasename))
+            p2.save('%s/%s.png' % (resourcesDir, targetBasename))
+            rleFilename, ptype = make_rle(targetBasename + '.png', useRle = supportRle)
+
+            resourceStr += resourceEntry % {
+                'defName' : symbolName,
+                'targetFilename' : rleFilename,
+                'ptype' : ptype,
+                }
 
             line = handLookupEntry % {
                 'symbolName' : symbolName,
@@ -1003,8 +1011,8 @@ invertHands = False
 supportSweep = False
 compileDebugging = False
 supportMoon = True
-#supportRle = True
-supportRle = False
+supportRle = True
+#supportRle = False
 targetPlatforms = [ ]
 for opt, arg in opts:
     if opt == '-s':

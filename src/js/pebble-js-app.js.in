@@ -51,12 +51,14 @@ function sent_nack(e) {
 }
 
 function logLocalStorage() {
+    /*
     var keys = Object.keys(localStorage);
     console.log("  localStorage = {");
     for (var key in keys) {
 	console.log('      "' + keys[key] + '" : ' + localStorage[keys[key]] + ',');
     }
     console.log("  }");
+    */
 }
 
 function writeToStorage(keyword, value) {

@@ -96,10 +96,24 @@ struct HandCache second_cache;
 
 struct HandPlacement current_placement;
 
+#ifdef PBL_PLATFORM_APLITE
+// In Aplite, we have to decide carefully what compositing mode to
+// draw the hands.
 DrawModeTable draw_mode_table[2] = {
   { GCompOpClear, GCompOpOr, GCompOpAssign, GCompOpAnd, GCompOpSet, { GColorClearInit, GColorBlackInit, GColorWhiteInit } },
   { GCompOpOr, GCompOpClear, GCompOpAssignInverted, GCompOpSet, GCompOpAnd, { GColorClearInit, GColorWhiteInit, GColorBlackInit } },
 };
+
+#else  // PBL_PLATFORM_APLITE
+
+// In Basalt, we always use GCompOpSet to draw the hands, because
+// we always use the alpha channel.
+DrawModeTable draw_mode_table[2] = {
+  { GCompOpSet, GCompOpSet, GCompOpSet, GCompOpSet, GCompOpSet, { GColorClearInit, GColorBlackInit, GColorWhiteInit } },
+  { GCompOpSet, GCompOpSet, GCompOpSet, GCompOpSet, GCompOpSet, { GColorClearInit, GColorWhiteInit, GColorBlackInit } },
+};
+
+#endif  // PBL_PLATFORM_APLITE
 
 unsigned char stacking_order[] = {
   STACKING_ORDER_LIST
@@ -257,22 +271,98 @@ uint8_t reverse_bits(uint8_t b) {
   return ((b * 0x0802LU & 0x22110LU) | (b * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16; 
 }
 
+// Reverse the four two-bit components of a byte.
+uint8_t reverse_2bits(uint8_t b) {
+  return ((b & 0x3) << 6) | ((b & 0xc) << 2) | ((b & 0x30) >> 2) | ((b & 0xc0) >> 6);
+}
+
+// Reverse the high nibble and low nibble of a byte.
+uint8_t reverse_nibbles(uint8_t b) {
+  return ((b & 0xf) << 4) | ((b >> 4) & 0xf);
+}
+
 // Horizontally flips the indicated GBitmap in-place.  Requires
 // that the width be a multiple of 8 pixels.
 void flip_bitmap_x(GBitmap *image, short *cx) {
+  if (image == NULL) {
+    // Trivial no-op.
+    return;
+  }
+  
   int height = gbitmap_get_bounds(image).size.h;
-  int width = gbitmap_get_bounds(image).size.w;  // multiple of 8, by our convention.
-  int width_bytes = width / 8;
-  int stride = gbitmap_get_bytes_per_row(image); // multiple of 4, by Pebble.
+  int width = gbitmap_get_bounds(image).size.w;
+  int pixels_per_byte = 8;
+
+#ifndef PBL_PLATFORM_APLITE
+  switch (gbitmap_get_format(image)) {
+  case GBitmapFormat1Bit:
+  case GBitmapFormat1BitPalette:
+    pixels_per_byte = 8;
+    break;
+    
+  case GBitmapFormat2BitPalette:
+    pixels_per_byte = 4;
+    break;
+
+  case GBitmapFormat4BitPalette:
+    pixels_per_byte = 2;
+    break;
+
+  case GBitmapFormat8Bit:
+    pixels_per_byte = 1;
+    break;
+  }
+#endif  // PBL_PLATFORM_APLITE
+    
+  assert(width % pixels_per_byte == 0);  // This must be an even divisor, by our convention.
+  int width_bytes = width / pixels_per_byte;
+  int stride = gbitmap_get_bytes_per_row(image);
+  assert(stride >= width_bytes);
+
+  //app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "flip_bitmap_x, width_bytes = %d, stride=%d, format=%d", width_bytes, stride, gbitmap_get_format(image));
+
   uint8_t *data = gbitmap_get_data(image);
 
   for (int y = 0; y < height; ++y) {
     uint8_t *row = data + y * stride;
-    for (int x1 = (width_bytes - 1) / 2; x1 >= 0; --x1) {
-      int x2 = width_bytes - 1 - x1;
-      uint8_t b = reverse_bits(row[x1]);
-      row[x1] = reverse_bits(row[x2]);
-      row[x2] = b;
+    switch (pixels_per_byte) {
+    case 8:
+      for (int x1 = (width_bytes - 1) / 2; x1 >= 0; --x1) {
+        int x2 = width_bytes - 1 - x1;
+        uint8_t b = reverse_bits(row[x1]);
+        row[x1] = reverse_bits(row[x2]);
+        row[x2] = b;
+      }
+      break;
+
+#ifndef PBL_PLATFORM_APLITE
+    case 4:
+      for (int x1 = (width_bytes - 1) / 2; x1 >= 0; --x1) {
+        int x2 = width_bytes - 1 - x1;
+        uint8_t b = reverse_2bits(row[x1]);
+        row[x1] = reverse_2bits(row[x2]);
+        row[x2] = b;
+      }
+      break;
+      
+    case 2:
+      for (int x1 = (width_bytes - 1) / 2; x1 >= 0; --x1) {
+        int x2 = width_bytes - 1 - x1;
+        uint8_t b = reverse_nibbles(row[x1]);
+        row[x1] = reverse_nibbles(row[x2]);
+        row[x2] = b;
+      }
+      break;
+      
+    case 1:
+      for (int x1 = (width_bytes - 1) / 2; x1 >= 0; --x1) {
+        int x2 = width_bytes - 1 - x1;
+        uint8_t b = row[x1];
+        row[x1] = row[x2];
+        row[x2] = b;
+      }
+      break;
+#endif  // PBL_PLATFORM_APLITE
     }
   }
 
@@ -287,9 +377,6 @@ void flip_bitmap_y(GBitmap *image, short *cy) {
   int stride = gbitmap_get_bytes_per_row(image); // multiple of 4.
   uint8_t *data = gbitmap_get_data(image);
 
-#if 1
-  /* This is the slightly slower flip, that requires less RAM on the
-     stack. */
   uint8_t buffer[stride]; // gcc lets us do this.
   for (int y1 = (height - 1) / 2; y1 >= 0; --y1) {
     int y2 = height - 1 - y1;
@@ -298,18 +385,6 @@ void flip_bitmap_y(GBitmap *image, short *cy) {
     memcpy(data + y1 * stride, data + y2 * stride, stride);
     memcpy(data + y2 * stride, buffer, stride);
   }
-
-#else
-  /* This is the slightly faster flip, that requires more RAM on the
-     stack.  I have no idea what our stack limit is on the Pebble, or
-     what happens if we exceed it. */
-  uint8_t buffer[height * stride]; // gcc lets us do this.
-  memcpy(buffer, data, height * stride);
-  for (int y1 = 0; y1 < height; ++y1) {
-    int y2 = height - 1 - y1;
-    memcpy(data + y1 * stride, buffer + y2 * stride, stride);
-  }
-#endif
 
   if (cy != NULL) {
     *cy = height - 1 - *cy;
@@ -430,7 +505,7 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
       // Painting foreground ("white") pixels as white.
       graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
     }
-      
+    
     graphics_draw_bitmap_in_rect(ctx, hand_cache->image.bitmap, destination);
     
   } else {
@@ -540,6 +615,8 @@ void second_layer_update_callback(Layer *me, GContext *ctx) {
 
 // Draws the frame and optionally fills the background of the current date window.
 void draw_date_window_background(GContext *ctx, unsigned int fg_draw_mode, unsigned int bg_draw_mode, bool opaque_layer) {
+#ifdef PBL_PLATFORM_APLITE
+  // We only need the mask on Aplite.
   if (opaque_layer || bg_draw_mode != fg_draw_mode) {
     if (date_window_mask.bitmap == NULL) {
       date_window_mask = rle_bwd_create(RESOURCE_ID_DATE_WINDOW_MASK);
@@ -551,6 +628,7 @@ void draw_date_window_background(GContext *ctx, unsigned int fg_draw_mode, unsig
     graphics_context_set_compositing_mode(ctx, draw_mode_table[bg_draw_mode].paint_mask);
     graphics_draw_bitmap_in_rect(ctx, date_window_mask.bitmap, date_window_box);
   }
+#endif  // PBL_PLATFORM_APLITE
   
   if (date_window.bitmap == NULL) {
     date_window = rle_bwd_create(RESOURCE_ID_DATE_WINDOW);

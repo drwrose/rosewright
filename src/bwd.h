@@ -9,10 +9,11 @@
 
 typedef struct {
   GBitmap *bitmap;
-  uint8_t *data;
+  // We used to piggyback additional data here, but this is no longer
+  // needed.  Who knows, maybe one day we'll add something else.
 } BitmapWithData;
 
-BitmapWithData bwd_create(GBitmap *bitmap, void *data);
+BitmapWithData bwd_create(GBitmap *bitmap);
 void bwd_destroy(BitmapWithData *bwd);
 BitmapWithData png_bwd_create(int resource_id);
 BitmapWithData rle_bwd_create(int resource_id);
