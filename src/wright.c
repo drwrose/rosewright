@@ -1,5 +1,6 @@
 #include "wright.h"
 #include "wright_chrono.h"
+#include "antialiasing.h"
 
 #include "../resources/generated_table.c"
 #include "../resources/lang_table.c"
@@ -431,7 +432,7 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
     }
     if (group->outline != 0) {
       graphics_context_set_stroke_color(ctx, draw_mode_table[config.draw_mode].colors[group->outline]);
-      gpath_draw_outline(ctx, hand_cache->path[gi]);
+      gpath_draw_outline_antialiased(ctx, hand_cache->path[gi]);
     }
   }
 }
@@ -638,7 +639,7 @@ void draw_date_window_background(GContext *ctx, unsigned int fg_draw_mode, unsig
       return;
     }
   }
-
+  
   graphics_context_set_compositing_mode(ctx, draw_mode_table[fg_draw_mode].paint_fg);
   graphics_draw_bitmap_in_rect(ctx, date_window.bitmap, date_window_box);
 }

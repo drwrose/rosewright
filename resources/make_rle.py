@@ -408,7 +408,10 @@ def make_rle_image_basalt(rleFilename, image):
 
     pixels_per_byte = 8 / vn
     stride = (w + pixels_per_byte - 1) / pixels_per_byte
-    stride = ((stride + 3) / 4) * 4
+
+    # Apparently Basalt does not word-align the rows for these advanced format types.
+    #stride = ((stride + 3) / 4) * 4
+    
     fullSize = h * stride
 
     w_orig = w
@@ -578,7 +581,9 @@ def unpack_rle_file(rleFilename):
         assert False
 
     stride = (width + pixels_per_byte - 1) / pixels_per_byte
-    stride = ((stride + 3) / 4) * 4
+
+    if format == GBitmapFormat1Bit:
+        stride = ((stride + 3) / 4) * 4
 
     # Expand the width as needed to include the extra padding pixels.
     width2 = (stride * pixels_per_byte)
