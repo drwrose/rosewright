@@ -13,11 +13,13 @@
 #include "assert.h"
 #include "bwd.h"
 
+/*
 #ifdef NDEBUG
   // In a production build, eliminate log calls from even appearing in
   // the code.
   #define app_log(...)
 #endif  // NDBEUG
+*/
 
 #define SECONDS_PER_DAY 86400
 #define SECONDS_PER_HOUR 3600

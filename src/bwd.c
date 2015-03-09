@@ -429,7 +429,7 @@ rle_bwd_create(int resource_id) {
   uint8_t *bitmap_data = gbitmap_get_data(image);
   assert(bitmap_data != NULL);
   size_t data_size = height * stride;
-  //app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "stride = %d, data_size = %d", stride, data_size);
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "stride = %d, data_size = %d", stride, data_size);
 
   Rl2Unpacker rl2;
   rl2unpacker_init(&rl2, &rb, n, true);
@@ -529,6 +529,7 @@ rle_bwd_create(int resource_id) {
   rbuffer_init(resource_id, &rb, 0);
   int width = rbuffer_getc(&rb);
   int height = rbuffer_getc(&rb);
+  assert(width > 0 && width <= 144 && height > 0 && height <= 168);
   int n = rbuffer_getc(&rb);
   int format = rbuffer_getc(&rb);
   if (format != 0) {
@@ -544,6 +545,8 @@ rle_bwd_create(int resource_id) {
   int do_unscreen = (n & 0x80);
   n = n & 0x7f;
 
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "reading bitmap %d x %d, n = %d, format = %d", width, height, n, format);
+  
   GBitmap *image = gbitmap_create_blank(GSize(width, height));
   if (image == NULL) {
     return bwd_create(NULL);

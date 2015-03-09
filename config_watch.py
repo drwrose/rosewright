@@ -661,9 +661,9 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
 
             # We require our images to be an even multiple of 8 pixels
             # wide, to make it easier to reverse the bits
-            # horizontally.  This doesn't consume any extra memory,
-            # however, since the bits are there whether we use them or
-            # not.
+            # horizontally.  (Actually we only need it to be an even
+            # multiple of bytes, but the Aplite build is the lowest
+            # common denominator with 8 pixels per byte.)
             w = 8 * ((p2.size[0] + 7) / 8)
             if w != p2.size[0]:
                 pt = PIL.Image.new('1', (w, p1.size[1]), 0)
@@ -690,7 +690,7 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
             if useTransparency:
                 targetMaskFilename = 'clock_hands/flat_%s_%s_%s_mask.png' % (handStyle, hand, i)
                 pm1.save('%s/%s' % (resourcesDir, targetMaskFilename))
-                rleFilename, ptype = make_rle(targetMaskFilename, useRle = supportRle)
+                rleFilename, ptype = make_rle(targetMaskFilename, useRle = useRle)
                 maskResourceStr += resourceEntry % {
                     'defName' : symbolMaskName,
                     'targetFilename' : rleFilename,
@@ -700,7 +700,7 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
             targetBasename = 'clock_hands/flat_%s_%s_%s' % (handStyle, hand, i)
             p1.save('%s/%s~bw.png' % (resourcesDir, targetBasename))
             p2.save('%s/%s.png' % (resourcesDir, targetBasename))
-            rleFilename, ptype = make_rle(targetBasename + '.png', useRle = supportRle)
+            rleFilename, ptype = make_rle(targetBasename + '.png', useRle = useRle)
 
             resourceStr += resourceEntry % {
                 'defName' : symbolName,

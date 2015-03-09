@@ -313,7 +313,11 @@ def make_rle_image_1bit(rleFilename, image):
     fullSize = h * stride
     pixels_per_byte = 8
     
-    if stride * pixels_per_byte != w:
+    ## if w % 8 != 0:
+    ##     # Must be a multiple of 8 pixels wide.  If not, expand it.
+    ##     w = ((w + 7) / 8) * 8
+    w_orig = w
+    if w != stride * pixels_per_byte:
         # Must be stride bytes wide.  If not, expand it.
         w = stride * pixels_per_byte
         im2 = PIL.Image.new('1', (w, h), 0)
@@ -364,7 +368,7 @@ def make_rle_image_1bit(rleFilename, image):
     #print "n = %s, format = %s, vo = %s, po = %s" % (n, format, vo, vo)
 
     rle = open(rleFilename, 'wb')
-    rle.write('%c%c%c%c%c%c%c%c' % (w, h, n, format, vo_lo, vo_hi, vo_lo, vo_hi))
+    rle.write('%c%c%c%c%c%c%c%c' % (w_orig, h, n, format, vo_lo, vo_hi, vo_lo, vo_hi))
     rle.write(result)
     rle.close()
     
@@ -407,7 +411,8 @@ def make_rle_image_basalt(rleFilename, image):
     stride = ((stride + 3) / 4) * 4
     fullSize = h * stride
 
-    if stride * pixels_per_byte != w:
+    w_orig = w
+    if w != stride * pixels_per_byte:
         # Must be stride bytes wide.  If not, expand it.
         w = stride * pixels_per_byte
         im2 = PIL.Image.new(image.mode, (w, h), 0)
@@ -466,7 +471,7 @@ def make_rle_image_basalt(rleFilename, image):
     #print "n = %s, format = %s, vo = %s, po = %s" % (n, format, vo, po)
 
     rle = open(rleFilename, 'wb')
-    rle.write('%c%c%c%c%c%c%c%c' % (w, h, n, format, vo_lo, vo_hi, po_lo, po_hi))
+    rle.write('%c%c%c%c%c%c%c%c' % (w_orig, h, n, format, vo_lo, vo_hi, po_lo, po_hi))
     rle.write(result)
     assert rle.tell() == vo
     rle.write(values_result)
@@ -648,6 +653,11 @@ def unpack_rle_file(rleFilename):
             pi += 1
 
     assert pi == len(pixels)
+
+    # Re-crop the image to its intended width.
+    if width2 != width:
+        image = image.crop((0, 0, width, height))
+        
     return image
 
 

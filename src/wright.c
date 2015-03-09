@@ -319,7 +319,7 @@ void flip_bitmap_x(GBitmap *image, short *cx) {
   int stride = gbitmap_get_bytes_per_row(image);
   assert(stride >= width_bytes);
 
-  //app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "flip_bitmap_x, width_bytes = %d, stride=%d, format=%d", width_bytes, stride, gbitmap_get_format(image));
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "flip_bitmap_x, width_bytes = %d, stride=%d", width_bytes, stride);
 
   uint8_t *data = gbitmap_get_data(image);
 
@@ -594,19 +594,19 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
 }
   
 void hour_layer_update_callback(Layer *me, GContext *ctx) {
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "hour_layer");
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "hour_layer");
 
   draw_hand(&hour_cache, &hour_hand_def, current_placement.hour_hand_index, ctx);
 }
 
 void minute_layer_update_callback(Layer *me, GContext *ctx) {
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "minute_layer");
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "minute_layer");
 
   draw_hand(&minute_cache, &minute_hand_def, current_placement.minute_hand_index, ctx);
 }
 
 void second_layer_update_callback(Layer *me, GContext *ctx) {
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "second_layer");
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "second_layer");
 
   if (config.second_hand) {
     draw_hand(&second_cache, &second_hand_def, current_placement.second_hand_index, ctx);
