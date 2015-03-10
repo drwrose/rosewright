@@ -187,6 +187,7 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
   ms *= 67;
 #endif  // FAST_TIME
 
+  /*
   // Hack for screenshots.
   {
     ms = ((10*60 + 9)*60 + 36) * 1000;  // 10:09:36
@@ -194,6 +195,7 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
       time->tm_mday = 9;
     }
   }
+  */
   
   {
     // Avoid overflowing the integer arithmetic by pre-constraining
@@ -440,7 +442,7 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
     }
     if (group->outline != 0) {
       graphics_context_set_stroke_color(ctx, draw_mode_table[config.draw_mode].colors[group->outline]);
-      gpath_draw_outline_antialiased(ctx, hand_cache->path[gi]);
+      gpath_draw_outline_antialiased(ctx, hand_cache->path[gi], draw_mode_table[config.draw_mode].colors[group->outline]);
     }
   }
 }
