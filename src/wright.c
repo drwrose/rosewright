@@ -187,6 +187,14 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
   ms *= 67;
 #endif  // FAST_TIME
 
+  // Hack for screenshots.
+  {
+    ms = ((10*60 + 9)*60 + 36) * 1000;  // 10:09:36
+    if (time != NULL) {
+      time->tm_mday = 9;
+    }
+  }
+  
   {
     // Avoid overflowing the integer arithmetic by pre-constraining
     // the ms value to the appropriate range.
