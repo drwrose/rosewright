@@ -676,6 +676,9 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
                     pt = PIL.Image.new('1', (w, pm1.size[1]), 0)
                     pt.paste(pm1, (0, 0))
                     pm1 = pt
+                    pt = PIL.Image.new('L', (w, pm2.size[1]), 0)
+                    pt.paste(pm2, (0, 0))
+                    pm2 = pt
 
             if useTransparency:
                 # In the Basalt transparency case, we apply the mask

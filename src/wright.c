@@ -107,11 +107,12 @@ DrawModeTable draw_mode_table[2] = {
 
 #else  // PBL_PLATFORM_APLITE
 
-// In Basalt, we always use GCompOpSet to draw the hands, because
-// we always use the alpha channel.
+// In Basalt, we always use GCompOpSet to draw the hands, because we
+// always use the alpha channel.  The only exception is paint_assign,
+// because assign means assign.
 DrawModeTable draw_mode_table[2] = {
-  { GCompOpSet, GCompOpSet, GCompOpSet, GCompOpSet, GCompOpSet, { GColorClearInit, GColorBlackInit, GColorWhiteInit } },
-  { GCompOpSet, GCompOpSet, GCompOpSet, GCompOpSet, GCompOpSet, { GColorClearInit, GColorWhiteInit, GColorBlackInit } },
+  { GCompOpSet, GCompOpSet, GCompOpAssign, GCompOpSet, GCompOpSet, { GColorClearInit, GColorBlackInit, GColorWhiteInit } },
+  { GCompOpSet, GCompOpSet, GCompOpAssign, GCompOpSet, GCompOpSet, { GColorClearInit, GColorWhiteInit, GColorBlackInit } },
 };
 
 #endif  // PBL_PLATFORM_APLITE
@@ -466,8 +467,13 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
 
   int hand_resource_id = hand_def->resource_id + bitmap_index;
   int hand_resource_mask_id = hand_def->resource_mask_id + bitmap_index;
- 
-  if (hand_def->resource_id == hand_def->resource_mask_id) {
+
+#ifdef PBL_PLATFORM_APLITE
+  if (hand_def->resource_id == hand_def->resource_mask_id)
+#else
+    if (true)  // On Basalt, we always draw without the mask.
+#endif  // PBL_PLATFORM_APLITE
+    {
     // The hand does not have a mask.  Draw the hand on top of the scene.
     if (hand_cache->image.bitmap == NULL) {
       if (hand_def->use_rle) {
