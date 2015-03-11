@@ -29,7 +29,7 @@ Options:
     -F style
         Overrides the face style.  The following styles are available:
           %(faceStyles)s
-          
+
     -S
         Suppress the second hand if it is defined.
 
@@ -59,7 +59,7 @@ Options:
         Compile for debugging.  Specifically this enables "fast time",
         so the hands move quickly about the face of the watch.  It
         also enables logging.
-        
+
 """
 
 def usage(code, msg = ''):
@@ -105,7 +105,7 @@ watches = {
     'd' : ('Rosewright D', 'd', 'd', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC8]),
     'e' : ('Rosewright E', 'e', 'e', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC9]),
     }
-    
+
 
 # Table of hand styles.  For each style, specify the following for
 # each hand type.  Bitmapped hands will have bitmapParams defined and
@@ -170,7 +170,7 @@ hands = {
            ],
     'c' : [('hour', ('c_hour_hand.png', 't%', False, (59, 434), 0.14), None),
            ('minute', ('c_minute_hand.png', 't%', False, (38, 584), 0.14), None),
-           ('second', ('c_chrono1_hand.png', 'w', False, (32, -27), 0.14), 
+           ('second', ('c_chrono1_hand.png', 'w', False, (32, -27), 0.14),
             [('w', [(0, -2), (0, -26)]),
              ]),
            ('chrono_minute', ('c_chrono2_hand.png', 'w', False, (37, 195), 0.14), None),
@@ -229,9 +229,9 @@ faces = {
     'a' : {
         'filename': ['a_face.png', 'a_face_unrotated.png'],
         'date_window_a': (38, 82, 'b'),
-        'date_window_b': (106, 82, 'b'), 
-        'date_window_c' : (52, 109, 'b'), 
-        'date_window_d' : (92, 109, 'b'), 
+        'date_window_b': (106, 82, 'b'),
+        'date_window_c' : (52, 109, 'b'),
+        'date_window_d' : (92, 109, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : (37, 47, 'b'),
         'battery' : (92, 51, 'b'),
@@ -239,9 +239,9 @@ faces = {
         },
     'b' : {
         'filename' : ['b_face_rect.png', 'b_face.png'],
-        'date_window_a' : (72, 54, 'bt'), 
-        'date_window_b' : (52, 109, 'b'), 
-        'date_window_c' : (92, 109, 'b'), 
+        'date_window_a' : (72, 54, 'bt'),
+        'date_window_b' : (52, 109, 'b'),
+        'date_window_c' : (92, 109, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : (0, 0, 'bt'),
         'battery' : (125, 3, 'bt'),
@@ -252,7 +252,7 @@ faces = {
         'chrono' : ('c_face_chrono_tenths.png', 'c_face_chrono_hours.png'),
         'centers' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
         'date_window_a' : (52, 45, 'wt'),
-        'date_window_b' : (92, 45, 'wt'), 
+        'date_window_b' : (92, 45, 'wt'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : [ (0, 0, 'w'), (16, 18, 'w'), ],
         'battery' : [ (125, 3, 'w'), (109, 21, 'w'), ],
@@ -278,9 +278,9 @@ faces = {
     'e' : {
         'filename' : ['e_face.png', 'e_face_white.png'],
         'date_window_a' : (72, 21, 'bt'),
-        'date_window_b' : (21, 82, 'bt'), 
-        'date_window_c' : (123, 82, 'bt'), 
-        'date_window_d' : (72, 146, 'bt'), 
+        'date_window_b' : (21, 82, 'bt'),
+        'date_window_c' : (123, 82, 'bt'),
+        'date_window_d' : (72, 146, 'bt'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : [ (11, 12, 'w'), (11, 12, 'b'), ],
         'battery' : [ (115, 16, 'w'), (115, 16, 'b'), ],
@@ -364,24 +364,24 @@ def parseColorMode(colorMode):
         dither = True
 
     return paintBlack, useTransparency, invertColors, dither
-        
+
 def makeFaces(generatedTable, generatedDefs):
 
     resourceStr = ''
-    
+
     clockFaceEntry = """
     {
       "name": "CLOCK_FACE_%(index)s",
       "file": "%(rleFilename)s",
       "type": "%(ptype)s"
-    },"""    
-    
+    },"""
+
     dateWindowEntry = """
     {
       "name": "%(name)s",
       "file": "%(rleFilename)s",
       "type": "%(ptype)s"
-    },"""    
+    },"""
 
     chronoResourceEntry = """
     {
@@ -403,7 +403,7 @@ def makeFaces(generatedTable, generatedDefs):
       "name": "CHRONO_DIAL_HOURS_BLACK",
       "file": "%(targetChronoHoursBlack)s",
       "type": "%(ptype)s"
-    },"""    
+    },"""
 
     fd = faces[faceStyle]
     faceFilenames = fd.get('filename')
@@ -419,7 +419,7 @@ def makeFaces(generatedTable, generatedDefs):
     print >> generatedTable, "unsigned int clock_face_table[NUM_FACES] = {"
     for i in range(len(faceFilenames)):
         print >> generatedTable, "  RESOURCE_ID_CLOCK_FACE_%s," % (i)
-        
+
         rleFilename, ptype = make_rle('clock_faces/' + faceFilenames[i], useRle = supportRle)
         resourceStr += clockFaceEntry % {
             'index' : i,
@@ -445,7 +445,7 @@ def makeFaces(generatedTable, generatedDefs):
                 'rleFilename' : rleFilename,
                 'ptype' : ptype,
                 }
-        
+
     if targetChronoTenths:
         tenthsWhite, tenthsBlack, ptype = make_rle_trans('clock_faces/' + targetChronoTenths, useRle = supportRle)
         hoursWhite, hoursBlack, ptype = make_rle_trans('clock_faces/' + targetChronoHours, useRle = supportRle)
@@ -478,7 +478,7 @@ def makeVectorHands(generatedTable, generatedDefs, hand, groupList):
         for px, py in points:
             print >> generatedTable, "    { %s, %s }," % (px, py)
         print >> generatedTable, "  } } },"
-    
+
     print >> generatedTable, "  }"
     print >> generatedTable, "};\n"
 
@@ -499,7 +499,7 @@ def getNumSteps(hand):
                 numStepsHand = numStepsSweep[hand]
 
     return numStepsHand
-                
+
 
 def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename, colorMode, asymmetric, pivot, scale):
     resourceStr = ''
@@ -510,11 +510,11 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
       "name": "%(defName)s",
       "file": "%(targetFilename)s",
       "type": "%(ptype)s"
-    },"""    
+    },"""
 
     handLookupEntry = """  { %(cx)s, %(cy)s },  // %(symbolName)s"""
     handTableEntry = """  { %(lookup_index)s, %(flip_x)s, %(flip_y)s },"""
-    
+
     handLookupLines = {}
     maxLookupIndex = -1
     handTableLines = []
@@ -644,13 +644,13 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
                 # mask.
                 pm1 = pm.point(threshold1Bit).convert('1')
                 pm2 = pm.point(threshold2Bit).convert('L')
-                
+
                 # In the useTransparency case, it's important to take
                 # the crop from the alpha mask, not from the color.
-                cropbox = pm2.getbbox() 
+                cropbox = pm2.getbbox()
                 pm1 = pm1.crop(cropbox)
                 pm2 = pm2.crop(cropbox)
-                
+
             p1 = p1.crop(cropbox)
             p2 = p2.crop(cropbox)
 
@@ -680,17 +680,24 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
                     pt.paste(pm2, (0, 0))
                     pm2 = pt
 
-            if useTransparency:
-                # In the Basalt transparency case, we apply the mask
-                # as the alpha channel.
-                p2 = PIL.Image.merge('LA', [p2, pm2])
-            else:
+            if not useTransparency:
                 # In the Basalt non-transparency case, the grayscale
-                # color of the hand becomes the alpha channel.
-                black = PIL.Image.new('L', p2.size, 0)
-                p2 = PIL.Image.merge('LA', [black, p2])
+                # color of the hand becomes the mask (which then
+                # becomes the alpha channel).
+                pm2 = p2
+                p2 = PIL.Image.new('L', p2.size, 0)
+
+            if useTransparency or not paintBlack:
+                # Re-invert the color in the Basalt case so it's the
+                # natural color.
+                p2 = PIL.ImageChops.invert(p2)
+
+            # In the Basalt case, apply the mask as the alpha channel.
+            p2 = PIL.Image.merge('LA', [p2, pm2])
 
             if useTransparency:
+                # In the Aplite transparency case, we need to load a
+                # mask image.
                 targetMaskFilename = 'clock_hands/flat_%s_%s_%s_mask.png' % (handStyle, hand, i)
                 pm1.save('%s/%s' % (resourcesDir, targetMaskFilename))
                 rleFilename, ptype = make_rle(targetMaskFilename, useRle = useRle)
@@ -742,7 +749,7 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
 def makeHands(generatedTable, generatedDefs):
     """ Generates the required resources and tables for the indicated
     hand style.  Returns resourceStr. """
-    
+
     resourceStr = ''
 
     handDefEntry = """struct HandDef %(hand)s_hand_def = {
@@ -755,7 +762,7 @@ def makeHands(generatedTable, generatedDefs):
     %(bitmapTable)s,
     %(vectorTable)s,
 };
-"""    
+"""
 
     for hand, bitmapParams, vectorParams in hands[handStyle]:
         useRle = supportRle
@@ -780,7 +787,7 @@ def makeHands(generatedTable, generatedDefs):
         bitmapCenters = 'NULL'
         bitmapTable = 'NULL'
         vectorTable = 'NULL'
-            
+
         if bitmapParams:
             resourceStr += makeBitmapHands(generatedTable, generatedDefs, useRle, hand, *bitmapParams)
             colorMode = bitmapParams[1]
@@ -791,11 +798,11 @@ def makeHands(generatedTable, generatedDefs):
                 resourceMaskId = 'RESOURCE_ID_%s_0_mask' % (hand.upper())
             bitmapCenters = '%s_hand_bitmap_lookup' % (hand)
             bitmapTable = '%s_hand_bitmap_table' % (hand)
-            
+
         if vectorParams:
             resourceStr += makeVectorHands(generatedTable, generatedDefs, hand, vectorParams)
             vectorTable = '&%s_hand_vector_table' % (hand)
-    
+
         handDef = handDefEntry % {
             'hand' : hand,
             'handUpper' : hand.upper(),
@@ -818,7 +825,7 @@ def getIndicator(fd, indicator):
     """ Gets an indicator tuple from the config dictionary.  Finds
     either a tuple or a list of tuples; in either case returns a list
     of tuples. """
-    
+
     list = fd.get(indicator, None)
     if not isinstance(list, type([])):
         list = [list]
@@ -835,7 +842,7 @@ def makeIndicatorTable(generatedTable, generatedDefs, name, indicator, anonymous
         return
     if len(indicator) == 1 and numFaces != 1:
         indicator = [indicator[0]] * numFaces
-        
+
     assert len(indicator) == numFaces
 
     if anonymous:
@@ -857,7 +864,7 @@ def makeIndicatorTable(generatedTable, generatedDefs, name, indicator, anonymous
 
 def makeMoon():
     """ Returns the resource strings needed to include the moon phase icons. """
-    
+
     moonPhaseEntry = """
     {
       "name": "MOON_%(cat)s_%(index)s",
@@ -869,7 +876,7 @@ def makeMoon():
 
     # moon_white_*.png is for when the moon is to be drawn as white pixels on black.
     # moon_black_*.png is for when the moon is to be drawn as black pixels on white.
-    
+
     for cat in ['white', 'black']:
         for index in range(8):
             rleFilename, ptype = make_rle('clock_faces/moon_%s_%s.png' % (cat, index), useRle = supportRle)
@@ -889,7 +896,7 @@ def enquoteStrings(strings):
     for str in strings:
         quoted.append('"%s"' % (str))
     return quoted
-        
+
 def configWatch():
     generatedTable = open('%s/generated_table.c' % (resourcesDir), 'w')
     generatedDefs = open('%s/generated_defs.h' % (resourcesDir), 'w')
@@ -907,7 +914,7 @@ def configWatch():
         ch = chr(97 + i)
         makeIndicatorTable(generatedTable, generatedDefs, ch, date_windows[i], anonymous = True)
     print >> generatedTable, "};\n"
-        
+
     makeIndicatorTable(generatedTable, generatedDefs, 'battery_table', battery)
     makeIndicatorTable(generatedTable, generatedDefs, 'bluetooth_table', bluetooth)
 
@@ -971,7 +978,7 @@ def configWatch():
             explicitStackingOrder.append(hand)
     stackingOrder = map(lambda hand: 'STACKING_ORDER_%s' % (hand.upper()), explicitStackingOrder + implicitStackingOrder)
     stackingOrder.append('STACKING_ORDER_DONE')
-    
+
     print >> config, configIn % {
         'persistKey' : 0x5151 + uuId[-1],
         'supportRle' : int(bool(supportRle)),
