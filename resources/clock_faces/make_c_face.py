@@ -7,7 +7,7 @@ import FaceMaker
 face = FaceMaker.FaceMaker(zoom = 1.25, bg = 0, fg = 255) #, upscale = 2, format = 'L')
 
 rings = [0.2933, 0.3600, 0.4273, 0.4920, 0.6500, 0.6713, 0.7047, 0.7180, 0.8027, 0.8173]
-    
+
 rings.reverse()
 for diameter in rings:
     face.drawRing(diameter, width = 0.003)
@@ -23,7 +23,7 @@ ticks.remove(180)
 face.drawTicks(ticks, rings[3], rings[4], width = 0.01)
 
 font = face.loadFont('Multicolore.otf', 0.08)
-face.drawCircularLabels([(0, '12')], 0.5800, font)
+face.drawCircularLabels([(0, '12'), (180, '6')], 0.5800, font)
 
 face.drawTicks(60, rings[5], rings[6], width = 0.002)
 face.drawTicks(60, rings[7], rings[8], width = 0.002)
@@ -45,7 +45,7 @@ def drawChrono(c, smallTicks, bigTicks, labels, handFilename, handPivot):
 
     # Tell the developer where to place the chrono dials.
     print handFilename, face.p2s(*c)
-    
+
 # Draw the little chonograph dials.
 drawChrono((-0.2033, 0.0), 60, 12,
            [(60, '10'), (120, '20'), (180, '30'),
@@ -55,11 +55,14 @@ drawChrono((0.2033, 0.0), 30, 0,
            [(60, '5'), (120, '10'), (180, '15'),
             (240, '20'), (300, '25'), (0, '30')],
            'c_chrono2_hand.png', (37, 195))
-drawChrono((0, 0.2033), 0, 10,
-           [(72, '2'), (144, '4'), (216, '6'),
-            (288, '8'), (0, '0')],
-           'c_chrono2_hand.png', (37, 195))
 
-face.save('c_face.png')
-print "handScale = %s" % (face.pixelScaleToHandScale(1500))
+# tenths
+#drawChrono((0, 0.2033), 0, 10, [(72, '2'), (144, '4'), (216, '6'), (288, '8'), (0, '0')], 'c_chrono2_hand.png', (37, 195))
+
+# hours
+#drawChrono((0, 0.2033), 0, 12, [(0, '12'), (180, '6')], 'c_chrono2_hand.png', (37, 195))
+
+
+face.save('c_face_working.png')
+#print "handScale = %s" % (face.pixelScaleToHandScale(1500))
 
