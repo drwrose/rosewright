@@ -21,19 +21,4 @@ face.drawCircularLabels(face.standardLabels, 0.92, font, align = 'i')
 
 face.pasteImage((0, -0.2), 'pebble_label.png', (13, 4), None)
 
-cx, cy = 0.120, 0.15
-face.pasteImage((-cx, cy), 'date_card.png', (15, 8), None)
-face.pasteImage((cx, cy), 'date_card.png', (15, 8), None)
-
-face.save('b_face.png')
-
-print "date cards = %s" % (face.p2s(-cx, cy, cx, cy))
-
-if False:
-    # Add the hands for illustrative purposes.
-    pixelScale = face.handScaleToPixelScale(0.27)
-    face.pasteImage((0, 0), '../clock_hands/b_hour_hand.png', (33, 211), pixelScale, rotate = 255)
-    face.pasteImage((0, 0), '../clock_hands/b_minute_hand.png', (24, 280), pixelScale, rotate = 168)
-    face.save('b_face_sample.png')
-    
-
+face.save('b_face_working.png')
