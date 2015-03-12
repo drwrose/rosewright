@@ -3,8 +3,17 @@
 # again.
 
 import FaceMaker
+import sys
 
 face = FaceMaker.FaceMaker(zoom = 1.25, bg = 0, fg = 255) #, upscale = 2, format = 'L')
+
+#face.drawTicks(60, 0.2, 1.7, width = 0.004)
+#face.save('c_face_ticks.png')
+
+#face.drawTicks(12, 0.2, 1.7, width = 0.01)
+#face.save('c_face_ticks.png')
+#sys.exit()
+
 
 rings = [0.2933, 0.3600, 0.4273, 0.4920, 0.6500, 0.6713, 0.7047, 0.7180, 0.8027, 0.8173]
 
