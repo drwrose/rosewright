@@ -81,6 +81,7 @@ unsigned int get_chrono_ms(unsigned int ms) {
 }
 
 void load_chrono_dial() {
+#ifdef PBL_PLATFORM_APLITE
   bwd_destroy(&chrono_dial_white);
   bwd_destroy(&chrono_dial_black);
   if (chrono_dial_shows_tenths) {
@@ -95,6 +96,19 @@ void load_chrono_dial() {
     bwd_destroy(&chrono_dial_black);
     trigger_memory_panic(__LINE__);
   }
+#else  // PBL_PLATFORM_APLITE
+  // In Basalt, we only load the "white" image.
+  bwd_destroy(&chrono_dial_white);
+  if (chrono_dial_shows_tenths) {
+    chrono_dial_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_TENTHS_WHITE);
+  } else {
+    chrono_dial_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_HOURS_WHITE);
+  }
+  if (chrono_dial_white.bitmap == NULL) {
+    bwd_destroy(&chrono_dial_white);
+    trigger_memory_panic(__LINE__);
+  }
+#endif  // PBL_PLATFORM_APLITE
 }
 
 void compute_chrono_hands(unsigned int ms, struct HandPlacement *placement) {
@@ -226,10 +240,15 @@ void chrono_dial_layer_update_callback(Layer *me, GContext *ctx) {
     destination.origin.x = 0;
     destination.origin.y = 0;
 
+#ifdef PBL_PLATFORM_APLITE
     graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
     graphics_draw_bitmap_in_rect(ctx, chrono_dial_black.bitmap, destination);
     graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
     graphics_draw_bitmap_in_rect(ctx, chrono_dial_white.bitmap, destination);
+#else  // PBL_PLATFORM_APLITE
+    graphics_context_set_compositing_mode(ctx, GCompOpSet);
+    graphics_draw_bitmap_in_rect(ctx, chrono_dial_white.bitmap, destination);
+#endif  // PBL_PLATFORM_APLITE
   }
 }
 
