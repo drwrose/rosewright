@@ -595,9 +595,9 @@ rle_bwd_create(int resource_id) {
 
 #endif  // SUPPORT_RLE
 
-// Invert the colors of a palette-based bitmap after loading.  Only
-// supported for palette bitmaps.
-void bwd_invert(BitmapWithData *bwd) {
+// Apply boolean ops to the colors of a palette-based bitmap after
+// loading.  Only supported for palette bitmaps.
+void bwd_adjust_colors(BitmapWithData *bwd, uint8_t and_argb8, uint8_t or_argb8, uint8_t xor_argb8) {
 #ifndef PBL_PLATFORM_APLITE
   if (bwd->bitmap == NULL) {
     return;
@@ -617,7 +617,7 @@ void bwd_invert(BitmapWithData *bwd) {
 
   case GBitmapFormat1Bit:
   case GBitmapFormat8Bit:
-    app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "bwd_invert cannot invert non-palette format %d", format);
+    app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "bwd_adjust_colors cannot invert non-palette format %d", format);
     return;
   }
 
@@ -626,7 +626,7 @@ void bwd_invert(BitmapWithData *bwd) {
   assert(palette != NULL);
 
   for (int pi = 0; pi < palette_size; ++pi) {
-    palette[pi].argb ^= 0x3f;
+    palette[pi].argb = (((palette[pi].argb & and_argb8) | or_argb8) ^ xor_argb8);
   }
     
 #endif // PBL_PLATFORM_APLITE

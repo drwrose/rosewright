@@ -488,7 +488,11 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
       }
       hand_cache->cx = lookup->cx;
       hand_cache->cy = lookup->cy;
-    
+
+      uint8_t and_argb8 = clock_face_table[config.face_index].and_argb8;
+      uint8_t or_argb8 = clock_face_table[config.face_index].or_argb8;
+      bwd_adjust_colors(&hand_cache->image, and_argb8, or_argb8, 0x00);
+      
       if (hand->flip_x) {
         // To minimize wasteful resource usage, if the hand is symmetric
         // we can store only the bitmaps for the right half of the clock
@@ -595,7 +599,7 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
 
   // Load the clock face from the resource file if we haven't already.
   if (clock_face.bitmap == NULL) {
-    clock_face = rle_bwd_create(clock_face_table[config.face_index]);
+    clock_face = rle_bwd_create(clock_face_table[config.face_index].resource_id);
     if (clock_face.bitmap == NULL) {
       trigger_memory_panic(__LINE__);
       return;
@@ -657,7 +661,7 @@ void draw_date_window_background(GContext *ctx, unsigned int fg_draw_mode, unsig
 #ifndef PBL_PLATFORM_APLITE
     // On Basalt, if we have an inverse setting here we invert the bitmap colors.
     if (fg_draw_mode) {
-      bwd_invert(&date_window);
+      bwd_adjust_colors(&date_window, 0xff, 0x00, 0x3f);
     }
 #endif  // PBL_PLATFORM_APLITE
   }

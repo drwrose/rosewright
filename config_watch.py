@@ -120,7 +120,8 @@ watches = {
 #
 #   hand - the hand type being defined.
 #   filename - the png image that defines this hand, pointing upward.
-#   colorMode - indicate how the colors in the png file are to be interpreted:
+#   colorMode - indicate how the colors in the png file are to be interpreted.
+#       The first part applies only to the Aplite build:
 #       'b'  - black pixels are drawn as black, white pixels are ignored.
 #       'w'  - white pixels are drawn as white, black pixels are ignored.
 #       '-b' - black pixels are drawn as white, white pixels are ignored.
@@ -197,6 +198,7 @@ hands = {
 #
 #   filename  - the background image for the face, or a list of optional faces.
 #   chrono    - the (tenths, hours) images for the two chrono dials, if used.
+#   hand_color    - the (and, or) tuple to adjust the hand colors in a Basalt build.
 #   date_window_a - the (x, y, c) position, color, background of the first date window.
 #   date_window_b - the (x, y, c) position, color, background of the second date window.
 #   date_window_c - etc.  All date windows must be consecutively named.
@@ -260,6 +262,7 @@ faces = {
         },
     'd' : {
         'filename' : ['d_face_rect.png', 'd_face_rect_clean.png', 'd_face.png', 'd_face_clean.png'],
+        'hand_color' : [ (0xff, 0x01), (0xff, 0x02), (0xff, 0x01), (0xff, 0x02) ],
         'date_window_a': [ (49, 102, 'wt'), (49, 102, 'b'),
                            (41, 82, 'wt'), (41, 82, 'b'), ],
         'date_window_b': [ (95, 102, 'wt'), (95, 102, 'b'),
@@ -369,7 +372,7 @@ def makeFaces(generatedTable, generatedDefs):
 
     resourceStr = ''
 
-    clockFaceEntry = """
+    faceResourceEntry = """
     {
       "name": "CLOCK_FACE_%(index)s",
       "file": "%(rleFilename)s",
@@ -416,15 +419,25 @@ def makeFaces(generatedTable, generatedDefs):
     if chronoFilenames:
         targetChronoTenths, targetChronoHours = chronoFilenames
 
-    print >> generatedTable, "unsigned int clock_face_table[NUM_FACES] = {"
+    handColors = fd.get('hand_color')
+    if not handColors:
+      handColors = [(0xff, 0x00)] * len(faceFilenames)
+    elif isinstance(handColors[0], type(0x00)):
+      handColors = [handColors]
+    assert len(faceFilenames) == len(handColors)
+        
+    print >> generatedTable, "struct FaceDef clock_face_table[NUM_FACES] = {"
     for i in range(len(faceFilenames)):
-        print >> generatedTable, "  RESOURCE_ID_CLOCK_FACE_%s," % (i)
+        print >> generatedTable, "  { RESOURCE_ID_CLOCK_FACE_%s, %s, %s }," % (
+          i, handColors[i][0], handColors[i][1])
 
         rleFilename, ptype = make_rle('clock_faces/' + faceFilenames[i], useRle = supportRle)
-        resourceStr += clockFaceEntry % {
+        resourceStr += faceResourceEntry % {
             'index' : i,
             'rleFilename' : rleFilename,
             'ptype' : ptype,
+            'and_argb8' : handColors[i][0],
+            'or_argb8' : handColors[i][1],
             }
     print >> generatedTable, "};\n"
 
