@@ -18,4 +18,6 @@ void bwd_destroy(BitmapWithData *bwd);
 BitmapWithData png_bwd_create(int resource_id);
 BitmapWithData rle_bwd_create(int resource_id);
 
+void bwd_invert(BitmapWithData *bwd);
+
 #endif

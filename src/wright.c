@@ -654,6 +654,12 @@ void draw_date_window_background(GContext *ctx, unsigned int fg_draw_mode, unsig
       trigger_memory_panic(__LINE__);
       return;
     }
+#ifndef PBL_PLATFORM_APLITE
+    // On Basalt, if we have an inverse setting here we invert the bitmap colors.
+    if (fg_draw_mode) {
+      bwd_invert(&date_window);
+    }
+#endif  // PBL_PLATFORM_APLITE
   }
   
   graphics_context_set_compositing_mode(ctx, draw_mode_table[fg_draw_mode].paint_fg);

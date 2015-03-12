@@ -594,3 +594,11 @@ rle_bwd_create(int resource_id) {
 #endif // PBL_PLATFORM_APLITE
 
 #endif  // SUPPORT_RLE
+
+// Invert the colors of a palette-based bitmap after loading.  Only
+// supported for palette bitmaps.
+void bwd_invert(BitmapWithData *bwd) {
+#ifndef PBL_PLATFORM_APLITE
+  
+#endif // PBL_PLATFORM_APLITE
+}
