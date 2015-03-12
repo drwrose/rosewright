@@ -2,6 +2,7 @@
 #include "assert.h"
 #include "pebble_compat.h"
 #include "../resources/generated_config.h"
+//#define SUPPORT_RLE 1
 
 BitmapWithData bwd_create(GBitmap *bitmap) {
   BitmapWithData bwd;
@@ -429,7 +430,6 @@ rle_bwd_create(int resource_id) {
   uint8_t *bitmap_data = gbitmap_get_data(image);
   assert(bitmap_data != NULL);
   size_t data_size = height * stride;
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "stride = %d, data_size = %d", stride, data_size);
 
   Rl2Unpacker rl2;
   rl2unpacker_init(&rl2, &rb, n, true);
@@ -495,8 +495,8 @@ rle_bwd_create(int resource_id) {
     size_t total_size = resource_size(rh);
     assert(total_size > po);
     size_t palette_size = total_size - po;
-    assert(palette_size == palette_count);
-    GColor *palette = (GColor *)malloc(palette_size);
+    assert(palette_size <= palette_count);
+    GColor *palette = (GColor *)malloc(palette_count);
     size_t bytes_read = resource_load_byte_range(rh, po, (uint8_t *)palette, palette_size);
     assert(bytes_read == palette_size);
 
@@ -599,6 +599,35 @@ rle_bwd_create(int resource_id) {
 // supported for palette bitmaps.
 void bwd_invert(BitmapWithData *bwd) {
 #ifndef PBL_PLATFORM_APLITE
-  
+  if (bwd->bitmap == NULL) {
+    return;
+  }
+  GBitmapFormat format = gbitmap_get_format(bwd->bitmap);
+  int palette_size = 0;
+  switch (format) {
+  case GBitmapFormat1BitPalette:
+    palette_size = 2;
+    break;
+  case GBitmapFormat2BitPalette:
+    palette_size = 4;
+    break;
+  case GBitmapFormat4BitPalette:
+    palette_size = 16;
+    break;
+
+  case GBitmapFormat1Bit:
+  case GBitmapFormat8Bit:
+    app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "bwd_invert cannot invert non-palette format %d", format);
+    return;
+  }
+
+  assert(palette_size != 0);
+  GColor *palette = gbitmap_get_palette(bwd->bitmap);
+  assert(palette != NULL);
+
+  for (int pi = 0; pi < palette_size; ++pi) {
+    palette[pi].argb ^= 0x3f;
+  }
+    
 #endif // PBL_PLATFORM_APLITE
 }
