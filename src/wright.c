@@ -121,6 +121,9 @@ unsigned char stacking_order[] = {
   STACKING_ORDER_LIST
 };
 
+void destroy_objects();
+void create_objects();
+
 // Loads a font from the resource and returns it.  It may return
 // either the intended font, or the fallback font.  If it returns
 // the fallback font, this function automatically triggers a memory
@@ -1062,11 +1065,10 @@ void apply_config() {
     display_lang = config.display_lang;
   }
 
-#ifdef SUPPORT_MOON
-  // Reload the moon bitmap just for good measure.  Maybe the user
-  // changed the draw mode or the lunar direction.
-  bwd_destroy(&moon_bitmap);
-#endif  // SUPPORT_MOON
+  // Reload all bitmaps just for good measure.  Maybe the user changed
+  // the draw mode or something else.
+  destroy_objects();
+  create_objects();
 
   layer_mark_dirty(clock_face_layer);
 

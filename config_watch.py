@@ -262,7 +262,7 @@ faces = {
         },
     'd' : {
         'filename' : ['d_face_rect.png', 'd_face_rect_clean.png', 'd_face.png', 'd_face_clean.png'],
-        'hand_color' : [ (0xff, 0x01), (0xff, 0x02), (0xff, 0x01), (0xff, 0x02) ],
+        'hand_color' : [ (0xff, 0x02), (0xff, 0x02), (0xff, 0x02), (0xff, 0x02) ],
         'date_window_a': [ (49, 102, 'wt'), (49, 102, 'b'),
                            (41, 82, 'wt'), (41, 82, 'b'), ],
         'date_window_b': [ (95, 102, 'wt'), (95, 102, 'b'),
@@ -272,7 +272,7 @@ faces = {
         'date_window_d' : [ (95, 125, 'wt'), (95, 125, 'b'),
                             (92, 107, 'wt'), (92, 107, 'b'), ],
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
-        'bluetooth' : [ (49, 45, 'bt'), (49, 45, 'b'),
+        'bluetooth' : [ (49, 45, 'bt'), (49, 45, 'bt'),
                         (0, 0, 'w'), (0, 0, 'w'), ],
         'battery' : [ (79, 49, 'bt'), (79, 49, 'bt'),
                       (125, 3, 'w'), (125, 3, 'w'), ],
