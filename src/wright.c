@@ -442,8 +442,17 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
       gpath_draw_filled(ctx, hand_cache->path[gi]);
     }
     if (group->outline != 0) {
-      graphics_context_set_stroke_color(ctx, draw_mode_table[config.draw_mode].colors[group->outline]);
-      gpath_draw_outline_antialiased(ctx, hand_cache->path[gi], draw_mode_table[config.draw_mode].colors[group->outline]);
+      GColor color = draw_mode_table[config.draw_mode].colors[group->outline];
+
+#ifndef PBL_PLATFORM_APLITE
+      uint8_t and_argb8 = clock_face_table[config.face_index].and_argb8;
+      uint8_t or_argb8 = clock_face_table[config.face_index].or_argb8;
+      uint8_t xor_argb8 = 0x00;
+      color.argb = (((color.argb & and_argb8) | or_argb8) ^ xor_argb8);
+#endif  // PBL_PLATFORM_APLITE
+
+      graphics_context_set_stroke_color(ctx, color);
+      gpath_draw_outline_antialiased(ctx, hand_cache->path[gi], color);
     }
   }
 }
@@ -489,9 +498,11 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
       hand_cache->cx = lookup->cx;
       hand_cache->cy = lookup->cy;
 
+#ifndef PBL_PLATFORM_APLITE
       uint8_t and_argb8 = clock_face_table[config.face_index].and_argb8;
       uint8_t or_argb8 = clock_face_table[config.face_index].or_argb8;
       bwd_adjust_colors(&hand_cache->image, and_argb8, or_argb8, 0x00);
+#endif  // PBL_PLATFORM_APLITE
       
       if (hand->flip_x) {
         // To minimize wasteful resource usage, if the hand is symmetric
