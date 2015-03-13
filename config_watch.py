@@ -533,13 +533,13 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
     handTableLines = []
 
     source = PIL.Image.open('%s/clock_hands/%s' % (resourcesDir, sourceFilename))
-
     paintBlack, useTransparency, invertColors, dither = parseColorMode(colorMode)
 
     if useTransparency or source.mode.endswith('A'):
-        source, sourceMask = source.convert('LA').split()
+        r, g, b, sourceMask = source.convert('RGBA').split()
+        source = PIL.Image.merge('RGB', [r, g, b])
     else:
-        source = source.convert('L')
+        source = source.convert('RGB')
         sourceMask = None
 
     # We must do the below operations with white as the foreground
@@ -560,13 +560,17 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
         # image outside of the alpha channel coverage that the
         # artist didn't even know about).
         black = PIL.Image.new('L', source.size, 0)
-        source = PIL.Image.composite(source, black, sourceMask)
+        r, g, b = source.split()
+        r = PIL.Image.composite(r, black, sourceMask)
+        g = PIL.Image.composite(g, black, sourceMask)
+        b = PIL.Image.composite(b, black, sourceMask)
+        source = PIL.Image.merge('RGB', [r, g, b])
 
     # Center the source image on its pivot, and pad it with black.
     border = (pivot[0], pivot[1], source.size[0] - pivot[0], source.size[1] - pivot[1])
     size = (max(border[0], border[2]) * 2, max(border[1], border[3]) * 2)
     center = (size[0] / 2, size[1] / 2)
-    large = PIL.Image.new('L', size, 0)
+    large = PIL.Image.new('RGB', size, 0)
     large.paste(source, (center[0] - pivot[0], center[1] - pivot[1]))
 
     if useTransparency:
@@ -641,11 +645,17 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
 
             # Now make the 1-bit version for Aplite and the 2-bit
             # version for Basalt.
+            r, g, b = p.split()
             if not dither:
-                p1 = p.point(threshold1Bit).convert('1')
+                p1 = b.point(threshold1Bit).convert('1')
             else:
-                p1 = p.convert('1')
-            p2 = p.point(threshold2Bit).convert('L')
+                p1 = b.convert('1')
+
+            r, g, b = p.split()
+            r = r.point(threshold2Bit).convert('L')
+            g = g.point(threshold2Bit).convert('L')
+            b = b.point(threshold2Bit).convert('L')
+            p2 = PIL.Image.merge('RGB', [r, g, b])
 
             cx, cy = p2.size[0] / 2, p2.size[1] / 2
             cropbox = p2.getbbox()
@@ -682,7 +692,7 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
                 pt = PIL.Image.new('1', (w, p1.size[1]), 0)
                 pt.paste(p1, (0, 0))
                 p1 = pt
-                pt = PIL.Image.new('L', (w, p2.size[1]), 0)
+                pt = PIL.Image.new('RGB', (w, p2.size[1]), 0)
                 pt.paste(p2, (0, 0))
                 p2 = pt
                 if useTransparency:
@@ -697,8 +707,8 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
                 # In the Basalt non-transparency case, the grayscale
                 # color of the hand becomes the mask (which then
                 # becomes the alpha channel).
-                pm2 = p2
-                p2 = PIL.Image.new('L', p2.size, 0)
+                pm2 = p2.convert('L')
+                p2 = PIL.Image.new('RGB', p2.size, 0)
 
             if useTransparency or not paintBlack:
                 # Re-invert the color in the Basalt case so it's the
@@ -706,7 +716,8 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
                 p2 = PIL.ImageChops.invert(p2)
 
             # In the Basalt case, apply the mask as the alpha channel.
-            p2 = PIL.Image.merge('LA', [p2, pm2])
+            r, g, b = p2.split()
+            p2 = PIL.Image.merge('RGBA', [r, g, b, pm2])
 
             if useTransparency:
                 # In the Aplite transparency case, we need to load a
