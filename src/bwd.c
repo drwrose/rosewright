@@ -488,7 +488,7 @@ rle_bwd_create(int resource_id) {
   if (do_unscreen) {
     unscreen_bitmap(image);
   }
-
+  
   if (palette_count != 0) {
     // Now we need to apply the palette.
     ResHandle rh = resource_get_handle(resource_id);
@@ -496,11 +496,10 @@ rle_bwd_create(int resource_id) {
     assert(total_size > po);
     size_t palette_size = total_size - po;
     assert(palette_size <= palette_count);
-    GColor *palette = (GColor *)malloc(palette_count);
+    GColor *palette = gbitmap_get_palette(image);
+    assert(palette != NULL);
     size_t bytes_read = resource_load_byte_range(rh, po, (uint8_t *)palette, palette_size);
     assert(bytes_read == palette_size);
-
-    gbitmap_set_palette(image, palette, true);
   }
   
   return bwd_create(image);

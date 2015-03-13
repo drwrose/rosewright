@@ -635,7 +635,7 @@ void hour_layer_update_callback(Layer *me, GContext *ctx) {
 }
 
 void minute_layer_update_callback(Layer *me, GContext *ctx) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "minute_layer");
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "minute_layer, heap = %d bytes free of %d total", heap_bytes_free(), heap_bytes_free() + heap_bytes_used());
 
   draw_hand(&minute_cache, &minute_hand_def, current_placement.minute_hand_index, ctx);
 }
