@@ -188,9 +188,7 @@ hands = {
            ],
     'e' : [('hour', ('e_hour_hand.png', 't%', False, (28, 99), 0.53), None),
            ('minute', ('e_minute_hand.png', 't%', False, (22, 142), 0.53), None),
-           ('second', ('d_second_hand.png', 'b', False, (14, -8), 0.24),
-            [('b', [(0, -3), (0, -63)]),
-             ]),
+           ('second', ('e_second_hand.png', 't', False, (14, 265), 0.24), None),
            ],
     }
 
@@ -280,6 +278,7 @@ faces = {
         },
     'e' : {
         'filename' : ['e_face.png', 'e_face_white.png'],
+        'hand_color' : [ (0xff, 0x00), (0xfe, 0x00) ],
         'date_window_a' : (72, 21, 'bt'),
         'date_window_b' : (21, 82, 'bt'),
         'date_window_c' : (123, 82, 'bt'),
@@ -423,7 +422,7 @@ def makeFaces(generatedTable, generatedDefs):
     if not handColors:
       handColors = [(0xff, 0x00)] * len(faceFilenames)
     elif isinstance(handColors[0], type(0x00)):
-      handColors = [handColors]
+      handColors = [handColors] * len(faceFilenames)
     assert len(faceFilenames) == len(handColors)
         
     print >> generatedTable, "struct FaceDef clock_face_table[NUM_FACES] = {"
@@ -793,14 +792,14 @@ def makeHands(generatedTable, generatedDefs):
         if hand == 'second':
             global enableSecondHand
             enableSecondHand = True
-            useRle = False
+            #useRle = False
         elif hand == 'chrono_minute':
             global enableChronoMinuteHand
             enableChronoMinuteHand = True
         elif hand == 'chrono_second':
             global enableChronoSecondHand
             enableChronoSecondHand = True
-            useRle = False
+            #useRle = False
         elif hand == 'chrono_tenth':
             global enableChronoTenthHand
             enableChronoTenthHand = True
