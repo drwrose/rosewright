@@ -188,7 +188,7 @@ hands = {
            ],
     'e' : [('hour', ('e_hour_hand.png', 't%', False, (28, 99), 0.53), None),
            ('minute', ('e_minute_hand.png', 't%', False, (22, 142), 0.53), None),
-           ('second', ('e_second_hand.png', 't%', False, (14, 265), 0.24), None),
+           ('second', ('e_second_hand.png', 't%', False, (18, 269), 0.24), None),
            ],
     }
 
