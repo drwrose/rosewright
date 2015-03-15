@@ -553,18 +553,6 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
     # The mask already uses black as the background color, no need
     # to invert that.
 
-    if sourceMask:
-        # Ensure that the source image is black anywhere the mask
-        # is black (sometimes there is junk in the original png
-        # image outside of the alpha channel coverage that the
-        # artist didn't even know about).
-        black = PIL.Image.new('L', source.size, 0)
-        r, g, b = source.split()
-        r = PIL.Image.composite(r, black, sourceMask)
-        g = PIL.Image.composite(g, black, sourceMask)
-        b = PIL.Image.composite(b, black, sourceMask)
-        source = PIL.Image.merge('RGB', [r, g, b])
-
     # Center the source image on its pivot, and pad it with black.
     border = (pivot[0], pivot[1], source.size[0] - pivot[0], source.size[1] - pivot[1])
     size = (max(border[0], border[2]) * 2, max(border[1], border[3]) * 2)
@@ -717,6 +705,10 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
             # In the Basalt case, apply the mask as the alpha channel.
             r, g, b = p2.split()
             p2 = PIL.Image.merge('RGBA', [r, g, b, pm2])
+
+            # And quantize to 16 colors, which looks almost as good
+            # for half the RAM.
+            p2 = p2.convert("P", palette = PIL.Image.ADAPTIVE, colors = 16)
 
             if useTransparency:
                 # In the Aplite transparency case, we need to load a

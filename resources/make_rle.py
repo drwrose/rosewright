@@ -379,12 +379,23 @@ def make_rle_image_basalt(rleFilename, image):
     image = image.convert('RGBA')
     w, h = image.size
 
-    # Ensure the image is reduced to Basalt's 64 colors.
     r, g, b, a = image.split()
+
+    # Ensure that the RGB image is black anywhere the alpha
+    # is black.
+    black = PIL.Image.new('L', image.size, 0)
+    threshold = [0] + [255] * 255
+    mask = a.point(threshold)
+    r = PIL.Image.composite(r, black, mask)
+    g = PIL.Image.composite(g, black, mask)
+    b = PIL.Image.composite(b, black, mask)
+
+    # Ensure the image is reduced to Basalt's 64 colors.
     r = PIL.ImageOps.posterize(r, 2)
     g = PIL.ImageOps.posterize(g, 2)
     b = PIL.ImageOps.posterize(b, 2)
     a = PIL.ImageOps.posterize(a, 2)
+
     image = PIL.Image.merge('RGBA', [r, g, b, a])
     
     # Check the number of unique colors in the image to determine the
@@ -393,6 +404,7 @@ def make_rle_image_basalt(rleFilename, image):
 
     if colors is None:
         # We have a full-color image.
+        import pdb; pdb.set_trace()
         palette = None
         format = GBitmapFormat8Bit
         vn = 8

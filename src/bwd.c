@@ -617,6 +617,11 @@ void bwd_adjust_colors(BitmapWithData *bwd, uint8_t and_argb8, uint8_t or_argb8,
   case GBitmapFormat1Bit:
   case GBitmapFormat8Bit:
   default:
+    // We just refuse to adjust true-color images.  Technically, we
+    // could apply the adjustment at least to GBitmapFormat8Bit images
+    // (by walking through all of the pixels), but instead we'll flag
+    // it as an error, to help catch accidental mistakes in image
+    // preparation.
     app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "bwd_adjust_colors cannot adjust non-palette format %d", format);
     return;
   }
