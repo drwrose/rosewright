@@ -245,7 +245,7 @@ faces = {
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : (0, 0, 'bt'),
         'battery' : (125, 3, 'bt'),
-        'defaults' : [ 'day:b', 'date:c' ],
+        'defaults' : [ 'day:b', 'date:c', 'moon:a' ],
         },
     'c' : {
         'filename' : ['c_face.png', 'c_face_rect.png'],
@@ -1124,14 +1124,12 @@ centers = fd.get('centers', ())
 # Look for 'day' and 'date' prefixes in the defaults.
 defaultDateWindows = [0] * len(date_windows)
 for keyword in defaults:
-    if keyword.startswith('day:'):
-        ch = keyword.split(':', 1)[1]
-        i = ord(ch) - 97
-        defaultDateWindows[i] = 4  # == DWM_weekday
-    elif keyword.startswith('date:'):
-        ch = keyword.split(':', 1)[1]
-        i = ord(ch) - 97
-        defaultDateWindows[i] = 2  # == date
+    for token, value in [('day', 4), ('date', 2), ('moon', 7)]:
+        if keyword.startswith(token + ':'):
+            ch = keyword.split(':', 1)[1]
+            i = ord(ch) - 97
+            defaultDateWindows[i] = value
+            break
 
 # Map the centers tuple into a dictionary of points for x and y.
 cxd = dict(map(lambda (hand, x, y): (hand, x), centers))

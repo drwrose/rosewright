@@ -673,7 +673,8 @@ void draw_date_window_background(GContext *ctx, unsigned int fg_draw_mode, unsig
       return;
     }
 #ifndef PBL_PLATFORM_APLITE
-    // On Basalt, if we have an inverse setting here we invert the bitmap colors.
+    // On Basalt, if we have an inverse setting here we invert the
+    // bitmap colors.
     if (fg_draw_mode) {
       bwd_adjust_colors(&date_window, 0xff, 0x00, 0x3f);
     }
@@ -729,14 +730,12 @@ void draw_lunar_window(Layer *me, GContext *ctx, DateWindowMode dwm, bool invert
     moon_draw_mode = 1;
   }
 
-  draw_date_window_background(ctx, draw_mode, moon_draw_mode, opaque_layer);
-
   if (moon_bitmap.bitmap == NULL) {
     assert(current_placement.lunar_phase <= 7);
     if (moon_draw_mode == 0) {
-      moon_bitmap = rle_bwd_create(RESOURCE_ID_MOON_BLACK_0 + current_placement.lunar_phase);
-    } else {
       moon_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHITE_0 + current_placement.lunar_phase);
+    } else {
+      moon_bitmap = rle_bwd_create(RESOURCE_ID_MOON_BLACK_0 + current_placement.lunar_phase);
     }
     if (moon_bitmap.bitmap == NULL) {
       trigger_memory_panic(__LINE__);
@@ -752,12 +751,18 @@ void draw_lunar_window(Layer *me, GContext *ctx, DateWindowMode dwm, bool invert
     }
   }
 
-  // Draw the moon in the fg color.  This will be black-on-white if
-  // moon_draw_mode = 0, or white-on-black if moon_draw_mode = 1.
-  // Since we have selected the particular moon resource above based
-  // on draw_mode, we will always draw the moon in the correct color,
-  // so that it looks like the moon.  (Drawing the moon in the
-  // inverted color would look weird.)
+  draw_date_window_background(ctx, draw_mode, moon_draw_mode, opaque_layer);
+
+  // In the Aplite case, we draw the moon in the fg color.  This will
+  // be black-on-white if moon_draw_mode = 0, or white-on-black if
+  // moon_draw_mode = 1.  Since we have selected the particular moon
+  // resource above based on draw_mode, we will always draw the moon
+  // in the correct color, so that it looks like the moon.  (Drawing
+  // the moon in the inverted color would look weird.)
+
+  // In the Basalt case, the only difference between moon_black and
+  // moon_white is the background color; in either case we draw them
+  // both in GCompOpSet.
   graphics_context_set_compositing_mode(ctx, draw_mode_table[moon_draw_mode].paint_black);
 
   if (config.lunar_direction) {
