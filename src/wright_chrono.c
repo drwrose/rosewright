@@ -107,7 +107,12 @@ void load_chrono_dial() {
   if (chrono_dial_white.bitmap == NULL) {
     bwd_destroy(&chrono_dial_white);
     trigger_memory_panic(__LINE__);
+    return;
   }
+
+  // We apply the color-inverting mode if necessary.
+  uint8_t xor_argb8 = config.draw_mode ? 0x3f : 0x00;
+  bwd_adjust_colors(&chrono_dial_white, 0xff, 0x00, xor_argb8);
 #endif  // PBL_PLATFORM_APLITE
 }
 

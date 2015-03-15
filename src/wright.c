@@ -445,12 +445,15 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
       gpath_draw_filled(ctx, hand_cache->path[gi]);
     }
     if (group->outline != 0) {
+#ifdef PBL_PLATFORM_APLITE
       GColor color = draw_mode_table[config.draw_mode].colors[group->outline];
 
-#ifndef PBL_PLATFORM_APLITE
+#else  // PBL_PLATFORM_APLITE
+      GColor color = draw_mode_table[0].colors[group->outline];
+
       uint8_t and_argb8 = clock_face_table[config.face_index].and_argb8;
       uint8_t or_argb8 = clock_face_table[config.face_index].or_argb8;
-      uint8_t xor_argb8 = 0x00;
+      uint8_t xor_argb8 = config.draw_mode ? 0x3f : 0x00;
       color.argb = (((color.argb & and_argb8) | or_argb8) ^ xor_argb8);
 #endif  // PBL_PLATFORM_APLITE
 
@@ -504,7 +507,8 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
 #ifndef PBL_PLATFORM_APLITE
       uint8_t and_argb8 = clock_face_table[config.face_index].and_argb8;
       uint8_t or_argb8 = clock_face_table[config.face_index].or_argb8;
-      bwd_adjust_colors(&hand_cache->image, and_argb8, or_argb8, 0x00);
+      uint8_t xor_argb8 = config.draw_mode ? 0x3f : 0x00;
+      bwd_adjust_colors(&hand_cache->image, and_argb8, or_argb8, xor_argb8);
 #endif  // PBL_PLATFORM_APLITE
       
       if (hand->flip_x) {
@@ -618,6 +622,11 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
       trigger_memory_panic(__LINE__);
       return;
     }
+
+#ifndef PBL_PLATFORM_APLITE
+    uint8_t xor_argb8 = config.draw_mode ? 0x3f : 0x00;
+    bwd_adjust_colors(&clock_face, 0xff, 0x00, xor_argb8);
+#endif  // PBL_PLATFORM_APLITE
   }
 
   // Draw the clock face into the layer.

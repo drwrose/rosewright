@@ -617,7 +617,7 @@ void bwd_adjust_colors(BitmapWithData *bwd, uint8_t and_argb8, uint8_t or_argb8,
   case GBitmapFormat1Bit:
   case GBitmapFormat8Bit:
   default:
-    app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "bwd_adjust_colors cannot invert non-palette format %d", format);
+    app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "bwd_adjust_colors cannot adjust non-palette format %d", format);
     return;
   }
 

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import PIL.Image
+import PIL.Image, PIL.ImageOps
 import sys
 import os
 import shutil
@@ -379,6 +379,14 @@ def make_rle_image_basalt(rleFilename, image):
     image = image.convert('RGBA')
     w, h = image.size
 
+    # Ensure the image is reduced to Basalt's 64 colors.
+    r, g, b, a = image.split()
+    r = PIL.ImageOps.posterize(r, 2)
+    g = PIL.ImageOps.posterize(g, 2)
+    b = PIL.ImageOps.posterize(b, 2)
+    a = PIL.ImageOps.posterize(a, 2)
+    image = PIL.Image.merge('RGBA', [r, g, b, a])
+    
     # Check the number of unique colors in the image to determine the
     # precise image type.
     colors = image.getcolors(16)
