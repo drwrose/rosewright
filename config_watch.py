@@ -552,6 +552,18 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
 
     # The mask already uses black as the background color, no need
     # to invert that.
+ 
+    if sourceMask:
+        # Ensure that the source image is black anywhere the mask
+        # is black.
+        black = PIL.Image.new('L', source.size, 0)
+        r, g, b = source.split()
+        threshold = [0] + [255] * 255
+        mask = sourceMask.point(threshold)
+        r = PIL.Image.composite(r, black, mask)
+        g = PIL.Image.composite(g, black, mask)
+        b = PIL.Image.composite(b, black, mask)
+        source = PIL.Image.merge('RGB', [r, g, b])
 
     # Center the source image on its pivot, and pad it with black.
     border = (pivot[0], pivot[1], source.size[0] - pivot[0], source.size[1] - pivot[1])

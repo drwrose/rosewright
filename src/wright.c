@@ -486,7 +486,7 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
 #ifdef PBL_PLATFORM_APLITE
   if (hand_def->resource_id == hand_def->resource_mask_id)
 #else
-    if (true)  // On Basalt, we always draw without the mask.
+  if (true)  // On Basalt, we always draw without the mask.
 #endif  // PBL_PLATFORM_APLITE
     {
     // The hand does not have a mask.  Draw the hand on top of the scene.
