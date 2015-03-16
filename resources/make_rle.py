@@ -42,6 +42,8 @@ GBitmapFormat2BitPalette = 3
 GBitmapFormat4BitPalette = 4
 
 
+threshold2Bit = [0] * 64 + [85] * 64 + [170] * 64 + [255] * 64
+
 
 def usage(code, msg = ''):
     print >> sys.stderr, help
@@ -391,10 +393,10 @@ def make_rle_image_basalt(rleFilename, image):
     b = PIL.Image.composite(b, black, mask)
 
     # Ensure the image is reduced to Basalt's 64 colors.
-    r = PIL.ImageOps.posterize(r, 2)
-    g = PIL.ImageOps.posterize(g, 2)
-    b = PIL.ImageOps.posterize(b, 2)
-    a = PIL.ImageOps.posterize(a, 2)
+    r = r.point(threshold2Bit)
+    g = g.point(threshold2Bit)
+    b = b.point(threshold2Bit)
+    a = a.point(threshold2Bit)
 
     image = PIL.Image.merge('RGBA', [r, g, b, a])
     
@@ -404,7 +406,6 @@ def make_rle_image_basalt(rleFilename, image):
 
     if colors is None:
         # We have a full-color image.
-        import pdb; pdb.set_trace()
         palette = None
         format = GBitmapFormat8Bit
         vn = 8
