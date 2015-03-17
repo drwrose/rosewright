@@ -36,6 +36,7 @@
   #define NDEBUG 1
 #endif
 
+#define DEFAULT_FACE_INDEX %(defaultFaceIndex)s
 #define DEFAULT_DATE_WINDOWS %(defaultDateWindows)s
  
 #define ENABLE_BLUETOOTH %(enableBluetooth)s

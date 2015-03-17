@@ -200,6 +200,14 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
     if (time != NULL) {
       time->tm_mday = 9;
     }
+
+    int moon_phase = 3;  // gibbous moon
+    gmt = (2551443 * moon_phase + 159465) / 8 + 1401302400;
+
+#ifdef MAKE_CHRONOGRAPH
+    chrono_data.running = false;
+    chrono_data.hold_ms = ((6 * 60) + 36) * 1000 + 900;  // 0:06:36.9
+#endif  // MAKE_CHRONOGRAPH
   }
   */
   

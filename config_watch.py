@@ -238,6 +238,7 @@ faces = {
         },
     'c' : {
         'filename' : ['c_face.png', 'c_face_rect.png'],
+        'default_face' : 1,
         'chrono' : ('c_face_chrono_tenths.png', 'c_face_chrono_hours.png'),
         'centers' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
         'date_window_a' : (52, 45, 'wt'),
@@ -938,6 +939,7 @@ def configWatch():
     print >> js, jsIn % {
         'watchName' : watchName,
         'numFaces' : numFaces,
+        'defaultFaceIndex' : defaultFaceIndex,
         'numDateWindows' : len(date_windows),
         'enableChronoDial' : int(makeChronograph),
         'supportMoon' : int(bool(supportMoon)),
@@ -967,6 +969,7 @@ def configWatch():
         'persistKey' : 0x5151 + uuId[-1],
         'supportRle' : int(bool(supportRle)),
         'numFaces' : numFaces,
+        'defaultFaceIndex' : defaultFaceIndex,
         'numDateWindows' : len(date_windows),
         'numStepsHour' : numSteps['hour'],
         'numStepsMinute' : numSteps['minute'],
@@ -1062,6 +1065,8 @@ faceFilenames = fd.get('filename')
 if isinstance(faceFilenames, type('')):
     faceFilenames = [faceFilenames]
 numFaces = len(faceFilenames)
+
+defaultFaceIndex = fd.get('default_face', 0)
 
 date_windows = []
 i = 0

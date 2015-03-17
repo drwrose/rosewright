@@ -18,7 +18,7 @@ void init_default_options() {
     CDM_tenths,
     false,
     0,
-    0,
+    DEFAULT_FACE_INDEX,
     { DEFAULT_DATE_WINDOWS },
     false,
     false,
