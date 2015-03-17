@@ -173,13 +173,15 @@ void hand_cache_destroy(struct HandCache *hand_cache) {
 // Determines the specific hand bitmaps that should be displayed based
 // on the current time.
 void compute_hands(struct tm *time, struct HandPlacement *placement) {
-  time_t s;
+  // Get the Unix time (in UTC).
+  time_t gmt;
   uint16_t t_ms;
-  unsigned int ms;
+  time_ms(&gmt, &t_ms);
 
-  // Compute the number of milliseconds since midnight.
-  time_ms(&s, &t_ms);
-  ms = (unsigned int)((s % SECONDS_PER_DAY) * 1000 + t_ms);
+  // Compute the number of milliseconds elapsed since midnight, local time.
+  struct tm *tm = localtime(&gmt);
+  unsigned int s = (unsigned int)(tm->tm_hour * 60 + tm->tm_min) * 60 + tm->tm_sec;
+  unsigned int ms = (unsigned int)(s * 1000 + t_ms);
 
 #ifdef FAST_TIME
   if (time != NULL) {
@@ -243,16 +245,14 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
       // Pebble user sets their watch before this time, the lunar
       // phase will be wrong--no big worries).  This date expressed in
       // Unix time is the value 1401302400.
-      unsigned int lunar_offset_s = (unsigned int)s - 1401302400;
+      unsigned int lunar_offset_s = (unsigned int)(gmt - 1401302400);
       
       // Now we have the number of seconds elapsed since a known new
       // moon.  To compute modulo 29.5305882 days using integer
       // arithmetic, we actually compute modulo 2551443 seconds.
       // (This integer computation is a bit less precise than the full
       // decimal value--by 2114 it have drifted off by about 2 hours.
-      // Close enough.  We don't account for timezone here anyway, and
-      // that's a much bigger error than this minor drift, but even
-      // that's pretty minor.)
+      // Close enough.)
       unsigned int lunar_age_s = lunar_offset_s % 2551443;
 
       // That gives the age of the moon in seconds.  We really want it

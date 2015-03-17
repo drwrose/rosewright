@@ -48,7 +48,7 @@ VibePattern tap = {
   1,
 };
 
-// Returns the number of milliseconds since midnight.
+// Returns the number of milliseconds since midnight, UTC.
 unsigned int get_time_ms() {
   time_t s;
   uint16_t ms;
