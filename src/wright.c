@@ -101,18 +101,18 @@ struct HandPlacement current_placement;
 // In Aplite, we have to decide carefully what compositing mode to
 // draw the hands.
 DrawModeTable draw_mode_table[2] = {
-  { GCompOpClear, GCompOpOr, GCompOpAssign, GCompOpAnd, GCompOpSet, { GColorClearInit, GColorBlackInit, GColorWhiteInit } },
-  { GCompOpOr, GCompOpClear, GCompOpAssignInverted, GCompOpSet, GCompOpAnd, { GColorClearInit, GColorWhiteInit, GColorBlackInit } },
+  { GCompOpClear, GCompOpOr, GCompOpAssign, { GColorClearInit, GColorBlackInit, GColorWhiteInit } },
+  { GCompOpOr, GCompOpClear, GCompOpAssignInverted, { GColorClearInit, GColorWhiteInit, GColorBlackInit } },
 };
 
 #else  // PBL_PLATFORM_APLITE
 
 // In Basalt, we always use GCompOpSet to draw the hands, because we
-// always use the alpha channel.  The only exception is paint_assign,
+// always use the alpha channel.  The exception is paint_assign,
 // because assign means assign.
 DrawModeTable draw_mode_table[2] = {
-  { GCompOpSet, GCompOpSet, GCompOpAssign, GCompOpSet, GCompOpSet, { GColorClearInit, GColorBlackInit, GColorWhiteInit } },
-  { GCompOpSet, GCompOpSet, GCompOpAssign, GCompOpSet, GCompOpSet, { GColorClearInit, GColorWhiteInit, GColorBlackInit } },
+  { GCompOpSet, GCompOpSet, GCompOpAssign, { GColorClearInit, GColorBlackInit, GColorWhiteInit } },
+  { GCompOpSet, GCompOpSet, GCompOpAssign, { GColorClearInit, GColorWhiteInit, GColorBlackInit } },
 };
 
 #endif  // PBL_PLATFORM_APLITE
@@ -539,10 +539,10 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
 
     if (hand_def->paint_black) {
       // Painting foreground ("white") pixels as black.
-      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
+      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_fg);
     } else {
       // Painting foreground ("white") pixels as white.
-      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
+      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_bg);
     }
     
     graphics_draw_bitmap_in_rect(ctx, hand_cache->image.bitmap, destination);
@@ -585,10 +585,10 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
     destination.origin.x = hand_def->place_x - hand_cache->cx;
     destination.origin.y = hand_def->place_y - hand_cache->cy;
 
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_fg);
     graphics_draw_bitmap_in_rect(ctx, hand_cache->mask.bitmap, destination);
     
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_bg);
     graphics_draw_bitmap_in_rect(ctx, hand_cache->image.bitmap, destination);
   }
 }
@@ -669,7 +669,7 @@ void draw_date_window_background(GContext *ctx, unsigned int fg_draw_mode, unsig
         return;
       }
     }
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[bg_draw_mode].paint_mask);
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[bg_draw_mode].paint_bg);
     graphics_draw_bitmap_in_rect(ctx, date_window_mask.bitmap, date_window_box);
   }
 #endif  // PBL_PLATFORM_APLITE
@@ -772,7 +772,7 @@ void draw_lunar_window(Layer *me, GContext *ctx, DateWindowMode dwm, bool invert
   // In the Basalt case, the only difference between moon_black and
   // moon_white is the background color; in either case we draw them
   // both in GCompOpSet.
-  graphics_context_set_compositing_mode(ctx, draw_mode_table[moon_draw_mode].paint_black);
+  graphics_context_set_compositing_mode(ctx, draw_mode_table[moon_draw_mode].paint_fg);
 
   if (config.lunar_direction) {
     graphics_draw_bitmap_in_rect(ctx, moon_bitmap.bitmap, date_window_box_offset);

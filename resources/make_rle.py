@@ -42,6 +42,7 @@ GBitmapFormat2BitPalette = 3
 GBitmapFormat4BitPalette = 4
 
 
+thresholdMask = [0] + [255] * 255
 threshold2Bit = [0] * 64 + [85] * 64 + [170] * 64 + [255] * 64
 
 
@@ -386,8 +387,7 @@ def make_rle_image_basalt(rleFilename, image):
     # Ensure that the RGB image is black anywhere the alpha
     # is black.
     black = PIL.Image.new('L', image.size, 0)
-    threshold = [0] + [255] * 255
-    mask = a.point(threshold)
+    mask = a.point(thresholdMask)
     r = PIL.Image.composite(r, black, mask)
     g = PIL.Image.composite(g, black, mask)
     b = PIL.Image.composite(b, black, mask)

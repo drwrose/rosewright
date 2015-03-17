@@ -42,10 +42,6 @@ Options:
         instead of as a watch face, to activate the chronograph
         buttons.
 
-    -i
-        Invert the hand color, for instance to apply a set of watch
-        hands meant for a white face onto a black face.
-
     -m
         Exclude moon-phase support.
 
@@ -121,17 +117,10 @@ watches = {
 #   hand - the hand type being defined.
 #   filename - the png image that defines this hand, pointing upward.
 #   colorMode - indicate how the colors in the png file are to be interpreted.
-#       The first part applies only to the Aplite build:
-#       'b'  - black pixels are drawn as black, white pixels are ignored.
-#       'w'  - white pixels are drawn as white, black pixels are ignored.
-#       '-b' - black pixels are drawn as white, white pixels are ignored.
-#       '-w' - white pixels are drawn as black, black pixels are ignored.
-#       't'  - opaque pixels are drawn in their own color,
-#              transparent pixels are ignored.  This doubles the
-#              resource cost.
-#       '-t' - opaque pixels are drawn in their opposite color,
-#              transparent pixels are ignored.  This doubles the
-#              resource cost.
+#       'b'  - foreground pixels are forced to black
+#       'w'  - foreground pixels are forced to white
+#       't'  - foreground pixels are drawn in their own color.
+#              This doubles the resource cost on Aplite.
 #       In addition, if any of the above is suffixed with '%', it
 #       means to dither the grayscale levels in the png file to
 #       produce the final black or white color pixel.  Without this
@@ -322,6 +311,7 @@ numStepsSweep = {
     'chrono_second' : 180,
     }
 
+thresholdMask = [0] + [255] * 255
 threshold1Bit = [0] * 128 + [255] * 128
 threshold2Bit = [0] * 64 + [85] * 64 + [170] * 64 + [255] * 64
 
@@ -335,37 +325,19 @@ def formatUuId(uuId):
 def parseColorMode(colorMode):
     paintBlack = False
     useTransparency = False
-    invertColors = False
     dither = False
-    blackToken, whiteToken = 'b', 'w'
 
-    inverted = False
-    if colorMode[0] == '-':
-        inverted = True
-        colorMode = colorMode[1:]
-    if invertHands:
-        inverted = not inverted
-
-    if inverted:
-        invertColors = True
-        blackToken, whiteToken = 'w', 'b'
-
-    if colorMode[0] == blackToken:
-        # Black is the foreground color.
-        invertColors = not invertColors
+    if colorMode[0] == 'b':
         paintBlack = True
-    elif colorMode[0] == whiteToken:
-        # White is the foreground color.
+    elif colorMode[0] == 'w':
         paintBlack = False
     elif colorMode[0] == 't':
-        invertColors = not invertColors
-        paintBlack = True
         useTransparency = True
 
     if colorMode.endswith('%'):
         dither = True
 
-    return paintBlack, useTransparency, invertColors, dither
+    return paintBlack, useTransparency, dither
 
 def makeFaces(generatedTable, generatedDefs):
 
@@ -532,38 +504,20 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
     handTableLines = []
 
     source = PIL.Image.open('%s/clock_hands/%s' % (resourcesDir, sourceFilename))
-    paintBlack, useTransparency, invertColors, dither = parseColorMode(colorMode)
+    paintBlack, useTransparency, dither = parseColorMode(colorMode)
 
-    if useTransparency or source.mode.endswith('A'):
-        r, g, b, sourceMask = source.convert('RGBA').split()
-        source = PIL.Image.merge('RGB', [r, g, b])
-    else:
-        source = source.convert('RGB')
-        sourceMask = None
-
-    # We must do the below operations with white as the foreground
-    # color and black as the background color, because the
-    # rotate() operation always fills with black, and getbbox() is
-    # always based on black.  Also, the Pebble library likes to
-    # use white as the foreground color too.  So, invert the image
-    # if necessary to make white the foreground color.
-    if invertColors:
-        source = PIL.ImageChops.invert(source)
-
-    # The mask already uses black as the background color, no need
-    # to invert that.
+    r, g, b, sourceMask = source.convert('RGBA').split()
+    source = PIL.Image.merge('RGB', [r, g, b])
  
-    if sourceMask:
-        # Ensure that the source image is black anywhere the mask
-        # is black.
-        black = PIL.Image.new('L', source.size, 0)
-        r, g, b = source.split()
-        threshold = [0] + [255] * 255
-        mask = sourceMask.point(threshold)
-        r = PIL.Image.composite(r, black, mask)
-        g = PIL.Image.composite(g, black, mask)
-        b = PIL.Image.composite(b, black, mask)
-        source = PIL.Image.merge('RGB', [r, g, b])
+    # Ensure that the source image is black anywhere the
+    # mask is black.
+    black = PIL.Image.new('L', source.size, 0)
+    r, g, b = source.split()
+    mask = sourceMask.point(thresholdMask)
+    r = PIL.Image.composite(r, black, mask)
+    g = PIL.Image.composite(g, black, mask)
+    b = PIL.Image.composite(b, black, mask)
+    source = PIL.Image.merge('RGB', [r, g, b])
 
     # Center the source image on its pivot, and pad it with black.
     border = (pivot[0], pivot[1], source.size[0] - pivot[0], source.size[1] - pivot[1])
@@ -572,9 +526,8 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
     large = PIL.Image.new('RGB', size, 0)
     large.paste(source, (center[0] - pivot[0], center[1] - pivot[1]))
 
-    if useTransparency:
-        largeMask = PIL.Image.new('L', size, 0)
-        largeMask.paste(sourceMask, (center[0] - pivot[0], center[1] - pivot[1]))
+    largeMask = PIL.Image.new('L', size, 0)
+    largeMask.paste(sourceMask, (center[0] - pivot[0], center[1] - pivot[1]))
 
     numStepsHand = getNumSteps(hand)
     for i in range(numStepsHand):
@@ -625,7 +578,7 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
         symbolName = '%s_%s' % (hand.upper(), i)
         symbolMaskName = symbolName
         if useTransparency:
-            symbolMaskName = '%s_%s_mask' % (hand.upper(), i)
+            symbolMaskName = '%s_%s_MASK' % (hand.upper(), i)
 
         if i not in handLookupLines:
             # Here we have a new rotation of the bitmap image to
@@ -658,23 +611,35 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
 
             cx, cy = p2.size[0] / 2, p2.size[1] / 2
             cropbox = p2.getbbox()
-            if useTransparency:
-                pm = largeMask.rotate(-angle, PIL.Image.BICUBIC, True)
-                pm = pm.resize(scaledSize, PIL.Image.ANTIALIAS)
 
-                # And the 1-bit version and 2-bit versions of the
-                # mask.
+            # Mask.
+            pm = largeMask.rotate(-angle, PIL.Image.BICUBIC, True)
+            pm = pm.resize(scaledSize, PIL.Image.ANTIALIAS)
+
+            # And the 1-bit version and 2-bit versions of the
+            # mask.
+            if not dither or useTransparency:
                 pm1 = pm.point(threshold1Bit).convert('1')
-                pm2 = pm.point(threshold2Bit).convert('L')
+            else:
+                pm1 = pm.convert('1')
+            pm2 = pm.point(threshold2Bit).convert('L')
 
-                # In the useTransparency case, it's important to take
-                # the crop from the alpha mask, not from the color.
-                cropbox = pm2.getbbox()
-                pm1 = pm1.crop(cropbox)
-                pm2 = pm2.crop(cropbox)
+            # It's important to take the crop from the alpha mask, not
+            # from the color.
+            cropbox = pm2.getbbox()
+            pm1 = pm1.crop(cropbox)
+            pm2 = pm2.crop(cropbox)
 
             p1 = p1.crop(cropbox)
             p2 = p2.crop(cropbox)
+
+            if not useTransparency:
+                # Force the foreground pixels to either black or white (for
+                # Basalt only; in the Aplite case these pixels are implicit).
+                if paintBlack:
+                    p2 = PIL.Image.new('RGB', p2.size, (0, 0, 0))
+                else:
+                    p2 = PIL.Image.new('RGB', p2.size, (255, 255, 255))
 
             cx, cy = cx - cropbox[0], cy - cropbox[1]
 
@@ -694,25 +659,13 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
                 pt = PIL.Image.new('RGB', (w, p2.size[1]), 0)
                 pt.paste(p2, (0, 0))
                 p2 = pt
-                if useTransparency:
-                    pt = PIL.Image.new('1', (w, pm1.size[1]), 0)
-                    pt.paste(pm1, (0, 0))
-                    pm1 = pt
-                    pt = PIL.Image.new('L', (w, pm2.size[1]), 0)
-                    pt.paste(pm2, (0, 0))
-                    pm2 = pt
 
-            if not useTransparency:
-                # In the Basalt non-transparency case, the grayscale
-                # color of the hand becomes the mask (which then
-                # becomes the alpha channel).
-                pm2 = p2.convert('L')
-                p2 = PIL.Image.new('RGB', p2.size, 0)
-
-            if useTransparency or not paintBlack:
-                # Re-invert the color in the Basalt case so it's the
-                # natural color.
-                p2 = PIL.ImageChops.invert(p2)
+                pt = PIL.Image.new('1', (w, pm1.size[1]), 0)
+                pt.paste(pm1, (0, 0))
+                pm1 = pt
+                pt = PIL.Image.new('L', (w, pm2.size[1]), 0)
+                pt.paste(pm2, (0, 0))
+                pm2 = pt
 
             # In the Basalt case, apply the mask as the alpha channel.
             r, g, b = p2.split()
@@ -722,9 +675,13 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
             # for half the RAM.
             p2 = p2.convert("P", palette = PIL.Image.ADAPTIVE, colors = 16)
 
-            if useTransparency:
-                # In the Aplite transparency case, we need to load a
-                # mask image.
+            if not useTransparency:
+                # In the Aplite non-transparency case, the mask
+                # becomes the image itself.
+                p1 = pm1
+            else:
+                # In the Aplite transparency case, we need to load the mask
+                # image separately.
                 targetMaskFilename = 'clock_hands/flat_%s_%s_%s_mask.png' % (handStyle, hand, i)
                 pm1.save('%s/%s' % (resourcesDir, targetMaskFilename))
                 rleFilename, ptype = make_rle(targetMaskFilename, useRle = useRle)
@@ -818,11 +775,11 @@ def makeHands(generatedTable, generatedDefs):
         if bitmapParams:
             resourceStr += makeBitmapHands(generatedTable, generatedDefs, useRle, hand, *bitmapParams)
             colorMode = bitmapParams[1]
-            paintBlack, useTransparency, invertColors, dither = parseColorMode(colorMode)
+            paintBlack, useTransparency, dither = parseColorMode(colorMode)
             resourceId = 'RESOURCE_ID_%s_0' % (hand.upper())
             resourceMaskId = resourceId
             if useTransparency:
-                resourceMaskId = 'RESOURCE_ID_%s_0_mask' % (hand.upper())
+                resourceMaskId = 'RESOURCE_ID_%s_0_MASK' % (hand.upper())
             bitmapCenters = '%s_hand_bitmap_lookup' % (hand)
             bitmapTable = '%s_hand_bitmap_table' % (hand)
 
@@ -1044,7 +1001,6 @@ except getopt.error, msg:
 watchStyle = None
 handStyle = None
 faceStyle = None
-invertHands = False
 supportSweep = False
 compileDebugging = False
 supportMoon = True
@@ -1073,8 +1029,6 @@ for opt, arg in opts:
         enableHourBuzzer = True
     elif opt == '-c':
         makeChronograph = True
-    elif opt == '-i':
-        invertHands = True
     elif opt == '-w':
         supportSweep = True
     elif opt == '-m':
