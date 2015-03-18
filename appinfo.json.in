@@ -6,6 +6,8 @@
   "companyName": "drwrose",
   "versionCode": 1,
   "versionLabel": "2.18",
+  "sdkVersion": "3",
+  "targetPlatforms": [ %(targetPlatforms)s ],
   "watchapp": {
     "watchface": %(watchface)s
   },
@@ -38,27 +40,27 @@
     {
       "name": "BATTERY_GAUGE_EMPTY",
       "file": "battery_gauge_empty.png",
-      "type": "png"
+      "type": "pbi"
     },
     {
       "name": "BATTERY_GAUGE_CHARGED",
       "file": "battery_gauge_charged.png",
-      "type": "png"
+      "type": "pbi"
     },
     {
       "name": "BATTERY_GAUGE_MASK",
       "file": "battery_gauge_mask.png",
-      "type": "png"
+      "type": "pbi"
     },
     {
       "name": "CHARGING",
       "file": "charging.png",
-      "type": "png"
+      "type": "pbi"
     },
     {
       "name": "CHARGING_MASK",
       "file": "charging_mask.png",
-      "type": "png"
+      "type": "pbi"
     },
     {
       "name": "BLUETOOTH_DISCONNECTED",

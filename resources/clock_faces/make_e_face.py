@@ -9,6 +9,7 @@ face = FaceMaker.FaceMaker(zoom = 1.0)
 
 face.drawTicks(60, 0.5, 2.0, width = 0.003)
 #face.drawTicks(12, 0.5, 2.0, width = 0.01)
+#face.drawTicks(60, 0.2, 1.7, width = 0.003); face.drawTicks(12, 0.2, 1.7, width = 0.009)
 
 # 1.0 = 317 ref pixels
 

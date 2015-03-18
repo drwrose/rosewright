@@ -1,5 +1,6 @@
 #include "wright.h"
 #include "wright_chrono.h"
+#include "antialiasing.h"
 
 #include "../resources/generated_table.c"
 #include "../resources/lang_table.c"
@@ -96,14 +97,32 @@ struct HandCache second_cache;
 
 struct HandPlacement current_placement;
 
+#ifdef PBL_PLATFORM_APLITE
+// In Aplite, we have to decide carefully what compositing mode to
+// draw the hands.
 DrawModeTable draw_mode_table[2] = {
-  { GCompOpClear, GCompOpOr, GCompOpAssign, GCompOpAnd, GCompOpSet, { GColorClear, GColorBlack, GColorWhite } },
-  { GCompOpOr, GCompOpClear, GCompOpAssignInverted, GCompOpSet, GCompOpAnd, { GColorClear, GColorWhite, GColorBlack } },
+  { GCompOpClear, GCompOpOr, GCompOpAssign, { GColorClearInit, GColorBlackInit, GColorWhiteInit } },
+  { GCompOpOr, GCompOpClear, GCompOpAssignInverted, { GColorClearInit, GColorWhiteInit, GColorBlackInit } },
 };
+
+#else  // PBL_PLATFORM_APLITE
+
+// In Basalt, we always use GCompOpSet to draw the hands, because we
+// always use the alpha channel.  The exception is paint_assign,
+// because assign means assign.
+DrawModeTable draw_mode_table[2] = {
+  { GCompOpSet, GCompOpSet, GCompOpAssign, { GColorClearInit, GColorBlackInit, GColorWhiteInit } },
+  { GCompOpSet, GCompOpSet, GCompOpAssign, { GColorClearInit, GColorWhiteInit, GColorBlackInit } },
+};
+
+#endif  // PBL_PLATFORM_APLITE
 
 unsigned char stacking_order[] = {
   STACKING_ORDER_LIST
 };
+
+void destroy_objects();
+void create_objects();
 
 // Loads a font from the resource and returns it.  It may return
 // either the intended font, or the fallback font.  If it returns
@@ -154,13 +173,15 @@ void hand_cache_destroy(struct HandCache *hand_cache) {
 // Determines the specific hand bitmaps that should be displayed based
 // on the current time.
 void compute_hands(struct tm *time, struct HandPlacement *placement) {
-  time_t s;
+  // Get the Unix time (in UTC).
+  time_t gmt;
   uint16_t t_ms;
-  unsigned int ms;
+  time_ms(&gmt, &t_ms);
 
-  // Compute the number of milliseconds since midnight.
-  time_ms(&s, &t_ms);
-  ms = (unsigned int)((s % SECONDS_PER_DAY) * 1000 + t_ms);
+  // Compute the number of milliseconds elapsed since midnight, local time.
+  struct tm *tm = localtime(&gmt);
+  unsigned int s = (unsigned int)(tm->tm_hour * 60 + tm->tm_min) * 60 + tm->tm_sec;
+  unsigned int ms = (unsigned int)(s * 1000 + t_ms);
 
 #ifdef FAST_TIME
   if (time != NULL) {
@@ -172,6 +193,24 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
   ms *= 67;
 #endif  // FAST_TIME
 
+  /*
+  // Hack for screenshots.
+  {
+    ms = ((10*60 + 9)*60 + 36) * 1000;  // 10:09:36
+    if (time != NULL) {
+      time->tm_mday = 9;
+    }
+
+    int moon_phase = 3;  // gibbous moon
+    gmt = (2551443 * moon_phase + 159465) / 8 + 1401302400;
+
+#ifdef MAKE_CHRONOGRAPH
+    chrono_data.running = false;
+    chrono_data.hold_ms = ((6 * 60) + 36) * 1000 + 900;  // 0:06:36.9
+#endif  // MAKE_CHRONOGRAPH
+  }
+  */
+  
   {
     // Avoid overflowing the integer arithmetic by pre-constraining
     // the ms value to the appropriate range.
@@ -214,16 +253,14 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
       // Pebble user sets their watch before this time, the lunar
       // phase will be wrong--no big worries).  This date expressed in
       // Unix time is the value 1401302400.
-      unsigned int lunar_offset_s = (unsigned int)s - 1401302400;
+      unsigned int lunar_offset_s = (unsigned int)(gmt - 1401302400);
       
       // Now we have the number of seconds elapsed since a known new
       // moon.  To compute modulo 29.5305882 days using integer
       // arithmetic, we actually compute modulo 2551443 seconds.
       // (This integer computation is a bit less precise than the full
       // decimal value--by 2114 it have drifted off by about 2 hours.
-      // Close enough.  We don't account for timezone here anyway, and
-      // that's a much bigger error than this minor drift, but even
-      // that's pretty minor.)
+      // Close enough.)
       unsigned int lunar_age_s = lunar_offset_s % 2551443;
 
       // That gives the age of the moon in seconds.  We really want it
@@ -257,22 +294,98 @@ uint8_t reverse_bits(uint8_t b) {
   return ((b * 0x0802LU & 0x22110LU) | (b * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16; 
 }
 
+// Reverse the four two-bit components of a byte.
+uint8_t reverse_2bits(uint8_t b) {
+  return ((b & 0x3) << 6) | ((b & 0xc) << 2) | ((b & 0x30) >> 2) | ((b & 0xc0) >> 6);
+}
+
+// Reverse the high nibble and low nibble of a byte.
+uint8_t reverse_nibbles(uint8_t b) {
+  return ((b & 0xf) << 4) | ((b >> 4) & 0xf);
+}
+
 // Horizontally flips the indicated GBitmap in-place.  Requires
 // that the width be a multiple of 8 pixels.
 void flip_bitmap_x(GBitmap *image, short *cx) {
-  int height = image->bounds.size.h;
-  int width = image->bounds.size.w;  // multiple of 8, by our convention.
-  int width_bytes = width / 8;
-  int stride = image->row_size_bytes; // multiple of 4, by Pebble.
-  uint8_t *data = image->addr;
+  if (image == NULL) {
+    // Trivial no-op.
+    return;
+  }
+  
+  int height = gbitmap_get_bounds(image).size.h;
+  int width = gbitmap_get_bounds(image).size.w;
+  int pixels_per_byte = 8;
+
+#ifndef PBL_PLATFORM_APLITE
+  switch (gbitmap_get_format(image)) {
+  case GBitmapFormat1Bit:
+  case GBitmapFormat1BitPalette:
+    pixels_per_byte = 8;
+    break;
+    
+  case GBitmapFormat2BitPalette:
+    pixels_per_byte = 4;
+    break;
+
+  case GBitmapFormat4BitPalette:
+    pixels_per_byte = 2;
+    break;
+
+  case GBitmapFormat8Bit:
+    pixels_per_byte = 1;
+    break;
+  }
+#endif  // PBL_PLATFORM_APLITE
+    
+  assert(width % pixels_per_byte == 0);  // This must be an even divisor, by our convention.
+  int width_bytes = width / pixels_per_byte;
+  int stride = gbitmap_get_bytes_per_row(image);
+  assert(stride >= width_bytes);
+
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "flip_bitmap_x, width_bytes = %d, stride=%d", width_bytes, stride);
+
+  uint8_t *data = gbitmap_get_data(image);
 
   for (int y = 0; y < height; ++y) {
     uint8_t *row = data + y * stride;
-    for (int x1 = (width_bytes - 1) / 2; x1 >= 0; --x1) {
-      int x2 = width_bytes - 1 - x1;
-      uint8_t b = reverse_bits(row[x1]);
-      row[x1] = reverse_bits(row[x2]);
-      row[x2] = b;
+    switch (pixels_per_byte) {
+    case 8:
+      for (int x1 = (width_bytes - 1) / 2; x1 >= 0; --x1) {
+        int x2 = width_bytes - 1 - x1;
+        uint8_t b = reverse_bits(row[x1]);
+        row[x1] = reverse_bits(row[x2]);
+        row[x2] = b;
+      }
+      break;
+
+#ifndef PBL_PLATFORM_APLITE
+    case 4:
+      for (int x1 = (width_bytes - 1) / 2; x1 >= 0; --x1) {
+        int x2 = width_bytes - 1 - x1;
+        uint8_t b = reverse_2bits(row[x1]);
+        row[x1] = reverse_2bits(row[x2]);
+        row[x2] = b;
+      }
+      break;
+      
+    case 2:
+      for (int x1 = (width_bytes - 1) / 2; x1 >= 0; --x1) {
+        int x2 = width_bytes - 1 - x1;
+        uint8_t b = reverse_nibbles(row[x1]);
+        row[x1] = reverse_nibbles(row[x2]);
+        row[x2] = b;
+      }
+      break;
+      
+    case 1:
+      for (int x1 = (width_bytes - 1) / 2; x1 >= 0; --x1) {
+        int x2 = width_bytes - 1 - x1;
+        uint8_t b = row[x1];
+        row[x1] = row[x2];
+        row[x2] = b;
+      }
+      break;
+#endif  // PBL_PLATFORM_APLITE
     }
   }
 
@@ -283,13 +396,10 @@ void flip_bitmap_x(GBitmap *image, short *cx) {
 
 // Vertically flips the indicated GBitmap in-place.
 void flip_bitmap_y(GBitmap *image, short *cy) {
-  int height = image->bounds.size.h;
-  int stride = image->row_size_bytes; // multiple of 4.
-  uint8_t *data = image->addr;
+  int height = gbitmap_get_bounds(image).size.h;
+  int stride = gbitmap_get_bytes_per_row(image); // multiple of 4.
+  uint8_t *data = gbitmap_get_data(image);
 
-#if 1
-  /* This is the slightly slower flip, that requires less RAM on the
-     stack. */
   uint8_t buffer[stride]; // gcc lets us do this.
   for (int y1 = (height - 1) / 2; y1 >= 0; --y1) {
     int y2 = height - 1 - y1;
@@ -298,18 +408,6 @@ void flip_bitmap_y(GBitmap *image, short *cy) {
     memcpy(data + y1 * stride, data + y2 * stride, stride);
     memcpy(data + y2 * stride, buffer, stride);
   }
-
-#else
-  /* This is the slightly faster flip, that requires more RAM on the
-     stack.  I have no idea what our stack limit is on the Pebble, or
-     what happens if we exceed it. */
-  uint8_t buffer[height * stride]; // gcc lets us do this.
-  memcpy(buffer, data, height * stride);
-  for (int y1 = 0; y1 < height; ++y1) {
-    int y2 = height - 1 - y1;
-    memcpy(data + y1 * stride, buffer + y2 * stride, stride);
-  }
-#endif
 
   if (cy != NULL) {
     *cy = height - 1 - *cy;
@@ -355,8 +453,20 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
       gpath_draw_filled(ctx, hand_cache->path[gi]);
     }
     if (group->outline != 0) {
-      graphics_context_set_stroke_color(ctx, draw_mode_table[config.draw_mode].colors[group->outline]);
-      gpath_draw_outline(ctx, hand_cache->path[gi]);
+#ifdef PBL_PLATFORM_APLITE
+      GColor color = draw_mode_table[config.draw_mode].colors[group->outline];
+
+#else  // PBL_PLATFORM_APLITE
+      GColor color = draw_mode_table[0].colors[group->outline];
+
+      uint8_t and_argb8 = clock_face_table[config.face_index].and_argb8;
+      uint8_t or_argb8 = clock_face_table[config.face_index].or_argb8;
+      uint8_t xor_argb8 = config.draw_mode ? 0x3f : 0x00;
+      color.argb = (((color.argb & and_argb8) | or_argb8) ^ xor_argb8);
+#endif  // PBL_PLATFORM_APLITE
+
+      graphics_context_set_stroke_color(ctx, color);
+      gpath_draw_outline_antialiased(ctx, hand_cache->path[gi], color);
     }
   }
 }
@@ -380,8 +490,13 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
 
   int hand_resource_id = hand_def->resource_id + bitmap_index;
   int hand_resource_mask_id = hand_def->resource_mask_id + bitmap_index;
- 
-  if (hand_def->resource_id == hand_def->resource_mask_id) {
+
+#ifdef PBL_PLATFORM_APLITE
+  if (hand_def->resource_id == hand_def->resource_mask_id)
+#else
+  if (true)  // On Basalt, we always draw without the mask.
+#endif  // PBL_PLATFORM_APLITE
+    {
     // The hand does not have a mask.  Draw the hand on top of the scene.
     if (hand_cache->image.bitmap == NULL) {
       if (hand_def->use_rle) {
@@ -396,7 +511,14 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
       }
       hand_cache->cx = lookup->cx;
       hand_cache->cy = lookup->cy;
-    
+
+#ifndef PBL_PLATFORM_APLITE
+      uint8_t and_argb8 = clock_face_table[config.face_index].and_argb8;
+      uint8_t or_argb8 = clock_face_table[config.face_index].or_argb8;
+      uint8_t xor_argb8 = config.draw_mode ? 0x3f : 0x00;
+      bwd_adjust_colors(&hand_cache->image, and_argb8, or_argb8, xor_argb8);
+#endif  // PBL_PLATFORM_APLITE
+      
       if (hand->flip_x) {
         // To minimize wasteful resource usage, if the hand is symmetric
         // we can store only the bitmaps for the right half of the clock
@@ -413,7 +535,7 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
     // We make sure the dimensions of the GRect to draw into
     // are equal to the size of the bitmap--otherwise the image
     // will automatically tile.
-    GRect destination = hand_cache->image.bitmap->bounds;
+    GRect destination = gbitmap_get_bounds(hand_cache->image.bitmap);
     
     // Place the hand's center point at place_x, place_y.
     destination.origin.x = hand_def->place_x - hand_cache->cx;
@@ -425,12 +547,12 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
 
     if (hand_def->paint_black) {
       // Painting foreground ("white") pixels as black.
-      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
+      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_fg);
     } else {
       // Painting foreground ("white") pixels as white.
-      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
+      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_bg);
     }
-      
+    
     graphics_draw_bitmap_in_rect(ctx, hand_cache->image.bitmap, destination);
     
   } else {
@@ -466,15 +588,15 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
       }
     }
     
-    GRect destination = hand_cache->image.bitmap->bounds;
+    GRect destination = gbitmap_get_bounds(hand_cache->image.bitmap);
     
     destination.origin.x = hand_def->place_x - hand_cache->cx;
     destination.origin.y = hand_def->place_y - hand_cache->cy;
 
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_white);
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_fg);
     graphics_draw_bitmap_in_rect(ctx, hand_cache->mask.bitmap, destination);
     
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_black);
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_bg);
     graphics_draw_bitmap_in_rect(ctx, hand_cache->image.bitmap, destination);
   }
 }
@@ -503,11 +625,16 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
 
   // Load the clock face from the resource file if we haven't already.
   if (clock_face.bitmap == NULL) {
-    clock_face = rle_bwd_create(clock_face_table[config.face_index]);
+    clock_face = rle_bwd_create(clock_face_table[config.face_index].resource_id);
     if (clock_face.bitmap == NULL) {
       trigger_memory_panic(__LINE__);
       return;
     }
+
+#ifndef PBL_PLATFORM_APLITE
+    uint8_t xor_argb8 = config.draw_mode ? 0x3f : 0x00;
+    bwd_adjust_colors(&clock_face, 0xff, 0x00, xor_argb8);
+#endif  // PBL_PLATFORM_APLITE
   }
 
   // Draw the clock face into the layer.
@@ -519,19 +646,19 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
 }
   
 void hour_layer_update_callback(Layer *me, GContext *ctx) {
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "hour_layer");
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "hour_layer");
 
   draw_hand(&hour_cache, &hour_hand_def, current_placement.hour_hand_index, ctx);
 }
 
 void minute_layer_update_callback(Layer *me, GContext *ctx) {
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "minute_layer");
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "minute_layer, heap = %d bytes free of %d total", heap_bytes_free(), heap_bytes_free() + heap_bytes_used());
 
   draw_hand(&minute_cache, &minute_hand_def, current_placement.minute_hand_index, ctx);
 }
 
 void second_layer_update_callback(Layer *me, GContext *ctx) {
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "second_layer");
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "second_layer");
 
   if (config.second_hand) {
     draw_hand(&second_cache, &second_hand_def, current_placement.second_hand_index, ctx);
@@ -540,6 +667,8 @@ void second_layer_update_callback(Layer *me, GContext *ctx) {
 
 // Draws the frame and optionally fills the background of the current date window.
 void draw_date_window_background(GContext *ctx, unsigned int fg_draw_mode, unsigned int bg_draw_mode, bool opaque_layer) {
+#ifdef PBL_PLATFORM_APLITE
+  // We only need the mask on Aplite.
   if (opaque_layer || bg_draw_mode != fg_draw_mode) {
     if (date_window_mask.bitmap == NULL) {
       date_window_mask = rle_bwd_create(RESOURCE_ID_DATE_WINDOW_MASK);
@@ -548,9 +677,10 @@ void draw_date_window_background(GContext *ctx, unsigned int fg_draw_mode, unsig
         return;
       }
     }
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[bg_draw_mode].paint_mask);
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[bg_draw_mode].paint_bg);
     graphics_draw_bitmap_in_rect(ctx, date_window_mask.bitmap, date_window_box);
   }
+#endif  // PBL_PLATFORM_APLITE
   
   if (date_window.bitmap == NULL) {
     date_window = rle_bwd_create(RESOURCE_ID_DATE_WINDOW);
@@ -559,8 +689,15 @@ void draw_date_window_background(GContext *ctx, unsigned int fg_draw_mode, unsig
       trigger_memory_panic(__LINE__);
       return;
     }
+#ifndef PBL_PLATFORM_APLITE
+    // On Basalt, if we have an inverse setting here we invert the
+    // bitmap colors.
+    if (fg_draw_mode) {
+      bwd_adjust_colors(&date_window, 0xff, 0x00, 0x3f);
+    }
+#endif  // PBL_PLATFORM_APLITE
   }
-
+  
   graphics_context_set_compositing_mode(ctx, draw_mode_table[fg_draw_mode].paint_fg);
   graphics_draw_bitmap_in_rect(ctx, date_window.bitmap, date_window_box);
 }
@@ -610,14 +747,12 @@ void draw_lunar_window(Layer *me, GContext *ctx, DateWindowMode dwm, bool invert
     moon_draw_mode = 1;
   }
 
-  draw_date_window_background(ctx, draw_mode, moon_draw_mode, opaque_layer);
-
   if (moon_bitmap.bitmap == NULL) {
     assert(current_placement.lunar_phase <= 7);
     if (moon_draw_mode == 0) {
-      moon_bitmap = rle_bwd_create(RESOURCE_ID_MOON_BLACK_0 + current_placement.lunar_phase);
-    } else {
       moon_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHITE_0 + current_placement.lunar_phase);
+    } else {
+      moon_bitmap = rle_bwd_create(RESOURCE_ID_MOON_BLACK_0 + current_placement.lunar_phase);
     }
     if (moon_bitmap.bitmap == NULL) {
       trigger_memory_panic(__LINE__);
@@ -633,13 +768,19 @@ void draw_lunar_window(Layer *me, GContext *ctx, DateWindowMode dwm, bool invert
     }
   }
 
-  // Draw the moon in the fg color.  This will be black-on-white if
-  // moon_draw_mode = 0, or white-on-black if moon_draw_mode = 1.
-  // Since we have selected the particular moon resource above based
-  // on draw_mode, we will always draw the moon in the correct color,
-  // so that it looks like the moon.  (Drawing the moon in the
-  // inverted color would look weird.)
-  graphics_context_set_compositing_mode(ctx, draw_mode_table[moon_draw_mode].paint_black);
+  draw_date_window_background(ctx, draw_mode, moon_draw_mode, opaque_layer);
+
+  // In the Aplite case, we draw the moon in the fg color.  This will
+  // be black-on-white if moon_draw_mode = 0, or white-on-black if
+  // moon_draw_mode = 1.  Since we have selected the particular moon
+  // resource above based on draw_mode, we will always draw the moon
+  // in the correct color, so that it looks like the moon.  (Drawing
+  // the moon in the inverted color would look weird.)
+
+  // In the Basalt case, the only difference between moon_black and
+  // moon_white is the background color; in either case we draw them
+  // both in GCompOpSet.
+  graphics_context_set_compositing_mode(ctx, draw_mode_table[moon_draw_mode].paint_fg);
 
   if (config.lunar_direction) {
     graphics_draw_bitmap_in_rect(ctx, moon_bitmap.bitmap, date_window_box_offset);
@@ -946,11 +1087,10 @@ void apply_config() {
     display_lang = config.display_lang;
   }
 
-#ifdef SUPPORT_MOON
-  // Reload the moon bitmap just for good measure.  Maybe the user
-  // changed the draw mode or the lunar direction.
-  bwd_destroy(&moon_bitmap);
-#endif  // SUPPORT_MOON
+  // Reload all bitmaps just for good measure.  Maybe the user changed
+  // the draw mode or something else.
+  destroy_objects();
+  create_objects();
 
   layer_mark_dirty(clock_face_layer);
 

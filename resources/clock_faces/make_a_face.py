@@ -14,7 +14,8 @@ face.drawRing(0.0512, 0.0225)
 #face.drawRing(0.0470, 0.0225)
 
 font = face.loadFont('effloresce.otf', 0.12)
-face.drawCircularLabels(face.romanLabels, 0.95, font, align = 'i', rotate = True)
+#face.drawCircularLabels(face.romanLabels, 0.95, font, align = 'i', rotate = True)
+face.drawCircularLabels(face.romanLabels, 0.92, font, align = 'i', rotate = False)
 
 face.pasteImage((0, -0.2), 'pebble_label.png', (13, 4), None)
 face.pasteImage((0.47, 0.53), 'corner_trim.png', (29, 29), None)
@@ -22,17 +23,5 @@ face.pasteImage((-0.47, 0.53), 'corner_trim.png', (29, 29), None, rotate = 90)
 face.pasteImage((-0.47, -0.53), 'corner_trim.png', (29, 29), None, rotate = 180)
 face.pasteImage((0.47, -0.53), 'corner_trim.png', (29, 29), None, rotate = 270)
 
-cx, cy = 0.220, -0.010
-face.pasteImage((cx, cy), 'date_card.png', (15, 8), None)
-print "date card = %s" % (face.p2s(cx, cy))
-
-face.save('a_face.png')
-
-if True: #False:
-    # Add the hands for illustrative purposes.
-    pixelScale = face.handScaleToPixelScale(0.12)
-    face.pasteImage((0, 0), '../clock_hands/a_hour_hand.png', (78, 410), pixelScale, rotate = 300)
-    face.pasteImage((0, 0), '../clock_hands/a_minute_hand.png', (37, 557), pixelScale, rotate = 54)
-    face.save('a_face_sample.png')
-    
+face.save('a_face_working.png')
 

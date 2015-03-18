@@ -2,7 +2,7 @@
 #define WRIGHT_H
 
 #include <pebble.h>
-
+#include "pebble_compat.h"
 #include "hand_table.h"
 #include "lang_table.h"
 #include "../resources/generated_config.h"
@@ -73,11 +73,10 @@ struct __attribute__((__packed__)) HandCache {
 // comments below the "fg color" is black in draw mode 0 and white in
 // draw mode 1.
 typedef struct {
-  GCompOp paint_black;  // paint the white pixels in the fg color
-  GCompOp paint_white;  // paint the white pixels in the bg color
+  GCompOp paint_fg;     // paint the white pixels of the hand in the fg color
+  GCompOp paint_bg;     // paint the white pixels of the mask in the bg color
   GCompOp paint_assign; // paint the black pixels in the fg color and the white pixels in the bg color
-  GCompOp paint_fg;     // paint the black pixels in the fg color
-  GCompOp paint_mask;   // paint the black pixels in the bg color
+
   GColor colors[3];     //  { clear, fg color, bg color }
 } __attribute__((__packed__)) DrawModeTable;
 

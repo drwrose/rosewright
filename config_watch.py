@@ -5,7 +5,7 @@ import PIL.ImageChops
 import sys
 import os
 import getopt
-from resources.make_rle import make_rle, make_rle_trans, make_rle_image
+from resources.make_rle import make_rle, make_rle_trans
 
 help = """
 config_watch.py
@@ -29,7 +29,7 @@ Options:
     -F style
         Overrides the face style.  The following styles are available:
           %(faceStyles)s
-          
+
     -S
         Suppress the second hand if it is defined.
 
@@ -42,21 +42,20 @@ Options:
         instead of as a watch face, to activate the chronograph
         buttons.
 
-    -i
-        Invert the hand color, for instance to apply a set of watch
-        hands meant for a white face onto a black face.
-
     -m
         Exclude moon-phase support.
 
     -x
         Perform no RLE compression of images.
 
+    -p platform[,platform]
+        Specifies the build platform (aplite and/or basalt).
+
     -d
         Compile for debugging.  Specifically this enables "fast time",
         so the hands move quickly about the face of the watch.  It
         also enables logging.
-        
+
 """
 
 def usage(code, msg = ''):
@@ -102,7 +101,7 @@ watches = {
     'd' : ('Rosewright D', 'd', 'd', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC8]),
     'e' : ('Rosewright E', 'e', 'e', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC9]),
     }
-    
+
 
 # Table of hand styles.  For each style, specify the following for
 # each hand type.  Bitmapped hands will have bitmapParams defined and
@@ -117,17 +116,11 @@ watches = {
 #
 #   hand - the hand type being defined.
 #   filename - the png image that defines this hand, pointing upward.
-#   colorMode - indicate how the colors in the png file are to be interpreted:
-#       'b'  - black pixels are drawn as black, white pixels are ignored.
-#       'w'  - white pixels are drawn as white, black pixels are ignored.
-#       '-b' - black pixels are drawn as white, white pixels are ignored.
-#       '-w' - white pixels are drawn as black, black pixels are ignored.
-#       't'  - opaque pixels are drawn in their own color,
-#              transparent pixels are ignored.  This doubles the
-#              resource cost.
-#       '-t' - opaque pixels are drawn in their opposite color,
-#              transparent pixels are ignored.  This doubles the
-#              resource cost.
+#   colorMode - indicate how the colors in the png file are to be interpreted.
+#       'b'  - foreground pixels are forced to black
+#       'w'  - foreground pixels are forced to white
+#       't'  - foreground pixels are drawn in their own color.
+#              This doubles the resource cost on Aplite.
 #       In addition, if any of the above is suffixed with '%', it
 #       means to dither the grayscale levels in the png file to
 #       produce the final black or white color pixel.  Without this
@@ -154,9 +147,9 @@ watches = {
 #
 
 hands = {
-    'a' : [('hour', ('a_hour_hand.png', 'b', False, (78, 410), 0.12), None),
-           ('minute', ('a_minute_hand.png', 'b', True, (37, 557), 0.12), None),
-           ('second', ('a_second_hand.png', 'b', False, (37, -28), 0.12),
+    'a' : [('hour', ('a_hour_hand.png', 'b', False, (78, 398), 0.12), None),
+           ('minute', ('a_minute_hand.png', 'b', True, (37, 553), 0.12), None),
+           ('second', ('a_second_hand.png', 'b', False, (37, -24), 0.12),
             [('b', [(0, -5), (0, -70)])]),
            ],
     'b' : [('hour', ('b_hour_hand.png', 'b', False, (33, 211), 0.27), None),
@@ -167,7 +160,7 @@ hands = {
            ],
     'c' : [('hour', ('c_hour_hand.png', 't%', False, (59, 434), 0.14), None),
            ('minute', ('c_minute_hand.png', 't%', False, (38, 584), 0.14), None),
-           ('second', ('c_chrono1_hand.png', 'w', False, (32, -27), 0.14), 
+           ('second', ('c_chrono1_hand.png', 'w', False, (32, -27), 0.14),
             [('w', [(0, -2), (0, -26)]),
              ]),
            ('chrono_minute', ('c_chrono2_hand.png', 'w', False, (37, 195), 0.14), None),
@@ -184,9 +177,7 @@ hands = {
            ],
     'e' : [('hour', ('e_hour_hand.png', 't%', False, (28, 99), 0.53), None),
            ('minute', ('e_minute_hand.png', 't%', False, (22, 142), 0.53), None),
-           ('second', ('d_second_hand.png', 'b', False, (14, -8), 0.24),
-            [('b', [(0, -3), (0, -63)]),
-             ]),
+           ('second', ('e_second_hand.png', 't%', False, (18, 269), 0.24), None),
            ],
     }
 
@@ -194,6 +185,7 @@ hands = {
 #
 #   filename  - the background image for the face, or a list of optional faces.
 #   chrono    - the (tenths, hours) images for the two chrono dials, if used.
+#   hand_color    - the (and, or) tuple to adjust the hand colors in a Basalt build.
 #   date_window_a - the (x, y, c) position, color, background of the first date window.
 #   date_window_b - the (x, y, c) position, color, background of the second date window.
 #   date_window_c - etc.  All date windows must be consecutively named.
@@ -226,9 +218,9 @@ faces = {
     'a' : {
         'filename': ['a_face.png', 'a_face_unrotated.png'],
         'date_window_a': (38, 82, 'b'),
-        'date_window_b': (106, 82, 'b'), 
-        'date_window_c' : (52, 109, 'b'), 
-        'date_window_d' : (92, 109, 'b'), 
+        'date_window_b': (106, 82, 'b'),
+        'date_window_c' : (52, 109, 'b'),
+        'date_window_d' : (92, 109, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : (37, 47, 'b'),
         'battery' : (92, 51, 'b'),
@@ -236,20 +228,21 @@ faces = {
         },
     'b' : {
         'filename' : ['b_face_rect.png', 'b_face.png'],
-        'date_window_a' : (72, 54, 'bt'), 
-        'date_window_b' : (52, 109, 'b'), 
-        'date_window_c' : (92, 109, 'b'), 
+        'date_window_a' : (72, 54, 'bt'),
+        'date_window_b' : (52, 109, 'b'),
+        'date_window_c' : (92, 109, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : (0, 0, 'bt'),
         'battery' : (125, 3, 'bt'),
-        'defaults' : [ 'day:b', 'date:c' ],
+        'defaults' : [ 'day:b', 'date:c', 'moon:a' ],
         },
     'c' : {
         'filename' : ['c_face.png', 'c_face_rect.png'],
+        'default_face' : 1,
         'chrono' : ('c_face_chrono_tenths.png', 'c_face_chrono_hours.png'),
         'centers' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
         'date_window_a' : (52, 45, 'wt'),
-        'date_window_b' : (92, 45, 'wt'), 
+        'date_window_b' : (92, 45, 'wt'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : [ (0, 0, 'w'), (16, 18, 'w'), ],
         'battery' : [ (125, 3, 'w'), (109, 21, 'w'), ],
@@ -257,6 +250,7 @@ faces = {
         },
     'd' : {
         'filename' : ['d_face_rect.png', 'd_face_rect_clean.png', 'd_face.png', 'd_face_clean.png'],
+        'hand_color' : [ (0xff, 0x02), (0xff, 0x02), (0xff, 0x02), (0xff, 0x02) ],
         'date_window_a': [ (49, 102, 'wt'), (49, 102, 'b'),
                            (41, 82, 'wt'), (41, 82, 'b'), ],
         'date_window_b': [ (95, 102, 'wt'), (95, 102, 'b'),
@@ -266,7 +260,7 @@ faces = {
         'date_window_d' : [ (95, 125, 'wt'), (95, 125, 'b'),
                             (92, 107, 'wt'), (92, 107, 'b'), ],
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
-        'bluetooth' : [ (49, 45, 'bt'), (49, 45, 'b'),
+        'bluetooth' : [ (49, 45, 'bt'), (49, 45, 'bt'),
                         (0, 0, 'w'), (0, 0, 'w'), ],
         'battery' : [ (79, 49, 'bt'), (79, 49, 'bt'),
                       (125, 3, 'w'), (125, 3, 'w'), ],
@@ -274,10 +268,11 @@ faces = {
         },
     'e' : {
         'filename' : ['e_face.png', 'e_face_white.png'],
+        'hand_color' : [ (0xfe, 0x00), (0xff, 0x00) ],
         'date_window_a' : (72, 21, 'bt'),
-        'date_window_b' : (21, 82, 'bt'), 
-        'date_window_c' : (123, 82, 'bt'), 
-        'date_window_d' : (72, 146, 'bt'), 
+        'date_window_b' : (21, 82, 'bt'),
+        'date_window_c' : (123, 82, 'bt'),
+        'date_window_d' : (72, 146, 'bt'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : [ (11, 12, 'w'), (11, 12, 'b'), ],
         'battery' : [ (115, 16, 'w'), (115, 16, 'b'), ],
@@ -317,9 +312,9 @@ numStepsSweep = {
     'chrono_second' : 180,
     }
 
-# The threshold level for dropping to 1-bit images.
-threshold = 127
-thresholdMap = [0] * (256 - threshold) + [255] * (threshold)
+thresholdMask = [0] + [255] * 255
+threshold1Bit = [0] * 128 + [255] * 128
+threshold2Bit = [0] * 64 + [85] * 64 + [170] * 64 + [255] * 64
 
 # Attempt to determine the directory in which we're operating.
 rootDir = os.path.dirname(__file__) or '.'
@@ -331,55 +326,37 @@ def formatUuId(uuId):
 def parseColorMode(colorMode):
     paintBlack = False
     useTransparency = False
-    invertColors = False
     dither = False
-    blackToken, whiteToken = 'b', 'w'
 
-    inverted = False
-    if colorMode[0] == '-':
-        inverted = True
-        colorMode = colorMode[1:]
-    if invertHands:
-        inverted = not inverted
-
-    if inverted:
-        invertColors = True
-        blackToken, whiteToken = 'w', 'b'
-
-    if colorMode[0] == blackToken:
-        # Black is the foreground color.
-        invertColors = not invertColors
+    if colorMode[0] == 'b':
         paintBlack = True
-    elif colorMode[0] == whiteToken:
-        # White is the foreground color.
+    elif colorMode[0] == 'w':
         paintBlack = False
     elif colorMode[0] == 't':
-        invertColors = not invertColors
-        paintBlack = True
         useTransparency = True
 
     if colorMode.endswith('%'):
         dither = True
 
-    return paintBlack, useTransparency, invertColors, dither
-        
+    return paintBlack, useTransparency, dither
+
 def makeFaces(generatedTable, generatedDefs):
 
     resourceStr = ''
-    
-    clockFaceEntry = """
+
+    faceResourceEntry = """
     {
       "name": "CLOCK_FACE_%(index)s",
       "file": "%(rleFilename)s",
       "type": "%(ptype)s"
-    },"""    
-    
+    },"""
+
     dateWindowEntry = """
     {
       "name": "%(name)s",
       "file": "%(rleFilename)s",
       "type": "%(ptype)s"
-    },"""    
+    },"""
 
     chronoResourceEntry = """
     {
@@ -401,7 +378,7 @@ def makeFaces(generatedTable, generatedDefs):
       "name": "CHRONO_DIAL_HOURS_BLACK",
       "file": "%(targetChronoHoursBlack)s",
       "type": "%(ptype)s"
-    },"""    
+    },"""
 
     fd = faces[faceStyle]
     faceFilenames = fd.get('filename')
@@ -414,15 +391,25 @@ def makeFaces(generatedTable, generatedDefs):
     if chronoFilenames:
         targetChronoTenths, targetChronoHours = chronoFilenames
 
-    print >> generatedTable, "unsigned int clock_face_table[NUM_FACES] = {"
-    for i in range(len(faceFilenames)):
-        print >> generatedTable, "  RESOURCE_ID_CLOCK_FACE_%s," % (i)
+    handColors = fd.get('hand_color')
+    if not handColors:
+      handColors = [(0xff, 0x00)] * len(faceFilenames)
+    elif isinstance(handColors[0], type(0x00)):
+      handColors = [handColors] * len(faceFilenames)
+    assert len(faceFilenames) == len(handColors)
         
+    print >> generatedTable, "struct FaceDef clock_face_table[NUM_FACES] = {"
+    for i in range(len(faceFilenames)):
+        print >> generatedTable, "  { RESOURCE_ID_CLOCK_FACE_%s, %s, %s }," % (
+          i, handColors[i][0], handColors[i][1])
+
         rleFilename, ptype = make_rle('clock_faces/' + faceFilenames[i], useRle = supportRle)
-        resourceStr += clockFaceEntry % {
+        resourceStr += faceResourceEntry % {
             'index' : i,
             'rleFilename' : rleFilename,
             'ptype' : ptype,
+            'and_argb8' : handColors[i][0],
+            'or_argb8' : handColors[i][1],
             }
     print >> generatedTable, "};\n"
 
@@ -443,7 +430,7 @@ def makeFaces(generatedTable, generatedDefs):
                 'rleFilename' : rleFilename,
                 'ptype' : ptype,
                 }
-        
+
     if targetChronoTenths:
         tenthsWhite, tenthsBlack, ptype = make_rle_trans('clock_faces/' + targetChronoTenths, useRle = supportRle)
         hoursWhite, hoursBlack, ptype = make_rle_trans('clock_faces/' + targetChronoHours, useRle = supportRle)
@@ -476,7 +463,7 @@ def makeVectorHands(generatedTable, generatedDefs, hand, groupList):
         for px, py in points:
             print >> generatedTable, "    { %s, %s }," % (px, py)
         print >> generatedTable, "  } } },"
-    
+
     print >> generatedTable, "  }"
     print >> generatedTable, "};\n"
 
@@ -497,7 +484,7 @@ def getNumSteps(hand):
                 numStepsHand = numStepsSweep[hand]
 
     return numStepsHand
-                
+
 
 def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename, colorMode, asymmetric, pivot, scale):
     resourceStr = ''
@@ -506,57 +493,42 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
     resourceEntry = """
     {
       "name": "%(defName)s",
-      "file": "clock_hands/%(targetFilename)s",
+      "file": "%(targetFilename)s",
       "type": "%(ptype)s"
-    },"""    
+    },"""
 
     handLookupEntry = """  { %(cx)s, %(cy)s },  // %(symbolName)s"""
     handTableEntry = """  { %(lookup_index)s, %(flip_x)s, %(flip_y)s },"""
-    
+
     handLookupLines = {}
     maxLookupIndex = -1
     handTableLines = []
 
     source = PIL.Image.open('%s/clock_hands/%s' % (resourcesDir, sourceFilename))
+    paintBlack, useTransparency, dither = parseColorMode(colorMode)
 
-    paintBlack, useTransparency, invertColors, dither = parseColorMode(colorMode)
-
-    if useTransparency or source.mode.endswith('A'):
-        source, sourceMask = source.convert('LA').split()
-    else:
-        source = source.convert('L')
-        sourceMask = None
-
-    # We must do the below operations with white as the foreground
-    # color and black as the background color, because the
-    # rotate() operation always fills with black, and getbbox() is
-    # always based on black.  Also, the Pebble library likes to
-    # use white as the foreground color too.  So, invert the image
-    # if necessary to make white the foreground color.
-    if invertColors:
-        source = PIL.ImageChops.invert(source)
-
-    # The mask already uses black as the background color, no need
-    # to invert that.
-
-    if sourceMask:
-        # Ensure that the source image is black anywhere the mask
-        # is black (sometimes there is junk in the original png
-        # image outside of the alpha channel coverage that the
-        # artist didn't even know about).
-        black = PIL.Image.new('L', source.size, 0)
-        source = PIL.Image.composite(source, black, sourceMask)
+    r, g, b, sourceMask = source.convert('RGBA').split()
+    source = PIL.Image.merge('RGB', [r, g, b])
+ 
+    # Ensure that the source image is black anywhere the
+    # mask is black.
+    black = PIL.Image.new('L', source.size, 0)
+    r, g, b = source.split()
+    mask = sourceMask.point(thresholdMask)
+    r = PIL.Image.composite(r, black, mask)
+    g = PIL.Image.composite(g, black, mask)
+    b = PIL.Image.composite(b, black, mask)
+    source = PIL.Image.merge('RGB', [r, g, b])
 
     # Center the source image on its pivot, and pad it with black.
     border = (pivot[0], pivot[1], source.size[0] - pivot[0], source.size[1] - pivot[1])
     size = (max(border[0], border[2]) * 2, max(border[1], border[3]) * 2)
     center = (size[0] / 2, size[1] / 2)
-    large = PIL.Image.new('L', size, 0)
+    large = PIL.Image.new('RGB', size, 0)
     large.paste(source, (center[0] - pivot[0], center[1] - pivot[1]))
 
-    if useTransparency:
-        largeMask = PIL.Image.new('L', size, 0)
-        largeMask.paste(sourceMask, (center[0] - pivot[0], center[1] - pivot[1]))
+    largeMask = PIL.Image.new('L', size, 0)
+    largeMask.paste(sourceMask, (center[0] - pivot[0], center[1] - pivot[1]))
 
     numStepsHand = getNumSteps(hand)
     for i in range(numStepsHand):
@@ -607,7 +579,7 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
         symbolName = '%s_%s' % (hand.upper(), i)
         symbolMaskName = symbolName
         if useTransparency:
-            symbolMaskName = '%s_%s_mask' % (hand.upper(), i)
+            symbolMaskName = '%s_%s_MASK' % (hand.upper(), i)
 
         if i not in handLookupLines:
             # Here we have a new rotation of the bitmap image to
@@ -623,22 +595,52 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
             p = large.rotate(-angle, PIL.Image.BICUBIC, True)
             scaledSize = (int(p.size[0] * scale + 0.5), int(p.size[1] * scale + 0.5))
             p = p.resize(scaledSize, PIL.Image.ANTIALIAS)
-            if not dither:
-                p = p.point(thresholdMap)
-            p = p.convert('1')
 
-            cx, cy = p.size[0] / 2, p.size[1] / 2
-            cropbox = p.getbbox()
-            if useTransparency:
-                pm = largeMask.rotate(-angle, PIL.Image.BICUBIC, True)
-                pm = pm.resize(scaledSize, PIL.Image.ANTIALIAS)
-                pm = pm.point(thresholdMap)
-                pm = pm.convert('1')
-                # In the useTransparency case, it's important to take
-                # the crop from the alpha mask, not from the color.
-                cropbox = pm.getbbox() 
-                pm = pm.crop(cropbox)
-            p = p.crop(cropbox)
+            # Now make the 1-bit version for Aplite and the 2-bit
+            # version for Basalt.
+            r, g, b = p.split()
+            if not dither:
+                p1 = b.point(threshold1Bit).convert('1')
+            else:
+                p1 = b.convert('1')
+
+            r, g, b = p.split()
+            r = r.point(threshold2Bit).convert('L')
+            g = g.point(threshold2Bit).convert('L')
+            b = b.point(threshold2Bit).convert('L')
+            p2 = PIL.Image.merge('RGB', [r, g, b])
+
+            cx, cy = p2.size[0] / 2, p2.size[1] / 2
+            cropbox = p2.getbbox()
+
+            # Mask.
+            pm = largeMask.rotate(-angle, PIL.Image.BICUBIC, True)
+            pm = pm.resize(scaledSize, PIL.Image.ANTIALIAS)
+
+            # And the 1-bit version and 2-bit versions of the
+            # mask.
+            if not dither or useTransparency:
+                pm1 = pm.point(threshold1Bit).convert('1')
+            else:
+                pm1 = pm.convert('1')
+            pm2 = pm.point(threshold2Bit).convert('L')
+
+            # It's important to take the crop from the alpha mask, not
+            # from the color.
+            cropbox = pm2.getbbox()
+            pm1 = pm1.crop(cropbox)
+            pm2 = pm2.crop(cropbox)
+
+            p1 = p1.crop(cropbox)
+            p2 = p2.crop(cropbox)
+
+            if not useTransparency:
+                # Force the foreground pixels to either black or white (for
+                # Basalt only; in the Aplite case these pixels are implicit).
+                if paintBlack:
+                    p2 = PIL.Image.new('RGB', p2.size, (0, 0, 0))
+                else:
+                    p2 = PIL.Image.new('RGB', p2.size, (255, 255, 255))
 
             cx, cy = cx - cropbox[0], cy - cropbox[1]
 
@@ -647,55 +649,59 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
 
             # We require our images to be an even multiple of 8 pixels
             # wide, to make it easier to reverse the bits
-            # horizontally.  This doesn't consume any extra memory,
-            # however, since the bits are there whether we use them or
-            # not.
-            w = 8 * ((p.size[0] + 7) / 8)
-            if w != p.size[0]:
-                p1 = PIL.Image.new('1', (w, p.size[1]), 0)
-                p1.paste(p, (0, 0))
-                p = p1
-                if useTransparency:
-                    p1 = PIL.Image.new('1', (w, p.size[1]), 0)
-                    p1.paste(pm, (0, 0))
-                    pm = p1
+            # horizontally.  (Actually we only need it to be an even
+            # multiple of bytes, but the Aplite build is the lowest
+            # common denominator with 8 pixels per byte.)
+            w = 8 * ((p2.size[0] + 7) / 8)
+            if w != p2.size[0]:
+                pt = PIL.Image.new('1', (w, p1.size[1]), 0)
+                pt.paste(p1, (0, 0))
+                p1 = pt
+                pt = PIL.Image.new('RGB', (w, p2.size[1]), 0)
+                pt.paste(p2, (0, 0))
+                p2 = pt
 
-            if useRle:
-                targetFilename = 'flat_%s_%s_%s.rle' % (handStyle, hand, i)
-                make_rle_image('%s/clock_hands/%s' % (resourcesDir, targetFilename), p)
-                resourceStr += resourceEntry % {
-                    'defName' : symbolName,
-                    'targetFilename' : targetFilename,
-                    'ptype' : 'raw',
-                    }
+                pt = PIL.Image.new('1', (w, pm1.size[1]), 0)
+                pt.paste(pm1, (0, 0))
+                pm1 = pt
+                pt = PIL.Image.new('L', (w, pm2.size[1]), 0)
+                pt.paste(pm2, (0, 0))
+                pm2 = pt
+
+            # In the Basalt case, apply the mask as the alpha channel.
+            r, g, b = p2.split()
+            p2 = PIL.Image.merge('RGBA', [r, g, b, pm2])
+
+            # And quantize to 16 colors, which looks almost as good
+            # for half the RAM.
+            p2 = p2.convert("P", palette = PIL.Image.ADAPTIVE, colors = 16)
+
+            if not useTransparency:
+                # In the Aplite non-transparency case, the mask
+                # becomes the image itself.
+                p1 = pm1
             else:
-                targetFilename = 'flat_%s_%s_%s.png' % (handStyle, hand, i)
-                print targetFilename
-                p.save('%s/clock_hands/%s' % (resourcesDir, targetFilename))
-                resourceStr += resourceEntry % {
-                    'defName' : symbolName,
-                    'targetFilename' : targetFilename,
-                    'ptype' : 'png',
+                # In the Aplite transparency case, we need to load the mask
+                # image separately.
+                targetMaskFilename = 'clock_hands/flat_%s_%s_%s_mask.png' % (handStyle, hand, i)
+                pm1.save('%s/%s' % (resourcesDir, targetMaskFilename))
+                rleFilename, ptype = make_rle(targetMaskFilename, useRle = useRle)
+                maskResourceStr += resourceEntry % {
+                    'defName' : symbolMaskName,
+                    'targetFilename' : rleFilename,
+                    'ptype' : ptype,
                     }
 
-            if useTransparency:
-                if useRle:
-                    targetMaskFilename = 'flat_%s_%s_%s_mask.rle' % (handStyle, hand, i)
-                    make_rle_image('%s/clock_hands/%s' % (resourcesDir, targetMaskFilename), pm)
-                    maskResourceStr += resourceEntry % {
-                        'defName' : symbolMaskName,
-                        'targetFilename' : targetMaskFilename,
-                        'ptype' : 'raw',
-                        }
-                else:
-                    targetMaskFilename = 'flat_%s_%s_%s_mask.png' % (handStyle, hand, i)
-                    print targetMaskFilename
-                    pm.save('%s/clock_hands/%s' % (resourcesDir, targetMaskFilename))
-                    maskResourceStr += resourceEntry % {
-                        'defName' : symbolMaskName,
-                        'targetFilename' : targetMaskFilename,
-                        'ptype' : 'png',
-                        }
+            targetBasename = 'clock_hands/flat_%s_%s_%s' % (handStyle, hand, i)
+            p1.save('%s/%s~bw.png' % (resourcesDir, targetBasename))
+            p2.save('%s/%s.png' % (resourcesDir, targetBasename))
+            rleFilename, ptype = make_rle(targetBasename + '.png', useRle = useRle)
+
+            resourceStr += resourceEntry % {
+                'defName' : symbolName,
+                'targetFilename' : rleFilename,
+                'ptype' : ptype,
+                }
 
             line = handLookupEntry % {
                 'symbolName' : symbolName,
@@ -728,7 +734,7 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
 def makeHands(generatedTable, generatedDefs):
     """ Generates the required resources and tables for the indicated
     hand style.  Returns resourceStr. """
-    
+
     resourceStr = ''
 
     handDefEntry = """struct HandDef %(hand)s_hand_def = {
@@ -741,21 +747,21 @@ def makeHands(generatedTable, generatedDefs):
     %(bitmapTable)s,
     %(vectorTable)s,
 };
-"""    
+"""
 
     for hand, bitmapParams, vectorParams in hands[handStyle]:
         useRle = supportRle
         if hand == 'second':
             global enableSecondHand
             enableSecondHand = True
-            useRle = False
+            #useRle = False
         elif hand == 'chrono_minute':
             global enableChronoMinuteHand
             enableChronoMinuteHand = True
         elif hand == 'chrono_second':
             global enableChronoSecondHand
             enableChronoSecondHand = True
-            useRle = False
+            #useRle = False
         elif hand == 'chrono_tenth':
             global enableChronoTenthHand
             enableChronoTenthHand = True
@@ -766,22 +772,22 @@ def makeHands(generatedTable, generatedDefs):
         bitmapCenters = 'NULL'
         bitmapTable = 'NULL'
         vectorTable = 'NULL'
-            
+
         if bitmapParams:
             resourceStr += makeBitmapHands(generatedTable, generatedDefs, useRle, hand, *bitmapParams)
             colorMode = bitmapParams[1]
-            paintBlack, useTransparency, invertColors, dither = parseColorMode(colorMode)
+            paintBlack, useTransparency, dither = parseColorMode(colorMode)
             resourceId = 'RESOURCE_ID_%s_0' % (hand.upper())
             resourceMaskId = resourceId
             if useTransparency:
-                resourceMaskId = 'RESOURCE_ID_%s_0_mask' % (hand.upper())
+                resourceMaskId = 'RESOURCE_ID_%s_0_MASK' % (hand.upper())
             bitmapCenters = '%s_hand_bitmap_lookup' % (hand)
             bitmapTable = '%s_hand_bitmap_table' % (hand)
-            
+
         if vectorParams:
             resourceStr += makeVectorHands(generatedTable, generatedDefs, hand, vectorParams)
             vectorTable = '&%s_hand_vector_table' % (hand)
-    
+
         handDef = handDefEntry % {
             'hand' : hand,
             'handUpper' : hand.upper(),
@@ -804,7 +810,7 @@ def getIndicator(fd, indicator):
     """ Gets an indicator tuple from the config dictionary.  Finds
     either a tuple or a list of tuples; in either case returns a list
     of tuples. """
-    
+
     list = fd.get(indicator, None)
     if not isinstance(list, type([])):
         list = [list]
@@ -821,7 +827,7 @@ def makeIndicatorTable(generatedTable, generatedDefs, name, indicator, anonymous
         return
     if len(indicator) == 1 and numFaces != 1:
         indicator = [indicator[0]] * numFaces
-        
+
     assert len(indicator) == numFaces
 
     if anonymous:
@@ -843,7 +849,7 @@ def makeIndicatorTable(generatedTable, generatedDefs, name, indicator, anonymous
 
 def makeMoon():
     """ Returns the resource strings needed to include the moon phase icons. """
-    
+
     moonPhaseEntry = """
     {
       "name": "MOON_%(cat)s_%(index)s",
@@ -855,7 +861,7 @@ def makeMoon():
 
     # moon_white_*.png is for when the moon is to be drawn as white pixels on black.
     # moon_black_*.png is for when the moon is to be drawn as black pixels on white.
-    
+
     for cat in ['white', 'black']:
         for index in range(8):
             rleFilename, ptype = make_rle('clock_faces/moon_%s_%s.png' % (cat, index), useRle = supportRle)
@@ -867,7 +873,15 @@ def makeMoon():
                 }
 
     return resourceStr
-        
+
+def enquoteStrings(strings):
+    """ Accepts a list of strings, returns a list of strings with
+    embedded quotation marks. """
+    quoted = []
+    for str in strings:
+        quoted.append('"%s"' % (str))
+    return quoted
+
 def configWatch():
     generatedTable = open('%s/generated_table.c' % (resourcesDir), 'w')
     generatedDefs = open('%s/generated_defs.h' % (resourcesDir), 'w')
@@ -885,7 +899,7 @@ def configWatch():
         ch = chr(97 + i)
         makeIndicatorTable(generatedTable, generatedDefs, ch, date_windows[i], anonymous = True)
     print >> generatedTable, "};\n"
-        
+
     makeIndicatorTable(generatedTable, generatedDefs, 'battery_table', battery)
     makeIndicatorTable(generatedTable, generatedDefs, 'bluetooth_table', bluetooth)
 
@@ -904,6 +918,7 @@ def configWatch():
         'watchName' : watchName,
         'watchface' : watchface,
         'langData' : langData,
+        'targetPlatforms' : ', '.join(enquoteStrings(targetPlatforms)),
         'generatedMedia' : generatedMedia,
         }
 
@@ -924,6 +939,7 @@ def configWatch():
     print >> js, jsIn % {
         'watchName' : watchName,
         'numFaces' : numFaces,
+        'defaultFaceIndex' : defaultFaceIndex,
         'numDateWindows' : len(date_windows),
         'enableChronoDial' : int(makeChronograph),
         'supportMoon' : int(bool(supportMoon)),
@@ -948,11 +964,12 @@ def configWatch():
             explicitStackingOrder.append(hand)
     stackingOrder = map(lambda hand: 'STACKING_ORDER_%s' % (hand.upper()), explicitStackingOrder + implicitStackingOrder)
     stackingOrder.append('STACKING_ORDER_DONE')
-    
+
     print >> config, configIn % {
         'persistKey' : 0x5151 + uuId[-1],
         'supportRle' : int(bool(supportRle)),
         'numFaces' : numFaces,
+        'defaultFaceIndex' : defaultFaceIndex,
         'numDateWindows' : len(date_windows),
         'numStepsHour' : numSteps['hour'],
         'numStepsMinute' : numSteps['minute'],
@@ -980,19 +997,19 @@ def configWatch():
 
 # Main.
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:Sbciwmxdh')
+    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:Sbciwmxp:dh')
 except getopt.error, msg:
     usage(1, msg)
 
 watchStyle = None
 handStyle = None
 faceStyle = None
-invertHands = False
 supportSweep = False
 compileDebugging = False
 supportMoon = True
-#supportRle = True
-supportRle = False
+supportRle = True
+#supportRle = False
+targetPlatforms = [ ]
 for opt, arg in opts:
     if opt == '-s':
         watchStyle = arg
@@ -1015,14 +1032,14 @@ for opt, arg in opts:
         enableHourBuzzer = True
     elif opt == '-c':
         makeChronograph = True
-    elif opt == '-i':
-        invertHands = True
     elif opt == '-w':
         supportSweep = True
     elif opt == '-m':
         supportMoon = False
     elif opt == '-x':
         supportRle = False
+    elif opt == '-p':
+        targetPlatforms += arg.split(',')
     elif opt == '-d':
         compileDebugging = True
     elif opt == '-h':
@@ -1031,6 +1048,9 @@ for opt, arg in opts:
 if not watchStyle:
     print >> sys.stderr, "You must specify a desired watch style."
     sys.exit(1)
+
+if not targetPlatforms:
+    targetPlatforms = [ "aplite", "basalt" ]
 
 watchName, defaultHandStyle, defaultFaceStyle, uuId = watches[watchStyle]
 
@@ -1045,6 +1065,8 @@ faceFilenames = fd.get('filename')
 if isinstance(faceFilenames, type('')):
     faceFilenames = [faceFilenames]
 numFaces = len(faceFilenames)
+
+defaultFaceIndex = fd.get('default_face', 0)
 
 date_windows = []
 i = 0
@@ -1065,14 +1087,12 @@ centers = fd.get('centers', ())
 # Look for 'day' and 'date' prefixes in the defaults.
 defaultDateWindows = [0] * len(date_windows)
 for keyword in defaults:
-    if keyword.startswith('day:'):
-        ch = keyword.split(':', 1)[1]
-        i = ord(ch) - 97
-        defaultDateWindows[i] = 4  # == DWM_weekday
-    elif keyword.startswith('date:'):
-        ch = keyword.split(':', 1)[1]
-        i = ord(ch) - 97
-        defaultDateWindows[i] = 2  # == date
+    for token, value in [('day', 4), ('date', 2), ('moon', 7)]:
+        if keyword.startswith(token + ':'):
+            ch = keyword.split(':', 1)[1]
+            i = ord(ch) - 97
+            defaultDateWindows[i] = value
+            break
 
 # Map the centers tuple into a dictionary of points for x and y.
 cxd = dict(map(lambda (hand, x, y): (hand, x), centers))

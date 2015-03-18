@@ -5,6 +5,12 @@
 // stored in resources/generated_table.c to represent the different
 // clock hands and their various bitmap permutations.
 
+
+struct __attribute__((__packed__)) FaceDef {
+  unsigned char resource_id;
+  uint8_t and_argb8, or_argb8;
+};
+
 // A table of center positions, one for each different bitmap for a
 // hand.  This point in the bitmap is the "center" or "pivot" point of
 // the bitmap, and indicates the point that corresponds to the hinge
@@ -78,8 +84,9 @@ struct __attribute__((__packed__)) HandDef {
   bool use_rle;
 
   // This is true if the bitmap's foreground pixels are to be drawn in
-  // black, false if they are drawn in white.  It is ignored if
-  // transparency is enabled due to the use of a mask above.
+  // black, false if they are drawn in white.  It is only used on an
+  // Aplite build, and it is ignored if transparency is enabled due to
+  // the use of a mask above.
   bool paint_black;
 
   // The table of center values, one for each of bitmap_index.
