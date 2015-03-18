@@ -268,7 +268,7 @@ faces = {
         },
     'e' : {
         'filename' : ['e_face.png', 'e_face_white.png'],
-        'hand_color' : [ (0xff, 0x00), (0xfe, 0x00) ],
+        'hand_color' : [ (0xfe, 0x00), (0xff, 0x00) ],
         'date_window_a' : (72, 21, 'bt'),
         'date_window_b' : (21, 82, 'bt'),
         'date_window_c' : (123, 82, 'bt'),
