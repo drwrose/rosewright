@@ -75,7 +75,10 @@
     {
       "name": "BLUETOOTH_MASK",
       "file": "bluetooth_mask.png",
-      "type": "png"
+      "type": "png",
+      "targetPlatforms": [
+        "aplite"
+      ]
     },
 %(langData)s
 %(generatedMedia)s

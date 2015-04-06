@@ -17,8 +17,8 @@ bool bluetooth_opaque_layer = false;
 
 #else  // PBL_PLATFORM_APLITE
 
-// On Basalt, the icon is never inverted, and the layer is always
-// opaque.
+// On Basalt, the icon is never inverted, and the layer is never
+// opaque in the Aplite sense.
 #define bluetooth_invert false
 #define bluetooth_opaque_layer false
 
@@ -35,9 +35,9 @@ void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
   box.origin.y = 0;
 
   GCompOp fg_mode;
-  GCompOp mask_mode;
 
 #ifdef PBL_PLATFORM_APLITE
+  GCompOp mask_mode;
   if (bluetooth_invert ^ config.draw_mode) {
     fg_mode = GCompOpSet;
     mask_mode = GCompOpAnd;
@@ -49,7 +49,6 @@ void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
   // In Basalt, we always use GCompOpSet because the icon includes its
   // own alpha channel.
   fg_mode = GCompOpSet;
-  mask_mode = GCompOpSet;
 #endif  // PBL_PLATFORM_APLITE
 
   bool new_state = bluetooth_connection_service_peek();
@@ -65,6 +64,7 @@ void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
     if (config.bluetooth_indicator != IM_when_needed) {
       // We don't draw the "connected" bitmap if bluetooth_indicator
       // is set to IM_when_needed; only on IM_always.
+#ifdef PBL_PLATFORM_APLITE      
       if (bluetooth_opaque_layer) {
 	if (bluetooth_mask.bitmap == NULL) {
 	  bluetooth_mask = png_bwd_create(RESOURCE_ID_BLUETOOTH_MASK);
@@ -72,6 +72,7 @@ void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
 	graphics_context_set_compositing_mode(ctx, mask_mode);
 	graphics_draw_bitmap_in_rect(ctx, bluetooth_mask.bitmap, box);
       }
+#endif  // PBL_PLATFORM_APLITE      
       if (bluetooth_connected.bitmap == NULL) {
 	bluetooth_connected = png_bwd_create(RESOURCE_ID_BLUETOOTH_CONNECTED);
       }
@@ -81,6 +82,7 @@ void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
   } else {
     // We always draw the disconnected bitmap (except in the IM_off
     // case, of course).
+#ifdef PBL_PLATFORM_APLITE      
     if (bluetooth_opaque_layer) {
       if (bluetooth_mask.bitmap == NULL) {
 	bluetooth_mask = png_bwd_create(RESOURCE_ID_BLUETOOTH_MASK);
@@ -88,6 +90,7 @@ void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
       graphics_context_set_compositing_mode(ctx, mask_mode);
       graphics_draw_bitmap_in_rect(ctx, bluetooth_mask.bitmap, box);
     }
+#endif  // PBL_PLATFORM_APLITE      
     if (bluetooth_disconnected.bitmap == NULL) {
       bluetooth_disconnected = png_bwd_create(RESOURCE_ID_BLUETOOTH_DISCONNECTED);
     }

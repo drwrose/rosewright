@@ -7,7 +7,7 @@
 
 
 struct __attribute__((__packed__)) FaceDef {
-  unsigned char resource_id;
+  uint8_t resource_id;
   uint8_t and_argb8, or_argb8;
 };
 
@@ -17,8 +17,8 @@ struct __attribute__((__packed__)) FaceDef {
 // of the hand.  This point is placed at the place_x, place_y point of
 // the hand when it is drawn.
 struct __attribute__((__packed__)) BitmapHandCenterRow {
-  signed char cx;
-  signed char cy;
+  int8_t cx;
+  int8_t cy;
 };
 
 // A table of hand positions, one for each different "step" defined
@@ -41,8 +41,8 @@ struct __attribute__((__packed__)) BitmapHandTableRow {
 // contiguous path.
 struct __attribute__((__packed__)) VectorHandGroup {
   // outline or fill are 0, 1, or 2: GColorClear, GColorWhite, GColorBlack.
-  unsigned char outline;
-  unsigned char fill;
+  uint8_t outline;
+  uint8_t fill;
 
   // The Pebble path for the hand at 12:00.  This will be rotated to
   // the appropriate angle at runtime.
@@ -51,7 +51,7 @@ struct __attribute__((__packed__)) VectorHandGroup {
 
 // The array of groups that makes up a vector definition.
 struct __attribute__((__packed__)) VectorHand {
-  unsigned char num_groups;
+  uint8_t num_groups;
   struct VectorHandGroup *group;
 };
 
@@ -59,7 +59,7 @@ struct __attribute__((__packed__)) HandDef {
   // The number of steps around the circle for this particular hand.
   // This is also stored in the symbol NUM_STEPS_HOUR,
   // NUM_STEPS_MINUTE, and so on.
-  unsigned char num_steps;
+  uint8_t num_steps;
 
   // If a bitmap hand is available, all of the bitmap images should
   // appear consecutively in the resource file.  (config_watch.py will
@@ -71,11 +71,11 @@ struct __attribute__((__packed__)) HandDef {
   // implement transparency, and resource_mask_id is the resource ID
   // number of the first bitmap mask image (which should have the same
   // number of entries as the primary bitmaps).
-  unsigned char resource_id, resource_mask_id;
+  uint8_t resource_id, resource_mask_id;
 
   // This defines the position on the Pebble face of the pivot point
   // of the bitmap.
-  unsigned char place_x, place_y;
+  uint8_t place_x, place_y;
 
   // This is true if the bitmaps are compressed using the rle_bwd
   // mechanism, or false if they are ordinary PNG's.  (We never use
@@ -112,10 +112,17 @@ struct __attribute__((__packed__)) HandDef {
 
 // A table for bluetooth and battery icons, as well as date windows.
 struct __attribute__((__packed__)) IndicatorTable {
-  unsigned char x, y;
+  uint8_t x, y;
   bool invert;
   bool opaque;
 };
+
+// A handy symbol for wrapping resource ID's that only exist on Aplite.
+#ifdef PBL_PLATFORM_APLITE
+#define APLITE_RESOURCE(resource_id) (resource_id)
+#else
+#define APLITE_RESOURCE(resource_id) (0)
+#endif  // PBL_PLATFORM_APLITE
 
 #endif
 

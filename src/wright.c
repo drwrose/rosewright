@@ -1,6 +1,5 @@
 #include "wright.h"
 #include "wright_chrono.h"
-#include "antialiasing.h"
 
 #include "../resources/generated_table.c"
 #include "../resources/lang_table.c"
@@ -466,7 +465,7 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
 #endif  // PBL_PLATFORM_APLITE
 
       graphics_context_set_stroke_color(ctx, color);
-      gpath_draw_outline_antialiased(ctx, hand_cache->path[gi], color);
+      gpath_draw_outline(ctx, hand_cache->path[gi]);
     }
   }
 }

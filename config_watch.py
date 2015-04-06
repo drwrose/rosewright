@@ -353,9 +353,19 @@ def makeFaces(generatedTable, generatedDefs):
 
     dateWindowEntry = """
     {
-      "name": "%(name)s",
+      "name": "DATE_WINDOW",
       "file": "%(rleFilename)s",
       "type": "%(ptype)s"
+    },"""
+
+    dateWindowMaskEntry = """
+    {
+      "name": "DATE_WINDOW_MASK",
+      "file": "%(rleFilename)s",
+      "type": "%(ptype)s",
+      "targetPlatforms": [
+        "aplite"
+      ]
     },"""
 
     chronoResourceEntry = """
@@ -418,15 +428,13 @@ def makeFaces(generatedTable, generatedDefs):
 
         rleFilename, ptype = make_rle('clock_faces/' + window, useRle = supportRle)
         resourceStr += dateWindowEntry % {
-            'name' : 'DATE_WINDOW',
             'rleFilename' : rleFilename,
             'ptype' : ptype,
             }
 
         if mask:
             rleFilename, ptype = make_rle('clock_faces/' + mask, useRle = supportRle)
-            resourceStr += dateWindowEntry % {
-                'name' : 'DATE_WINDOW_MASK',
+            resourceStr += dateWindowMaskEntry % {
                 'rleFilename' : rleFilename,
                 'ptype' : ptype,
                 }
@@ -495,6 +503,16 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
       "name": "%(defName)s",
       "file": "%(targetFilename)s",
       "type": "%(ptype)s"
+    },"""
+
+    maskResourceEntry = """
+    {
+      "name": "%(defName)s",
+      "file": "%(targetFilename)s",
+      "type": "%(ptype)s",
+      "targetPlatforms": [
+        "aplite"
+      ]
     },"""
 
     handLookupEntry = """  { %(cx)s, %(cy)s },  // %(symbolName)s"""
@@ -686,7 +704,7 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
                 targetMaskFilename = 'clock_hands/flat_%s_%s_%s_mask.png' % (handStyle, hand, i)
                 pm1.save('%s/%s' % (resourcesDir, targetMaskFilename))
                 rleFilename, ptype = make_rle(targetMaskFilename, useRle = useRle)
-                maskResourceStr += resourceEntry % {
+                maskResourceStr += maskResourceEntry % {
                     'defName' : symbolMaskName,
                     'targetFilename' : rleFilename,
                     'ptype' : ptype,
@@ -739,7 +757,7 @@ def makeHands(generatedTable, generatedDefs):
 
     handDefEntry = """struct HandDef %(hand)s_hand_def = {
     NUM_STEPS_%(handUpper)s,
-    %(resourceId)s, %(resourceMaskId)s,
+    %(resourceId)s, APLITE_RESOURCE(%(resourceMaskId)s),
     %(placeX)s, %(placeY)s,
     %(useRle)s,
     %(paintBlack)s,
