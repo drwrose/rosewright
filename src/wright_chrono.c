@@ -17,9 +17,9 @@ Layer *chrono_dial_layer;
 // This window is pushed on top of the chrono dial to display the
 // readout in digital form for ease of recording.
 Window *chrono_digital_window;
-InverterLayer *chrono_digital_line_layer = NULL;
 TextLayer *chrono_digital_current_layer = NULL;
 TextLayer *chrono_digital_laps_layer[CHRONO_MAX_LAPS];
+Layer *chrono_digital_line_layer = NULL;
 bool chrono_digital_window_showing = false;
 AppTimer *chrono_digital_timer = NULL;
 
@@ -399,6 +399,14 @@ void chrono_lap_or_reset_handler(ClickRecognizerRef recognizer, void *context) {
     chrono_reset_button();
   }
 }
+  
+void chrono_digital_line_layer_update_callback(Layer *me, GContext *ctx) {
+  GRect destination = layer_get_bounds(me);
+
+  // Paint the background black.
+  graphics_context_set_fill_color(ctx, GColorBlack);
+  graphics_fill_rect(ctx, destination, 0, GCornerNone);
+}
 
 void chrono_digital_window_load_handler(struct Window *window) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono digital loads");
@@ -435,11 +443,12 @@ void chrono_digital_window_load_handler(struct Window *window) {
   text_layer_set_font(chrono_digital_current_layer, font);
   layer_add_child(chrono_digital_window_layer, (Layer *)chrono_digital_current_layer);
 
-  chrono_digital_line_layer = inverter_layer_create(GRect(0, 121, SCREEN_WIDTH, 1));
+  chrono_digital_line_layer = layer_create(GRect(0, 121, SCREEN_WIDTH, 1));
   if (chrono_digital_line_layer == NULL) {
     trigger_memory_panic(__LINE__);
     return;
   }    
+  layer_set_update_proc(chrono_digital_line_layer, &chrono_digital_line_layer_update_callback);
   layer_add_child(chrono_digital_window_layer, (Layer *)chrono_digital_line_layer);
 }
 
@@ -469,10 +478,10 @@ void chrono_digital_window_unload_handler(struct Window *window) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono digital unloads");
 
   if (chrono_digital_line_layer != NULL) {
-    inverter_layer_destroy(chrono_digital_line_layer);
+    layer_destroy(chrono_digital_line_layer);
     chrono_digital_line_layer = NULL;
   }
-
+  
   if (chrono_digital_current_layer != NULL) {
     text_layer_destroy(chrono_digital_current_layer);
     chrono_digital_current_layer = NULL;

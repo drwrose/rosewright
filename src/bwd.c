@@ -422,8 +422,14 @@ rle_bwd_create(int resource_id) {
   }
   assert(packer_func != NULL);
 
-  GBitmap *image = gbitmap_create_blank(GSize(width, height), format);
+  GColor *palette = NULL;
+  if (palette_count != 0) {
+    palette = (GColor *)malloc(palette_count * sizeof(GColor));
+  }
+  
+  GBitmap *image = gbitmap_create_blank_with_palette(GSize(width, height), format, palette, true);
   if (image == NULL) {
+    free(palette);
     return bwd_create(NULL);
   }
   int stride = gbitmap_get_bytes_per_row(image);
@@ -496,8 +502,7 @@ rle_bwd_create(int resource_id) {
     assert(total_size > po);
     size_t palette_size = total_size - po;
     assert(palette_size <= palette_count);
-    GColor *palette = gbitmap_get_palette(image);
-    assert(palette != NULL);
+    assert(palette == gbitmap_get_palette(image));
     size_t bytes_read = resource_load_byte_range(rh, po, (uint8_t *)palette, palette_size);
     assert(bytes_read == palette_size);
   }
@@ -546,7 +551,7 @@ rle_bwd_create(int resource_id) {
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "reading bitmap %d x %d, n = %d, format = %d", width, height, n, format);
   
-  GBitmap *image = gbitmap_create_blank(GSize(width, height));
+  GBitmap *image = __gbitmap_create_blank(GSize(width, height));
   if (image == NULL) {
     return bwd_create(NULL);
   }

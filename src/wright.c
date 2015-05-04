@@ -1112,7 +1112,9 @@ void create_objects() {
   window_handlers.unload = window_unload_handler;
   window_set_window_handlers(window, window_handlers);
 
+#ifdef PBL_PLATFORM_APLITE
   window_set_fullscreen(window, true);
+#endif  //  PBL_PLATFORM_APLITE
   window_stack_push(window, false);
 
   hand_cache_init(&hour_cache);
