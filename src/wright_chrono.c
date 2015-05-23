@@ -17,6 +17,10 @@ Layer *chrono_dial_layer;
 // This window is pushed on top of the chrono dial to display the
 // readout in digital form for ease of recording.
 Window *chrono_digital_window;
+#ifdef PBL_SDK_3
+StatusBarLayer *chrono_status_bar_layer = NULL;
+Layer *chrono_digital_contents_layer = NULL;
+#endif  // PBL_SDK_3
 TextLayer *chrono_digital_current_layer = NULL;
 TextLayer *chrono_digital_laps_layer[CHRONO_MAX_LAPS];
 Layer *chrono_digital_line_layer = NULL;
@@ -413,7 +417,29 @@ void chrono_digital_window_load_handler(struct Window *window) {
 
   GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
 
+
+#ifdef PBL_SDK_3
   Layer *chrono_digital_window_layer = window_get_root_layer(chrono_digital_window);
+  chrono_status_bar_layer = status_bar_layer_create();
+  if (chrono_status_bar_layer == NULL) {
+    trigger_memory_panic(__LINE__);
+    return;
+  }    
+  layer_add_child(chrono_digital_window_layer, status_bar_layer_get_layer(chrono_status_bar_layer));
+  
+  chrono_digital_contents_layer = layer_create(GRect(0, STATUS_BAR_LAYER_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT - STATUS_BAR_LAYER_HEIGHT));
+  if (chrono_digital_contents_layer == NULL) {
+    trigger_memory_panic(__LINE__);
+    return;
+  }    
+  layer_add_child(chrono_digital_window_layer, chrono_digital_contents_layer);
+
+#else  // PBL_SDK_3
+  // On SDK 2.0 and before, we don't create a separate contents layer;
+  // we just use the root layer.
+  Layer *chrono_digital_contents_layer = window_get_root_layer(chrono_digital_window);
+  
+#endif  // PBL_SDK_3
 
   chrono_digital_current_layer = text_layer_create(GRect(25, 120, 94, 48));
   if (chrono_digital_current_layer == NULL) {
@@ -433,7 +459,7 @@ void chrono_digital_window_load_handler(struct Window *window) {
     text_layer_set_text_alignment(chrono_digital_laps_layer[i], GTextAlignmentRight);
     text_layer_set_overflow_mode(chrono_digital_laps_layer[i], GTextOverflowModeFill);
     text_layer_set_font(chrono_digital_laps_layer[i], font);
-    layer_add_child(chrono_digital_window_layer, (Layer *)chrono_digital_laps_layer[i]);
+    layer_add_child(chrono_digital_contents_layer, (Layer *)chrono_digital_laps_layer[i]);
   }
 
   text_layer_set_text(chrono_digital_current_layer, chrono_current_buffer);
@@ -441,7 +467,7 @@ void chrono_digital_window_load_handler(struct Window *window) {
   text_layer_set_text_alignment(chrono_digital_current_layer, GTextAlignmentRight);
   text_layer_set_overflow_mode(chrono_digital_current_layer, GTextOverflowModeFill);
   text_layer_set_font(chrono_digital_current_layer, font);
-  layer_add_child(chrono_digital_window_layer, (Layer *)chrono_digital_current_layer);
+  layer_add_child(chrono_digital_contents_layer, (Layer *)chrono_digital_current_layer);
 
   chrono_digital_line_layer = layer_create(GRect(0, 121, SCREEN_WIDTH, 1));
   if (chrono_digital_line_layer == NULL) {
@@ -449,7 +475,7 @@ void chrono_digital_window_load_handler(struct Window *window) {
     return;
   }    
   layer_set_update_proc(chrono_digital_line_layer, &chrono_digital_line_layer_update_callback);
-  layer_add_child(chrono_digital_window_layer, (Layer *)chrono_digital_line_layer);
+  layer_add_child(chrono_digital_contents_layer, (Layer *)chrono_digital_line_layer);
 }
 
 void chrono_digital_window_appear_handler(struct Window *window) {
@@ -493,6 +519,17 @@ void chrono_digital_window_unload_handler(struct Window *window) {
       chrono_digital_laps_layer[i] = NULL;
     }
   }
+
+#ifdef PBL_SDK_3
+  if (chrono_digital_contents_layer != NULL) {
+    layer_destroy(chrono_digital_contents_layer);
+    chrono_digital_contents_layer = NULL;
+  }
+  if (chrono_status_bar_layer != NULL) {
+    status_bar_layer_destroy(chrono_status_bar_layer);
+    chrono_status_bar_layer = NULL;
+  }
+#endif  // PDL_SDK_3
 }
 
 void push_chrono_digital_handler(ClickRecognizerRef recognizer, void *context) {
