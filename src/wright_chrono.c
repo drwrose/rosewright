@@ -249,9 +249,9 @@ void chrono_dial_layer_update_callback(Layer *me, GContext *ctx) {
     destination.origin.y = 0;
 
 #ifdef PBL_PLATFORM_APLITE
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_fg);
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_fg);
     graphics_draw_bitmap_in_rect(ctx, chrono_dial_black.bitmap, destination);
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_bg);
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_bg);
     graphics_draw_bitmap_in_rect(ctx, chrono_dial_white.bitmap, destination);
 #else  // PBL_PLATFORM_APLITE
     graphics_context_set_compositing_mode(ctx, GCompOpSet);

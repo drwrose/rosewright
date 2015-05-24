@@ -11,7 +11,6 @@ BitmapWithData charging_mask;
 Layer *battery_gauge_layer;
 
 bool battery_gauge_invert = false;
-bool battery_gauge_opaque_layer = false;
 
 void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
   if (config.battery_gauge == IM_off) {
@@ -38,7 +37,7 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
   GColor fg_color, bg_color;
   GCompOp mask_mode;
 
-  if (battery_gauge_invert ^ config.draw_mode) {
+  if (battery_gauge_invert ^ config.draw_mode ^ APLITE_INVERT) {
     fg_mode = GCompOpSet;
     bg_color = GColorBlack;
     fg_color = GColorWhite;
@@ -50,29 +49,27 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
     mask_mode = GCompOpSet;
   }
 
-  if (battery_gauge_opaque_layer) {
-    // Draw the background of the layer.
-    if (charge_state.is_charging) {
-      // Erase the charging icon shape.
-      if (charging_mask.bitmap == NULL) {
-	charging_mask = png_bwd_create(RESOURCE_ID_CHARGING_MASK);
-      }
-      graphics_context_set_compositing_mode(ctx, mask_mode);
-      graphics_draw_bitmap_in_rect(ctx, charging_mask.bitmap, box);
+  // Draw the background of the layer.
+  if (charge_state.is_charging) {
+    // Erase the charging icon shape.
+    if (charging_mask.bitmap == NULL) {
+      charging_mask = png_bwd_create(RESOURCE_ID_CHARGING_MASK);
     }
-
-    if (config.battery_gauge != IM_digital) {
-      // Erase the battery gauge shape.
-      if (battery_gauge_mask.bitmap == NULL) {
-	battery_gauge_mask = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_MASK);
-      }
-      graphics_context_set_compositing_mode(ctx, mask_mode);
-      graphics_draw_bitmap_in_rect(ctx, battery_gauge_mask.bitmap, box);
-    } else {
-      // Erase a rectangle for text.
-      graphics_context_set_fill_color(ctx, bg_color);
-      graphics_fill_rect(ctx, GRect(6, 0, 18, 10), 0, GCornerNone);
+    graphics_context_set_compositing_mode(ctx, mask_mode);
+    graphics_draw_bitmap_in_rect(ctx, charging_mask.bitmap, box);
+  }
+  
+  if (config.battery_gauge != IM_digital) {
+    // Erase the battery gauge shape.
+    if (battery_gauge_mask.bitmap == NULL) {
+      battery_gauge_mask = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_MASK);
     }
+    graphics_context_set_compositing_mode(ctx, mask_mode);
+    graphics_draw_bitmap_in_rect(ctx, battery_gauge_mask.bitmap, box);
+  } else {
+    // Erase a rectangle for text.
+    graphics_context_set_fill_color(ctx, bg_color);
+    graphics_fill_rect(ctx, GRect(6, 0, 18, 10), 0, GCornerNone);
   }
 
   if (charge_state.is_charging) {
@@ -120,18 +117,16 @@ void handle_battery(BatteryChargeState charge_state) {
   layer_mark_dirty(battery_gauge_layer);
 }
 
-void init_battery_gauge(Layer *window_layer, int x, int y, bool invert, bool opaque_layer) {
+void init_battery_gauge(Layer *window_layer, int x, int y, bool invert) {
   battery_gauge_invert = invert;
-  battery_gauge_opaque_layer = opaque_layer;
   battery_gauge_layer = layer_create(GRect(x - 6, y, 24, 10));
   layer_set_update_proc(battery_gauge_layer, &battery_gauge_layer_update_callback);
   layer_add_child(window_layer, battery_gauge_layer);
   battery_state_service_subscribe(&handle_battery);
 }
 
-void move_battery_gauge(int x, int y, bool invert, bool opaque_layer) {
+void move_battery_gauge(int x, int y, bool invert) {
   battery_gauge_invert = invert;
-  battery_gauge_opaque_layer = opaque_layer;
   layer_set_frame((Layer *)battery_gauge_layer, GRect(x - 6, y, 24, 10));
 }
 

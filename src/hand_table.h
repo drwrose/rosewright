@@ -112,7 +112,6 @@ struct __attribute__((__packed__)) HandDef {
 struct __attribute__((__packed__)) IndicatorTable {
   uint8_t x, y;
   bool invert;
-  bool opaque;
 };
 
 // A handy symbol for wrapping resource ID's that only exist on Aplite.

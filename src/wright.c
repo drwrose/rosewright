@@ -433,6 +433,34 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
   GPoint center = { hand_def->place_x, hand_def->place_y };
   int32_t angle = TRIG_MAX_ANGLE * hand_index / hand_def->num_steps;
 
+#ifdef PBL_PLATFORM_APLITE
+  GColor color = draw_mode_table[config.draw_mode ^ APLITE_INVERT].colors[2];
+    
+#else  // PBL_PLATFORM_APLITE
+  // On Basalt, draw lines using the indicated color channel.
+  struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
+  GColor color;
+  switch (vector_hand->paint_channel) {
+  case 0:
+  default:
+    color.argb = cd->cb_argb8;
+    break;
+  case 1:
+    color.argb = cd->c1_argb8;
+    break;
+  case 2:
+    color.argb = cd->c2_argb8;
+    break;
+  case 3:
+    color.argb = cd->c3_argb8;
+    break;
+  }
+  if (config.draw_mode) {
+    color.argb ^= 0x3f;
+  }
+#endif  // PBL_PLATFORM_APLITE
+  graphics_context_set_stroke_color(ctx, color);
+
   assert(vector_hand->num_groups <= HAND_CACHE_MAX_GROUPS);
   for (gi = 0; gi < vector_hand->num_groups; ++gi) {
     struct VectorHandGroup *group = &vector_hand->group[gi];
@@ -447,45 +475,7 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
       gpath_rotate_to(hand_cache->path[gi], angle);
       gpath_move_to(hand_cache->path[gi], center);
     }
-
-    /*
-    if (group->fill != 0) {
-#ifdef PBL_PLATFORM_APLITE
-      graphics_context_set_fill_color(ctx, draw_mode_table[config.draw_mode].colors[group->fill]);
-#endif   // PBL_PLATFORM_APLITE
-      gpath_draw_filled(ctx, hand_cache->path[gi]);
-    }
-    */
-    /*
-    if (group->outline != 0) 
-    */
-    {
-#ifdef PBL_PLATFORM_APLITE
-      GColor color = draw_mode_table[config.draw_mode].colors[0];
-
-#else  // PBL_PLATFORM_APLITE
-      // On Basalt, draw lines with indicated color channel.
-      struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
-      GColor color;
-      switch (vector_hand->paint_channel) {
-      case 0:
-        color.argb = cd->cb_argb8;
-        break;
-      case 1:
-        color.argb = cd->c1_argb8;
-        break;
-      case 2:
-        color.argb = cd->c2_argb8;
-        break;
-      case 3:
-        color.argb = cd->c3_argb8;
-        break;
-      }
-#endif  // PBL_PLATFORM_APLITE
-
-      graphics_context_set_stroke_color(ctx, color);
-      gpath_draw_outline(ctx, hand_cache->path[gi]);
-    }
+    gpath_draw_outline(ctx, hand_cache->path[gi]);
   }
 }
 
@@ -557,14 +547,8 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
     // each other, instead of the background parts of the bitmaps
     // blocking each other.
 
-    if (false) {  // hack
-      // Painting foreground ("white") pixels as black.
-      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_fg);
-    } else {
-      // Painting foreground ("white") pixels as white.
-      graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_bg);
-    }
-    
+    // Painting foreground ("white") pixels as white.
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_bg);
     graphics_draw_bitmap_in_rect(ctx, hand_cache->image.bitmap, destination);
     
   } else {
@@ -605,10 +589,10 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
     destination.origin.x = hand_def->place_x - hand_cache->cx;
     destination.origin.y = hand_def->place_y - hand_cache->cy;
 
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_fg);
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_fg);
     graphics_draw_bitmap_in_rect(ctx, hand_cache->mask.bitmap, destination);
     
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_bg);
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_bg);
     graphics_draw_bitmap_in_rect(ctx, hand_cache->image.bitmap, destination);
   }
 }
@@ -631,7 +615,7 @@ void draw_hand(struct HandCache *hand_cache, struct HandDef *hand_def, int hand_
 void remap_colors(BitmapWithData *bwd) {
 #ifndef PBL_PLATFORM_APLITE
   struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
-  bwd_remap_colors(bwd, (GColor8){.argb=cd->cb_argb8}, (GColor8){.argb=cd->c1_argb8}, (GColor8){.argb=cd->c2_argb8}, (GColor8){.argb=cd->c3_argb8});
+  bwd_remap_colors(bwd, (GColor8){.argb=cd->cb_argb8}, (GColor8){.argb=cd->c1_argb8}, (GColor8){.argb=cd->c2_argb8}, (GColor8){.argb=cd->c3_argb8}, config.draw_mode);
 #endif  // PBL_PLATFORM_APLITE
 }
 
@@ -658,7 +642,7 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
   GRect destination = layer_get_bounds(me);
   destination.origin.x = 0;
   destination.origin.y = 0;
-  graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_assign);
+  graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_assign);
   graphics_draw_bitmap_in_rect(ctx, clock_face.bitmap, destination);
 }
   
@@ -683,20 +667,18 @@ void second_layer_update_callback(Layer *me, GContext *ctx) {
 }
 
 // Draws the frame and optionally fills the background of the current date window.
-void draw_date_window_background(GContext *ctx, unsigned int fg_draw_mode, unsigned int bg_draw_mode, bool opaque_layer) {
+void draw_date_window_background(GContext *ctx, unsigned int fg_draw_mode, unsigned int bg_draw_mode) {
 #ifdef PBL_PLATFORM_APLITE
   // We only need the mask on Aplite.
-  if (opaque_layer || bg_draw_mode != fg_draw_mode) {
+  if (date_window_mask.bitmap == NULL) {
+    date_window_mask = rle_bwd_create(RESOURCE_ID_DATE_WINDOW_MASK);
     if (date_window_mask.bitmap == NULL) {
-      date_window_mask = rle_bwd_create(RESOURCE_ID_DATE_WINDOW_MASK);
-      if (date_window_mask.bitmap == NULL) {
-	trigger_memory_panic(__LINE__);
-        return;
-      }
+      trigger_memory_panic(__LINE__);
+      return;
     }
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[bg_draw_mode].paint_bg);
-    graphics_draw_bitmap_in_rect(ctx, date_window_mask.bitmap, date_window_box);
   }
+  graphics_context_set_compositing_mode(ctx, draw_mode_table[bg_draw_mode].paint_bg);
+  graphics_draw_bitmap_in_rect(ctx, date_window_mask.bitmap, date_window_box);
 #endif  // PBL_PLATFORM_APLITE
   
   if (date_window.bitmap == NULL) {
@@ -722,11 +704,11 @@ void draw_date_window_background(GContext *ctx, unsigned int fg_draw_mode, unsig
 // Draws a date window with the specified text contents.  Usually this is
 // something like a numeric date or the weekday name.
 void draw_window(Layer *me, GContext *ctx, const char *text, struct FontPlacement *font_placement, 
-		 GFont *font, bool invert, bool opaque_layer) {
+		 GFont *font, bool invert) {
   GRect box = date_window_box;
 
-  unsigned int draw_mode = invert ^ config.draw_mode;
-  draw_date_window_background(ctx, draw_mode, draw_mode, opaque_layer);
+  unsigned int draw_mode = invert ^ config.draw_mode ^ APLITE_INVERT;
+  draw_date_window_background(ctx, draw_mode, draw_mode);
 
   graphics_context_set_text_color(ctx, draw_mode_table[draw_mode].colors[1]);
 
@@ -753,9 +735,9 @@ void draw_window(Layer *me, GContext *ctx, const char *text, struct FontPlacemen
 #ifdef SUPPORT_MOON
 
 // Draws a date window with the current lunar phase.
-void draw_lunar_window(Layer *me, GContext *ctx, DateWindowMode dwm, bool invert, bool opaque_layer) {
+void draw_lunar_window(Layer *me, GContext *ctx, DateWindowMode dwm, bool invert) {
   // The draw_mode is the color to draw the frame of the date window.
-  unsigned int draw_mode = invert ^ config.draw_mode;
+  unsigned int draw_mode = invert ^ config.draw_mode ^ APLITE_INVERT;
 
   // The moon_draw_mode is the color to draw the moon within the date window.
   unsigned int moon_draw_mode = draw_mode;
@@ -785,7 +767,7 @@ void draw_lunar_window(Layer *me, GContext *ctx, DateWindowMode dwm, bool invert
     }
   }
 
-  draw_date_window_background(ctx, draw_mode, moon_draw_mode, opaque_layer);
+  draw_date_window_background(ctx, draw_mode, moon_draw_mode);
 
   // In the Aplite case, we draw the moon in the fg color.  This will
   // be black-on-white if moon_draw_mode = 0, or white-on-black if
@@ -823,7 +805,7 @@ void date_window_layer_update_callback(Layer *me, GContext *ctx) {
 #ifdef SUPPORT_MOON
   if (dwm == DWM_moon) {
     // Draw the lunar phase.
-    draw_lunar_window(me, ctx, dwm, window->invert, window->opaque);
+    draw_lunar_window(me, ctx, dwm, window->invert);
     return;
   }
 #endif  // SUPPORT_MOON
@@ -873,7 +855,7 @@ void date_window_layer_update_callback(Layer *me, GContext *ctx) {
     buffer[0] = '\0';
   }
 
-  draw_window(me, ctx, text, font_placement, font, window->invert, window->opaque);
+  draw_window(me, ctx, text, font_placement, font, window->invert);
 }
 
 // Called once per epoch (e.g. once per second, or once per minute) to
@@ -1082,11 +1064,11 @@ void apply_config() {
 
     {
       const struct IndicatorTable *window = &battery_table[config.face_index];
-      move_battery_gauge(window->x, window->y, window->invert, window->opaque);
+      move_battery_gauge(window->x, window->y, window->invert);
     }
     {
       const struct IndicatorTable *window = &bluetooth_table[config.face_index];
-      move_bluetooth_indicator(window->x, window->y, window->invert, window->opaque);
+      move_bluetooth_indicator(window->x, window->y, window->invert);
     }
   }
 
@@ -1149,11 +1131,11 @@ void create_objects() {
 
   {
     const struct IndicatorTable *window = &battery_table[config.face_index];
-    init_battery_gauge(window_layer, window->x, window->y, window->invert, window->opaque);
+    init_battery_gauge(window_layer, window->x, window->y, window->invert);
   }
   {
     const struct IndicatorTable *window = &bluetooth_table[config.face_index];
-    init_bluetooth_indicator(window_layer, window->x, window->y, window->invert, window->opaque);
+    init_bluetooth_indicator(window_layer, window->x, window->y, window->invert);
   }
 
   for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {

@@ -644,7 +644,7 @@ void bwd_adjust_colors(BitmapWithData *bwd, uint8_t and_argb8, uint8_t or_argb8,
 
 // Replace each of the R, G, B channels with a different color, and
 // blend the result together.  Only supported for palette bitmaps.
-void bwd_remap_colors(BitmapWithData *bwd, GColor cb, GColor c1, GColor c2, GColor c3) {
+void bwd_remap_colors(BitmapWithData *bwd, GColor cb, GColor c1, GColor c2, GColor c3, bool invert_colors) {
 #ifndef PBL_PLATFORM_APLITE
   if (bwd->bitmap == NULL) {
     return;
@@ -700,6 +700,10 @@ void bwd_remap_colors(BitmapWithData *bwd, GColor cb, GColor c1, GColor c2, GCol
     palette[pi].r = (r < 0x3) ? r : 0x3;
     palette[pi].g = (g < 0x3) ? g : 0x3;
     palette[pi].b = (b < 0x3) ? b : 0x3;
+
+    if (invert_colors) {
+      palette[pi].argb ^= 0x3f;
+    }
   }
     
 #endif // PBL_PLATFORM_APLITE

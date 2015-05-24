@@ -209,6 +209,10 @@ hands = {
 faces = {
     'a' : {
         'filename': ['a_face.png', 'a_face_unrotated.png'],
+        'aplite_invert' : True,
+        'colors' : [ ('Yellow', 'Black', 'Black', 'Black'),
+                     ('White', 'Blue', 'Red', 'Green'),
+                     ],
         'date_window_a': (38, 82, 'b'),
         'date_window_b': (106, 82, 'b'),
         'date_window_c' : (52, 109, 'b'),
@@ -220,57 +224,55 @@ faces = {
         },
     'b' : {
         'filename' : ['b_face_rect.png', 'b_face.png'],
-        'date_window_a' : (72, 54, 'bt'),
+        'aplite_invert' : True,
+        'colors' : [ ('White', 'Black', 'Black', 'Black'), ],
+        'date_window_a' : (72, 54, 'b'),
         'date_window_b' : (52, 109, 'b'),
         'date_window_c' : (92, 109, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
-        'bluetooth' : (0, 0, 'bt'),
-        'battery' : (125, 3, 'bt'),
+        'bluetooth' : (0, 0, 'b'),
+        'battery' : (125, 3, 'b'),
         'defaults' : [ 'day:b', 'date:c', 'moon:a' ],
         },
     'c' : {
-        'filename' : ['c_face.png', 'c_face_rect.png'],
+        'filename' : ['c_face_rect.png', 'c_face.png'],
         'colors' : [ ('Black', 'White', 'White', 'Yellow'),
                      ('Yellow', 'Black', 'Blue', 'Red'),
                      ],
-        'default_face' : 1,
         'chrono' : ('c_face_chrono_tenths.png', 'c_face_chrono_hours.png'),
         'centers' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
-        'date_window_a' : (52, 45, 'wt'),
-        'date_window_b' : (92, 45, 'wt'),
+        'date_window_a' : (52, 45, 'b'),
+        'date_window_b' : (92, 45, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
-        'bluetooth' : [ (0, 0, 'w'), (16, 18, 'w'), ],
-        'battery' : [ (125, 3, 'w'), (109, 21, 'w'), ],
+        'bluetooth' : [ (0, 0, 'b'), (16, 18, 'b'), ],
+        'battery' : [ (125, 3, 'b'), (109, 21, 'b'), ],
         'defaults' : [ 'second' ],
         },
     'd' : {
-        'filename' : ['d_face_rect.png', 'd_face_rect_clean.png', 'd_face.png', 'd_face_clean.png'],
-        'hand_color' : [ (0xff, 0x02), (0xff, 0x02), (0xff, 0x02), (0xff, 0x02) ],
-        'date_window_a': [ (49, 102, 'wt'), (49, 102, 'b'),
-                           (41, 82, 'wt'), (41, 82, 'b'), ],
-        'date_window_b': [ (95, 102, 'wt'), (95, 102, 'b'),
-                           (103, 82, 'wt'), (103, 82, 'b'), ],
-        'date_window_c' : [ (49, 125, 'wt'), (49, 125, 'b'),
-                            (52, 107, 'wt'), (52, 107, 'b'), ],
-        'date_window_d' : [ (95, 125, 'wt'), (95, 125, 'b'),
-                            (92, 107, 'wt'), (92, 107, 'b'), ],
+        'filename' : ['d_face_rect.png', 'd_face_rect_clean.png'],
+        'aplite_invert' : True,
+        'colors' : [ ('White', 'Black', 'Black', 'Black'), ],
+        'hand_color' : [ (0xff, 0x02), (0xff, 0x02) ],
+        'date_window_a': [ (49, 102, 'w'), (49, 102, 'b') ],
+        'date_window_b': [ (95, 102, 'w'), (95, 102, 'b') ],
+        'date_window_c' : [ (49, 125, 'w'), (49, 125, 'b') ],
+        'date_window_d' : [ (95, 125, 'w'), (95, 125, 'b') ],
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
-        'bluetooth' : [ (49, 45, 'bt'), (49, 45, 'bt'),
-                        (0, 0, 'w'), (0, 0, 'w'), ],
-        'battery' : [ (79, 49, 'bt'), (79, 49, 'bt'),
-                      (125, 3, 'w'), (125, 3, 'w'), ],
+        'bluetooth' : [ (49, 45, 'bt'), (49, 45, 'bt') ],
+        'battery' : [ (79, 49, 'bt'), (79, 49, 'bt') ],
         'defaults' : [ 'day:c', 'date:d', 'bluetooth', 'battery' ],
         },
     'e' : {
         'filename' : ['e_face.png', 'e_face_white.png'],
+        'colors' : [ ('White', 'Black', 'Black', 'Black'), ],
         'hand_color' : [ (0xfe, 0x00), (0xff, 0x00) ],
-        'date_window_a' : (72, 21, 'bt'),
-        'date_window_b' : (21, 82, 'bt'),
-        'date_window_c' : (123, 82, 'bt'),
-        'date_window_d' : (72, 146, 'bt'),
+        'date_window_a' : (72, 21, 'w'),
+        'date_window_b' : (21, 82, 'w'),
+        'date_window_c' : (123, 82, 'w'),
+        'date_window_d' : (72, 146, 'w'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
-        'bluetooth' : [ (11, 12, 'w'), (11, 12, 'b'), ],
-        'battery' : [ (115, 16, 'w'), (115, 16, 'b'), ],
+        'bluetooth' : [ (11, 12, 'b'), (11, 12, 'w'), ],
+        'battery' : [ (115, 16, 'b'), (115, 16, 'w'), ],
         'defaults' : [ 'date:c' ],
         },
     }
@@ -520,12 +522,27 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
     maxLookupIndex = -1
     handTableLines = []
 
-    source = PIL.Image.open('%s/clock_hands/%s' % (resourcesDir, sourceFilename))
     paintChannel, useTransparency, dither = parseColorMode(colorMode)
+
+    sourcePathname = '%s/clock_hands/%s' % (resourcesDir, sourceFilename)
+    source = PIL.Image.open(sourcePathname)
+
+    basename, ext = os.path.splitext(sourcePathname)
+    source1Pathname = basename + '~bw' + ext
+    if os.path.exists(source1Pathname):
+        # If there's an explicit ~bw source file, use it for the 1-bit
+        # version.
+        source1 = PIL.Image.open(source1Pathname)
+    else:
+        # Otherwise, use the original for the 1-bit version.
+        source1 = source
 
     r, g, b, sourceMask = source.convert('RGBA').split()
     source = PIL.Image.merge('RGB', [r, g, b])
- 
+
+    r, g, b, source1Mask = source1.convert('RGBA').split()
+    source1 = PIL.Image.merge('RGB', [r, g, b])
+
     # Ensure that the source image is black anywhere the
     # mask is black.
     black = PIL.Image.new('L', source.size, 0)
@@ -536,15 +553,27 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
     b = PIL.Image.composite(b, black, mask)
     source = PIL.Image.merge('RGB', [r, g, b])
 
+    black = PIL.Image.new('L', source1.size, 0)
+    r, g, b = source1.split()
+    mask = source1Mask.point(thresholdMask)
+    r = PIL.Image.composite(r, black, mask)
+    g = PIL.Image.composite(g, black, mask)
+    b = PIL.Image.composite(b, black, mask)
+    source1 = PIL.Image.merge('RGB', [r, g, b])
+
     # Center the source image on its pivot, and pad it with black.
     border = (pivot[0], pivot[1], source.size[0] - pivot[0], source.size[1] - pivot[1])
     size = (max(border[0], border[2]) * 2, max(border[1], border[3]) * 2)
     center = (size[0] / 2, size[1] / 2)
     large = PIL.Image.new('RGB', size, 0)
     large.paste(source, (center[0] - pivot[0], center[1] - pivot[1]))
+    large1 = PIL.Image.new('RGB', size, 0)
+    large1.paste(source1, (center[0] - pivot[0], center[1] - pivot[1]))
 
     largeMask = PIL.Image.new('L', size, 0)
     largeMask.paste(sourceMask, (center[0] - pivot[0], center[1] - pivot[1]))
+    large1Mask = PIL.Image.new('L', size, 0)
+    large1Mask.paste(source1Mask, (center[0] - pivot[0], center[1] - pivot[1]))
 
     numStepsHand = getNumSteps(hand)
     for i in range(numStepsHand):
@@ -612,9 +641,12 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
             scaledSize = (int(p.size[0] * scale + 0.5), int(p.size[1] * scale + 0.5))
             p = p.resize(scaledSize, PIL.Image.ANTIALIAS)
 
+            p1 = large1.rotate(-angle, PIL.Image.BICUBIC, True)
+            p1 = p1.resize(scaledSize, PIL.Image.ANTIALIAS)
+
             # Now make the 1-bit version for Aplite and the 2-bit
             # version for Basalt.
-            r, g, b = p.split()
+            r, g, b = p1.split()
             if not dither:
                 p1 = b.point(threshold1Bit).convert('1')
             else:
@@ -632,13 +664,15 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
             # Mask.
             pm = largeMask.rotate(-angle, PIL.Image.BICUBIC, True)
             pm = pm.resize(scaledSize, PIL.Image.ANTIALIAS)
+            pm1 = large1Mask.rotate(-angle, PIL.Image.BICUBIC, True)
+            pm1 = pm1.resize(scaledSize, PIL.Image.ANTIALIAS)
 
             # And the 1-bit version and 2-bit versions of the
             # mask.
             if not dither or useTransparency:
-                pm1 = pm.point(threshold1Bit).convert('1')
+                pm1 = pm1.point(threshold1Bit).convert('1')
             else:
-                pm1 = pm.convert('1')
+                pm1 = pm1.convert('1')
             pm2 = pm.point(threshold2Bit).convert('L')
 
             # It's important to take the crop from the alpha mask, not
@@ -854,8 +888,8 @@ def makeIndicatorTable(generatedTable, generatedDefs, name, indicator, anonymous
         print >> generatedDefs, "extern struct IndicatorTable %s[NUM_FACES];" % (name)
         print >> generatedTable, "struct IndicatorTable %s[NUM_FACES] = {" % (name)
     for x, y, c in indicator:
-        print >> generatedTable, "   { %s, %s, %s, %s }," % (
-            x, y, int(c[0] == 'w'), int(c[-1] == 't'))
+        print >> generatedTable, "   { %s, %s, %s }," % (
+            x, y, int(c[0] == 'b'))
 
     if anonymous:
         # Anonymous structure within a table
@@ -985,6 +1019,7 @@ def configWatch():
     print >> config, configIn % {
         'persistKey' : 0x5151 + uuId[-1],
         'supportRle' : int(bool(supportRle)),
+        'apliteInvert' : int(bool(apliteInvert)),
         'numFaces' : numFaces,
         'numFaceColors' : numFaceColors,
         'defaultFaceIndex' : defaultFaceIndex,
@@ -1083,6 +1118,8 @@ faceFilenames = fd.get('filename')
 if isinstance(faceFilenames, type('')):
     faceFilenames = [faceFilenames]
 numFaces = len(faceFilenames)
+
+apliteInvert = fd.get('aplite_invert', False)
 
 faceColors = fd.get('colors')
 numFaceColors = len(faceColors)
