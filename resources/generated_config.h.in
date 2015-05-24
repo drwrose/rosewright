@@ -10,6 +10,9 @@
 // The number of different clock faces available.
 #define NUM_FACES %(numFaces)s
 
+// The number of different color options available for the face.
+#define NUM_FACE_COLORS %(numFaceColors)s
+
 // The number of date windows provided.
 #define NUM_DATE_WINDOWS %(numDateWindows)s
 

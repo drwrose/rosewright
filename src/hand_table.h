@@ -11,6 +11,10 @@ struct __attribute__((__packed__)) FaceDef {
   uint8_t and_argb8, or_argb8;
 };
 
+struct __attribute__((__packed__)) FaceColorDef {
+  uint8_t cb_argb8, c1_argb8, c2_argb8, c3_argb8;
+};
+
 // A table of center positions, one for each different bitmap for a
 // hand.  This point in the bitmap is the "center" or "pivot" point of
 // the bitmap, and indicates the point that corresponds to the hinge
@@ -40,10 +44,6 @@ struct __attribute__((__packed__)) BitmapHandTableRow {
 // A vector definition is an array of groups, where each group is a
 // contiguous path.
 struct __attribute__((__packed__)) VectorHandGroup {
-  // outline or fill are 0, 1, or 2: GColorClear, GColorWhite, GColorBlack.
-  uint8_t outline;
-  uint8_t fill;
-
   // The Pebble path for the hand at 12:00.  This will be rotated to
   // the appropriate angle at runtime.
   GPathInfo path_info;
@@ -51,6 +51,10 @@ struct __attribute__((__packed__)) VectorHandGroup {
 
 // The array of groups that makes up a vector definition.
 struct __attribute__((__packed__)) VectorHand {
+  // This is the color channel to be used when drawing vector hands,
+  // on Basalt only.
+  uint8_t paint_channel;
+
   uint8_t num_groups;
   struct VectorHandGroup *group;
 };
@@ -82,12 +86,6 @@ struct __attribute__((__packed__)) HandDef {
   // RLE compression on second hands, for instance, to avoid the
   // unneeded cost of constantly decompressing these things.)
   bool use_rle;
-
-  // This is true if the bitmap's foreground pixels are to be drawn in
-  // black, false if they are drawn in white.  It is only used on an
-  // Aplite build, and it is ignored if transparency is enabled due to
-  // the use of a mask above.
-  bool paint_black;
 
   // The table of center values, one for each of bitmap_index.
   struct BitmapHandCenterRow *bitmap_centers;

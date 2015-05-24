@@ -21,6 +21,7 @@ __LunarPhase = "Mondphasen"
 __SecondHand = "Sekundenzeiger"
 __SweepSeconds = "Sekundenzeiger glatter laufen (schwere Batteriebetrieb)"
 __FaceIndex = "Wählen Sie die Variante Gesicht"
+__ColorMode = "Color scheme (Pebble Time only)"
 __DrawMode = "Negativbild"
 
 __ChronoDial = "Chrono Zifferblatt zeigt"

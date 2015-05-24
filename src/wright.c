@@ -1,5 +1,6 @@
 #include "wright.h"
 #include "wright_chrono.h"
+#include "hand_table.h"
 
 #include "../resources/generated_table.c"
 #include "../resources/lang_table.c"
@@ -447,21 +448,39 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
       gpath_move_to(hand_cache->path[gi], center);
     }
 
+    /*
     if (group->fill != 0) {
+#ifdef PBL_PLATFORM_APLITE
       graphics_context_set_fill_color(ctx, draw_mode_table[config.draw_mode].colors[group->fill]);
+#endif   // PBL_PLATFORM_APLITE
       gpath_draw_filled(ctx, hand_cache->path[gi]);
     }
-    if (group->outline != 0) {
+    */
+    /*
+    if (group->outline != 0) 
+    */
+    {
 #ifdef PBL_PLATFORM_APLITE
-      GColor color = draw_mode_table[config.draw_mode].colors[group->outline];
+      GColor color = draw_mode_table[config.draw_mode].colors[0];
 
 #else  // PBL_PLATFORM_APLITE
-      GColor color = draw_mode_table[0].colors[group->outline];
-
-      uint8_t and_argb8 = clock_face_table[config.face_index].and_argb8;
-      uint8_t or_argb8 = clock_face_table[config.face_index].or_argb8;
-      uint8_t xor_argb8 = config.draw_mode ? 0x3f : 0x00;
-      color.argb = (((color.argb & and_argb8) | or_argb8) ^ xor_argb8);
+      // On Basalt, draw lines with indicated color channel.
+      struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
+      GColor color;
+      switch (vector_hand->paint_channel) {
+      case 0:
+        color.argb = cd->cb_argb8;
+        break;
+      case 1:
+        color.argb = cd->c1_argb8;
+        break;
+      case 2:
+        color.argb = cd->c2_argb8;
+        break;
+      case 3:
+        color.argb = cd->c3_argb8;
+        break;
+      }
 #endif  // PBL_PLATFORM_APLITE
 
       graphics_context_set_stroke_color(ctx, color);
@@ -510,13 +529,7 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
       }
       hand_cache->cx = lookup->cx;
       hand_cache->cy = lookup->cy;
-
-#ifndef PBL_PLATFORM_APLITE
-      uint8_t and_argb8 = clock_face_table[config.face_index].and_argb8;
-      uint8_t or_argb8 = clock_face_table[config.face_index].or_argb8;
-      uint8_t xor_argb8 = config.draw_mode ? 0x3f : 0x00;
-      bwd_adjust_colors(&hand_cache->image, and_argb8, or_argb8, xor_argb8);
-#endif  // PBL_PLATFORM_APLITE
+      remap_colors(&hand_cache->image);
       
       if (hand->flip_x) {
         // To minimize wasteful resource usage, if the hand is symmetric
@@ -544,7 +557,7 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
     // each other, instead of the background parts of the bitmaps
     // blocking each other.
 
-    if (hand_def->paint_black) {
+    if (false) {  // hack
       // Painting foreground ("white") pixels as black.
       graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode].paint_fg);
     } else {
@@ -613,6 +626,15 @@ void draw_hand(struct HandCache *hand_cache, struct HandDef *hand_def, int hand_
   }
 }
 
+// Applies the appropriate Basalt color-remapping according to the
+// selected color mode.
+void remap_colors(BitmapWithData *bwd) {
+#ifndef PBL_PLATFORM_APLITE
+  struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
+  bwd_remap_colors(bwd, (GColor8){.argb=cd->cb_argb8}, (GColor8){.argb=cd->c1_argb8}, (GColor8){.argb=cd->c2_argb8}, (GColor8){.argb=cd->c3_argb8});
+#endif  // PBL_PLATFORM_APLITE
+}
+
 void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_face_layer");
   if (memory_panic_count > 5) {
@@ -629,11 +651,7 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
       trigger_memory_panic(__LINE__);
       return;
     }
-
-#ifndef PBL_PLATFORM_APLITE
-    uint8_t xor_argb8 = config.draw_mode ? 0x3f : 0x00;
-    bwd_adjust_colors(&clock_face, 0xff, 0x00, xor_argb8);
-#endif  // PBL_PLATFORM_APLITE
+    remap_colors(&clock_face);
   }
 
   // Draw the clock face into the layer.

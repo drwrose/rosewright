@@ -21,6 +21,7 @@ __LunarPhase = "Phase lunaire"
 __SecondHand = "Trotteuse"
 __SweepSeconds = "Mouvement fluide de trotteuse (utilisation de la batterie lourde)"
 __FaceIndex = "Variante de visage"
+__ColorMode = "Color scheme (Pebble Time only)"
 __DrawMode = "Inverser les couleurs"
 
 __ChronoDial = "Chrono ligne indique"

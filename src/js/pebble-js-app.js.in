@@ -3,6 +3,7 @@ var watch_name = "%(watchName)s";
 var show_chrono_dial = %(enableChronoDial)s;
 var enable_sweep_seconds = %(enableSweepSeconds)s;
 var num_faces = %(numFaces)s;
+var num_face_colors = %(numFaceColors)s;
 var num_date_windows = %(numDateWindows)s;
 var support_moon = %(supportMoon)s;
 
@@ -15,6 +16,7 @@ var default_second_hand = %(enableSecondHand)s;
 var default_hour_buzzer = %(enableHourBuzzer)s;
 var default_bluetooth_buzzer = 1;
 var default_draw_mode = 0;
+var default_color_mode = 0;
 var default_chrono_dial = 1;
 var default_sweep_seconds = 0;
 var default_display_lang = null;  // determined from navigator.language, below
@@ -29,6 +31,7 @@ var second_hand;
 var hour_buzzer;
 var bluetooth_buzzer;
 var draw_mode;
+var color_mode;
 var chrono_dial;
 var sweep_seconds;
 var display_lang;
@@ -119,6 +122,7 @@ function initialize() {
     hour_buzzer = getIntFromStorage('hour_buzzer', default_hour_buzzer);
     bluetooth_buzzer = getIntFromStorage('bluetooth_buzzer', default_bluetooth_buzzer);
     draw_mode = getIntFromStorage('draw_mode', default_draw_mode);
+    color_mode = getIntFromStorage('color_mode', default_color_mode);
     chrono_dial = getIntFromStorage('chrono_dial', default_chrono_dial);
     sweep_seconds = getIntFromStorage('sweep_seconds', default_sweep_seconds);
     display_lang = getStringFromStorage('display_lang_' + default_display_lang, default_display_lang);
@@ -148,6 +152,7 @@ Pebble.addEventListener("ready", function(e) {
 	    'hour_buzzer' : hour_buzzer,
 	    'bluetooth_buzzer' : bluetooth_buzzer,
 	    'draw_mode' : draw_mode,
+	    'color_mode' : color_mode,
 	    'chrono_dial' : chrono_dial,
 	    'sweep_seconds' : sweep_seconds,
 	    'display_lang' : display_lang_lookup[display_lang],
@@ -173,7 +178,7 @@ Pebble.addEventListener("showConfiguration", function(e) {
     if (config_langs.indexOf(prefix) >= 0) {
 	lang_extension = '.' + prefix;
     }
-    var url = "http://www.ddrose.com/pebble/rosewright_2_16_configure" + lang_extension + ".html?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&default_display_lang=" + default_display_lang + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_date_windows=" + num_date_windows;
+    var url = "http://www.ddrose.com/pebble/rosewright_3_3_configure" + lang_extension + ".html?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&color_mode=" + color_mode + "&default_display_lang=" + default_display_lang + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_face_colors=" + num_face_colors + "&num_date_windows=" + num_date_windows;
     if (show_chrono_dial) {
 	url += "&chrono_dial=" + chrono_dial;
     }
@@ -219,6 +224,9 @@ Pebble.addEventListener("webviewclosed", function(e) {
 	
 	draw_mode = configuration["draw_mode"];
 	writeToStorage("draw_mode", draw_mode);
+	
+	color_mode = configuration["color_mode"];
+	writeToStorage("color_mode", color_mode);
 	
 	chrono_dial = configuration["chrono_dial"];
 	writeToStorage("chrono_dial", chrono_dial);

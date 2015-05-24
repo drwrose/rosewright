@@ -21,6 +21,7 @@ __LunarPhase = "Lunar phase"
 __SecondHand = "Second hand"
 __SweepSeconds = "Smooth-sweep seconds (heavy battery use)"
 __FaceIndex = "Select face variant"
+__ColorMode = "Color scheme (Pebble Time only)"
 __DrawMode = "Invert colors"
 
 __ChronoDial = "Bottom chrono dial shows"

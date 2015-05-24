@@ -117,14 +117,12 @@ watches = {
 #   hand - the hand type being defined.
 #   filename - the png image that defines this hand, pointing upward.
 #   colorMode - indicate how the colors in the png file are to be interpreted.
-#       'b'  - foreground pixels are forced to black
-#       'w'  - foreground pixels are forced to white
+#       1    - foreground pixels are forced to color 1 (red channel)
+#       2    - foreground pixels are forced to color 2 (green channel)
+#       3    - foreground pixels are forced to color 3 (blue channel)
 #       't'  - foreground pixels are drawn in their own color.
 #              This doubles the resource cost on Aplite.
-#       In addition, if any of the above is suffixed with '%', it
-#       means to dither the grayscale levels in the png file to
-#       produce the final black or white color pixel.  Without this
-#       symbol, the default is to use thresholding.
+#       't%' - As above, but dither the grayscale levels on Aplite.
 #   asymmetric - false if the hand is left/right symmetric and can be
 #       drawn mirrored, or false if it must be drawn without
 #       mirroring, which doubles the resource cost again.
@@ -135,44 +133,38 @@ watches = {
 #  For vectorParams:
 #     [(fillType, points), (fillType, points), ...]
 #
-#   fillType - Specify the type of the drawing:
-#       'b'  - black unfilled stroke
-#       'w'  - white unfilled stroke
-#       'bb' - black stroke filled with black
-#       'bw' - black stroke filled with white
-#       'wb' - white stroke filled with black
-#       'ww' - white stroke filled with white
+#   fillType - Deprecated.
 #   points - a list of points in the vector.  Draw the hand in the
 #       vertical position, from the pivot at (0, 0).
 #
 
 hands = {
-    'a' : [('hour', ('a_hour_hand.png', 'b', False, (78, 398), 0.12), None),
-           ('minute', ('a_minute_hand.png', 'b', True, (37, 553), 0.12), None),
-           ('second', ('a_second_hand.png', 'b', False, (37, -24), 0.12),
-            [('b', [(0, -5), (0, -70)])]),
+    'a' : [('hour', ('a_hour_hand.png', 1, False, (78, 398), 0.12), None),
+           ('minute', ('a_minute_hand.png', 1, True, (37, 553), 0.12), None),
+           ('second', ('a_second_hand.png', 1, False, (37, -24), 0.12),
+            [(1, [(0, -5), (0, -70)])]),
            ],
-    'b' : [('hour', ('b_hour_hand.png', 'b', False, (33, 211), 0.27), None),
-           ('minute', ('b_minute_hand.png', 'b', False, (24, 280), 0.27), None),
-           ('second', ('b_second_hand.png', 'b', False, (33, -23), 0.27),
-            [('b', [(0, -5), (0, -75)]),
+    'b' : [('hour', ('b_hour_hand.png', 1, False, (33, 211), 0.27), None),
+           ('minute', ('b_minute_hand.png', 1, False, (24, 280), 0.27), None),
+           ('second', ('b_second_hand.png', 1, False, (33, -23), 0.27),
+            [(1, [(0, -5), (0, -75)]),
              ]),
            ],
     'c' : [('hour', ('c_hour_hand.png', 't%', False, (59, 434), 0.14), None),
            ('minute', ('c_minute_hand.png', 't%', False, (38, 584), 0.14), None),
-           ('second', ('c_chrono1_hand.png', 'w', False, (32, -27), 0.14),
-            [('w', [(0, -2), (0, -26)]),
+           ('second', ('c_chrono1_hand.png', 2, False, (32, -27), 0.14),
+            [(2, [(0, -2), (0, -26)]),
              ]),
-           ('chrono_minute', ('c_chrono2_hand.png', 'w', False, (37, 195), 0.14), None),
-           ('chrono_second', ('c_second_hand.png', 'w', False, (41, -29), 0.14),
-            [('w', [(0, -4), (0, -88)]),
+           ('chrono_minute', ('c_chrono2_hand.png', 2, False, (37, 195), 0.14), None),
+           ('chrono_second', ('c_second_hand.png', 1, False, (41, -29), 0.14),
+            [(1, [(0, -4), (0, -88)]),
              ]),
-           ('chrono_tenth', ('c_chrono2_hand.png', 'w', False, (37, 195), 0.14), None),
+           ('chrono_tenth', ('c_chrono2_hand.png', 2, False, (37, 195), 0.14), None),
            ],
     'd' : [('hour', ('d_hour_hand.png', 't', False, (24, 193), 0.24), None),
            ('minute', ('d_minute_hand.png', 't', False, (27, 267), 0.24), None),
-           ('second', ('d_second_hand.png', 'b', False, (14, -8), 0.24),
-            [('b', [(0, -3), (0, -64)]),
+           ('second', ('d_second_hand.png', 1, False, (14, -8), 0.24),
+            [(1, [(0, -3), (0, -64)]),
              ]),
            ],
     'e' : [('hour', ('e_hour_hand.png', 't%', False, (28, 99), 0.53), None),
@@ -238,6 +230,9 @@ faces = {
         },
     'c' : {
         'filename' : ['c_face.png', 'c_face_rect.png'],
+        'colors' : [ ('Black', 'White', 'White', 'Yellow'),
+                     ('Yellow', 'Black', 'Blue', 'Red'),
+                     ],
         'default_face' : 1,
         'chrono' : ('c_face_chrono_tenths.png', 'c_face_chrono_hours.png'),
         'centers' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
@@ -324,21 +319,18 @@ def formatUuId(uuId):
     return '%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x' % tuple(uuId)
 
 def parseColorMode(colorMode):
-    paintBlack = False
+    paintChannel = 0
     useTransparency = False
     dither = False
 
-    if colorMode[0] == 'b':
-        paintBlack = True
-    elif colorMode[0] == 'w':
-        paintBlack = False
+    if colorMode in [1, 2, 3]:
+        paintChannel = colorMode
     elif colorMode[0] == 't':
         useTransparency = True
+        if colorMode.endswith('%'):
+            dither = True
 
-    if colorMode.endswith('%'):
-        dither = True
-
-    return paintBlack, useTransparency, dither
+    return paintChannel, useTransparency, dither
 
 def makeFaces(generatedTable, generatedDefs):
 
@@ -423,6 +415,14 @@ def makeFaces(generatedTable, generatedDefs):
             }
     print >> generatedTable, "};\n"
 
+    faceColors = fd.get('colors')
+    print >> generatedTable, "#ifndef PBL_PLATFORM_APLITE"
+    print >> generatedTable, "struct FaceColorDef clock_face_color_table[NUM_FACE_COLORS] = {"
+    for i in range(len(faceColors)):
+        print >> generatedTable, "  { GColor%sARGB8, GColor%sARGB8, GColor%sARGB8, GColor%sARGB8 }," % faceColors[i]
+    print >> generatedTable, "};"
+    print >> generatedTable, "#endif  // PBL_PLATFORM_APLITE\n"
+
     if date_windows and date_window_filename:
         window, mask = date_window_filename
 
@@ -452,7 +452,7 @@ def makeFaces(generatedTable, generatedDefs):
 
     return resourceStr
 
-def makeVectorHands(generatedTable, generatedDefs, hand, groupList):
+def makeVectorHands(generatedTable, paintChannel, generatedDefs, hand, groupList):
     resourceStr = ''
 
     colorMap = {
@@ -462,12 +462,10 @@ def makeVectorHands(generatedTable, generatedDefs, hand, groupList):
         }
 
     print >> generatedTable, "struct VectorHand %s_hand_vector_table = {" % (hand)
-
+    print >> generatedTable, "  %s," % (paintChannel)
     print >> generatedTable, "  %s, (struct VectorHandGroup[]){" % (len(groupList))
     for fillType, points in groupList:
-        stroke = colorMap[fillType[0]]
-        fill = colorMap[fillType[1:2]]
-        print >> generatedTable, "  { %s, %s, { %s, (GPoint[]){" % (stroke, fill, len(points))
+        print >> generatedTable, "  { { %s, (GPoint[]){" % (len(points))
         for px, py in points:
             print >> generatedTable, "    { %s, %s }," % (px, py)
         print >> generatedTable, "  } } },"
@@ -523,7 +521,7 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
     handTableLines = []
 
     source = PIL.Image.open('%s/clock_hands/%s' % (resourcesDir, sourceFilename))
-    paintBlack, useTransparency, dither = parseColorMode(colorMode)
+    paintChannel, useTransparency, dither = parseColorMode(colorMode)
 
     r, g, b, sourceMask = source.convert('RGBA').split()
     source = PIL.Image.merge('RGB', [r, g, b])
@@ -653,12 +651,14 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
             p2 = p2.crop(cropbox)
 
             if not useTransparency:
-                # Force the foreground pixels to either black or white (for
-                # Basalt only; in the Aplite case these pixels are implicit).
-                if paintBlack:
-                    p2 = PIL.Image.new('RGB', p2.size, (0, 0, 0))
-                else:
-                    p2 = PIL.Image.new('RGB', p2.size, (255, 255, 255))
+                # Force the foreground pixels to the appropriate color
+                # (in the Basalt case only):
+                if paintChannel == 1:
+                    p2 = PIL.Image.new('RGB', p2.size, (255, 0, 0))
+                elif paintChannel == 2:
+                    p2 = PIL.Image.new('RGB', p2.size, (0, 255, 0))
+                elif paintChannel == 3:
+                    p2 = PIL.Image.new('RGB', p2.size, (0, 0, 255))
 
             cx, cy = cx - cropbox[0], cy - cropbox[1]
 
@@ -760,7 +760,6 @@ def makeHands(generatedTable, generatedDefs):
     %(resourceId)s, APLITE_RESOURCE(%(resourceMaskId)s),
     %(placeX)s, %(placeY)s,
     %(useRle)s,
-    %(paintBlack)s,
     %(bitmapCenters)s,
     %(bitmapTable)s,
     %(vectorTable)s,
@@ -786,7 +785,7 @@ def makeHands(generatedTable, generatedDefs):
 
         resourceId = '0'
         resourceMaskId = resourceId
-        paintBlack = False
+        paintChannel = 0
         bitmapCenters = 'NULL'
         bitmapTable = 'NULL'
         vectorTable = 'NULL'
@@ -794,7 +793,7 @@ def makeHands(generatedTable, generatedDefs):
         if bitmapParams:
             resourceStr += makeBitmapHands(generatedTable, generatedDefs, useRle, hand, *bitmapParams)
             colorMode = bitmapParams[1]
-            paintBlack, useTransparency, dither = parseColorMode(colorMode)
+            paintChannel, useTransparency, dither = parseColorMode(colorMode)
             resourceId = 'RESOURCE_ID_%s_0' % (hand.upper())
             resourceMaskId = resourceId
             if useTransparency:
@@ -803,7 +802,7 @@ def makeHands(generatedTable, generatedDefs):
             bitmapTable = '%s_hand_bitmap_table' % (hand)
 
         if vectorParams:
-            resourceStr += makeVectorHands(generatedTable, generatedDefs, hand, vectorParams)
+            resourceStr += makeVectorHands(generatedTable, paintChannel, generatedDefs, hand, vectorParams)
             vectorTable = '&%s_hand_vector_table' % (hand)
 
         handDef = handDefEntry % {
@@ -814,7 +813,6 @@ def makeHands(generatedTable, generatedDefs):
             'placeX' : cxd.get(hand, centerX),
             'placeY' : cyd.get(hand, centerY),
             'useRle' : int(bool(useRle)),
-            'paintBlack' : int(bool(paintBlack)),
             'bitmapCenters' : bitmapCenters,
             'bitmapTable' : bitmapTable,
             'vectorTable' : vectorTable,
@@ -957,6 +955,7 @@ def configWatch():
     print >> js, jsIn % {
         'watchName' : watchName,
         'numFaces' : numFaces,
+        'numFaceColors' : numFaceColors,
         'defaultFaceIndex' : defaultFaceIndex,
         'numDateWindows' : len(date_windows),
         'enableChronoDial' : int(makeChronograph),
@@ -987,6 +986,7 @@ def configWatch():
         'persistKey' : 0x5151 + uuId[-1],
         'supportRle' : int(bool(supportRle)),
         'numFaces' : numFaces,
+        'numFaceColors' : numFaceColors,
         'defaultFaceIndex' : defaultFaceIndex,
         'numDateWindows' : len(date_windows),
         'numStepsHour' : numSteps['hour'],
@@ -1083,6 +1083,9 @@ faceFilenames = fd.get('filename')
 if isinstance(faceFilenames, type('')):
     faceFilenames = [faceFilenames]
 numFaces = len(faceFilenames)
+
+faceColors = fd.get('colors')
+numFaceColors = len(faceColors)
 
 defaultFaceIndex = fd.get('default_face', 0)
 

@@ -114,9 +114,8 @@ void load_chrono_dial() {
     return;
   }
 
-  // We apply the color-inverting mode if necessary.
-  uint8_t xor_argb8 = config.draw_mode ? 0x3f : 0x00;
-  bwd_adjust_colors(&chrono_dial_white, 0xff, 0x00, xor_argb8);
+  // We apply the color scheme as needed.
+  remap_colors(&chrono_dial_white);
 #endif  // PBL_PLATFORM_APLITE
 }
 

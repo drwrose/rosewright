@@ -23,6 +23,7 @@ typedef enum {
   CK_bluetooth_buzzer = 13,
   CK_lunar_background = 14,
   CK_lunar_direction = 15,
+  CK_color_mode = 16,
 } ConfigKey;
 
 typedef enum {
@@ -70,6 +71,7 @@ typedef struct {
   DateWindowMode date_windows[NUM_DATE_WINDOWS];
   bool lunar_background;   // true for always-black background.
   bool lunar_direction;    // true for southern hemisphere (left-to-right).
+  unsigned char color_mode;
 } __attribute__((__packed__)) ConfigOptions;
 
 extern ConfigOptions config;

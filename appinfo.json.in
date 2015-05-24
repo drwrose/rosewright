@@ -27,7 +27,8 @@
     "date_window_d": 12,
     "bluetooth_buzzer": 13,
     "lunar_background": 14,
-    "lunar_direction": 15
+    "lunar_direction": 15,
+    "color_mode": 16
   },
   "resources": {
   "media": [

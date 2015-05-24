@@ -22,6 +22,7 @@ void init_default_options() {
     { DEFAULT_DATE_WINDOWS },
     false,
     false,
+    0,
   };
   
   config = default_options;
@@ -39,13 +40,14 @@ void sanitize_config() {
   for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
     config.date_windows[i] = config.date_windows[i] % (DWM_moon + 1);
   }
+  config.color_mode = config.color_mode % NUM_FACE_COLORS;
 }
 
 #ifndef NDEBUG
 const char *show_config() {
 #define CONFIG_BUFFER_SIZE 100
   static char buffer[CONFIG_BUFFER_SIZE];
-  snprintf(buffer, CONFIG_BUFFER_SIZE, "bat: %d, bt: %d, sh: %d, hb: %d, bb: %d, dm: %d, cd: %d, sw: %d, dl: %d, fi: %d, lb: %d, ld: %d, dw: ", config.battery_gauge, config.bluetooth_indicator, config.second_hand, config.hour_buzzer, config.bluetooth_buzzer, config.draw_mode, config.chrono_dial, config.sweep_seconds, config.display_lang, config.face_index, config.lunar_background, config.lunar_direction);
+  snprintf(buffer, CONFIG_BUFFER_SIZE, "bat: %d, bt: %d, sh: %d, hb: %d, bb: %d, dm: %d, cm: %d, cd: %d, sw: %d, dl: %d, fi: %d, lb: %d, ld: %d, dw: ", config.battery_gauge, config.bluetooth_indicator, config.second_hand, config.hour_buzzer, config.bluetooth_buzzer, config.draw_mode, config.color_mode, config.chrono_dial, config.sweep_seconds, config.display_lang, config.face_index, config.lunar_background, config.lunar_direction);
 
   if (NUM_DATE_WINDOWS > 0) {
     char b2[12];
@@ -122,6 +124,11 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
   Tuple *draw_mode = dict_find(received, CK_draw_mode);
   if (draw_mode != NULL) {
     config.draw_mode = draw_mode->value->int32;
+  }
+
+  Tuple *color_mode = dict_find(received, CK_color_mode);
+  if (color_mode != NULL) {
+    config.color_mode = color_mode->value->int32;
   }
 
   Tuple *chrono_dial = dict_find(received, CK_chrono_dial);
