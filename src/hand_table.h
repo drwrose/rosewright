@@ -12,7 +12,11 @@ struct __attribute__((__packed__)) FaceDef {
 };
 
 struct __attribute__((__packed__)) FaceColorDef {
+  // Clock face background, c1, c2, c3
   uint8_t cb_argb8, c1_argb8, c2_argb8, c3_argb8;
+
+  // Date window background, c1
+  uint8_t db_argb8, d1_argb8;
 };
 
 // A table of center positions, one for each different bitmap for a

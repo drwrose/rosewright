@@ -210,8 +210,8 @@ faces = {
     'a' : {
         'filename': ['a_face.png', 'a_face_unrotated.png'],
         'aplite_invert' : True,
-        'colors' : [ ('Yellow', 'Black', 'Black', 'Black'),
-                     ('White', 'Blue', 'Red', 'Green'),
+        'colors' : [ (('Yellow', 'Black', 'Black', 'Black'), ('White', 'Black')),
+                     (('White', 'Blue', 'Red', 'Green'), ('White', 'Black')),
                      ],
         'date_window_a': (38, 82, 'b'),
         'date_window_b': (106, 82, 'b'),
@@ -225,7 +225,7 @@ faces = {
     'b' : {
         'filename' : ['b_face_rect.png', 'b_face.png'],
         'aplite_invert' : True,
-        'colors' : [ ('White', 'Black', 'Black', 'Black'), ],
+        'colors' : [ (('White', 'Black', 'Black', 'Black'), ('White', 'Black')) ],
         'date_window_a' : (72, 54, 'b'),
         'date_window_b' : (52, 109, 'b'),
         'date_window_c' : (92, 109, 'b'),
@@ -236,8 +236,8 @@ faces = {
         },
     'c' : {
         'filename' : ['c_face_rect.png', 'c_face.png'],
-        'colors' : [ ('Black', 'White', 'White', 'Yellow'),
-                     ('Yellow', 'Black', 'Blue', 'Red'),
+        'colors' : [ (('Black', 'White', 'White', 'Yellow'), ('Black', 'White')),
+                     (('Yellow', 'Black', 'Blue', 'Red'), ('Black', 'White')),
                      ],
         'chrono' : ('c_face_chrono_tenths.png', 'c_face_chrono_hours.png'),
         'centers' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
@@ -251,20 +251,20 @@ faces = {
     'd' : {
         'filename' : ['d_face_rect.png', 'd_face_rect_clean.png'],
         'aplite_invert' : True,
-        'colors' : [ ('White', 'Black', 'Black', 'Black'), ],
+        'colors' : [ (('White', 'Black', 'Black', 'Black'), ('White', 'Black')) ],
         'hand_color' : [ (0xff, 0x02), (0xff, 0x02) ],
         'date_window_a': [ (49, 102, 'w'), (49, 102, 'b') ],
         'date_window_b': [ (95, 102, 'w'), (95, 102, 'b') ],
         'date_window_c' : [ (49, 125, 'w'), (49, 125, 'b') ],
         'date_window_d' : [ (95, 125, 'w'), (95, 125, 'b') ],
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
-        'bluetooth' : [ (49, 45, 'bt'), (49, 45, 'bt') ],
-        'battery' : [ (79, 49, 'bt'), (79, 49, 'bt') ],
+        'bluetooth' : [ (49, 45, 'b'), (49, 45, 'b') ],
+        'battery' : [ (79, 49, 'b'), (79, 49, 'b') ],
         'defaults' : [ 'day:c', 'date:d', 'bluetooth', 'battery' ],
         },
     'e' : {
         'filename' : ['e_face.png', 'e_face_white.png'],
-        'colors' : [ ('White', 'Black', 'Black', 'Black'), ],
+        'colors' : [ (('White', 'Black', 'Black', 'Black'), ('White', 'Black')) ],
         'hand_color' : [ (0xfe, 0x00), (0xff, 0x00) ],
         'date_window_a' : (72, 21, 'w'),
         'date_window_b' : (21, 82, 'w'),
@@ -421,7 +421,8 @@ def makeFaces(generatedTable, generatedDefs):
     print >> generatedTable, "#ifndef PBL_PLATFORM_APLITE"
     print >> generatedTable, "struct FaceColorDef clock_face_color_table[NUM_FACE_COLORS] = {"
     for i in range(len(faceColors)):
-        print >> generatedTable, "  { GColor%sARGB8, GColor%sARGB8, GColor%sARGB8, GColor%sARGB8 }," % faceColors[i]
+        cb, db = faceColors[i]
+        print >> generatedTable, "  { GColor%sARGB8, GColor%sARGB8, GColor%sARGB8, GColor%sARGB8, GColor%sARGB8, GColor%sARGB8 }," % (cb[0], cb[1], cb[2], cb[3], db[0], db[1])
     print >> generatedTable, "};"
     print >> generatedTable, "#endif  // PBL_PLATFORM_APLITE\n"
 

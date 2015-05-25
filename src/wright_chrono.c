@@ -115,7 +115,7 @@ void load_chrono_dial() {
   }
 
   // We apply the color scheme as needed.
-  remap_colors(&chrono_dial_white);
+  remap_colors_clock(&chrono_dial_white);
 #endif  // PBL_PLATFORM_APLITE
 }
 

@@ -519,7 +519,7 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
       }
       hand_cache->cx = lookup->cx;
       hand_cache->cy = lookup->cy;
-      remap_colors(&hand_cache->image);
+      remap_colors_clock(&hand_cache->image);
       
       if (hand->flip_x) {
         // To minimize wasteful resource usage, if the hand is symmetric
@@ -611,11 +611,25 @@ void draw_hand(struct HandCache *hand_cache, struct HandDef *hand_def, int hand_
 }
 
 // Applies the appropriate Basalt color-remapping according to the
-// selected color mode.
-void remap_colors(BitmapWithData *bwd) {
+// selected color mode, for the indicated clock-face or clock-hands
+// bitmap.
+void remap_colors_clock(BitmapWithData *bwd) {
 #ifndef PBL_PLATFORM_APLITE
   struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
   bwd_remap_colors(bwd, (GColor8){.argb=cd->cb_argb8}, (GColor8){.argb=cd->c1_argb8}, (GColor8){.argb=cd->c2_argb8}, (GColor8){.argb=cd->c3_argb8}, config.draw_mode);
+#endif  // PBL_PLATFORM_APLITE
+}
+
+// Applies the appropriate Basalt color-remapping according to the
+// selected color mode, for the indicated date-window bitmap.
+void remap_colors_date(BitmapWithData *bwd, bool bg_black) {
+#ifndef PBL_PLATFORM_APLITE
+  struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
+  GColor bg = GColorBlack;
+  if (!bg_black) {
+    bg.argb = cd->db_argb8;
+  }
+  bwd_remap_colors(bwd, bg, (GColor8){.argb=cd->d1_argb8}, bg, bg, config.draw_mode);
 #endif  // PBL_PLATFORM_APLITE
 }
 
@@ -635,7 +649,7 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
       trigger_memory_panic(__LINE__);
       return;
     }
-    remap_colors(&clock_face);
+    remap_colors_clock(&clock_face);
   }
 
   // Draw the clock face into the layer.
@@ -689,11 +703,7 @@ void draw_date_window_background(GContext *ctx, unsigned int fg_draw_mode, unsig
       return;
     }
 #ifndef PBL_PLATFORM_APLITE
-    // On Basalt, if we have an inverse setting here we invert the
-    // bitmap colors.
-    if (fg_draw_mode) {
-      bwd_adjust_colors(&date_window, 0xff, 0x00, 0x3f);
-    }
+    remap_colors_date(&date_window, fg_draw_mode);
 #endif  // PBL_PLATFORM_APLITE
   }
   
