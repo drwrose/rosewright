@@ -97,6 +97,5 @@ void hand_cache_destroy(struct HandCache *hand_cache);
 void reset_tick_timer();
 void draw_hand(struct HandCache *hand_cache, struct HandDef *hand_def, int hand_index, GContext *ctx);
 void remap_colors_clock(BitmapWithData *bwd);
-void remap_colors_date(BitmapWithData *bwd, bool bg_black);
 
 #endif

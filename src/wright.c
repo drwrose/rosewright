@@ -622,14 +622,36 @@ void remap_colors_clock(BitmapWithData *bwd) {
 
 // Applies the appropriate Basalt color-remapping according to the
 // selected color mode, for the indicated date-window bitmap.
-void remap_colors_date(BitmapWithData *bwd, bool bg_black) {
+static void remap_colors_date(BitmapWithData *bwd) {
 #ifndef PBL_PLATFORM_APLITE
   struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
   GColor bg, fg;
   bg.argb = cd->db_argb8;
   fg.argb = cd->d1_argb8;
 
-  bwd_remap_colors(bwd, bg, fg, bg, bg, config.draw_mode);
+  bwd_remap_colors(bwd, bg, fg, GColorBlack, GColorWhite, config.draw_mode);
+#endif  // PBL_PLATFORM_APLITE
+}
+
+// Applies the appropriate Basalt color-remapping according to the
+// selected color mode, for the indicated lunar bitmap.
+static void remap_colors_moon(BitmapWithData *bwd) {
+#ifndef PBL_PLATFORM_APLITE
+  struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
+  GColor bg, fg;
+  bg.argb = cd->db_argb8;
+  fg.argb = cd->d1_argb8;
+  if (config.lunar_background) {
+    // If the user specified an always-black background, honor that.
+    fg = GColorWhite;
+    bg = GColorBlack;
+  } else if (config.draw_mode) {
+    // Inverting colors really means only to invert the two watchface colors.
+    fg.argb ^= 0x3f;
+    bg.argb ^= 0x3f;
+  }
+
+  bwd_remap_colors(bwd, bg, fg, GColorBlack, GColorPastelYellow, false);
 #endif  // PBL_PLATFORM_APLITE
 }
 
@@ -703,7 +725,7 @@ void draw_date_window_background(GContext *ctx, unsigned int fg_draw_mode, unsig
       return;
     }
 #ifndef PBL_PLATFORM_APLITE
-    remap_colors_date(&date_window, fg_draw_mode);
+    remap_colors_date(&date_window);
 #endif  // PBL_PLATFORM_APLITE
   }
   
@@ -768,11 +790,19 @@ void draw_lunar_window(Layer *me, GContext *ctx, DateWindowMode dwm, bool invert
 
   if (moon_bitmap.bitmap == NULL) {
     assert(current_placement.lunar_phase <= 7);
+#ifdef PBL_PLATFORM_APLITE
+    // On Aplite, we load either "black" or "white" icons, according
+    // to what color we need the background to be.
     if (moon_draw_mode == 0) {
       moon_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHITE_0 + current_placement.lunar_phase);
     } else {
       moon_bitmap = rle_bwd_create(RESOURCE_ID_MOON_BLACK_0 + current_placement.lunar_phase);
     }
+#else  // PBL_PLATFORM_APLITE
+    // On Basalt, we only use the "black" icons, and we remap the colors at load time.
+    moon_bitmap = rle_bwd_create(RESOURCE_ID_MOON_BLACK_0 + current_placement.lunar_phase);
+    remap_colors_moon(&moon_bitmap);
+#endif  // PBL_PLATFORM_APLITE
     if (moon_bitmap.bitmap == NULL) {
       trigger_memory_panic(__LINE__);
       return;

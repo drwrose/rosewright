@@ -685,24 +685,23 @@ void bwd_remap_colors(BitmapWithData *bwd, GColor cb, GColor c1, GColor c2, GCol
     
     GColor p = palette[pi];
 
-    r = p.r * (c1.r - r) / 3 + r;  // Blend from r to c1.r
-    r = p.g * (c2.r - r) / 3 + r;  // Blend from r to c2.r
-    r = p.b * (c3.r - r) / 3 + r;  // Blend from r to c3.r
+    r = (3 * r + p.r * (c1.r - r)) / 3;  // Blend from r to c1.r
+    r = (3 * r + p.g * (c2.r - r)) / 3;  // Blend from r to c2.r
+    r = (3 * r + p.b * (c3.r - r)) / 3;  // Blend from r to c3.r
 
-    g = p.r * (c1.g - g) / 3 + g;  // Blend from g to c1.g
-    g = p.g * (c2.g - g) / 3 + g;  // Blend from g to c2.g
-    g = p.b * (c3.g - g) / 3 + g;  // Blend from g to c3.g
+    g = (3 * g + p.r * (c1.g - g)) / 3;  // Blend from g to c1.g
+    g = (3 * g + p.g * (c2.g - g)) / 3;  // Blend from g to c2.g
+    g = (3 * g + p.b * (c3.g - g)) / 3;  // Blend from g to c3.g
 
-    b = p.r * (c1.b - b) / 3 + b;  // Blend from b to c1.b
-    b = p.g * (c2.b - b) / 3 + b;  // Blend from b to c2.b
-    b = p.b * (c3.b - b) / 3 + b;  // Blend from b to c3.b
+    b = (3 * b + p.r * (c1.b - b)) / 3;  // Blend from b to c1.b
+    b = (3 * b + p.g * (c2.b - b)) / 3;  // Blend from b to c2.b
+    b = (3 * b + p.b * (c3.b - b)) / 3;  // Blend from b to c3.b
 
     palette[pi].r = (r < 0x3) ? r : 0x3;
     palette[pi].g = (g < 0x3) ? g : 0x3;
     palette[pi].b = (b < 0x3) ? b : 0x3;
 
-    //GColor q = palette[pi];
-    //app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "%d: %02x/%02x/%02x/%02x becomes %02x/%02x/%02x/%02x (%d, %d, %d)", pi, p.argb & 0xc0, p.argb & 0x30, p.argb & 0x0c, p.argb & 0x03, q.argb & 0xc0, q.argb & 0x30, q.argb & 0x0c, q.argb & 0x03, r, g, b);
+    //    GColor q = palette[pi]; app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "cb = %02x, c1 = %02x, c2 = %02x, c3 = %02x.  %d: %02x/%02x/%02x/%02x becomes %02x/%02x/%02x/%02x (%d, %d, %d)", cb.argb, c1.argb, c2.argb, c3.argb, pi, p.argb & 0xc0, p.argb & 0x30, p.argb & 0x0c, p.argb & 0x03, q.argb & 0xc0, q.argb & 0x30, q.argb & 0x0c, q.argb & 0x03, r, g, b);
     
     if (invert_colors) {
       palette[pi].argb ^= 0x3f;
