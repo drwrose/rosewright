@@ -176,12 +176,24 @@ hands = {
 # Table of face styles.  For each style, specify the following:
 #
 #   filename  - the background image for the face, or a list of optional faces.
+#   aplite_invert - True to invert the color scheme by default on Aplite.
+#               Needed to render dark hands on a white background;
+#               otherwise, hands will be drawn white (unless they have
+#               't' as their color).
+#   colors    - for Basalt only, the list of ((bg, c1, c2, c3), (db, d1))
+#               colors that define each color scheme.  The first four
+#               colors are the bg and three fg colors for the face and
+#               hands; the next two colors are the bg and fg colors
+#               for the date windows.
 #   chrono    - the (tenths, hours) images for the two chrono dials, if used.
-#   hand_color    - the (and, or) tuple to adjust the hand colors in a Basalt build.
-#   date_window_a - the (x, y, c) position, color, background of the first date window.
-#   date_window_b - the (x, y, c) position, color, background of the second date window.
+#   date_window_a - the (x, y, c) position, background of the first date window.
+#               The background is either 'b' or 'w', and is relevant
+#               only on Aplite; see the colors field, above, for
+#               Basalt.  This may be a list of tuples to define a
+#               different value for each optional face.
+#   date_window_b - the (x, y, c) position, background of the second date window.
 #   date_window_c - etc.  All date windows must be consecutively named.
-#   date_window_filename - the (window, mask) images shared by all date windows.  The mask is used only if one of the date_window_* colors includes t for transparency.
+#   date_window_filename - the (window, mask) images shared by all date windows.
 #   battery   - the (x, y, c) position and color of the battery gauge, or None.
 #   bluetooth - the (x, y, c) position and color of the bluetooth indicator, or None.
 #   defaults  - a list of things enabled by default: one or more of 'date:X', 'day:X', 'battery', 'bluetooth', 'second'
@@ -223,9 +235,12 @@ faces = {
         'defaults' : [ 'date:b' ],
         },
     'b' : {
-        'filename' : ['b_face_rect.png', 'b_face.png'],
+        'filename' : ['b_face_rect.png'],
         'aplite_invert' : True,
-        'colors' : [ (('White', 'Black', 'Black', 'Black'), ('White', 'Black')) ],
+        'colors' : [ (('Black', 'Black', 'PictonBlue', 'Black'), ('White', 'Black')),
+                     (('Black', 'BulgarianRose', 'Yellow', 'OxfordBlue'), ('White', 'Black')),
+                     (('Black', 'Blue', 'BrilliantRose', 'BulgarianRose'), ('White', 'Black')),
+                     ],
         'date_window_a' : (72, 54, 'b'),
         'date_window_b' : (52, 109, 'b'),
         'date_window_c' : (92, 109, 'b'),
@@ -251,7 +266,10 @@ faces = {
     'd' : {
         'filename' : ['d_face_rect.png', 'd_face_rect_clean.png'],
         'aplite_invert' : True,
-        'colors' : [ (('White', 'Black', 'Black', 'Black'), ('White', 'Black')) ],
+        'colors' : [ (('White', 'Blue', 'Yellow', 'LightGray'), ('DukeBlue', 'White')),
+                     (('Black', 'BulgarianRose', 'Yellow', 'VeryLightBlue'), ('White', 'Black')),
+                     (('White', 'DukeBlue', 'White', 'FashionMagenta'), ('DukeBlue', 'White')),
+                     ],
         'hand_color' : [ (0xff, 0x02), (0xff, 0x02) ],
         'date_window_a': [ (49, 102, 'w'), (49, 102, 'b') ],
         'date_window_b': [ (95, 102, 'w'), (95, 102, 'b') ],
@@ -264,8 +282,10 @@ faces = {
         },
     'e' : {
         'filename' : ['e_face.png', 'e_face_white.png'],
-        'colors' : [ (('White', 'Black', 'Black', 'Black'), ('White', 'Black')) ],
-        'hand_color' : [ (0xfe, 0x00), (0xff, 0x00) ],
+        'colors' : [ (('Black', 'Icterine', 'Yellow', 'PastelYellow'), ('White', 'Black')),
+                     (('Black', 'White', 'White', 'White'), ('White', 'Black')),
+                     (('Black', 'FashionMagenta', 'VeryLightBlue', 'White'), ('White', 'Black')),
+                     ],
         'date_window_a' : (72, 21, 'w'),
         'date_window_b' : (21, 82, 'w'),
         'date_window_c' : (123, 82, 'w'),

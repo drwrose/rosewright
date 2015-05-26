@@ -701,6 +701,9 @@ void bwd_remap_colors(BitmapWithData *bwd, GColor cb, GColor c1, GColor c2, GCol
     palette[pi].g = (g < 0x3) ? g : 0x3;
     palette[pi].b = (b < 0x3) ? b : 0x3;
 
+    //GColor q = palette[pi];
+    //app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "%d: %02x/%02x/%02x/%02x becomes %02x/%02x/%02x/%02x (%d, %d, %d)", pi, p.argb & 0xc0, p.argb & 0x30, p.argb & 0x0c, p.argb & 0x03, q.argb & 0xc0, q.argb & 0x30, q.argb & 0x0c, q.argb & 0x03, r, g, b);
+    
     if (invert_colors) {
       palette[pi].argb ^= 0x3f;
     }

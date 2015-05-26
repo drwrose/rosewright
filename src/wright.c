@@ -625,11 +625,11 @@ void remap_colors_clock(BitmapWithData *bwd) {
 void remap_colors_date(BitmapWithData *bwd, bool bg_black) {
 #ifndef PBL_PLATFORM_APLITE
   struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
-  GColor bg = GColorBlack;
-  if (!bg_black) {
-    bg.argb = cd->db_argb8;
-  }
-  bwd_remap_colors(bwd, bg, (GColor8){.argb=cd->d1_argb8}, bg, bg, config.draw_mode);
+  GColor bg, fg;
+  bg.argb = cd->db_argb8;
+  fg.argb = cd->d1_argb8;
+
+  bwd_remap_colors(bwd, bg, fg, bg, bg, config.draw_mode);
 #endif  // PBL_PLATFORM_APLITE
 }
 
@@ -720,7 +720,17 @@ void draw_window(Layer *me, GContext *ctx, const char *text, struct FontPlacemen
   unsigned int draw_mode = invert ^ config.draw_mode ^ APLITE_INVERT;
   draw_date_window_background(ctx, draw_mode, draw_mode);
 
+#ifdef PBL_PLATFORM_APLITE
   graphics_context_set_text_color(ctx, draw_mode_table[draw_mode].colors[1]);
+#else
+  struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
+  GColor fg;
+  fg.argb = cd->d1_argb8;
+  if (config.draw_mode) {
+    fg.argb ^= 0x3f;
+  }
+  graphics_context_set_text_color(ctx, fg);
+#endif  // PBL_PLATFORM_APLITE
 
   box.origin.y += font_placement->vshift;
 
