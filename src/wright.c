@@ -193,8 +193,8 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
   ms *= 67;
 #endif  // FAST_TIME
 
-  /*
-  // Hack for screenshots.
+#ifdef SCREENSHOT_BUILD
+  // Freeze the time to 10:09 for screenshots.
   {
     ms = ((10*60 + 9)*60 + 36) * 1000;  // 10:09:36
     if (time != NULL) {
@@ -209,7 +209,7 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
     chrono_data.hold_ms = ((6 * 60) + 36) * 1000 + 900;  // 0:06:36.9
 #endif  // MAKE_CHRONOGRAPH
   }
-  */
+#endif  // SCREENSHOT_BUILD
   
   {
     // Avoid overflowing the integer arithmetic by pre-constraining
@@ -1027,7 +1027,9 @@ void window_load_handler(struct Window *window) {
 void window_appear_handler(struct Window *window) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "main window appears");
 
-#ifdef MAKE_CHRONOGRAPH
+#ifdef SCREENSHOT_BUILD
+  config_set_click_config(window);
+#elif defined(MAKE_CHRONOGRAPH)
   chrono_set_click_config(window);
 #endif  // MAKE_CHRONOGRAPH
 }

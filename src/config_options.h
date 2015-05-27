@@ -85,4 +85,8 @@ void receive_config_handler(DictionaryIterator *received, void *context);
 
 void apply_config();  // implemented in the main program
 
+#ifdef SCREENSHOT_BUILD
+void config_set_click_config(struct Window *window);
+#endif // SCREENSHOT_BUILD
+
 #endif  // CONFIG_OPTIONS_H

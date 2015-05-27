@@ -178,3 +178,32 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
     apply_config();
   }
 }
+
+// The following functions are all designed to support rolling through
+// different configs with the buttons, when SCREENSHOT_BUILD is
+// defined.
+#ifdef SCREENSHOT_BUILD
+static void config_button_up_handler(ClickRecognizerRef recognizer, void *context) {
+  Window *window = (Window *)context;
+}
+#endif  // SCREENSHOT_BUILD
+
+#ifdef SCREENSHOT_BUILD
+static void config_button_down_handler(ClickRecognizerRef recognizer, void *context) {
+  Window *window = (Window *)context;
+}
+#endif  // SCREENSHOT_BUILD
+
+#ifdef SCREENSHOT_BUILD
+static void config_click_config_provider(void *context) {
+  window_single_click_subscribe(BUTTON_ID_UP, &config_button_up_handler);
+  window_single_click_subscribe(BUTTON_ID_DOWN, &config_button_down_handler);
+}
+#endif  // SCREENSHOT_BUILD
+
+
+#ifdef SCREENSHOT_BUILD
+void config_set_click_config(struct Window *window) {
+  window_set_click_config_provider(window, &config_click_config_provider);
+}
+#endif  // SCREENSHOT_BUILD

@@ -47,6 +47,14 @@
   #define NDEBUG 1
 #endif
 
+#if %(screenshotBuild)s
+  // If this is set, it means this build is made specifically for the
+  // purpose of capturing screenshots.  This freezes the time to
+  // 10:09, and also enables the buttons for scrolling through
+  // different configuration options.
+  #define SCREENSHOT_BUILD 1
+#endif
+
 #define DEFAULT_FACE_INDEX %(defaultFaceIndex)s
 #define DEFAULT_DATE_WINDOWS %(defaultDateWindows)s
  

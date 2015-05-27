@@ -56,6 +56,12 @@ Options:
         so the hands move quickly about the face of the watch.  It
         also enables logging.
 
+    -D
+        Make a "screenshot build".  This is a nonfunctional watch for
+        the purpose of capturing screenshots.  The hands are frozen at
+        10:09, and the buttons are active for scrolling through
+        different configuration options.
+
 """
 
 def usage(code, msg = ''):
@@ -980,7 +986,9 @@ def configWatch():
     resource = open('%s/appinfo.json' % (rootDir), 'w')
 
     watchface = 'true'
-    if makeChronograph and enableChronoSecondHand:
+    if screenshotBuild:
+        watchface = 'false'
+    elif makeChronograph and enableChronoSecondHand:
         watchface = 'false'
 
     langData = open('%s/lang_data.json' % (resourcesDir), 'r').read()
@@ -1054,6 +1062,7 @@ def configWatch():
         'numStepsChronoSecond' : getNumSteps('chrono_second'),
         'numStepsChronoTenth' : numSteps['chrono_tenth'],
         'compileDebugging' : int(compileDebugging),
+        'screenshotBuild' : int(screenshotBuild),
         'defaultDateWindows' : repr(defaultDateWindows)[1:-1],
         'enableBluetooth' : int(bool(bluetooth[0])),
         'defaultBluetooth' : int(bool('bluetooth' in defaults)),
@@ -1082,6 +1091,7 @@ handStyle = None
 faceStyle = None
 supportSweep = False
 compileDebugging = False
+screenshotBuild = False
 supportMoon = True
 supportRle = True
 #supportRle = False
@@ -1118,6 +1128,8 @@ for opt, arg in opts:
         targetPlatforms += arg.split(',')
     elif opt == '-d':
         compileDebugging = True
+    elif opt == '-D':
+        screenshotBuild = True
     elif opt == '-h':
         usage(0)
 
