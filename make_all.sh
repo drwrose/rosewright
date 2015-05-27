@@ -6,8 +6,8 @@ python config_watch.py -sb -w || exit
 pebble build || exit
 mv build/rosewright.pbw build/rosewright_b.pbw
 
-#python config_watch.py -sc -c -w -x || exit
-python config_watch.py -sc -c -w || exit
+python config_watch.py -sc -c -w -x || exit
+#python config_watch.py -sc -c -w || exit
 pebble build || exit
 mv build/rosewright.pbw build/rosewright_c2.pbw
 
