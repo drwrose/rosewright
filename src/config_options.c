@@ -182,15 +182,43 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
 // The following functions are all designed to support rolling through
 // different configs with the buttons, when SCREENSHOT_BUILD is
 // defined.
+
+#ifdef SCREENSHOT_BUILD
+static unsigned int current_config_index = 0;
+#endif  // SCREENSHOT_BUILD
+
+#ifdef SCREENSHOT_BUILD
+static void int_to_config() {
+  unsigned int index = current_config_index;
+  
+  // Third digit: color_mode.
+  config.color_mode = index % NUM_FACE_COLORS;
+  index /= NUM_FACE_COLORS;
+
+  // Second digit: draw_mode.
+  config.draw_mode = index % 2;
+  index /= 2;
+
+  // First digit: face_index.
+  config.face_index = index % NUM_FACES;
+  index /= NUM_FACES;
+
+  sanitize_config();
+  apply_config();
+}
+#endif  // SCREENSHOT_BUILD
+
 #ifdef SCREENSHOT_BUILD
 static void config_button_up_handler(ClickRecognizerRef recognizer, void *context) {
-  Window *window = (Window *)context;
+  ++current_config_index;
+  int_to_config();
 }
 #endif  // SCREENSHOT_BUILD
 
 #ifdef SCREENSHOT_BUILD
 static void config_button_down_handler(ClickRecognizerRef recognizer, void *context) {
-  Window *window = (Window *)context;
+  --current_config_index;
+  int_to_config();
 }
 #endif  // SCREENSHOT_BUILD
 
@@ -205,5 +233,6 @@ static void config_click_config_provider(void *context) {
 #ifdef SCREENSHOT_BUILD
 void config_set_click_config(struct Window *window) {
   window_set_click_config_provider(window, &config_click_config_provider);
+  int_to_config();
 }
 #endif  // SCREENSHOT_BUILD

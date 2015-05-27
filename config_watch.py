@@ -1082,7 +1082,7 @@ def configWatch():
 
 # Main.
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:Sbciwmxp:dh')
+    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:Sbciwmxp:dDh')
 except getopt.error, msg:
     usage(1, msg)
 
