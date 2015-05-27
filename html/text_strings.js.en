@@ -41,7 +41,7 @@ __DateWindowNameSuffix = ""
 
 __DisplayLang = "Language for date windows"
 __LunarBackground = "Moon background color"
-__LunarBackgroundMatch = "Same as watch background"
+__LunarBackgroundMatch = "Match watch background"
 __LunarBackgroundBlack = "Always black"
 
 __LunarDirection = "Moon phase direction"

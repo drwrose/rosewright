@@ -21,7 +21,7 @@ __LunarPhase = "Fase de la luna"
 __SecondHand = "Segundero"
 __SweepSeconds = "Movimiento fluido de segundero (uso de la batería pesada)"
 __FaceIndex = "Cara Variant"
-__ColorMode = "Color scheme (Pebble Time only)"
+__ColorMode = "Combinación de colores (Pebble Time solamente)"
 __DrawMode = "Invertir colores"
 
 __ChronoDial = "Línea Crono indica"
