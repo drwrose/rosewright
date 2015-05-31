@@ -18,7 +18,6 @@ void bwd_destroy(BitmapWithData *bwd);
 BitmapWithData png_bwd_create(int resource_id);
 BitmapWithData rle_bwd_create(int resource_id);
 
-void bwd_adjust_colors(BitmapWithData *bwd, uint8_t and_argb8, uint8_t or_argb8, uint8_t xor_argb8);
 void bwd_remap_colors(BitmapWithData *bwd, GColor cb, GColor c1, GColor c2, GColor c3, bool invert_colors);
 
 #endif

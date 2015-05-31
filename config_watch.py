@@ -278,7 +278,6 @@ faces = {
                      (('Black', 'BulgarianRose', 'Yellow', 'VeryLightBlue'), ('White', 'Black')),
                      (('White', 'DukeBlue', 'White', 'FashionMagenta'), ('DukeBlue', 'White')),
                      ],
-        'hand_color' : [ (0xff, 0x02), (0xff, 0x02) ],
         'date_window_a': [ (49, 102, 'w'), (49, 102, 'b') ],
         'date_window_b': [ (95, 102, 'w'), (95, 102, 'b') ],
         'date_window_c' : [ (49, 125, 'w'), (49, 125, 'b') ],
@@ -422,26 +421,16 @@ def makeFaces(generatedTable, generatedDefs):
     chronoFilenames = fd.get('chrono')
     if chronoFilenames:
         targetChronoTenths, targetChronoHours = chronoFilenames
-
-    handColors = fd.get('hand_color')
-    if not handColors:
-      handColors = [(0xff, 0x00)] * len(faceFilenames)
-    elif isinstance(handColors[0], type(0x00)):
-      handColors = [handColors] * len(faceFilenames)
-    assert len(faceFilenames) == len(handColors)
         
     print >> generatedTable, "struct FaceDef clock_face_table[NUM_FACES] = {"
     for i in range(len(faceFilenames)):
-        print >> generatedTable, "  { RESOURCE_ID_CLOCK_FACE_%s, %s, %s }," % (
-          i, handColors[i][0], handColors[i][1])
+        print >> generatedTable, "  { RESOURCE_ID_CLOCK_FACE_%s }," % (i)
 
         rleFilename, ptype = make_rle('clock_faces/' + faceFilenames[i], useRle = supportRle)
         resourceStr += faceResourceEntry % {
             'index' : i,
             'rleFilename' : rleFilename,
             'ptype' : ptype,
-            'and_argb8' : handColors[i][0],
-            'or_argb8' : handColors[i][1],
             }
     print >> generatedTable, "};\n"
 

@@ -599,49 +599,6 @@ rle_bwd_create(int resource_id) {
 
 #endif  // SUPPORT_RLE
 
-// Apply boolean ops to the colors of a palette-based bitmap after
-// loading.  Only supported for palette bitmaps.
-void bwd_adjust_colors(BitmapWithData *bwd, uint8_t and_argb8, uint8_t or_argb8, uint8_t xor_argb8) {
-#ifndef PBL_PLATFORM_APLITE
-  if (bwd->bitmap == NULL) {
-    return;
-  }
-  GBitmapFormat format = gbitmap_get_format(bwd->bitmap);
-  int palette_size = 0;
-  switch (format) {
-  case GBitmapFormat1BitPalette:
-    palette_size = 2;
-    break;
-  case GBitmapFormat2BitPalette:
-    palette_size = 4;
-    break;
-  case GBitmapFormat4BitPalette:
-    palette_size = 16;
-    break;
-
-  case GBitmapFormat1Bit:
-  case GBitmapFormat8Bit:
-  default:
-    // We just refuse to adjust true-color images.  Technically, we
-    // could apply the adjustment at least to GBitmapFormat8Bit images
-    // (by walking through all of the pixels), but instead we'll flag
-    // it as an error, to help catch accidental mistakes in image
-    // preparation.
-    app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "bwd_adjust_colors cannot adjust non-palette format %d", format);
-    return;
-  }
-
-  assert(palette_size != 0);
-  GColor *palette = gbitmap_get_palette(bwd->bitmap);
-  assert(palette != NULL);
-
-  for (int pi = 0; pi < palette_size; ++pi) {
-    palette[pi].argb = (((palette[pi].argb & and_argb8) | or_argb8) ^ xor_argb8);
-  }
-    
-#endif // PBL_PLATFORM_APLITE
-}
-
 // Replace each of the R, G, B channels with a different color, and
 // blend the result together.  Only supported for palette bitmaps.
 void bwd_remap_colors(BitmapWithData *bwd, GColor cb, GColor c1, GColor c2, GColor c3, bool invert_colors) {

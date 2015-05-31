@@ -8,7 +8,6 @@
 
 struct __attribute__((__packed__)) FaceDef {
   uint8_t resource_id;
-  uint8_t and_argb8, or_argb8;
 };
 
 struct __attribute__((__packed__)) FaceColorDef {
