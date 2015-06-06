@@ -289,7 +289,8 @@ faces = {
         },
     'e' : {
         'filename' : ['e_face.png', 'e_face_white.png'],
-        'colors' : [ (('Black', 'Icterine', 'Yellow', 'PastelYellow'), ('White', 'Black')),
+        'colors' : [ (('Black', 'White', 'Yellow', 'PastelYellow'), ('White', 'Black')),
+                     (('Black', 'Yellow', 'White', 'PastelYellow'), ('White', 'Black')),                     
                      (('Black', 'FashionMagenta', 'ShockingPink', 'White'), ('White', 'Black')),
                      (('Black', 'LavenderIndigo', 'BabyBlueEyes', 'White'), ('White', 'Black')),
                      ],
