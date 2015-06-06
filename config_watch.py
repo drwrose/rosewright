@@ -246,7 +246,7 @@ faces = {
         'filename' : ['b_face_rect.png'],
         'aplite_invert' : True,
         'colors' : [ (('PictonBlue', 'Black', 'DarkCandyAppleRed', 'Black'), ('BabyBlueEyes', 'Black')),
-                     (('White', 'Black', 'DarkCandyAppleRed', 'Black'), ('White', 'Black')),
+                     (('White', 'Black', 'DarkCandyAppleRed', 'DukeBlue'), ('White', 'DukeBlue')),
                      (('Yellow', 'BulgarianRose', 'DukeBlue', 'OxfordBlue'), ('PastelYellow', 'Black')),
                      (('BrilliantRose', 'Blue', 'DarkCandyAppleRed', 'BulgarianRose'), ('RichBrilliantLavender', 'Black')),
                      ],
