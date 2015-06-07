@@ -145,8 +145,8 @@ watches = {
 #
 
 hands = {
-    'a' : [('hour', ('a_hour_hand.png', 1, False, (78, 398), 0.12), None),
-           ('minute', ('a_minute_hand.png', 1, True, (37, 553), 0.12), None),
+    'a' : [('hour', ('a_hour_hand.png', 't', False, (90, 410), 0.12), None),
+           ('minute', ('a_minute_hand.png', 't', True, (49, 565), 0.12), None),
            ('second', ('a_second_hand.png', 2, False, (37, 37), 0.12),
             [(2, [(0, -5), (0, -70)])]),
            ],
