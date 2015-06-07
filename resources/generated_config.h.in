@@ -7,13 +7,9 @@
   #define SUPPORT_RLE 1
 #endif
 
-// Set to 1 if colors are to be inverted for the Aplite build, 0
-// otherwise, or if we are not compiling on Aplite.
-#if defined(PBL_PLATFORM_APLITE) && %(apliteInvert)s
-  #define APLITE_INVERT 1
-#else
-  #define APLITE_INVERT 0
-#endif
+// Set to 1 if Aplite-style drawing is to be inverted globally, 0
+// otherwise.  Basalt-style drawing commands are not affected.
+#define APLITE_INVERT %(apliteInvert)s
 
 // The number of different clock faces available.
 #define NUM_FACES %(numFaces)s
