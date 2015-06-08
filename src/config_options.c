@@ -204,7 +204,6 @@ static void int_to_config() {
   index /= NUM_FACES;
 
   sanitize_config();
-  apply_config();
 }
 #endif  // SCREENSHOT_BUILD
 
@@ -212,6 +211,7 @@ static void int_to_config() {
 static void config_button_up_handler(ClickRecognizerRef recognizer, void *context) {
   ++current_config_index;
   int_to_config();
+  apply_config();
 }
 #endif  // SCREENSHOT_BUILD
 
@@ -219,6 +219,7 @@ static void config_button_up_handler(ClickRecognizerRef recognizer, void *contex
 static void config_button_down_handler(ClickRecognizerRef recognizer, void *context) {
   --current_config_index;
   int_to_config();
+  apply_config();
 }
 #endif  // SCREENSHOT_BUILD
 
