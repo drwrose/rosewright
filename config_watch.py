@@ -276,9 +276,9 @@ faces = {
     'd' : {
         'filename' : ['d_face_rect.png', 'd_face_rect_clean.png'],
         'aplite_invert' : True,
-        'colors' : [ (('White', 'Blue', 'Yellow', 'LightGray'), ('DukeBlue', 'White')),
-                     (('Black', 'BulgarianRose', 'Yellow', 'VeryLightBlue'), ('White', 'Black')),
-                     (('White', 'DukeBlue', 'White', 'FashionMagenta'), ('DukeBlue', 'White')),
+        'colors' : [ (('White', 'BulgarianRose', 'White', 'ElectricBlue'), ('OxfordBlue', 'White')),
+                     (('Black', 'DarkGreen', 'BrightGreen', 'PastelYellow'), ('White', 'Black')),
+                     (('White', 'DukeBlue', 'Yellow', 'FashionMagenta'), ('DukeBlue', 'White')),
                      ],
         'date_window_a': [ (49, 102, 'w'), (49, 102, 'b') ],
         'date_window_b': [ (95, 102, 'w'), (95, 102, 'b') ],
