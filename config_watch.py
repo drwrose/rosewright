@@ -42,8 +42,10 @@ Options:
         instead of as a watch face, to activate the chronograph
         buttons.
 
-    -m
-        Exclude moon-phase support.
+    -m [0|1|2]
+        Specify moon-phase support: 0, no support for moon phases at
+        all; 1, moon phase available in date-windows only; 2,
+        date-windows and optional moon wheel.  The default is 1.
 
     -x
         Perform no RLE compression of images.
@@ -330,6 +332,7 @@ numSteps = {
     'chrono_minute' : 30,
     'chrono_second' : 60,
     'chrono_tenth' : 24,
+    'moon_wheel' : 30,
     }
 
 # If you use the -w option to enable sweep seconds, it means we need a
@@ -346,6 +349,9 @@ threshold2Bit = [0] * 64 + [85] * 64 + [170] * 64 + [255] * 64
 # Attempt to determine the directory in which we're operating.
 rootDir = os.path.dirname(__file__) or '.'
 resourcesDir = os.path.join(rootDir, 'resources')
+buildDir = os.path.join(resourcesDir, 'build')
+if not os.path.isdir(buildDir):
+    os.mkdir(buildDir)
 
 def formatUuId(uuId):
     return '%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x' % tuple(uuId)
@@ -756,7 +762,7 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
             else:
                 # In the Aplite transparency case, we need to load the mask
                 # image separately.
-                targetMaskFilename = 'clock_hands/flat_%s_%s_%s_mask.png' % (handStyle, hand, i)
+                targetMaskFilename = 'build/flat_%s_%s_%s_mask.png' % (handStyle, hand, i)
                 pm1.save('%s/%s' % (resourcesDir, targetMaskFilename))
                 rleFilename, ptype = make_rle(targetMaskFilename, useRle = useRle)
                 maskResourceStr += maskResourceEntry % {
@@ -765,7 +771,7 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
                     'ptype' : ptype,
                     }
 
-            targetBasename = 'clock_hands/flat_%s_%s_%s' % (handStyle, hand, i)
+            targetBasename = 'build/flat_%s_%s_%s' % (handStyle, hand, i)
             p1.save('%s/%s~bw.png' % (resourcesDir, targetBasename))
             p2.save('%s/%s.png' % (resourcesDir, targetBasename))
             rleFilename, ptype = make_rle(targetBasename + '.png', useRle = useRle)
@@ -918,8 +924,9 @@ def makeIndicatorTable(generatedTable, generatedDefs, name, indicator, anonymous
     else:
         print >> generatedTable, "};\n";
 
-def makeMoon():
-    """ Returns the resource strings needed to include the moon phase icons. """
+def makeMoonDateWindow():
+    """ Returns the resource strings needed to include the moon phase
+    icons, for the moon date window. """
 
     moonPhaseEntry = """
     {
@@ -945,6 +952,70 @@ def makeMoon():
 
     return resourceStr
 
+def makeMoonWheel():
+    """ Returns the resource strings needed to include the moon wheel
+    icons, for the optional moon wheel window. """
+
+    moonWheelEntry = """
+    {
+      "name": "MOON_WHEEL_%(cat)s_%(index)s",
+      "file": "%(rleFilename)s",
+      "type": "%(ptype)s"
+    },"""
+
+    resourceStr = ''
+
+    # moon_wheel_white_*.png is for when the moon is to be drawn as white pixels on black.
+    # moon_wheel_black_*.png is for when the moon is to be drawn as black pixels on white.
+
+    numStepsMoon = getNumSteps('moon_wheel')
+
+    for mode in [ '~bw' ]:
+        for cat in ['white', 'black']:
+
+            wheelSourcePathname = '%s/clock_faces/moon_wheel_%s%s.png' % (resourcesDir, cat, mode)
+            wheelSource = PIL.Image.open(wheelSourcePathname)
+
+            for i in range(numStepsMoon):
+                angle = i * 180.0 / numStepsMoon
+
+                # Rotate the moon wheel to the appropriate angle.
+                p = wheelSource.rotate(-angle, PIL.Image.BICUBIC, True)
+
+                # Now make the 1-bit version for Aplite and the 2-bit
+                # version for Basalt.
+                if mode == '~bw':
+                    p = p.convert('1')
+                else:
+                    r, g, b = p.split()
+                    r = r.point(threshold2Bit).convert('L')
+                    g = g.point(threshold2Bit).convert('L')
+                    b = b.point(threshold2Bit).convert('L')
+                    p = PIL.Image.merge('RGB', [r, g, b])
+
+                cx, cy = p.size[0] / 2, p.size[1] / 2
+                print cx, cy
+                cropbox = (cx - 48, cy - 48, cx + 48, cy + 1)
+                print cropbox
+                p = p.crop(cropbox)
+
+                if mode == '':
+                    # And quantize to 16 colors.
+                    p = p.convert("P", palette = PIL.Image.ADAPTIVE, colors = 16)
+
+                targetBasename = 'build/rot_moon_wheel_%s_%s%s' % (cat, i, mode)
+                p.save('%s/%s.png' % (resourcesDir, targetBasename))
+
+                rleFilename, ptype = make_rle(targetBasename + '.png', useRle = supportRle, modes = [mode])
+                resourceStr += moonWheelEntry % {
+                    'cat' : cat.upper(),
+                    'index' : i,
+                    'rleFilename' : rleFilename,
+                    'ptype' : ptype,
+                    }
+
+    return resourceStr
+
 def enquoteStrings(strings):
     """ Accepts a list of strings, returns a list of strings with
     embedded quotation marks. """
@@ -961,8 +1032,10 @@ def configWatch():
     resourceStr += makeFaces(generatedTable, generatedDefs)
     resourceStr += makeHands(generatedTable, generatedDefs)
 
-    if supportMoon:
-        resourceStr += makeMoon()
+    if supportMoon >= 1:
+        resourceStr += makeMoonDateWindow()
+    if supportMoon >= 2:
+        resourceStr += makeMoonWheel()
 
     print >> generatedDefs, "extern struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_FACES];"
     print >> generatedTable, "struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_FACES] = {"
@@ -1016,7 +1089,7 @@ def configWatch():
         'defaultFaceIndex' : defaultFaceIndex,
         'numDateWindows' : len(date_windows),
         'enableChronoDial' : int(makeChronograph),
-        'supportMoon' : int(bool(supportMoon)),
+        'supportMoon' : int(supportMoon != 0),
         'defaultBluetooth' : defaultBluetooth,
         'defaultBattery' : defaultBattery,
         'enableSecondHand' : int(enableSecondHand and not suppressSecondHand),
@@ -1064,7 +1137,7 @@ def configWatch():
         'enableSweepSeconds' : int(enableSecondHand and supportSweep),
         'enableHourBuzzer' : int(enableHourBuzzer),
         'makeChronograph' : int(makeChronograph and enableChronoSecondHand),
-        'supportMoon' : int(bool(supportMoon)),
+        'supportMoon' : int(supportMoon != 0),
         'enableChronoMinuteHand' : int(enableChronoMinuteHand),
         'enableChronoSecondHand' : int(enableChronoSecondHand),
         'enableChronoTenthHand' : int(enableChronoTenthHand),
@@ -1074,7 +1147,7 @@ def configWatch():
 
 # Main.
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:Sbciwmxp:dDh')
+    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:Sbciwm:xp:dDh')
 except getopt.error, msg:
     usage(1, msg)
 
@@ -1084,7 +1157,7 @@ faceStyle = None
 supportSweep = False
 compileDebugging = False
 screenshotBuild = False
-supportMoon = True
+supportMoon = 1
 supportRle = True
 #supportRle = False
 targetPlatforms = [ ]
@@ -1113,7 +1186,7 @@ for opt, arg in opts:
     elif opt == '-w':
         supportSweep = True
     elif opt == '-m':
-        supportMoon = False
+        supportMoon = int(arg)
     elif opt == '-x':
         supportRle = False
     elif opt == '-p':
