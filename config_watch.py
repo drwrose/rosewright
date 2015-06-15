@@ -974,10 +974,13 @@ def makeMoonWheel():
     # moon_wheel_black_*.png is for when the moon is to be drawn as black pixels on white.
 
     numStepsMoon = getNumSteps('moon')
+    wheelSize = 80, 80
+    subdialSize = 80, 41
 
     for mode in [ '~bw' ]:
         subdialMaskPathname = '%s/clock_faces/moon_subdial_mask%s.png' % (resourcesDir, mode)
         subdialMask = PIL.Image.open(subdialMaskPathname)
+        assert subdialMask.size == subdialSize
         subdialMask = subdialMask.convert('L')
         black = PIL.Image.new('L', subdialMask.size, 0)
         white = PIL.Image.new('L', subdialMask.size, 255)
@@ -993,7 +996,8 @@ def makeMoonWheel():
                 p = wheelSource.rotate(-angle, PIL.Image.BICUBIC, True)
 
                 cx, cy = p.size[0] / 2, p.size[1] / 2
-                cropbox = (cx - 48, cy - 48, cx + 48, cy + 1)
+                px, py = cx - wheelSize[0] / 2, cy - wheelSize[1] / 2
+                cropbox = (px, py, px + subdialSize[0], py + subdialSize[1])
                 p = p.crop(cropbox)
 
                 # Now make the 1-bit version for Aplite and the 2-bit

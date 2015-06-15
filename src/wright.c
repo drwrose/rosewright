@@ -1328,7 +1328,7 @@ void create_objects() {
   }
 
 #if SUPPORT_MOON >= 2
-  moon_subdial_layer = layer_create(GRect(24, 36, 96, 49));
+  moon_subdial_layer = layer_create(GRect(32, 32, 80, 41));
   assert(moon_subdial_layer != NULL);
   layer_set_update_proc(moon_subdial_layer, &moon_subdial_layer_update_callback);
   layer_add_child(window_layer, moon_subdial_layer);
