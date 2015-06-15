@@ -24,6 +24,7 @@ var default_face_index = %(defaultFaceIndex)s;
 var default_date_windows = %(defaultDateWindows)s;
 var default_lunar_background = 0;
 var default_lunar_direction = 0;
+var default_moon_subdial = %(defaultMoonSubdial)s;
 
 var battery_gauge;
 var bluetooth_indicator;
@@ -134,6 +135,7 @@ function initialize() {
     }
     lunar_background = getIntFromStorage('lunar_background', default_lunar_background);
     lunar_direction = getIntFromStorage('lunar_direction', default_lunar_direction);
+    moon_subdial = getIntFromStorage('moon_subdial', default_moon_subdial);
 }
 
 Pebble.addEventListener("ready", function(e) {
@@ -159,6 +161,7 @@ Pebble.addEventListener("ready", function(e) {
 	    'face_index' : face_index,
 	    'lunar_background' : lunar_background,
 	    'lunar_direction' : lunar_direction,
+	    'moon_subdial' : moon_subdial,
 	};
 	for (var i = 0; i < num_date_windows; ++i) {
 	    var sym = 'date_window_' + String.fromCharCode(97 + i);
@@ -183,7 +186,7 @@ Pebble.addEventListener("showConfiguration", function(e) {
 	url += "&chrono_dial=" + chrono_dial;
     }
     if (support_moon) {
-	url += "&support_moon=1&lunar_background=" + lunar_background + "&lunar_direction=" + lunar_direction;
+	url += "&support_moon=" + support_moon + "&lunar_background=" + lunar_background + "&lunar_direction=" + lunar_direction + "&moon_subdial=" + moon_subdial
     }
     if (enable_sweep_seconds) {
 	url += "&sweep_seconds=" + sweep_seconds;
@@ -252,6 +255,9 @@ Pebble.addEventListener("webviewclosed", function(e) {
 
 	lunar_direction = configuration["lunar_direction"];
 	writeToStorage("lunar_direction", lunar_direction);
+	
+	moon_subdial = configuration["moon_subdial"];
+	writeToStorage("moon_subdial", moon_subdial);
 
 	// Finally, massage any elements as needed for Pebble's
 	// storage conventions (which are slightly different than the

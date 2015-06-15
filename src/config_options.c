@@ -23,6 +23,7 @@ void init_default_options() {
     false,
     false,
     0,
+    DEFAULT_MOON_SUBDIAL,
   };
   
   config = default_options;
@@ -41,6 +42,8 @@ void sanitize_config() {
     config.date_windows[i] = config.date_windows[i] % (DWM_moon + 1);
   }
   config.color_mode = config.color_mode % NUM_FACE_COLORS;
+
+  config.moon_subdial = DEFAULT_MOON_SUBDIAL;  // hack
 }
 
 #ifndef NDEBUG
@@ -166,6 +169,11 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
   Tuple *lunar_direction = dict_find(received, CK_lunar_direction);
   if (lunar_direction != NULL) {
     config.lunar_direction = (lunar_direction->value->int32 != 0);
+  }
+
+  Tuple *moon_subdial = dict_find(received, CK_moon_subdial);
+  if (moon_subdial != NULL) {
+    config.moon_subdial = moon_subdial->value->int32;
   }
 
   sanitize_config();

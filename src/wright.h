@@ -45,8 +45,11 @@ struct __attribute__((__packed__)) HandPlacement {
   unsigned char year_value;  // less 1900.
   bool ampm_value;
 
-#ifdef SUPPORT_MOON
+#if SUPPORT_MOON >= 1
   unsigned char lunar_phase;
+#endif  // SUPPORT_MOON
+#if SUPPORT_MOON >= 2
+  unsigned char lunar_index;
 #endif  // SUPPORT_MOON
 
   // Not really a hand placement, but this is used to keep track of

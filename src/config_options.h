@@ -24,6 +24,7 @@ typedef enum {
   CK_lunar_background = 14,
   CK_lunar_direction = 15,
   CK_color_mode = 16,
+  CK_moon_subdial = 17,
 } ConfigKey;
 
 typedef enum {
@@ -72,6 +73,7 @@ typedef struct {
   bool lunar_background;   // true for always-black background.
   bool lunar_direction;    // true for southern hemisphere (left-to-right).
   unsigned char color_mode;
+  bool moon_subdial;
 } __attribute__((__packed__)) ConfigOptions;
 
 extern ConfigOptions config;

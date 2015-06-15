@@ -28,7 +28,8 @@
     "bluetooth_buzzer": 13,
     "lunar_background": 14,
     "lunar_direction": 15,
-    "color_mode": 16
+    "color_mode": 16,
+    "moon_subdial" : 17
   },
   "resources": {
   "media": [

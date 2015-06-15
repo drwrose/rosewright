@@ -45,7 +45,7 @@ Options:
     -m [0|1|2]
         Specify moon-phase support: 0, no support for moon phases at
         all; 1, moon phase available in date-windows only; 2,
-        date-windows and optional moon wheel.  The default is 1.
+        date-windows and optional moon subdial.  The default is 1.
 
     -x
         Perform no RLE compression of images.
@@ -332,7 +332,7 @@ numSteps = {
     'chrono_minute' : 30,
     'chrono_second' : 60,
     'chrono_tenth' : 24,
-    'moon_wheel' : 30,
+    'moon' : 30,
     }
 
 # If you use the -w option to enable sweep seconds, it means we need a
@@ -956,6 +956,13 @@ def makeMoonWheel():
     """ Returns the resource strings needed to include the moon wheel
     icons, for the optional moon wheel window. """
 
+    moonSubdialEntry = """
+    {
+      "name": "%(name)s",
+      "file": "%(rleFilename)s",
+      "type": "%(ptype)s"
+    },"""
+
     moonWheelEntry = """
     {
       "name": "MOON_WHEEL_%(cat)s_%(index)s",
@@ -963,16 +970,19 @@ def makeMoonWheel():
       "type": "%(ptype)s"
     },"""
 
-    resourceStr = ''
-
     # moon_wheel_white_*.png is for when the moon is to be drawn as white pixels on black.
     # moon_wheel_black_*.png is for when the moon is to be drawn as black pixels on white.
 
-    numStepsMoon = getNumSteps('moon_wheel')
+    numStepsMoon = getNumSteps('moon')
 
     for mode in [ '~bw' ]:
-        for cat in ['white', 'black']:
+        subdialMaskPathname = '%s/clock_faces/moon_subdial_mask%s.png' % (resourcesDir, mode)
+        subdialMask = PIL.Image.open(subdialMaskPathname)
+        subdialMask = subdialMask.convert('L')
+        black = PIL.Image.new('L', subdialMask.size, 0)
+        white = PIL.Image.new('L', subdialMask.size, 1)
 
+        for cat in ['white', 'black']:
             wheelSourcePathname = '%s/clock_faces/moon_wheel_%s%s.png' % (resourcesDir, cat, mode)
             wheelSource = PIL.Image.open(wheelSourcePathname)
 
@@ -982,10 +992,18 @@ def makeMoonWheel():
                 # Rotate the moon wheel to the appropriate angle.
                 p = wheelSource.rotate(-angle, PIL.Image.BICUBIC, True)
 
+                cx, cy = p.size[0] / 2, p.size[1] / 2
+                cropbox = (cx - 48, cy - 48, cx + 48, cy + 1)
+                p = p.crop(cropbox)
+
                 # Now make the 1-bit version for Aplite and the 2-bit
                 # version for Basalt.
                 if mode == '~bw':
                     p = p.convert('1')
+                    if cat == 'white':
+                        # Invert the image for moon_wheel_white.
+                        p = PIL.Image.composite(black, white, p)
+                        
                 else:
                     r, g, b = p.split()
                     r = r.point(threshold2Bit).convert('L')
@@ -993,26 +1011,43 @@ def makeMoonWheel():
                     b = b.point(threshold2Bit).convert('L')
                     p = PIL.Image.merge('RGB', [r, g, b])
 
-                cx, cy = p.size[0] / 2, p.size[1] / 2
-                print cx, cy
-                cropbox = (cx - 48, cy - 48, cx + 48, cy + 1)
-                print cropbox
-                p = p.crop(cropbox)
+                # Now apply the mask.
+                p = PIL.Image.composite(p, black, subdialMask)
 
                 if mode == '':
                     # And quantize to 16 colors.
                     p = p.convert("P", palette = PIL.Image.ADAPTIVE, colors = 16)
 
-                targetBasename = 'build/rot_moon_wheel_%s_%s%s' % (cat, i, mode)
-                p.save('%s/%s.png' % (resourcesDir, targetBasename))
+                targetBasename = 'build/rot_moon_wheel_%s_%s%s.png' % (cat, i, mode)
+                p.save('%s/%s' % (resourcesDir, targetBasename))
 
-                rleFilename, ptype = make_rle(targetBasename + '.png', useRle = supportRle, modes = [mode])
-                resourceStr += moonWheelEntry % {
-                    'cat' : cat.upper(),
-                    'index' : i,
-                    'rleFilename' : rleFilename,
-                    'ptype' : ptype,
-                    }
+
+    # Now encode to RLE and build the resource string (which is global
+    # rather than dependent on the platform).
+    resourceStr = ''
+
+    rleFilename, ptype = make_rle('clock_faces/moon_subdial.png', useRle = supportRle)
+    resourceStr += moonSubdialEntry % {
+        'name' : 'MOON_SUBDIAL',
+        'rleFilename' : rleFilename,
+        'ptype' : ptype,
+        }
+    rleFilename, ptype = make_rle('clock_faces/moon_subdial_mask.png', useRle = supportRle)
+    resourceStr += moonSubdialEntry % {
+        'name' : 'MOON_SUBDIAL_MASK',
+        'rleFilename' : rleFilename,
+        'ptype' : ptype,
+        }
+    for cat in ['white', 'black']:
+        for i in range(numStepsMoon):
+            targetBasename = 'build/rot_moon_wheel_%s_%s.png' % (cat, i)
+            rleFilename, ptype = make_rle(targetBasename, useRle = supportRle)
+            resourceStr += moonWheelEntry % {
+                'cat' : cat.upper(),
+                'index' : i,
+                'rleFilename' : rleFilename,
+                'ptype' : ptype,
+                }
 
     return resourceStr
 
@@ -1089,7 +1124,7 @@ def configWatch():
         'defaultFaceIndex' : defaultFaceIndex,
         'numDateWindows' : len(date_windows),
         'enableChronoDial' : int(makeChronograph),
-        'supportMoon' : int(supportMoon != 0),
+        'supportMoon' : supportMoon,
         'defaultBluetooth' : defaultBluetooth,
         'defaultBattery' : defaultBattery,
         'enableSecondHand' : int(enableSecondHand and not suppressSecondHand),
@@ -1097,6 +1132,7 @@ def configWatch():
         'enableSweepSeconds' : int(enableSecondHand and supportSweep),
         'defaultDateWindows' : repr(defaultDateWindows),
         'displayLangLookup' : displayLangLookup,
+        'defaultMoonSubdial' : int(supportMoon >= 2),
         }
 
     configIn = open('%s/generated_config.h.in' % (resourcesDir), 'r').read()
@@ -1126,6 +1162,7 @@ def configWatch():
         'numStepsChronoMinute' : numSteps['chrono_minute'],
         'numStepsChronoSecond' : getNumSteps('chrono_second'),
         'numStepsChronoTenth' : numSteps['chrono_tenth'],
+        'numStepsMoon' : numSteps['moon'],
         'compileDebugging' : int(compileDebugging),
         'screenshotBuild' : int(screenshotBuild),
         'defaultDateWindows' : repr(defaultDateWindows)[1:-1],
@@ -1137,7 +1174,8 @@ def configWatch():
         'enableSweepSeconds' : int(enableSecondHand and supportSweep),
         'enableHourBuzzer' : int(enableHourBuzzer),
         'makeChronograph' : int(makeChronograph and enableChronoSecondHand),
-        'supportMoon' : int(supportMoon != 0),
+        'supportMoon' : supportMoon,
+        'defaultMoonSubdial' : int(supportMoon >= 2),
         'enableChronoMinuteHand' : int(enableChronoMinuteHand),
         'enableChronoSecondHand' : int(enableChronoSecondHand),
         'enableChronoTenthHand' : int(enableChronoTenthHand),

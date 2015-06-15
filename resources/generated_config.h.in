@@ -27,6 +27,7 @@
 #define NUM_STEPS_CHRONO_MINUTE %(numStepsChronoMinute)s
 #define NUM_STEPS_CHRONO_SECOND %(numStepsChronoSecond)s
 #define NUM_STEPS_CHRONO_TENTH %(numStepsChronoTenth)s
+#define NUM_STEPS_MOON %(numStepsMoon)s
 
 // The order in which the hands are layered on top of each other.
 #define STACKING_ORDER_LIST  %(stackingOrder)s
@@ -81,6 +82,9 @@
   #define ENABLE_CHRONO_TENTH_HAND 1
 #endif
 
-#if %(supportMoon)s
-  #define SUPPORT_MOON 1
-#endif
+// 0: no moon support
+// 1: only date-window moon support
+// 2: date-window and moon subdial support
+#define SUPPORT_MOON %(supportMoon)s
+#define DEFAULT_MOON_SUBDIAL %(defaultMoonSubdial)s
+
