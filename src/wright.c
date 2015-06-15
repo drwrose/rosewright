@@ -947,6 +947,7 @@ void draw_moon_subdial(Layer *me, GContext *ctx, bool invert) {
   // moon_white is the background color; in either case we draw them
   // both in GCompOpSet.
   graphics_context_set_compositing_mode(ctx, draw_mode_table[moon_draw_mode].paint_fg);
+  //graphics_context_set_compositing_mode(ctx, GCompOpAssign);
   graphics_draw_bitmap_in_rect(ctx, moon_wheel_bitmap.bitmap, destination);
 }
 #endif  // SUPPORT_MOON

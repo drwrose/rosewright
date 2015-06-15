@@ -9,6 +9,7 @@ resources/generated_table.c
 src/js/pebble-js-app.js
 appinfo.json
 
+*.rle
 *.pyc
 *~
 #*

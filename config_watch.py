@@ -980,7 +980,7 @@ def makeMoonWheel():
         subdialMask = PIL.Image.open(subdialMaskPathname)
         subdialMask = subdialMask.convert('L')
         black = PIL.Image.new('L', subdialMask.size, 0)
-        white = PIL.Image.new('L', subdialMask.size, 1)
+        white = PIL.Image.new('L', subdialMask.size, 255)
 
         for cat in ['white', 'black']:
             wheelSourcePathname = '%s/clock_faces/moon_wheel_%s%s.png' % (resourcesDir, cat, mode)
