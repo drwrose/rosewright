@@ -970,14 +970,14 @@ def makeMoonWheel():
       "type": "%(ptype)s"
     },"""
 
-    # moon_wheel_white_*.png is for when the moon is to be drawn as white pixels on black.
+    # moon_wheel_white_*.png is for when the moon is to be drawn as white pixels on black (not used on Basalt).
     # moon_wheel_black_*.png is for when the moon is to be drawn as black pixels on white.
 
     numStepsMoon = getNumSteps('moon')
     wheelSize = 80, 80
     subdialSize = 80, 41
 
-    for mode in [ '~bw' ]:
+    for mode in [ '', '~bw' ]:
         subdialMaskPathname = '%s/clock_faces/moon_subdial_mask%s.png' % (resourcesDir, mode)
         subdialMask = PIL.Image.open(subdialMaskPathname)
         assert subdialMask.size == subdialSize
@@ -990,37 +990,48 @@ def makeMoonWheel():
             wheelSource = PIL.Image.open(wheelSourcePathname)
 
             for i in range(numStepsMoon):
-                angle = i * 180.0 / numStepsMoon
-
-                # Rotate the moon wheel to the appropriate angle.
-                p = wheelSource.rotate(-angle, PIL.Image.BICUBIC, True)
-
-                cx, cy = p.size[0] / 2, p.size[1] / 2
-                px, py = cx - wheelSize[0] / 2, cy - wheelSize[1] / 2
-                cropbox = (px, py, px + subdialSize[0], py + subdialSize[1])
-                p = p.crop(cropbox)
-
-                # Now make the 1-bit version for Aplite and the 2-bit
-                # version for Basalt.
-                if mode == '~bw':
-                    p = p.convert('1')
-                    if cat == 'white':
-                        # Invert the image for moon_wheel_white.
-                        p = PIL.Image.composite(black, white, p)
-                        
+                if cat == 'white' and mode != '~bw':
+                    # Ignore the white image on Basalt.
+                    p = wheelSource
                 else:
-                    r, g, b = p.split()
-                    r = r.point(threshold2Bit).convert('L')
-                    g = g.point(threshold2Bit).convert('L')
-                    b = b.point(threshold2Bit).convert('L')
-                    p = PIL.Image.merge('RGB', [r, g, b])
+                    # Process the image normally.
+                    angle = i * 180.0 / numStepsMoon
 
-                # Now apply the mask.
-                p = PIL.Image.composite(p, black, subdialMask)
+                    # Rotate the moon wheel to the appropriate angle.
+                    p = wheelSource.rotate(-angle, PIL.Image.BICUBIC, True)
 
-                if mode == '':
-                    # And quantize to 16 colors.
-                    p = p.convert("P", palette = PIL.Image.ADAPTIVE, colors = 16)
+                    cx, cy = p.size[0] / 2, p.size[1] / 2
+                    px, py = cx - wheelSize[0] / 2, cy - wheelSize[1] / 2
+                    cropbox = (px, py, px + subdialSize[0], py + subdialSize[1])
+                    p = p.crop(cropbox)
+
+                    # Now make the 1-bit version for Aplite and the 2-bit
+                    # version for Basalt.
+                    if mode == '~bw':
+                        p = p.convert('1')
+                        if cat == 'white':
+                            # Invert the image for moon_wheel_white.
+                            p = PIL.Image.composite(black, white, p)
+
+                        # Now apply the mask.
+                        p = PIL.Image.composite(p, black, subdialMask)
+
+                    else:
+                        r, g, b = p.split()
+                        r = r.point(threshold2Bit).convert('L')
+                        g = g.point(threshold2Bit).convert('L')
+                        b = b.point(threshold2Bit).convert('L')
+
+                        # Now apply the mask.
+                        r = PIL.Image.composite(r, black, subdialMask)
+                        g = PIL.Image.composite(g, black, subdialMask)
+                        b = PIL.Image.composite(b, black, subdialMask)
+
+                        p = PIL.Image.merge('RGB', [r, g, b])
+
+                    if mode == '':
+                        # And quantize to 16 colors.
+                        p = p.convert("P", palette = PIL.Image.ADAPTIVE, colors = 16)
 
                 targetBasename = 'build/rot_moon_wheel_%s_%s%s.png' % (cat, i, mode)
                 p.save('%s/%s' % (resourcesDir, targetBasename))
