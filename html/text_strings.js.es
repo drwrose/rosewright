@@ -41,11 +41,11 @@ __DateWindowNameSuffix = ""
 
 __DisplayLang = "Idioma para las ventanas"
 
-__MoonSubdial = "Show moon phase subdial"
+__TopSubdial = "Cuadrante superior"
 
 __LunarBackground = "Color de fondo de la Luna"
 __LunarBackgroundMatch = "Igual que programas de fondo"
-__LunarBackgroundBlack = "Siempre negro"
+__LunarBackgroundBlack = "Siempre oscuro"
 
 __LunarDirection = "Dirección de fase lunar"
 __LunarDirectionNorth = "Hemisferio norte"

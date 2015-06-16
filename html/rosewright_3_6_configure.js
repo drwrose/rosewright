@@ -142,10 +142,16 @@ var date_window_options = [
     [5, __DateMonth],
     [3, __DateYear],
     [6, __DateAmPm],
+    [7, __LunarPhase],
 ];
 
-if ($.url().param("support_moon")) {
-    date_window_options.push([7, __LunarPhase]);
+var top_subdial_options = [
+    [0, __Off], 
+    [1, __LunarPhase],
+];
+
+if ($.url().param("top_subdial")) {
+    makeOption("top_subdial", __TopSubdial, top_subdial_options);
 }
 
 var num_date_windows = $.url().param("num_date_windows");
@@ -159,16 +165,10 @@ if (num_date_windows) {
     makeOption("display_lang", __DisplayLang, lang_options, storeStringResult);
 }
 
-if ($.url().param("support_moon")) {
-    if ($.url().param("support_moon") >= 2) {
-        makeOption("moon_subdial", __MoonSubdial);
-    }
-
-    makeOption("lunar_background", __LunarBackground,
-	       [[0, __LunarBackgroundMatch], [1, __LunarBackgroundBlack]]);
-    makeOption("lunar_direction", __LunarDirection,
-	       [[0, __LunarDirectionNorth], [1, __LunarDirectionSouth]]);
-}
+makeOption("lunar_background", __LunarBackground,
+	   [[0, __LunarBackgroundMatch], [1, __LunarBackgroundBlack]]);
+makeOption("lunar_direction", __LunarDirection,
+	   [[0, __LunarDirectionNorth], [1, __LunarDirectionSouth]]);
 
 makeOption("hour_buzzer", __HourBuzzer);
 makeOption("bluetooth_buzzer", __BluetoothBuzzer);

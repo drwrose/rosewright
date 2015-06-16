@@ -23,7 +23,7 @@ void init_default_options() {
     false,
     false,
     0,
-    DEFAULT_MOON_SUBDIAL,
+    DEFAULT_TOP_SUBDIAL,
   };
   
   config = default_options;
@@ -41,6 +41,7 @@ void sanitize_config() {
   for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
     config.date_windows[i] = config.date_windows[i] % (DWM_moon + 1);
   }
+  config.top_subdial = config.top_subdial % (TSM_moon_phase + 1);
   config.color_mode = config.color_mode % NUM_FACE_COLORS;
 }
 
@@ -169,9 +170,9 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
     config.lunar_direction = (lunar_direction->value->int32 != 0);
   }
 
-  Tuple *moon_subdial = dict_find(received, CK_moon_subdial);
-  if (moon_subdial != NULL) {
-    config.moon_subdial = moon_subdial->value->int32;
+  Tuple *top_subdial = dict_find(received, CK_top_subdial);
+  if (top_subdial != NULL) {
+    config.top_subdial = top_subdial->value->int32;
   }
 
   sanitize_config();

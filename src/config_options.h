@@ -24,7 +24,7 @@ typedef enum {
   CK_lunar_background = 14,
   CK_lunar_direction = 15,
   CK_color_mode = 16,
-  CK_moon_subdial = 17,
+  CK_top_subdial = 17,
 } ConfigKey;
 
 typedef enum {
@@ -58,6 +58,11 @@ typedef enum {
   DWM_moon = 7,
 } DateWindowMode;
 
+typedef enum {
+  TSM_off = 0,
+  TSM_moon_phase = 1,
+} TopSubdialMode;
+
 typedef struct {
   IndicatorMode battery_gauge;
   IndicatorMode bluetooth_indicator;
@@ -73,7 +78,7 @@ typedef struct {
   bool lunar_background;   // true for always-dark background.
   bool lunar_direction;    // true for southern hemisphere (left-to-right).
   unsigned char color_mode;
-  bool moon_subdial;
+  TopSubdialMode top_subdial;
 } __attribute__((__packed__)) ConfigOptions;
 
 extern ConfigOptions config;

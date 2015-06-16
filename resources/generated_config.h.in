@@ -20,6 +20,12 @@
 // The number of date windows provided.
 #define NUM_DATE_WINDOWS %(numDateWindows)s
 
+// Is there an optional top subdial on the face (to show moon phases,
+// etc.)?
+#if %(enableTopSubdial)s
+  #define TOP_SUBDIAL 1
+#endif
+
 // The number of subdivisions around the face for each kind of hand.
 #define NUM_STEPS_HOUR %(numStepsHour)s
 #define NUM_STEPS_MINUTE %(numStepsMinute)s
@@ -54,6 +60,7 @@
 
 #define DEFAULT_FACE_INDEX %(defaultFaceIndex)s
 #define DEFAULT_DATE_WINDOWS %(defaultDateWindows)s
+#define DEFAULT_TOP_SUBDIAL %(defaultTopSubdial)s
  
 #define ENABLE_BLUETOOTH %(enableBluetooth)s
 #define DEFAULT_BLUETOOTH %(defaultBluetooth)s
@@ -81,10 +88,3 @@
 #if %(enableChronoTenthHand)s
   #define ENABLE_CHRONO_TENTH_HAND 1
 #endif
-
-// 0: no moon support
-// 1: only date-window moon support
-// 2: date-window and moon subdial support
-#define SUPPORT_MOON %(supportMoon)s
-#define DEFAULT_MOON_SUBDIAL %(defaultMoonSubdial)s
-

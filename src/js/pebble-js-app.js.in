@@ -5,7 +5,7 @@ var enable_sweep_seconds = %(enableSweepSeconds)s;
 var num_faces = %(numFaces)s;
 var num_face_colors = %(numFaceColors)s;
 var num_date_windows = %(numDateWindows)s;
-var support_moon = %(supportMoon)s;
+var show_top_subdial = %(enableTopSubdial)s;
 
 // Define the initial config default values.  These defaults override
 // the similar default values built directly into the watchapp in
@@ -22,9 +22,9 @@ var default_sweep_seconds = 0;
 var default_display_lang = null;  // determined from navigator.language, below
 var default_face_index = %(defaultFaceIndex)s;
 var default_date_windows = %(defaultDateWindows)s;
+var default_top_subdial = %(defaultTopSubdial)s;
 var default_lunar_background = 0;
 var default_lunar_direction = 0;
-var default_moon_subdial = %(defaultMoonSubdial)s;
 
 var battery_gauge;
 var bluetooth_indicator;
@@ -38,6 +38,7 @@ var sweep_seconds;
 var display_lang;
 var face_index;
 var date_windows;
+var top_subdial;
 var lunar_background;
 var lunar_direction;
 
@@ -135,7 +136,7 @@ function initialize() {
     }
     lunar_background = getIntFromStorage('lunar_background', default_lunar_background);
     lunar_direction = getIntFromStorage('lunar_direction', default_lunar_direction);
-    moon_subdial = getIntFromStorage('moon_subdial', default_moon_subdial);
+    top_subdial = getIntFromStorage('top_subdial', default_top_subdial);
 }
 
 Pebble.addEventListener("ready", function(e) {
@@ -161,7 +162,7 @@ Pebble.addEventListener("ready", function(e) {
 	    'face_index' : face_index,
 	    'lunar_background' : lunar_background,
 	    'lunar_direction' : lunar_direction,
-	    'moon_subdial' : moon_subdial,
+	    'top_subdial' : top_subdial,
 	};
 	for (var i = 0; i < num_date_windows; ++i) {
 	    var sym = 'date_window_' + String.fromCharCode(97 + i);
@@ -181,12 +182,12 @@ Pebble.addEventListener("showConfiguration", function(e) {
     if (config_langs.indexOf(prefix) >= 0) {
 	lang_extension = '.' + prefix;
     }
-    var url = "http://www.ddrose.com/pebble/rosewright_3_6_configure" + lang_extension + ".html?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&color_mode=" + color_mode + "&default_display_lang=" + default_display_lang + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_face_colors=" + num_face_colors + "&num_date_windows=" + num_date_windows;
+    var url = "http://www.ddrose.com/pebble/rosewright_3_6_configure" + lang_extension + ".html?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&color_mode=" + color_mode + "&default_display_lang=" + default_display_lang + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_face_colors=" + num_face_colors + "&num_date_windows=" + num_date_windows + "&lunar_background=" + lunar_background + "&lunar_direction=" + lunar_direction;
+    if (show_top_subdial) {
+        url += "&top_subdial=" + top_subdial;
+    }
     if (show_chrono_dial) {
 	url += "&chrono_dial=" + chrono_dial;
-    }
-    if (support_moon) {
-	url += "&support_moon=" + support_moon + "&lunar_background=" + lunar_background + "&lunar_direction=" + lunar_direction + "&moon_subdial=" + moon_subdial
     }
     if (enable_sweep_seconds) {
 	url += "&sweep_seconds=" + sweep_seconds;
@@ -231,11 +232,15 @@ Pebble.addEventListener("webviewclosed", function(e) {
 	color_mode = configuration["color_mode"];
 	writeToStorage("color_mode", color_mode);
 	
-	chrono_dial = configuration["chrono_dial"];
-	writeToStorage("chrono_dial", chrono_dial);
-	
-	sweep_seconds = configuration["sweep_seconds"];
-	writeToStorage("sweep_seconds", sweep_seconds);
+	if (show_chrono_dial) {
+	    chrono_dial = configuration["chrono_dial"];
+	    writeToStorage("chrono_dial", chrono_dial);
+        }
+
+	if (enable_sweep_seconds) {
+	    sweep_seconds = configuration["sweep_seconds"];
+	    writeToStorage("sweep_seconds", sweep_seconds);
+        }
 	
 	display_lang = configuration["display_lang"];
 	writeToStorage("display_lang_" + default_display_lang, display_lang);
@@ -250,14 +255,16 @@ Pebble.addEventListener("webviewclosed", function(e) {
 	    writeToStorage("" + sym, date_windows[i]);
 	}
 
+	if (show_top_subdial) {
+	    top_subdial = configuration["top_subdial"];
+	    writeToStorage("top_subdial", top_subdial);
+        }
+
 	lunar_background = configuration["lunar_background"];
 	writeToStorage("lunar_background", lunar_background);
 
 	lunar_direction = configuration["lunar_direction"];
 	writeToStorage("lunar_direction", lunar_direction);
-	
-	moon_subdial = configuration["moon_subdial"];
-	writeToStorage("moon_subdial", moon_subdial);
 
 	// Finally, massage any elements as needed for Pebble's
 	// storage conventions (which are slightly different than the

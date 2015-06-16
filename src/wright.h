@@ -45,12 +45,10 @@ struct __attribute__((__packed__)) HandPlacement {
   unsigned char year_value;  // less 1900.
   bool ampm_value;
 
-#if SUPPORT_MOON >= 1
   unsigned char lunar_phase;
-#endif  // SUPPORT_MOON
-#if SUPPORT_MOON >= 2
+#ifdef TOP_SUBDIAL
   unsigned char lunar_index;
-#endif  // SUPPORT_MOON
+#endif  // TOP_SUBDIAL
 
   // Not really a hand placement, but this is used to keep track of
   // whether we have buzzed for the top of the hour or not.

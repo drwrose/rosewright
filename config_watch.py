@@ -42,11 +42,6 @@ Options:
         instead of as a watch face, to activate the chronograph
         buttons.
 
-    -m [0|1|2]
-        Specify moon-phase support: 0, no support for moon phases at
-        all; 1, moon phase available in date-windows only; 2,
-        date-windows and optional moon subdial.  The default is 1.
-
     -x
         Perform no RLE compression of images.
 
@@ -235,14 +230,15 @@ faces = {
                      (('ElectricBlue', 'DukeBlue', 'DarkCandyAppleRed', 'ElectricUltramarine'), ('BabyBlueEyes', 'Black')),
                      (('MediumSpringGreen', 'Black', 'DarkCandyAppleRed', 'DarkGreen'), ('DarkGreen', 'White')),
                      ],
-        'date_window_a': (21, 83, 'b'),
+        'date_window_a': (19, 83, 'b'),
         'date_window_b': (123, 83, 'b'),
         'date_window_c' : (52, 109, 'b'),
         'date_window_d' : (92, 109, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
+        'top_subdial' : (32, 32, 'b'),
         'bluetooth' : (37, 47, 'b'),
         'battery' : (92, 51, 'b'),
-        'defaults' : [ 'date:b' ],
+        'defaults' : [ 'date:b', 'moon_phase' ],
         },
     'b' : {
         'filename' : ['b_face_rect.png'],
@@ -956,7 +952,7 @@ def makeMoonWheel():
     """ Returns the resource strings needed to include the moon wheel
     icons, for the optional moon wheel window. """
 
-    moonSubdialEntry = """
+    topSubdialEntry = """
     {
       "name": "%(name)s",
       "file": "%(rleFilename)s",
@@ -978,7 +974,7 @@ def makeMoonWheel():
     subdialSize = 80, 41
 
     for mode in [ '', '~bw' ]:
-        subdialMaskPathname = '%s/clock_faces/moon_subdial_mask%s.png' % (resourcesDir, mode)
+        subdialMaskPathname = '%s/clock_faces/top_subdial_mask%s.png' % (resourcesDir, mode)
         subdialMask = PIL.Image.open(subdialMaskPathname)
         assert subdialMask.size == subdialSize
         subdialMask = subdialMask.convert('L')
@@ -1042,15 +1038,15 @@ def makeMoonWheel():
     # rather than dependent on the platform).
     resourceStr = ''
 
-    rleFilename, ptype = make_rle('clock_faces/moon_subdial.png', useRle = supportRle)
-    resourceStr += moonSubdialEntry % {
-        'name' : 'MOON_SUBDIAL',
+    rleFilename, ptype = make_rle('clock_faces/top_subdial.png', useRle = supportRle)
+    resourceStr += topSubdialEntry % {
+        'name' : 'TOP_SUBDIAL',
         'rleFilename' : rleFilename,
         'ptype' : ptype,
         }
-    rleFilename, ptype = make_rle('clock_faces/moon_subdial_mask.png', useRle = supportRle)
-    resourceStr += moonSubdialEntry % {
-        'name' : 'MOON_SUBDIAL_MASK',
+    rleFilename, ptype = make_rle('clock_faces/top_subdial_mask.png', useRle = supportRle)
+    resourceStr += topSubdialEntry % {
+        'name' : 'TOP_SUBDIAL_MASK',
         'rleFilename' : rleFilename,
         'ptype' : ptype,
         }
@@ -1082,10 +1078,9 @@ def configWatch():
     resourceStr = ''
     resourceStr += makeFaces(generatedTable, generatedDefs)
     resourceStr += makeHands(generatedTable, generatedDefs)
+    resourceStr += makeMoonDateWindow()
 
-    if supportMoon >= 1:
-        resourceStr += makeMoonDateWindow()
-    if supportMoon >= 2:
+    if top_subdial:
         resourceStr += makeMoonWheel()
 
     print >> generatedDefs, "extern struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_FACES];"
@@ -1097,6 +1092,7 @@ def configWatch():
 
     makeIndicatorTable(generatedTable, generatedDefs, 'battery_table', battery)
     makeIndicatorTable(generatedTable, generatedDefs, 'bluetooth_table', bluetooth)
+    makeIndicatorTable(generatedTable, generatedDefs, 'top_subdial', top_subdial)
 
     resourceIn = open('%s/appinfo.json.in' % (rootDir), 'r').read()
     resource = open('%s/appinfo.json' % (rootDir), 'w')
@@ -1140,7 +1136,6 @@ def configWatch():
         'defaultFaceIndex' : defaultFaceIndex,
         'numDateWindows' : len(date_windows),
         'enableChronoDial' : int(makeChronograph),
-        'supportMoon' : supportMoon,
         'defaultBluetooth' : defaultBluetooth,
         'defaultBattery' : defaultBattery,
         'enableSecondHand' : int(enableSecondHand and not suppressSecondHand),
@@ -1148,7 +1143,8 @@ def configWatch():
         'enableSweepSeconds' : int(enableSecondHand and supportSweep),
         'defaultDateWindows' : repr(defaultDateWindows),
         'displayLangLookup' : displayLangLookup,
-        'defaultMoonSubdial' : int(supportMoon >= 2),
+        'enableTopSubdial' : int(bool(top_subdial[0])),
+        'defaultTopSubdial' : defaultTopSubdial,
         }
 
     configIn = open('%s/generated_config.h.in' % (resourcesDir), 'r').read()
@@ -1190,8 +1186,8 @@ def configWatch():
         'enableSweepSeconds' : int(enableSecondHand and supportSweep),
         'enableHourBuzzer' : int(enableHourBuzzer),
         'makeChronograph' : int(makeChronograph and enableChronoSecondHand),
-        'supportMoon' : supportMoon,
-        'defaultMoonSubdial' : int(supportMoon >= 2),
+        'enableTopSubdial' : int(bool(top_subdial[0])),
+        'defaultTopSubdial' : defaultTopSubdial,
         'enableChronoMinuteHand' : int(enableChronoMinuteHand),
         'enableChronoSecondHand' : int(enableChronoSecondHand),
         'enableChronoTenthHand' : int(enableChronoTenthHand),
@@ -1211,7 +1207,6 @@ faceStyle = None
 supportSweep = False
 compileDebugging = False
 screenshotBuild = False
-supportMoon = 1
 supportRle = True
 #supportRle = False
 targetPlatforms = [ ]
@@ -1239,8 +1234,6 @@ for opt, arg in opts:
         makeChronograph = True
     elif opt == '-w':
         supportSweep = True
-    elif opt == '-m':
-        supportMoon = int(arg)
     elif opt == '-x':
         supportRle = False
     elif opt == '-p':
@@ -1280,6 +1273,7 @@ numFaceColors = len(faceColors)
 
 defaultFaceIndex = fd.get('default_face', 0)
 
+top_subdial = getIndicator(fd, 'top_subdial')
 date_windows = []
 i = 0
 ch = chr(97 + i)
@@ -1305,6 +1299,10 @@ for keyword in defaults:
             i = ord(ch) - 97
             defaultDateWindows[i] = value
             break
+
+defaultTopSubdial = 0
+if 'moon_phase' in defaults:
+    defaultTopSubdial = 1
 
 # Map the centers tuple into a dictionary of points for x and y.
 cxd = dict(map(lambda (hand, x, y): (hand, x), centers))
