@@ -270,10 +270,10 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
       // Close enough.)
       unsigned int lunar_age_s = lunar_offset_s % 2551443;
 
-#ifdef FAST_TIME
+      //#ifdef FAST_TIME  // hack
       // One subdial shift every 10 seconds.
       lunar_age_s = (s * 255144) / NUM_STEPS_MOON;
-#endif  // FAST_TIME
+      //#endif  // FAST_TIME
 
       // That gives the age of the moon in seconds.  We really want it
       // in the range 0 .. 7, so we divide by (2551443 / 8) to give us
@@ -1436,6 +1436,8 @@ void destroy_objects() {
 
 #if SUPPORT_MOON >= 2
   bwd_destroy(&moon_wheel_bitmap);
+  bwd_destroy(&moon_subdial);
+  bwd_destroy(&moon_subdial_mask);
   layer_destroy(moon_subdial_layer);
 #endif  // SUPPORT_MOON
   
