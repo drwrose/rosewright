@@ -42,6 +42,8 @@ void sanitize_config() {
     config.date_windows[i] = config.date_windows[i] % (DWM_moon + 1);
   }
   config.color_mode = config.color_mode % NUM_FACE_COLORS;
+
+  config.lunar_background = true;  // hack
 }
 
 #ifndef NDEBUG

@@ -982,6 +982,7 @@ def makeMoonWheel():
         subdialMask = PIL.Image.open(subdialMaskPathname)
         assert subdialMask.size == subdialSize
         subdialMask = subdialMask.convert('L')
+        subdialMaskBinary = subdialMask.point(thresholdMask)
         black = PIL.Image.new('L', subdialMask.size, 0)
         white = PIL.Image.new('L', subdialMask.size, 255)
 
@@ -1023,11 +1024,11 @@ def makeMoonWheel():
                         b = b.point(threshold2Bit).convert('L')
 
                         # Now apply the mask.
-                        r = PIL.Image.composite(r, black, subdialMask)
-                        g = PIL.Image.composite(g, black, subdialMask)
-                        b = PIL.Image.composite(b, black, subdialMask)
+                        r = PIL.Image.composite(r, black, subdialMaskBinary)
+                        g = PIL.Image.composite(g, black, subdialMaskBinary)
+                        b = PIL.Image.composite(b, black, subdialMaskBinary)
 
-                        p = PIL.Image.merge('RGB', [r, g, b])
+                        p = PIL.Image.merge('RGBA', [r, g, b, subdialMask])
 
                     if mode == '':
                         # And quantize to 16 colors.

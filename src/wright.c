@@ -659,9 +659,9 @@ static void remap_colors_moon(BitmapWithData *bwd) {
   bg.argb = cd->db_argb8;
   fg.argb = cd->d1_argb8;
   if (config.lunar_background) {
-    // If the user specified an always-black background, honor that.
-    fg = GColorWhite;
-    bg = GColorBlack;
+    // If the user specified an always-dark background, honor that.
+    fg = GColorYellow;
+    bg = GColorOxfordBlue;
   } else if (config.draw_mode) {
     // Inverting colors really means only to invert the two watchface colors.
     fg.argb ^= 0x3f;
@@ -673,8 +673,8 @@ static void remap_colors_moon(BitmapWithData *bwd) {
 }
 
 void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_face_layer");
-  if (memory_panic_count > 5) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_face_layer, memory_panic_count = %d", memory_panic_count);
+  if (memory_panic_count > 6) {
     // In case we're in extreme memory panic mode--too little
     // available memory to even keep the clock face resident--we do
     // nothing in this function.
@@ -1550,8 +1550,11 @@ void reset_memory_panic() {
   } 
   if (memory_panic_count > 4) {
     config.chrono_dial = 0;
-  } 
+  }
   if (memory_panic_count > 5) {
+    config.moon_subdial = false;
+  }
+  if (memory_panic_count > 6) {
     // At this point we hide the clock face.  Drastic!
   }
 

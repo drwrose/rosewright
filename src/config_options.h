@@ -70,7 +70,7 @@ typedef struct {
   unsigned char display_lang;
   unsigned char face_index;
   DateWindowMode date_windows[NUM_DATE_WINDOWS];
-  bool lunar_background;   // true for always-black background.
+  bool lunar_background;   // true for always-dark background.
   bool lunar_direction;    // true for southern hemisphere (left-to-right).
   unsigned char color_mode;
   bool moon_subdial;
