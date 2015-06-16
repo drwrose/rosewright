@@ -1306,15 +1306,6 @@ void create_objects() {
   assert(clock_face_layer != NULL);
   layer_set_update_proc(clock_face_layer, &clock_face_layer_update_callback);
   layer_add_child(window_layer, clock_face_layer);
-  
-  {
-    const struct IndicatorTable *window = &battery_table[config.face_index];
-    init_battery_gauge(window_layer, window->x, window->y, window->invert);
-  }
-  {
-    const struct IndicatorTable *window = &bluetooth_table[config.face_index];
-    init_bluetooth_indicator(window_layer, window->x, window->y, window->invert);
-  }
 
 #ifdef TOP_SUBDIAL
   {
@@ -1336,6 +1327,15 @@ void create_objects() {
 
     layer_set_update_proc(layer, &date_window_layer_update_callback);
     layer_add_child(window_layer, layer);
+  }
+  
+  {
+    const struct IndicatorTable *window = &battery_table[config.face_index];
+    init_battery_gauge(window_layer, window->x, window->y, window->invert);
+  }
+  {
+    const struct IndicatorTable *window = &bluetooth_table[config.face_index];
+    init_bluetooth_indicator(window_layer, window->x, window->y, window->invert);
   }
 
 #ifdef MAKE_CHRONOGRAPH
