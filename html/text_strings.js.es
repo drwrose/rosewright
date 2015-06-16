@@ -40,13 +40,16 @@ __DateWindowNamePrefix = "Ventana "
 __DateWindowNameSuffix = ""
 
 __DisplayLang = "Idioma para las ventanas"
+
+__MoonSubdial = "Show moon phase subdial"
+
 __LunarBackground = "Color de fondo de la Luna"
 __LunarBackgroundMatch = "Igual que programas de fondo"
 __LunarBackgroundBlack = "Siempre negro"
 
 __LunarDirection = "Dirección de fase lunar"
-__LunarDirectionNorth = "De derecha a izquierda (hemisferio norte)"
-__LunarDirectionSouth = "De izquierda a derecha (hemisferio sur)"
+__LunarDirectionNorth = "Hemisferio norte"
+__LunarDirectionSouth = "Hemisferio sur"
 
 __HourBuzzer = "Vibrar al tiempo"
 __BluetoothBuzzer = "Vibrar al desconectar"

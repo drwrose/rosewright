@@ -40,13 +40,16 @@ __DateWindowNamePrefix = "Date window "
 __DateWindowNameSuffix = ""
 
 __DisplayLang = "Language for date windows"
+
+__MoonSubdial = "Show moon phase subdial"
+
 __LunarBackground = "Moon background color"
 __LunarBackgroundMatch = "Match watch background"
 __LunarBackgroundBlack = "Always black"
 
 __LunarDirection = "Moon phase direction"
-__LunarDirectionNorth = "Right-to-left (northern hemisphere)"
-__LunarDirectionSouth = "Left-to-right (southern hemisphere)"
+__LunarDirectionNorth = "Northern hemisphere"
+__LunarDirectionSouth = "Southern hemisphere"
 
 __HourBuzzer = "Vibrate at each hour"
 __BluetoothBuzzer = "Vibrate on disconnect"
