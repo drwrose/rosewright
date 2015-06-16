@@ -6,6 +6,14 @@ build
 resources/generated_config.h
 resources/generated_defs.h
 resources/generated_table.c
+resources/clock_faces/c_face_chrono_hours_black.png
+resources/clock_faces/c_face_chrono_hours_black~bw.png
+resources/clock_faces/c_face_chrono_hours_white.png
+resources/clock_faces/c_face_chrono_hours_white~bw.png
+resources/clock_faces/c_face_chrono_tenths_black.png
+resources/clock_faces/c_face_chrono_tenths_black~bw.png
+resources/clock_faces/c_face_chrono_tenths_white.png
+resources/clock_faces/c_face_chrono_tenths_white~bw.png
 src/js/pebble-js-app.js
 appinfo.json
 

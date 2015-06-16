@@ -1080,7 +1080,7 @@ def configWatch():
     resourceStr += makeHands(generatedTable, generatedDefs)
     resourceStr += makeMoonDateWindow()
 
-    if top_subdial:
+    if top_subdial[0]:
         resourceStr += makeMoonWheel()
 
     print >> generatedDefs, "extern struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_FACES];"
