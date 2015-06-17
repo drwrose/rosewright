@@ -2,6 +2,7 @@
 #include "assert.h"
 #include "pebble_compat.h"
 #include "../resources/generated_config.h"
+#include "wright.h"  // for app_log() macro
 //#define SUPPORT_RLE 1
 
 BitmapWithData bwd_create(GBitmap *bitmap) {

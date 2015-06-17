@@ -19,7 +19,7 @@
 
 // The number of date windows provided.
 #define NUM_DATE_WINDOWS %(numDateWindows)s
-#define DATE_WINDOW_UPKEYS "%(dateWindowUpkeys)s"
+#define DATE_WINDOW_KEYS "%(dateWindowKeys)s"
 
 // Is there an optional top subdial on the face (to show moon phases,
 // etc.)?

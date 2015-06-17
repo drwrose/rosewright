@@ -21,7 +21,7 @@ function storeStringResult(options, keyword) {
 
 var storeResults = [];
 
-function makeOption(keyword, label, options, storeResult, store_index) {
+function makeOption(keyword, label, options, storeResult) {
     var role = "slider";
     if (options) {
 	role = "select";
@@ -31,12 +31,9 @@ function makeOption(keyword, label, options, storeResult, store_index) {
     if (!storeResult) {
 	storeResult = storeIntResult;
     }
-    if (!store_index) {
-        store_index = keyword;
-    }
-    storeResults.push([store_index, storeResult]);
+    storeResults.push([keyword, storeResult]);
 
-    document.write('<div data-role="fieldcontain"><label for="' + store_index + '">' + label + '</label><select name="' + store_index + '" id="' + store_index + '" data-role="' + role + '">');
+    document.write('<div data-role="fieldcontain"><label for="' + keyword + '">' + label + '</label><select name="' + keyword + '" id="' + keyword + '" data-role="' + role + '">');
     var key = $.url().param(keyword);
     for (var oi in options) {
 	if (key == options[oi][0]) {
@@ -163,9 +160,8 @@ if (num_date_windows) {
     for (var i = 0; i < num_date_windows; ++i) {
         var key = date_window_keys.charAt(i);
 	var sym = 'date_window_' + key;
-        var config_index = 'date_window_' + i;
 	var label = __DateWindowNamePrefix + key.toUpperCase() + __DateWindowNameSuffix;
-	makeOption(sym, label, date_window_options, storeIntResult, config_index);
+	makeOption(sym, label, date_window_options, storeIntResult);
     }
 
     makeOption("display_lang", __DisplayLang, lang_options, storeStringResult);
@@ -188,9 +184,9 @@ function saveOptions() {
     };
 
     for (var ri in storeResults) {
-	var store_index = storeResults[ri][0];
+	var keyword = storeResults[ri][0];
 	var storeResult = storeResults[ri][1];
-	storeResult(options, store_index);
+	storeResult(options, keyword);
     }
     return options;
 }

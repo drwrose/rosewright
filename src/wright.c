@@ -1,6 +1,7 @@
 #include "wright.h"
 #include "wright_chrono.h"
 #include "hand_table.h"
+#include <ctype.h>
 
 #include "../resources/generated_table.c"
 #include "../resources/lang_table.c"
@@ -979,7 +980,7 @@ void date_window_layer_update_callback(Layer *me, GContext *ctx) {
 
   switch (dwm) {
   case DWM_identify:
-    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%c", DATE_WINDOW_UPKEYS[date_window_index]);
+    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%c", toupper((int)(DATE_WINDOW_KEYS[date_window_index])));
     break;
 
   case DWM_date:

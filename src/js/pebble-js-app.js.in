@@ -167,8 +167,9 @@ Pebble.addEventListener("ready", function(e) {
 	    'top_subdial' : top_subdial,
 	};
 	for (var i = 0; i < num_date_windows; ++i) {
-            var config_index = 'date_window_' + i;
-	    configuration[config_index] = date_windows[i];
+            var key = date_window_keys.charAt(i);
+	    var sym = 'date_window_' + key;
+	    configuration[sym] = date_windows[i];
 	}
    	console.log("sending init config: " + JSON.stringify(configuration));
 	Pebble.sendAppMessage(configuration, sent_ack, sent_nack);
@@ -255,8 +256,7 @@ Pebble.addEventListener("webviewclosed", function(e) {
 	for (var i = 0; i < num_date_windows; ++i) {
             var key = date_window_keys.charAt(i);
 	    var sym = 'date_window_' + key;
-            var config_index = 'date_window_' + i;
-	    date_windows.push(configuration[config_index]);
+	    date_windows.push(configuration[sym]);
 	    writeToStorage("" + sym, date_windows[i]);
 	}
 

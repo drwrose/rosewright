@@ -1170,7 +1170,7 @@ def configWatch():
         'numFaceColors' : numFaceColors,
         'defaultFaceIndex' : defaultFaceIndex,
         'numDateWindows' : len(date_windows),
-        'dateWindowUpkeys' : date_window_keys.upper(),
+        'dateWindowKeys' : date_window_keys,
         'numStepsHour' : numSteps['hour'],
         'numStepsMinute' : numSteps['minute'],
         'numStepsSecond' : getNumSteps('second'),
