@@ -24,7 +24,7 @@ var default_display_lang = null;  // determined from navigator.language, below
 var default_face_index = %(defaultFaceIndex)s;
 var default_date_windows = %(defaultDateWindows)s;
 var default_top_subdial = %(defaultTopSubdial)s;
-var default_lunar_background = 0;
+var default_lunar_background = %(defaultLunarBackground)s;
 var default_lunar_direction = 0;
 
 var battery_gauge;

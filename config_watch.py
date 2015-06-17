@@ -238,7 +238,7 @@ faces = {
         'top_subdial' : (32, 32, 'b'),
         'bluetooth' : (0, 0, 'b'),
         'battery' : (125, 3, 'b'),
-        'defaults' : [ 'date:b', 'moon_phase' ],
+        'defaults' : [ 'date:b', 'moon_phase', 'moon_dark' ],
         },
     'b' : {
         'filename' : ['b_face_rect.png'],
@@ -1147,6 +1147,7 @@ def configWatch():
         'displayLangLookup' : displayLangLookup,
         'enableTopSubdial' : int(bool(top_subdial[0])),
         'defaultTopSubdial' : defaultTopSubdial,
+        'defaultLunarBackground' : defaultLunarBackground,
         }
 
     configIn = open('%s/generated_config.h.in' % (resourcesDir), 'r').read()
@@ -1191,6 +1192,7 @@ def configWatch():
         'makeChronograph' : int(makeChronograph and enableChronoSecondHand),
         'enableTopSubdial' : int(bool(top_subdial[0])),
         'defaultTopSubdial' : defaultTopSubdial,
+        'defaultLunarBackground' : defaultLunarBackground,
         'enableChronoMinuteHand' : int(enableChronoMinuteHand),
         'enableChronoSecondHand' : int(enableChronoSecondHand),
         'enableChronoTenthHand' : int(enableChronoTenthHand),
@@ -1306,6 +1308,10 @@ for keyword in defaults:
 defaultTopSubdial = 0
 if 'moon_phase' in defaults:
     defaultTopSubdial = 1
+
+defaultLunarBackground = 0
+if 'moon_dark' in defaults:
+    defaultLunarBackground = 1
 
 # Map the centers tuple into a dictionary of points for x and y.
 cxd = dict(map(lambda (hand, x, y): (hand, x), centers))

@@ -12,7 +12,7 @@ static ConfigOptions default_options = {
   true, 0, CDM_tenths, false,
   0, DEFAULT_FACE_INDEX,
   { DEFAULT_DATE_WINDOWS },
-  false, false, 0, DEFAULT_TOP_SUBDIAL,
+  DEFAULT_LUNAR_BACKGROUND, false, 0, DEFAULT_TOP_SUBDIAL,
 };
 
 void sanitize_config() {
@@ -189,7 +189,7 @@ static void int_to_config() {
       true, 0, CDM_tenths, false,
       0, DEFAULT_FACE_INDEX,
       { DEFAULT_DATE_WINDOWS },
-      false, false, 0, DEFAULT_TOP_SUBDIAL,
+      DEFAULT_LUNAR_BACKGROUND, false, 0, DEFAULT_TOP_SUBDIAL,
     },
 
 #if PERSIST_KEY == 0x5151 + 0xc5  // Rosewright A
@@ -197,7 +197,7 @@ static void int_to_config() {
       true, 0, CDM_tenths, false,
       0, 1,
       { DWM_weekday, DWM_date, DWM_off, DWM_off },
-      true, false, 1, TSM_moon_phase,
+      false, false, 1, TSM_moon_phase,
     },
 
     { IM_off, IM_off, true, false,
@@ -249,6 +249,12 @@ static void int_to_config() {
       { DWM_off, DWM_off },
       true, false, 3, TSM_off,
     },
+
+#elif PERSIST_KEY == 0x5151 + 0xc7  // Rosewright Chronograph
+
+#elif PERSIST_KEY == 0x5151 + 0xc8  // Rosewright D
+
+#elif PERSIST_KEY == 0x5151 + 0xc9  // Rosewright E
 
 #endif  // PERSIST_KEY
   };

@@ -62,6 +62,7 @@
 #define DEFAULT_FACE_INDEX %(defaultFaceIndex)s
 #define DEFAULT_DATE_WINDOWS %(defaultDateWindows)s
 #define DEFAULT_TOP_SUBDIAL %(defaultTopSubdial)s
+#define DEFAULT_LUNAR_BACKGROUND %(defaultLunarBackground)s
  
 #define ENABLE_BLUETOOTH %(enableBluetooth)s
 #define DEFAULT_BLUETOOTH %(defaultBluetooth)s
