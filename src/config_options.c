@@ -253,8 +253,62 @@ static void int_to_config() {
 #elif PERSIST_KEY == 0x5151 + 0xc7  // Rosewright Chronograph
 
 #elif PERSIST_KEY == 0x5151 + 0xc8  // Rosewright D
+    { IM_off, IM_off, true, false,
+      true, 0, CDM_tenths, false,
+      0, 1,
+      { DWM_weekday, DWM_date, DWM_month, DWM_ampm },
+      false, false, 1, TSM_moon_phase,
+    },
+
+    { IM_off, IM_off, true, false,
+      true, 0, CDM_tenths, false,
+      11, 0,
+      { DWM_off, DWM_off, DWM_weekday, DWM_month },
+      false, false, 2, TSM_off,
+    },
+    
+    { IM_always, IM_always, false, false,
+      true, 0, CDM_tenths, false,
+      0, 0,
+      { DWM_off, DWM_off, DWM_off, DWM_off },
+      true, false, 3, TSM_off,
+    },
+    
+    { IM_always, IM_always, false, false,
+      true, 1, CDM_tenths, false,
+      0, 0,
+      { DWM_off, DWM_off, DWM_off, DWM_off },
+      true, false, 3, TSM_off,
+    },
 
 #elif PERSIST_KEY == 0x5151 + 0xc9  // Rosewright E
+    { IM_off, IM_off, true, false,
+      true, 0, CDM_tenths, false,
+      0, 1,
+      { DWM_off, DWM_weekday, DWM_date, DWM_off },
+      true, false, 1, TSM_moon_phase,
+    },
+
+    { IM_off, IM_off, true, false,
+      true, 0, CDM_tenths, false,
+      11, 0,
+      { DWM_weekday, DWM_month, DWM_ampm, DWM_date },
+      false, false, 2, TSM_off,
+    },
+    
+    { IM_always, IM_always, false, false,
+      true, 0, CDM_tenths, false,
+      0, 0,
+      { DWM_off, DWM_off, DWM_off, DWM_off },
+      true, false, 3, TSM_off,
+    },
+    
+    { IM_always, IM_always, false, false,
+      true, 1, CDM_tenths, false,
+      0, 0,
+      { DWM_off, DWM_off, DWM_off, DWM_off },
+      true, false, 3, TSM_off,
+    },
 
 #endif  // PERSIST_KEY
   };

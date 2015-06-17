@@ -303,7 +303,7 @@ faces = {
         'top_subdial' : (32, 32, 'w'),
         'bluetooth' : [ (11, 12, 'b'), (11, 12, 'w'), ],
         'battery' : [ (115, 16, 'b'), (115, 16, 'w'), ],
-        'defaults' : [ 'date:c' ],
+        'defaults' : [ 'date:c', 'moon_dark' ],
         },
     }
 
