@@ -284,8 +284,8 @@ faces = {
         'date_window_d' : [ (95, 125, 'w'), (95, 125, 'b') ],
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial' : [ (32, 34, 'w'), (32, 34, 'b'), ],
-        'bluetooth' : [ (36, 29, 'b'), (49, 45, 'b') ],
-        'battery' : [ (95, 33, 'b'), (79, 49, 'b') ],
+        'bluetooth' : [ (36, 29, 'b'), (36, 29, 'b') ],
+        'battery' : [ (95, 33, 'b'), (95, 33, 'b') ],
         'defaults' : [ 'day:c', 'date:d', 'bluetooth', 'battery', 'moon_phase' ],
         },
     'e' : {
