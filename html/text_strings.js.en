@@ -44,7 +44,7 @@ __DisplayLang = "Language for date windows"
 __TopSubdial = "Top subdial"
 
 __LunarBackground = "Moon background color"
-__LunarBackgroundMatch = "Match watch background"
+__LunarBackgroundMatch = "Match watchface"
 __LunarBackgroundBlack = "Always dark"
 
 __LunarDirection = "Moon phase direction"

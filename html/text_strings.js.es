@@ -44,7 +44,7 @@ __DisplayLang = "Idioma para las ventanas"
 __TopSubdial = "Cuadrante superior"
 
 __LunarBackground = "Color de fondo de la Luna"
-__LunarBackgroundMatch = "Igual que programas de fondo"
+__LunarBackgroundMatch = "Coincida con la esfera del reloj"
 __LunarBackgroundBlack = "Siempre oscuro"
 
 __LunarDirection = "Dirección de fase lunar"

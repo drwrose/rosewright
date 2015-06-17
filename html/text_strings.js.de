@@ -44,7 +44,7 @@ __DisplayLang = "Sprache für Datumsfenster"
 __TopSubdial = "Obere Scheibe"
 
 __LunarBackground = "Mond Hintergrundfarbe"
-__LunarBackgroundMatch = "Wie Uhr Hintergrund"
+__LunarBackgroundMatch = "Passen das Zifferblatt zu"
 __LunarBackgroundBlack = "Immer dunkel"
 
 __LunarDirection = "Mondphase in Richtung"

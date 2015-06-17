@@ -286,7 +286,7 @@ faces = {
         'top_subdial' : [ (32, 34, 'w'), (32, 34, 'b'), ],
         'bluetooth' : [ (36, 29, 'b'), (49, 45, 'b') ],
         'battery' : [ (95, 33, 'b'), (79, 49, 'b') ],
-        'defaults' : [ 'day:c', 'date:d', 'bluetooth', 'battery' ],
+        'defaults' : [ 'day:c', 'date:d', 'bluetooth', 'battery', 'moon_phase' ],
         },
     'e' : {
         'filename' : ['e_face.png', 'e_face_white.png'],
