@@ -154,7 +154,7 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
   }
 
   for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
-    Tuple *date_window_x = dict_find(received, CK_date_window_a + i);
+    Tuple *date_window_x = dict_find(received, CK_date_window_0 + i);
     if (date_window_x != NULL) {
       config.date_windows[i] = date_window_x->value->int32;
     }

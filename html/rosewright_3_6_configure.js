@@ -21,7 +21,7 @@ function storeStringResult(options, keyword) {
 
 var storeResults = [];
 
-function makeOption(keyword, label, options, storeResult) {
+function makeOption(keyword, label, options, storeResult, store_index) {
     var role = "slider";
     if (options) {
 	role = "select";
@@ -31,9 +31,12 @@ function makeOption(keyword, label, options, storeResult) {
     if (!storeResult) {
 	storeResult = storeIntResult;
     }
-    storeResults.push([keyword, storeResult]);
+    if (!store_index) {
+        store_index = keyword;
+    }
+    storeResults.push([store_index, storeResult]);
 
-    document.write('<div data-role="fieldcontain"><label for="' + keyword + '">' + label + '</label><select name="' + keyword + '" id="' + keyword + '" data-role="' + role + '">');
+    document.write('<div data-role="fieldcontain"><label for="' + store_index + '">' + label + '</label><select name="' + store_index + '" id="' + store_index + '" data-role="' + role + '">');
     var key = $.url().param(keyword);
     for (var oi in options) {
 	if (key == options[oi][0]) {
@@ -154,12 +157,15 @@ if ($.url().param("top_subdial")) {
     makeOption("top_subdial", __TopSubdial, top_subdial_options);
 }
 
-var num_date_windows = $.url().param("num_date_windows");
+var date_window_keys = $.url().param("date_window_keys");
+var num_date_windows = date_window_keys.length;
 if (num_date_windows) {
     for (var i = 0; i < num_date_windows; ++i) {
-	var sym = 'date_window_' + String.fromCharCode(97 + i);
-	var label = __DateWindowNamePrefix + String.fromCharCode(65 + i) + __DateWindowNameSuffix;
-	makeOption(sym, label, date_window_options);
+        var key = date_window_keys.charAt(i);
+	var sym = 'date_window_' + key;
+        var config_index = 'date_window_' + i;
+	var label = __DateWindowNamePrefix + key.toUpperCase() + __DateWindowNameSuffix;
+	makeOption(sym, label, date_window_options, storeIntResult, config_index);
     }
 
     makeOption("display_lang", __DisplayLang, lang_options, storeStringResult);
@@ -182,9 +188,9 @@ function saveOptions() {
     };
 
     for (var ri in storeResults) {
-	var keyword = storeResults[ri][0];
+	var store_index = storeResults[ri][0];
 	var storeResult = storeResults[ri][1];
-	storeResult(options, keyword);
+	storeResult(options, store_index);
     }
     return options;
 }

@@ -979,7 +979,7 @@ void date_window_layer_update_callback(Layer *me, GContext *ctx) {
 
   switch (dwm) {
   case DWM_identify:
-    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%c", 'A' + date_window_index);
+    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%c", DATE_WINDOW_UPKEYS[date_window_index]);
     break;
 
   case DWM_date:

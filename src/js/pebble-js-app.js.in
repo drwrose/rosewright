@@ -4,7 +4,8 @@ var show_chrono_dial = %(enableChronoDial)s;
 var enable_sweep_seconds = %(enableSweepSeconds)s;
 var num_faces = %(numFaces)s;
 var num_face_colors = %(numFaceColors)s;
-var num_date_windows = %(numDateWindows)s;
+var date_window_keys = "%(dateWindowKeys)s";
+var num_date_windows = date_window_keys.length;
 var show_top_subdial = %(enableTopSubdial)s;
 
 // Define the initial config default values.  These defaults override
@@ -131,7 +132,8 @@ function initialize() {
     face_index = getIntFromStorage('face_index', default_face_index);
     date_windows = [];
     for (var i = 0; i < num_date_windows; ++i) {
-	var sym = 'date_window_' + String.fromCharCode(97 + i);
+        var key = date_window_keys.charAt(i);
+	var sym = 'date_window_' + key;
 	date_windows.push(getIntFromStorage(sym, default_date_windows[i]));
     }
     lunar_background = getIntFromStorage('lunar_background', default_lunar_background);
@@ -165,8 +167,8 @@ Pebble.addEventListener("ready", function(e) {
 	    'top_subdial' : top_subdial,
 	};
 	for (var i = 0; i < num_date_windows; ++i) {
-	    var sym = 'date_window_' + String.fromCharCode(97 + i);
-	    configuration[sym] = date_windows[i];
+            var config_index = 'date_window_' + i;
+	    configuration[config_index] = date_windows[i];
 	}
    	console.log("sending init config: " + JSON.stringify(configuration));
 	Pebble.sendAppMessage(configuration, sent_ack, sent_nack);
@@ -182,7 +184,7 @@ Pebble.addEventListener("showConfiguration", function(e) {
     if (config_langs.indexOf(prefix) >= 0) {
 	lang_extension = '.' + prefix;
     }
-    var url = "http://www.ddrose.com/pebble/rosewright_3_6_configure" + lang_extension + ".html?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&color_mode=" + color_mode + "&default_display_lang=" + default_display_lang + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_face_colors=" + num_face_colors + "&num_date_windows=" + num_date_windows + "&lunar_background=" + lunar_background + "&lunar_direction=" + lunar_direction;
+    var url = "http://www.ddrose.com/pebble/rosewright_3_6_configure" + lang_extension + ".html?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&color_mode=" + color_mode + "&default_display_lang=" + default_display_lang + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_face_colors=" + num_face_colors + "&date_window_keys=" + date_window_keys + "&lunar_background=" + lunar_background + "&lunar_direction=" + lunar_direction;
     if (show_top_subdial) {
         url += "&top_subdial=" + top_subdial;
     }
@@ -193,7 +195,8 @@ Pebble.addEventListener("showConfiguration", function(e) {
 	url += "&sweep_seconds=" + sweep_seconds;
     }
     for (var i = 0; i < num_date_windows; ++i) {
-	var sym = 'date_window_' + String.fromCharCode(97 + i);
+        var key = date_window_keys.charAt(i);
+	var sym = 'date_window_' + key;
 	url += "&" + sym + "=" + date_windows[i];
     }
     console.log("showConfiguration: " + url);
@@ -250,8 +253,10 @@ Pebble.addEventListener("webviewclosed", function(e) {
 
 	date_windows = [];
 	for (var i = 0; i < num_date_windows; ++i) {
-	    var sym = 'date_window_' + String.fromCharCode(97 + i);
-	    date_windows.push(configuration[sym]);
+            var key = date_window_keys.charAt(i);
+	    var sym = 'date_window_' + key;
+            var config_index = 'date_window_' + i;
+	    date_windows.push(configuration[config_index]);
 	    writeToStorage("" + sym, date_windows[i]);
 	}
 

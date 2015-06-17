@@ -248,8 +248,8 @@ faces = {
                      (('Yellow', 'BulgarianRose', 'DukeBlue', 'OxfordBlue'), ('PastelYellow', 'Black')),
                      (('BrilliantRose', 'Blue', 'DarkCandyAppleRed', 'BulgarianRose'), ('RichBrilliantLavender', 'Black')),
                      ],
-        'date_window_a' : (52, 109, 'b'),
-        'date_window_b' : (92, 109, 'b'),
+        'date_window_b' : (52, 109, 'b'),
+        'date_window_c' : (92, 109, 'b'),
         'top_subdial' : (32, 33, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : (0, 0, 'b'),
@@ -1136,7 +1136,7 @@ def configWatch():
         'numFaces' : numFaces,
         'numFaceColors' : numFaceColors,
         'defaultFaceIndex' : defaultFaceIndex,
-        'numDateWindows' : len(date_windows),
+        'dateWindowKeys' : date_window_keys,
         'enableChronoDial' : int(makeChronograph),
         'defaultBluetooth' : defaultBluetooth,
         'defaultBattery' : defaultBattery,
@@ -1170,6 +1170,7 @@ def configWatch():
         'numFaceColors' : numFaceColors,
         'defaultFaceIndex' : defaultFaceIndex,
         'numDateWindows' : len(date_windows),
+        'dateWindowUpkeys' : date_window_keys.upper(),
         'numStepsHour' : numSteps['hour'],
         'numStepsMinute' : numSteps['minute'],
         'numStepsSecond' : getNumSteps('second'),
@@ -1276,15 +1277,15 @@ numFaceColors = len(faceColors)
 defaultFaceIndex = fd.get('default_face', 0)
 
 top_subdial = getIndicator(fd, 'top_subdial')
+
+# Get the set of date_windows defined for the watchface.
 date_windows = []
-i = 0
-ch = chr(97 + i)
-dw = getIndicator(fd, 'date_window_%s' % (ch))
-while dw[0]:
-    date_windows.append(dw)
-    i += 1
-    ch = chr(97 + i)
-    dw = getIndicator(fd, 'date_window_%s' % (ch))
+date_window_keys = ''
+for key in 'abcd':
+    dw = getIndicator(fd, 'date_window_%s' % (key))
+    if dw[0]:
+        date_windows.append(dw)
+        date_window_keys += key
 
 date_window_filename = fd.get('date_window_filename', None)
 bluetooth = getIndicator(fd, 'bluetooth')
