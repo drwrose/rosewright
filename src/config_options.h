@@ -68,13 +68,17 @@ typedef struct {
   IndicatorMode bluetooth_indicator;
   bool second_hand;
   bool hour_buzzer;
+
   bool bluetooth_buzzer;
   unsigned char draw_mode;
   ChronoDialMode chrono_dial;
   bool sweep_seconds;
+
   unsigned char display_lang;
   unsigned char face_index;
+
   DateWindowMode date_windows[NUM_DATE_WINDOWS];
+
   bool lunar_background;   // true for always-dark background.
   bool lunar_direction;    // true for southern hemisphere (left-to-right).
   unsigned char color_mode;

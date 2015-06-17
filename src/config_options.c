@@ -3,31 +3,17 @@
 
 ConfigOptions config;
 
-void init_default_options() {
-  // Initializes the config options with their default values.  Note
-  // that these defaults are used only if the Pebble is not connected
-  // to the phone at the time of launch; otherwise, the defaults in
-  // pebble-js-app.js are used instead.
-  static ConfigOptions default_options = {
-    DEFAULT_BATTERY_GAUGE,
-    DEFAULT_BLUETOOTH,
-    ENABLE_SECOND_HAND,
-    ENABLE_HOUR_BUZZER,
-    true,
-    false,
-    CDM_tenths,
-    false,
-    0,
-    DEFAULT_FACE_INDEX,
-    { DEFAULT_DATE_WINDOWS },
-    false,
-    false,
-    0,
-    DEFAULT_TOP_SUBDIAL,
-  };
-  
-  config = default_options;
-}
+// Defaults the default values of the config options.  Note that these
+// defaults are used only if the Pebble is not connected to the phone
+// at the time of launch; otherwise, the defaults in pebble-js-app.js
+// are used instead.
+static ConfigOptions default_options = {
+  DEFAULT_BATTERY_GAUGE, DEFAULT_BLUETOOTH, ENABLE_SECOND_HAND, ENABLE_HOUR_BUZZER,
+  true, 0, CDM_tenths, false,
+  0, DEFAULT_FACE_INDEX,
+  { DEFAULT_DATE_WINDOWS },
+  false, false, 0, DEFAULT_TOP_SUBDIAL,
+};
 
 void sanitize_config() {
   // Ensures that the newly-loaded config parameters are within a
@@ -75,7 +61,7 @@ void save_config() {
 }
 
 void load_config() {
-  init_default_options();
+  config = default_options;
 
   ConfigOptions local_config;
   int read_size = persist_read_data(PERSIST_KEY, &local_config, sizeof(local_config));
@@ -196,19 +182,99 @@ static unsigned int current_config_index = 0;
 
 #ifdef SCREENSHOT_BUILD
 static void int_to_config() {
-  unsigned int index = current_config_index;
-  
-  // Third digit: color_mode.
-  config.color_mode = index % NUM_FACE_COLORS;
-  index /= NUM_FACE_COLORS;
+  static ConfigOptions screenshot_options[] = {
+    {
+      DEFAULT_BATTERY_GAUGE, DEFAULT_BLUETOOTH, ENABLE_SECOND_HAND, ENABLE_HOUR_BUZZER,
+      true, 0, CDM_tenths, false,
+      0, DEFAULT_FACE_INDEX,
+      { DEFAULT_DATE_WINDOWS },
+      false, false, 0, DEFAULT_TOP_SUBDIAL,
+    },
 
-  // Second digit: draw_mode.
-  config.draw_mode = index % 2;
-  index /= 2;
+#if PERSIST_KEY == 0x5151 + 0xc5  // Rosewright A
+    { IM_off, IM_off, true, false,
+      true, 0, CDM_tenths, false,
+      0, 1,
+      { DWM_weekday, DWM_date, DWM_off, DWM_off },
+      true, false, 1, TSM_moon_phase,
+    },
 
-  // First digit: face_index.
-  config.face_index = index % NUM_FACES;
-  index /= NUM_FACES;
+    { IM_off, IM_off, true, false,
+      true, 0, CDM_tenths, false,
+      11, 0,
+      { DWM_weekday, DWM_month, DWM_ampm, DWM_date },
+      false, false, 2, TSM_off,
+    },
+    
+    { IM_always, IM_always, false, false,
+      true, 0, CDM_tenths, false,
+      0, 0,
+      { DWM_off, DWM_off, DWM_off, DWM_off },
+      true, false, 3, TSM_off,
+    },
+    
+    { IM_always, IM_always, false, false,
+      true, 1, CDM_tenths, false,
+      0, 0,
+      { DWM_off, DWM_off, DWM_off, DWM_off },
+      true, false, 3, TSM_off,
+    },
+
+#elif PERSIST_KEY == 0x5151 + 0xc6  // Rosewright B
+    { IM_off, IM_off, true, false,
+      true, 0, CDM_tenths, false,
+      0, 0,
+      { DWM_weekday, DWM_date },
+      true, false, 1, TSM_moon_phase,
+    },
+
+    { IM_off, IM_off, true, false,
+      true, 0, CDM_tenths, false,
+      5, 0,
+      { DWM_date, DWM_weekday },
+      false, false, 2, TSM_off,
+    },
+    
+    { IM_always, IM_always, false, false,
+      true, 0, CDM_tenths, false,
+      0, 0,
+      { DWM_off, DWM_off },
+      true, false, 3, TSM_off,
+    },
+    
+    { IM_always, IM_always, false, false,
+      true, 1, CDM_tenths, false,
+      0, 0,
+      { DWM_off, DWM_off },
+      true, false, 3, TSM_off,
+    },
+
+#endif  // PERSIST_KEY
+  };
+
+  static const int num_screenshot_options = sizeof(screenshot_options) / sizeof(ConfigOptions);
+
+  if (current_config_index < (int)num_screenshot_options) {
+    // Choose one of the pre-canned configs.
+    config = screenshot_options[current_config_index];
+
+  } else {
+    // Generic iteration through config indexes (especially colors).
+    config = default_options;
+    unsigned int index = (unsigned int)current_config_index - num_screenshot_options;
+    
+    // Third digit: color_mode.
+    config.color_mode = index % NUM_FACE_COLORS;
+    index /= NUM_FACE_COLORS;
+    
+    // Second digit: draw_mode.
+    config.draw_mode = index % 2;
+    index /= 2;
+    
+    // First digit: face_index.
+    config.face_index = index % NUM_FACES;
+    index /= NUM_FACES;
+  }
 
   sanitize_config();
 }
