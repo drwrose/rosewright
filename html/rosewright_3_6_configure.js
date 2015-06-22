@@ -155,8 +155,9 @@ if ($.url().param("top_subdial")) {
 }
 
 var date_window_keys = $.url().param("date_window_keys");
-var num_date_windows = date_window_keys.length;
-if (num_date_windows) {
+if (date_window_keys) {
+  var num_date_windows = date_window_keys.length;
+  if (num_date_windows) {
     for (var i = 0; i < num_date_windows; ++i) {
         var key = date_window_keys.charAt(i);
 	var sym = 'date_window_' + key;
@@ -165,6 +166,7 @@ if (num_date_windows) {
     }
 
     makeOption("display_lang", __DisplayLang, lang_options, storeStringResult);
+  }
 }
 
 makeOption("lunar_background", __LunarBackground,
