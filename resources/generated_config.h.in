@@ -61,7 +61,6 @@
   // easily see the hands in several different orientations around the
   // face.
   #define FAST_TIME 1
-
 #else
   // Declare full optimizations.
   #define NDEBUG 1

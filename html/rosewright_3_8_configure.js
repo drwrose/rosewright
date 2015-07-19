@@ -145,6 +145,11 @@ var date_window_options = [
     [7, __LunarPhase],
 ];
 
+if ($.url().param("debug")) {
+    date_window_options.push([8, "(debug) heap free"]);
+    date_window_options.push([9, "(debug) memory panic count"]);
+}
+
 var top_subdial_options = [
     [0, __Off], 
     [1, __LunarPhase],

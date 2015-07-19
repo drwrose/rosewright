@@ -7,6 +7,7 @@ var num_face_colors = %(numFaceColors)s;
 var date_window_keys = "%(dateWindowKeys)s";
 var num_date_windows = date_window_keys.length;
 var show_top_subdial = %(enableTopSubdial)s;
+var enable_debug = %(enableDebug)s;
 
 // Define the initial config default values.  These defaults override
 // the similar default values built directly into the watchapp in
@@ -185,7 +186,7 @@ Pebble.addEventListener("showConfiguration", function(e) {
     if (config_langs.indexOf(prefix) >= 0) {
 	lang_extension = '.' + prefix;
     }
-    var url = "http://s3.amazonaws.com/us.ddrose/pebble/rosewright/html/rosewright_3_6_configure" + lang_extension + ".html?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&color_mode=" + color_mode + "&default_display_lang=" + default_display_lang + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_face_colors=" + num_face_colors + "&date_window_keys=" + date_window_keys + "&lunar_background=" + lunar_background + "&lunar_direction=" + lunar_direction;
+    var url = "http://s3.amazonaws.com/us.ddrose/pebble/rosewright/html/rosewright_3_8_configure" + lang_extension + ".html?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&color_mode=" + color_mode + "&default_display_lang=" + default_display_lang + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_face_colors=" + num_face_colors + "&date_window_keys=" + date_window_keys + "&lunar_background=" + lunar_background + "&lunar_direction=" + lunar_direction;
     if (show_top_subdial) {
         url += "&top_subdial=" + top_subdial;
     }
@@ -199,6 +200,9 @@ Pebble.addEventListener("showConfiguration", function(e) {
         var key = date_window_keys.charAt(i);
 	var sym = 'date_window_' + key;
 	url += "&" + sym + "=" + date_windows[i];
+    }
+    if (enable_debug) {
+        url += "&debug=1";
     }
     console.log("showConfiguration: " + url);
     var result = Pebble.openURL(url);

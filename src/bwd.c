@@ -49,6 +49,10 @@ BitmapWithData bwd_copy(BitmapWithData *source) {
   if (palette_count != 0) {
     GColor *source_palette = gbitmap_get_palette(source->bitmap);
     GColor *dest_palette = gbitmap_get_palette(dest.bitmap);
+    if (dest_palette == NULL) {
+      bwd_destroy(&dest);
+      return dest;
+    }
     memcpy(dest_palette, source_palette, palette_count);
   }
   

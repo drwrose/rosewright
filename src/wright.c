@@ -993,7 +993,7 @@ void date_window_layer_update_callback(Layer *me, GContext *ctx) {
 
   GFont *font = &date_numeric_font;
   struct FontPlacement *font_placement = &date_numeric_font_placement;
-  if (dwm >= DWM_weekday) {
+  if (dwm >= DWM_weekday && dwm < DWM_moon) {
     // Draw text using date_lang_font.
     const LangDef *lang = &lang_table[config.display_lang];
     font = &date_lang_font;
@@ -1015,6 +1015,14 @@ void date_window_layer_update_callback(Layer *me, GContext *ctx) {
     snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", current_placement.year_value + 1900);
     break;
 
+  case DWM_debug_heap_free:
+    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%dk", heap_bytes_free() / 1024);
+    break;
+
+  case DWM_debug_memory_panic_count:
+    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d!", memory_panic_count);
+    break;
+    
   case DWM_weekday:
     text = date_names[current_placement.day_index];
     break;
@@ -1589,7 +1597,9 @@ void reset_memory_panic() {
   } 
   if (memory_panic_count > 6) {
     for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
-      config.date_windows[i] = DWM_off;
+      if (config.date_windows[i] != DWM_debug_memory_panic_count) {
+        config.date_windows[i] = DWM_off;
+      }
     }
   } 
   if (memory_panic_count > 7) {

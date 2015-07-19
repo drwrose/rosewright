@@ -56,6 +56,10 @@ typedef enum {
   
   // Special case.
   DWM_moon = 7,
+
+  // Debug options.
+  DWM_debug_heap_free = 8,
+  DWM_debug_memory_panic_count = 9,
 } DateWindowMode;
 
 typedef enum {

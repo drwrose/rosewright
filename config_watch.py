@@ -1147,6 +1147,7 @@ def configWatch():
         'defaultDateWindows' : repr(defaultDateWindows),
         'displayLangLookup' : displayLangLookup,
         'enableTopSubdial' : int(bool(top_subdial[0])),
+        'enableDebug' : int(compileDebugging),
         'defaultTopSubdial' : defaultTopSubdial,
         'defaultLunarBackground' : defaultLunarBackground,
         }
