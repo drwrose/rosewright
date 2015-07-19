@@ -101,6 +101,13 @@ struct HandCache hour_cache;
 struct HandCache minute_cache;
 struct HandCache second_cache;
 
+BitmapWithData hour_bitmap_cache[HOUR_BITMAP_CACHE_SIZE];
+BitmapWithData minute_bitmap_cache[MINUTE_BITMAP_CACHE_SIZE];
+BitmapWithData second_bitmap_cache[SECOND_BITMAP_CACHE_SIZE];
+size_t hour_bitmap_cache_size = HOUR_BITMAP_CACHE_SIZE;
+size_t minute_bitmap_cache_size = MINUTE_BITMAP_CACHE_SIZE;
+size_t second_bitmap_cache_size = SECOND_BITMAP_CACHE_SIZE;
+
 struct HandPlacement current_placement;
 
 #ifdef PBL_PLATFORM_APLITE
@@ -493,7 +500,7 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
 }
 
 // Draws a given hand on the face, using the bitmap structures.
-void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, int hand_index, GContext *ctx) {
+void draw_bitmap_hand(struct HandCache *hand_cache, BitmapWithData *bitmap_cache, size_t bitmap_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx) {
   if (hand_cache->bitmap_hand_index != hand_index) {
     // Force a new bitmap.
     if (hand_cache->image.bitmap != NULL) {
@@ -520,20 +527,37 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
     {
     // The hand does not have a mask.  Draw the hand on top of the scene.
     if (hand_cache->image.bitmap == NULL) {
-      if (hand_def->use_rle) {
-	hand_cache->image = rle_bwd_create(hand_resource_id);
-      } else {
-	hand_cache->image = png_bwd_create(hand_resource_id);
+      if (bitmap_index < (int)bitmap_cache_size) {
+        // Check to see if this bitmap was saved in the cache, so we
+        // don't have to hit the resource file.
+        if (bitmap_cache[bitmap_index].bitmap != NULL) {
+          hand_cache->image = bwd_copy(&bitmap_cache[bitmap_index]);
+        }
       }
       if (hand_cache->image.bitmap == NULL) {
-        hand_cache_destroy(hand_cache);
-	trigger_memory_panic(__LINE__);
-        return;
+        // All right, load it from the resource file.
+        if (hand_def->use_rle) {
+          hand_cache->image = rle_bwd_create(hand_resource_id);
+        } else {
+          hand_cache->image = png_bwd_create(hand_resource_id);
+        }
+        if (hand_cache->image.bitmap == NULL) {
+          hand_cache_destroy(hand_cache);
+          trigger_memory_panic(__LINE__);
+          return;
+        }
+        remap_colors_clock(&hand_cache->image);
+        
+        if (bitmap_index < (int)bitmap_cache_size) {
+          // Record it in the cache for next time.
+          if (bitmap_cache[bitmap_index].bitmap == NULL) {
+            bitmap_cache[bitmap_index] = bwd_copy(&hand_cache->image);
+          }
+        }
       }
       hand_cache->cx = lookup->cx;
       hand_cache->cy = lookup->cy;
-      remap_colors_clock(&hand_cache->image);
-      
+
       if (hand->flip_x) {
         // To minimize wasteful resource usage, if the hand is symmetric
         // we can store only the bitmaps for the right half of the clock
@@ -613,13 +637,13 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
 // Draws a given hand on the face, using the vector and/or bitmap
 // structures.  A given hand may be represented by a bitmap or a
 // vector, or a combination of both.
-void draw_hand(struct HandCache *hand_cache, struct HandDef *hand_def, int hand_index, GContext *ctx) {
+void draw_hand(struct HandCache *hand_cache, BitmapWithData *bitmap_cache, size_t bitmap_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx) {
   if (hand_def->vector_hand != NULL) {
     draw_vector_hand(hand_cache, hand_def, hand_index, ctx);
   }
 
   if (hand_def->bitmap_table != NULL) {
-    draw_bitmap_hand(hand_cache, hand_def, hand_index, ctx);
+    draw_bitmap_hand(hand_cache, bitmap_cache, bitmap_cache_size, hand_def, hand_index, ctx);
   }
 }
 
@@ -670,7 +694,7 @@ static void remap_colors_moon(BitmapWithData *bwd) {
 
 void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_face_layer, memory_panic_count = %d", memory_panic_count);
-  if (memory_panic_count > 6) {
+  if (memory_panic_count > 9) {
     // In case we're in extreme memory panic mode--too little
     // available memory to even keep the clock face resident--we do
     // nothing in this function.
@@ -698,20 +722,20 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
 void hour_layer_update_callback(Layer *me, GContext *ctx) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "hour_layer");
 
-  draw_hand(&hour_cache, &hour_hand_def, current_placement.hour_hand_index, ctx);
+  draw_hand(&hour_cache, hour_bitmap_cache, hour_bitmap_cache_size, &hour_hand_def, current_placement.hour_hand_index, ctx);
 }
 
 void minute_layer_update_callback(Layer *me, GContext *ctx) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "minute_layer, heap = %d bytes free of %d total", heap_bytes_free(), heap_bytes_free() + heap_bytes_used());
 
-  draw_hand(&minute_cache, &minute_hand_def, current_placement.minute_hand_index, ctx);
+  draw_hand(&minute_cache, minute_bitmap_cache, minute_bitmap_cache_size, &minute_hand_def, current_placement.minute_hand_index, ctx);
 }
 
 void second_layer_update_callback(Layer *me, GContext *ctx) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "second_layer");
 
   if (config.second_hand) {
-    draw_hand(&second_cache, &second_hand_def, current_placement.second_hand_index, ctx);
+    draw_hand(&second_cache, second_bitmap_cache, second_bitmap_cache_size, &second_hand_def, current_placement.second_hand_index, ctx);
   }
 }
 
@@ -1415,6 +1439,16 @@ void destroy_objects() {
   deinit_battery_gauge();
   deinit_bluetooth_indicator();
 
+  for (int i = 0; i < HOUR_BITMAP_CACHE_SIZE; ++i) {
+    bwd_destroy(&hour_bitmap_cache[i]);
+  }
+  for (int i = 0; i < MINUTE_BITMAP_CACHE_SIZE; ++i) {
+    bwd_destroy(&minute_bitmap_cache[i]);
+  }
+  for (int i = 0; i < SECOND_BITMAP_CACHE_SIZE; ++i) {
+    bwd_destroy(&second_bitmap_cache[i]);
+  }
+  
   for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
     layer_destroy(date_window_layers[i]);
     date_window_layers[i] = NULL;
@@ -1529,24 +1563,42 @@ void reset_memory_panic() {
 
   // Start resetting some options if the memory panic count grows too high.
   if (memory_panic_count > 1) {
+    hour_bitmap_cache_size = 0;
+#ifdef MAKE_CHRONOGRAPH
+    chrono_tenth_bitmap_cache_size = 0;
+#endif  // MAKE_CHRONOGRAPH
+  }
+  if (memory_panic_count > 2) {
+    minute_bitmap_cache_size = 0;
+#ifdef MAKE_CHRONOGRAPH
+    chrono_minute_bitmap_cache_size = 0;
+#endif  // MAKE_CHRONOGRAPH
+  }
+  if (memory_panic_count > 3) {
+    second_bitmap_cache_size = 0;
+#ifdef MAKE_CHRONOGRAPH
+    chrono_second_bitmap_cache_size = 0;
+#endif  // MAKE_CHRONOGRAPH
+  }
+  if (memory_panic_count > 4) {
     config.battery_gauge = IM_off;
     config.bluetooth_indicator = IM_off;
   }
-  if (memory_panic_count > 2) {
+  if (memory_panic_count > 5) {
     config.second_hand = false;
   } 
-  if (memory_panic_count > 3) {
+  if (memory_panic_count > 6) {
     for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
       config.date_windows[i] = DWM_off;
     }
   } 
-  if (memory_panic_count > 4) {
+  if (memory_panic_count > 7) {
     config.chrono_dial = 0;
   }
-  if (memory_panic_count > 5) {
+  if (memory_panic_count > 8) {
     config.top_subdial = false;
   }
-  if (memory_panic_count > 6) {
+  if (memory_panic_count > 9) {
     // At this point we hide the clock face.  Drastic!
   }
 

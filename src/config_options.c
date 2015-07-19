@@ -3,12 +3,12 @@
 
 ConfigOptions config;
 
-// Defaults the default values of the config options.  Note that these
+// Defines the default values of the config options.  Note that these
 // defaults are used only if the Pebble is not connected to the phone
 // at the time of launch; otherwise, the defaults in pebble-js-app.js
 // are used instead.
 static ConfigOptions default_options = {
-  DEFAULT_BATTERY_GAUGE, DEFAULT_BLUETOOTH, ENABLE_SECOND_HAND, ENABLE_HOUR_BUZZER,
+  DEFAULT_BATTERY_GAUGE, DEFAULT_BLUETOOTH, DEFAULT_SECOND_HAND, DEFAULT_HOUR_BUZZER,
   true, 0, CDM_tenths, false,
   0, DEFAULT_FACE_INDEX,
   { DEFAULT_DATE_WINDOWS },

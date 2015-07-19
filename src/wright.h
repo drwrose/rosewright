@@ -96,7 +96,7 @@ void update_hands(struct tm *time);
 void hand_cache_init(struct HandCache *hand_cache);
 void hand_cache_destroy(struct HandCache *hand_cache);
 void reset_tick_timer();
-void draw_hand(struct HandCache *hand_cache, struct HandDef *hand_def, int hand_index, GContext *ctx);
+void draw_hand(struct HandCache *hand_cache, BitmapWithData *bitmap_cache, size_t bitmap_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx);
 void remap_colors_clock(BitmapWithData *bwd);
 
 #endif

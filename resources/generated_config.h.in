@@ -36,6 +36,22 @@
 #define NUM_STEPS_CHRONO_TENTH %(numStepsChronoTenth)s
 #define NUM_STEPS_MOON %(numStepsMoon)s
 
+#define HOUR_BITMAP_CACHE_SIZE %(hourBitmapCacheSize)s
+#define MINUTE_BITMAP_CACHE_SIZE %(minuteBitmapCacheSize)s
+#define SECOND_BITMAP_CACHE_SIZE %(secondBitmapCacheSize)s
+
+#ifndef PBL_PLATFORM_APLITE
+#define CHRONO_MINUTE_BITMAP_CACHE_SIZE %(chronoMinuteBitmapCacheSize)s
+#define CHRONO_SECOND_BITMAP_CACHE_SIZE %(chronoSecondBitmapCacheSize)s
+#define CHRONO_TENTH_BITMAP_CACHE_SIZE %(chronoTenthBitmapCacheSize)s
+#else  // PBL_PLATFORM_APLITE
+// On Aplite, we never cache these--not enough RAM to play with.
+#define CHRONO_MINUTE_BITMAP_CACHE_SIZE 0
+#define CHRONO_SECOND_BITMAP_CACHE_SIZE 0
+#define CHRONO_TENTH_BITMAP_CACHE_SIZE 0
+#endif  // PBL_PLATFORM_APLITE
+
+
 // The order in which the hands are layered on top of each other.
 #define STACKING_ORDER_LIST  %(stackingOrder)s
 
@@ -70,10 +86,10 @@
 #define ENABLE_BATTERY_GAUGE %(enableBatteryGauge)s
 #define DEFAULT_BATTERY_GAUGE %(defaultBattery)s
 
-#define ENABLE_SECOND_HAND %(enableSecondHand)s
+#define DEFAULT_SECOND_HAND %(defaultSecondHand)s
 #define ENABLE_SWEEP_SECONDS %(enableSweepSeconds)s
 
-#define ENABLE_HOUR_BUZZER %(enableHourBuzzer)s
+#define DEFAULT_HOUR_BUZZER %(defaultHourBuzzer)s
 
 #if %(makeChronograph)s
   #define MAKE_CHRONOGRAPH 1

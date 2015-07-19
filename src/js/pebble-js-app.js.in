@@ -13,8 +13,8 @@ var show_top_subdial = %(enableTopSubdial)s;
 // config_options.c.
 var default_battery_gauge = %(defaultBattery)s;
 var default_bluetooth_indicator = %(defaultBluetooth)s;
-var default_second_hand = %(enableSecondHand)s;
-var default_hour_buzzer = %(enableHourBuzzer)s;
+var default_second_hand = %(defaultSecondHand)s;
+var default_hour_buzzer = %(defaultHourBuzzer)s;
 var default_bluetooth_buzzer = 1;
 var default_draw_mode = 0;
 var default_color_mode = 0;

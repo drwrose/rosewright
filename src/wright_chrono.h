@@ -18,6 +18,10 @@ typedef struct {
 
 extern ChronoData chrono_data;
 
+extern size_t chrono_minute_bitmap_cache_size;
+extern size_t chrono_second_bitmap_cache_size;
+extern size_t chrono_tenth_bitmap_cache_size;
+
 extern Layer *chrono_minute_layer;
 extern Layer *chrono_second_layer;
 extern Layer *chrono_tenth_layer;

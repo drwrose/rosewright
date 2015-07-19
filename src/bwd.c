@@ -18,6 +18,57 @@ void bwd_destroy(BitmapWithData *bwd) {
   }
 }
 
+BitmapWithData bwd_copy(BitmapWithData *source) {
+  BitmapWithData dest;
+
+  GSize size = gbitmap_get_bounds(source->bitmap).size;
+
+#ifndef PBL_PLATFORM_APLITE
+  GBitmapFormat format = gbitmap_get_format(source->bitmap);
+  dest.bitmap = gbitmap_create_blank(size, format);
+
+  size_t palette_count = 0;
+  switch (format) {
+  case GBitmapFormat1Bit:
+  case GBitmapFormat8Bit:
+    break;
+    
+  case GBitmapFormat1BitPalette:
+    palette_count = 2;
+    break;
+    
+  case GBitmapFormat2BitPalette:
+    palette_count = 4;
+    break;
+    
+  case GBitmapFormat4BitPalette:
+    palette_count = 16;
+    break;
+  }
+
+  if (palette_count != 0) {
+    GColor *source_palette = gbitmap_get_palette(source->bitmap);
+    GColor *dest_palette = gbitmap_get_palette(dest.bitmap);
+    memcpy(dest_palette, source_palette, palette_count);
+  }
+  
+#else  // PBL_PLATFORM_APLITE
+  dest.bitmap = __gbitmap_create_blank(size);
+#endif  // PBL_PLATFORM_APLITE
+  if (dest.bitmap == NULL) {
+    return dest;
+  }
+
+  int stride = gbitmap_get_bytes_per_row(source->bitmap);
+  uint8_t *source_data = gbitmap_get_data(source->bitmap);
+  size_t data_size = stride * size.h;
+  
+  uint8_t *dest_data = gbitmap_get_data(dest.bitmap);
+  memcpy(dest_data, source_data, data_size);
+
+  return dest;
+}
+
 // Initialize a bitmap from a regular unencoded resource (i.e. as
 // loaded from a png file).  This is the same as
 // gbitmap_create_with_resource(), but wrapped within the

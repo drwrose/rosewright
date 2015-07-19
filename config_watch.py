@@ -30,12 +30,6 @@ Options:
         Overrides the face style.  The following styles are available:
           %(faceStyles)s
 
-    -S
-        Suppress the second hand if it is defined.
-
-    -b
-        Enable a quick buzz at the top of the hour.
-
     -c
         Enable chronograph mode (if the selected hand style includes
         chrono hands).  This builds the watch as a standard app,
@@ -235,10 +229,10 @@ faces = {
         'date_window_c' : (52, 109, 'b'),
         'date_window_d' : (92, 109, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
-        'top_subdial' : (32, 32, 'b'),
+        #'top_subdial' : (32, 32, 'b'),
         'bluetooth' : (26, 0, 'b'),
         'battery' : (98, 1, 'b'),
-        'defaults' : [ 'date:b', 'moon_phase', 'moon_dark' ],
+        'defaults' : [ 'date:b', 'moon_phase', 'moon_dark', 'second' ],
         },
     'b' : {
         'filename' : ['b_face_rect.png'],
@@ -254,7 +248,7 @@ faces = {
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : (0, 0, 'b'),
         'battery' : (125, 3, 'b'),
-        'defaults' : [ 'day:a', 'date:b', 'moon_phase' ],
+        'defaults' : [ 'day:a', 'date:b', 'moon_phase', 'second' ],
         },
     'c' : {
         'filename' : ['c_face_rect.png', 'c_face.png'],
@@ -303,14 +297,12 @@ faces = {
         'top_subdial' : (32, 32, 'w'),
         'bluetooth' : [ (11, 12, 'b'), (11, 12, 'w'), ],
         'battery' : [ (115, 16, 'b'), (115, 16, 'w'), ],
-        'defaults' : [ 'date:c', 'moon_dark' ],
+        'defaults' : [ 'date:c', 'moon_dark', 'second' ],
         },
     }
 
 makeChronograph = False
 enableSecondHand = False
-suppressSecondHand = False
-enableHourBuzzer = False
 enableChronoMinuteHand = False
 enableChronoSecondHand = False
 enableChronoTenthHand = False
@@ -339,6 +331,10 @@ numStepsSweep = {
     'second' : 180,
     'chrono_second' : 180,
     }
+
+# This gets populated with the number of bitmap images for each hand
+# type, if we are enabling caching.
+bitmapCacheSize = {}
 
 thresholdMask = [0] + [255] * 255
 threshold1Bit = [0] * 128 + [255] * 128
@@ -518,6 +514,8 @@ def getNumSteps(hand):
 
     return numStepsHand
 
+def getBitmapCacheSize(hand):
+    return bitmapCacheSize.get(hand, 0)
 
 def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename, colorMode, asymmetric, pivot, scale):
     resourceStr = ''
@@ -795,8 +793,11 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
             }
         handTableLines.append(line)
 
+    numBitmaps = maxLookupIndex + 1
+    bitmapCacheSize[hand] = numBitmaps
+    
     print >> generatedTable, "struct BitmapHandCenterRow %s_hand_bitmap_lookup[] = {" % (hand)
-    for i in range(maxLookupIndex + 1):
+    for i in range(numBitmaps):
         line = handLookupLines.get(i, "  {},");
         print >> generatedTable, line
     print >> generatedTable, "};\n"
@@ -1140,9 +1141,9 @@ def configWatch():
         'enableChronoDial' : int(makeChronograph),
         'defaultBluetooth' : defaultBluetooth,
         'defaultBattery' : defaultBattery,
-        'enableSecondHand' : int(enableSecondHand and not suppressSecondHand),
-        'enableHourBuzzer' : int(enableHourBuzzer),
-        'enableSweepSeconds' : int(enableSecondHand and supportSweep),
+        'defaultSecondHand' : int('second' in defaults),
+        'defaultHourBuzzer' : int('buzzer' in defaults),
+        'enableSweepSeconds' : int(supportSweep),
         'defaultDateWindows' : repr(defaultDateWindows),
         'displayLangLookup' : displayLangLookup,
         'enableTopSubdial' : int(bool(top_subdial[0])),
@@ -1179,6 +1180,12 @@ def configWatch():
         'numStepsChronoSecond' : getNumSteps('chrono_second'),
         'numStepsChronoTenth' : numSteps['chrono_tenth'],
         'numStepsMoon' : numSteps['moon'],
+        'hourBitmapCacheSize' : getBitmapCacheSize('hour'),
+        'minuteBitmapCacheSize' : getBitmapCacheSize('minute'),
+        'secondBitmapCacheSize' : getBitmapCacheSize('second'),
+        'chronoMinuteBitmapCacheSize' : getBitmapCacheSize('chrono_minute'),
+        'chronoSecondBitmapCacheSize' : getBitmapCacheSize('chrono_second'),
+        'chronoTenthBitmapCacheSize' : getBitmapCacheSize('chrono_tenth'),
         'compileDebugging' : int(compileDebugging),
         'screenshotBuild' : int(screenshotBuild),
         'defaultDateWindows' : repr(defaultDateWindows)[1:-1],
@@ -1186,9 +1193,9 @@ def configWatch():
         'defaultBluetooth' : defaultBluetooth,
         'enableBatteryGauge' : int(bool(battery[0])),
         'defaultBattery' : defaultBattery,
-        'enableSecondHand' : int(enableSecondHand and not suppressSecondHand),
-        'enableSweepSeconds' : int(enableSecondHand and supportSweep),
-        'enableHourBuzzer' : int(enableHourBuzzer),
+        'defaultSecondHand' : int('second' in defaults),
+        'defaultHourBuzzer' : int('buzzer' in defaults),
+        'enableSweepSeconds' : int(supportSweep),
         'makeChronograph' : int(makeChronograph and enableChronoSecondHand),
         'enableTopSubdial' : int(bool(top_subdial[0])),
         'defaultTopSubdial' : defaultTopSubdial,
@@ -1202,7 +1209,7 @@ def configWatch():
 
 # Main.
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:Sbciwm:xp:dDh')
+    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:ciwm:xp:dDh')
 except getopt.error, msg:
     usage(1, msg)
 
@@ -1231,10 +1238,6 @@ for opt, arg in opts:
         if faceStyle not in faces:
             print >> sys.stderr, "Unknown face style '%s'." % (arg)
             sys.exit(1)
-    elif opt == '-S':
-        suppressSecondHand = True
-    elif opt == '-b':
-        enableHourBuzzer = True
     elif opt == '-c':
         makeChronograph = True
     elif opt == '-w':
