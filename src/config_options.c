@@ -12,7 +12,7 @@ static ConfigOptions default_options = {
   true, 0, CDM_tenths, false,
   0, DEFAULT_FACE_INDEX,
   { DEFAULT_DATE_WINDOWS },
-  DEFAULT_LUNAR_BACKGROUND, false, 0, DEFAULT_TOP_SUBDIAL,
+  DEFAULT_LUNAR_BACKGROUND, false, 0, DEFAULT_TOP_SUBDIAL, false,
 };
 
 void sanitize_config() {
@@ -162,6 +162,11 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
     config.top_subdial = top_subdial->value->int32;
   }
 
+  Tuple *show_debug = dict_find(received, CK_show_debug);
+  if (show_debug != NULL) {
+    config.show_debug = (show_debug->value->int32 != 0);
+  }
+  
   sanitize_config();
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "New config: %s", show_config());
@@ -189,7 +194,7 @@ static void int_to_config() {
       true, 0, CDM_tenths, false,
       0, DEFAULT_FACE_INDEX,
       { DEFAULT_DATE_WINDOWS },
-      DEFAULT_LUNAR_BACKGROUND, false, 0, DEFAULT_TOP_SUBDIAL,
+      DEFAULT_LUNAR_BACKGROUND, false, 0, DEFAULT_TOP_SUBDIAL, false,
     },
 
 #if PERSIST_KEY == 0x5151 + 0xc5  // Rosewright A
@@ -197,28 +202,28 @@ static void int_to_config() {
       true, 0, CDM_tenths, false,
       0, 1,
       { DWM_weekday, DWM_date, DWM_off, DWM_off },
-      false, false, 1, TSM_moon_phase,
+      false, false, 1, TSM_moon_phase, false,
     },
 
     { IM_off, IM_off, true, false,
       true, 0, CDM_tenths, false,
       11, 0,
       { DWM_weekday, DWM_month, DWM_ampm, DWM_date },
-      false, false, 2, TSM_off,
+      false, false, 2, TSM_off, false,
     },
     
     { IM_always, IM_always, false, false,
       true, 0, CDM_tenths, false,
       0, 0,
       { DWM_off, DWM_off, DWM_off, DWM_off },
-      true, false, 3, TSM_off,
+      true, false, 3, TSM_off, false,
     },
     
     { IM_always, IM_always, false, false,
       true, 1, CDM_tenths, false,
       0, 0,
       { DWM_off, DWM_off, DWM_off, DWM_off },
-      true, false, 3, TSM_off,
+      true, false, 3, TSM_off, false,
     },
 
 #elif PERSIST_KEY == 0x5151 + 0xc6  // Rosewright B
@@ -226,28 +231,28 @@ static void int_to_config() {
       true, 0, CDM_tenths, false,
       0, 0,
       { DWM_weekday, DWM_date },
-      true, false, 1, TSM_moon_phase,
+      true, false, 1, TSM_moon_phase, false,
     },
 
     { IM_off, IM_off, true, false,
       true, 0, CDM_tenths, false,
       5, 0,
       { DWM_date, DWM_weekday },
-      false, false, 2, TSM_off,
+      false, false, 2, TSM_off, false,
     },
     
     { IM_always, IM_always, false, false,
       true, 0, CDM_tenths, false,
       0, 0,
       { DWM_off, DWM_off },
-      true, false, 3, TSM_off,
+      true, false, 3, TSM_off, false,
     },
     
     { IM_always, IM_always, false, false,
       true, 1, CDM_tenths, false,
       0, 0,
       { DWM_off, DWM_off },
-      true, false, 3, TSM_off,
+      true, false, 3, TSM_off, false,
     },
 
 #elif PERSIST_KEY == 0x5151 + 0xc7  // Rosewright Chronograph
@@ -257,28 +262,28 @@ static void int_to_config() {
       true, 0, CDM_tenths, false,
       0, 1,
       { DWM_weekday, DWM_date, DWM_month, DWM_ampm },
-      false, false, 1, TSM_moon_phase,
+      false, false, 1, TSM_moon_phase, false,
     },
 
     { IM_off, IM_off, true, false,
       true, 0, CDM_tenths, false,
       11, 0,
       { DWM_off, DWM_off, DWM_weekday, DWM_month },
-      false, false, 2, TSM_off,
+      false, false, 2, TSM_off, false,
     },
     
     { IM_off, IM_off, false, false,
       true, 0, CDM_tenths, false,
       0, 0,
       { DWM_off, DWM_off, DWM_off, DWM_off },
-      true, false, 3, TSM_off,
+      true, false, 3, TSM_off, false,
     },
     
     { IM_always, IM_always, true, false,
       true, 1, CDM_tenths, false,
       0, 0,
       { DWM_off, DWM_off, DWM_off, DWM_off },
-      true, false, 3, TSM_off,
+      true, false, 3, TSM_off, false,
     },
 
 #elif PERSIST_KEY == 0x5151 + 0xc9  // Rosewright E
@@ -286,28 +291,28 @@ static void int_to_config() {
       true, 0, CDM_tenths, false,
       0, 1,
       { DWM_off, DWM_weekday, DWM_date, DWM_off },
-      true, false, 1, TSM_moon_phase,
+      true, false, 1, TSM_moon_phase, false,
     },
 
     { IM_off, IM_off, true, false,
       true, 0, CDM_tenths, false,
       11, 0,
       { DWM_weekday, DWM_month, DWM_ampm, DWM_date },
-      false, false, 2, TSM_off,
+      false, false, 2, TSM_off, false,
     },
     
     { IM_always, IM_always, false, false,
       true, 0, CDM_tenths, false,
       0, 0,
       { DWM_off, DWM_off, DWM_off, DWM_off },
-      true, false, 3, TSM_off,
+      true, false, 3, TSM_off, false,
     },
     
     { IM_always, IM_always, false, false,
       true, 1, CDM_tenths, false,
       0, 0,
       { DWM_off, DWM_off, DWM_off, DWM_off },
-      true, false, 3, TSM_off,
+      true, false, 3, TSM_off, false,
     },
 
 #endif  // PERSIST_KEY

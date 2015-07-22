@@ -145,12 +145,12 @@ var date_window_options = [
     [7, __LunarPhase],
 ];
 
-if ($.url().param("debug")) {
-    date_window_options.push([8, "(debug) heap free"]);
-    date_window_options.push([9, "(debug) memory panic count"]);
-    date_window_options.push([10, "(debug) resource reads"]);
-    date_window_options.push([11, "(debug) cache hits"]);
-    date_window_options.push([12, "(debug) cache total size"]);
+if ($.url().param("show_debug")) {
+    date_window_options.push([8, "(dev) heap free"]);
+    date_window_options.push([9, "(dev) memory panic count"]);
+    date_window_options.push([10, "(dev) resource reads"]);
+    date_window_options.push([11, "(dev) cache hits"]);
+    date_window_options.push([12, "(dev) cache total size"]);
 }
 
 var top_subdial_options = [
@@ -189,6 +189,10 @@ makeOption("bluetooth_indicator", __BluetoothIndicator,
 makeOption("battery_gauge", __BatteryGauge,
 	   [[0, __Off], [1, __WhenNeeded], [2, __Always], [3, __DigitalBattery]]);
 
+if ($.url().param("show_debug")) {
+    makeOption("show_debug", "Show developer options");
+}
+
 function saveOptions() {
     var options = {
     };
@@ -198,6 +202,22 @@ function saveOptions() {
 	var storeResult = storeResults[ri][1];
 	storeResult(options, keyword);
     }
+
+    // Check for the developer Easter egg: set first date window to
+    // Identify, second date window to am/pm, language to Tamil,
+    // invert face on.  This reveals the option to enable developer
+    // options.
+    if (date_window_keys) {
+        var dw0 = 'date_window_' + date_window_keys.charAt(0);
+        var dw1 = 'date_window_' + date_window_keys.charAt(1);
+        if (options[dw0] == 1 &&
+            options[dw1] == 6 &&
+            options['display_lang'] == 'ta_IN' &&
+            options['draw_mode'] == 1) {
+            options['show_debug'] = 1;
+        }
+    }
+    
     return options;
 }
 

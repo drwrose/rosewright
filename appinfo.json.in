@@ -29,7 +29,8 @@
     "lunar_background": 14,
     "lunar_direction": 15,
     "color_mode": 16,
-    "top_subdial" : 17
+    "top_subdial" : 17,
+    "show_debug" : 18
   },
   "resources": {
   "media": [

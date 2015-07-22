@@ -34,7 +34,8 @@ function cancel_func() {
 }
 
 function save_func() {
-  var location = "pebblejs://close#" + encodeURIComponent(JSON.stringify(saveOptions()));
+  var return_to = $.url().param("return_to") || "pebblejs://close#"
+  var location = return_to + encodeURIComponent(JSON.stringify(saveOptions()));
   document.location = location;
 }
 
