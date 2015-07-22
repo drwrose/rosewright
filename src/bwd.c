@@ -20,13 +20,35 @@ void bwd_clear_cache(struct ResourceCache *resource_cache, size_t resource_cache
   }
 }
 
-BitmapWithData bwd_create(GBitmap *bitmap) {
+static void fill_cache(struct ResourceCache *cache, int resource_id) {
+  if (cache->data == NULL) {
+    // Go read the resource data.
+    ++bwd_resource_reads;
+    ResHandle rh = resource_get_handle(resource_id);
+    cache->data_size = resource_size(rh);
+    bwd_cache_total_size += cache->data_size;
+    cache->data = (unsigned char *)malloc(cache->data_size);
+    if (cache->data != NULL) {
+      size_t bytes_copied = resource_load(rh, cache->data, cache->data_size);
+      assert(bytes_copied == cache->data_size);
+    }
+  } else {
+    ++bwd_cache_hits;
+  }
+}
+
+BitmapWithData bwd_create(GBitmap *bitmap, unsigned char *data) {
   BitmapWithData bwd;
   bwd.bitmap = bitmap;
+  bwd.data = data;
   return bwd;
 }
 
 void bwd_destroy(BitmapWithData *bwd) {
+  if (bwd->data != NULL) {
+    free(bwd->data);
+    bwd->data = NULL;
+  }
   if (bwd->bitmap != NULL) {
     gbitmap_destroy(bwd->bitmap);
     bwd->bitmap = NULL;
@@ -96,7 +118,7 @@ BitmapWithData bwd_copy(BitmapWithData *source) {
 BitmapWithData png_bwd_create(int resource_id) {
   ++bwd_resource_reads;
   GBitmap *image = gbitmap_create_with_resource(resource_id);
-  return bwd_create(image);
+  return bwd_create(image, NULL);
 }
 
 BitmapWithData png_bwd_create_with_cache(int resource_id_offset, int resource_id, struct ResourceCache *resource_cache, size_t resource_cache_size) {
@@ -107,29 +129,24 @@ BitmapWithData png_bwd_create_with_cache(int resource_id_offset, int resource_id
   }
 
   struct ResourceCache *cache = &resource_cache[index];
+  fill_cache(cache, resource_id);
   if (cache->data == NULL) {
-    // Go read the resource data.
-    ++bwd_resource_reads;
-    ResHandle rh = resource_get_handle(resource_id);
-    cache->data_size = resource_size(rh);
-    bwd_cache_total_size += cache->data_size;
-    cache->data = (unsigned char *)malloc(cache->data_size);
-    if (cache->data == NULL) {
-      // Whoops, not enough RAM.
-      return bwd_create(NULL);
-    }
-    size_t bytes_copied = resource_load(rh, cache->data, cache->data_size);
-    assert(bytes_copied == cache->data_size);
-  } else {
-    ++bwd_cache_hits;
+    // Whoops, not enough RAM.
+    return bwd_create(NULL, NULL);
   }
 
 #ifndef PBL_PLATFORM_APLITE
   GBitmap *image = gbitmap_create_from_png_data(cache->data, cache->data_size);
+  return bwd_create(image, NULL);
 #else  // PBL_PLATFORM_APLITE
-  GBitmap *image = gbitmap_create_with_data(cache->data);
+  unsigned char *data = (unsigned char *)malloc(cache->data_size);
+  if (data == NULL) {
+    return bwd_create(NULL, NULL);
+  }
+  memcpy(data, cache->data, cache->data_size);
+  GBitmap *image = gbitmap_create_with_data(data);
+  return bwd_create(image, data);
 #endif  // PBL_PLATFORM_APLITE
-  return bwd_create(image);
 }
 
 #ifndef SUPPORT_RLE
@@ -155,12 +172,13 @@ typedef struct {
   size_t _filled_size;
   size_t _bytes_read;
   size_t _total_size;
+  const uint8_t *_data;
   uint8_t _buffer[RBUFFER_SIZE];
 } RBuffer;
 
 // Begins reading from a raw resource.  Should be matched by a later
-// call to rbuffer_deinit() to free this stuff.
-static void rbuffer_init(int resource_id, RBuffer *rb, size_t offset) {
+// call to rbuffer_deinit().
+static void rbuffer_init_resource(RBuffer *rb, int resource_id, size_t offset) {
   //  rb->_buffer = (uint8_t *)malloc(RBUFFER_SIZE);
   //  assert(rb->_buffer != NULL);
   
@@ -169,6 +187,20 @@ static void rbuffer_init(int resource_id, RBuffer *rb, size_t offset) {
   rb->_i = 0;
   rb->_filled_size = 0;
   rb->_bytes_read = offset;
+  rb->_data = rb->_buffer;
+}
+
+// Begins reading from a data buffer.  The data buffer should not be
+// freed during the lifetime of the RBuffer.  Should be matched by a
+// later call to rbuffer_deinit().
+static void rbuffer_init_data(RBuffer *rb, unsigned char *data, size_t data_size) {
+  //  rb->_buffer = (uint8_t *)malloc(RBUFFER_SIZE);
+  //  assert(rb->_buffer != NULL);
+  
+  rb->_rh = 0;
+  rb->_i = 0;
+  rb->_total_size = rb->_filled_size = rb->_bytes_read = data_size;
+  rb->_data = data;
 }
 
 // Splits an RBuffer into two discrete parts.  rb_front is truncated
@@ -183,6 +215,14 @@ static void rbuffer_split(RBuffer *rb_front, RBuffer *rb_back, size_t point) {
   rb_back->_i = 0;
   rb_back->_filled_size = 0;
   rb_back->_bytes_read = point;
+  rb_back->_data = rb_back->_buffer;
+  if (rb_front->_rh == 0) {
+    // This is an in-memory RBuffer.
+    assert(rb_front->_data != rb_front->_buffer && rb_front->_filled_size == rb_front->_total_size);
+    rb_back->_data = rb_front->_data;
+    rb_back->_bytes_read = rb_back->_filled_size = rb_front->_total_size;
+    rb_back->_i = point;
+  }
   
   if (rb_front->_total_size > point) {
     rb_front->_total_size = point;
@@ -210,6 +250,7 @@ static int rbuffer_getc(RBuffer *rb) {
       // More bytes available to read; read them now.
       size_t bytes_remaining = rb->_total_size - rb->_bytes_read;
       size_t try_to_read = (bytes_remaining < RBUFFER_SIZE) ? bytes_remaining : (size_t)RBUFFER_SIZE;
+      assert(rb->_rh != 0);
       size_t bytes_read = resource_load_byte_range(rb->_rh, rb->_bytes_read, rb->_buffer, try_to_read);
       //assert((ssize_t)bytes_read >= 0);
       if ((ssize_t)bytes_read < 0) {
@@ -228,7 +269,7 @@ static int rbuffer_getc(RBuffer *rb) {
     return EOF;
   }
 
-  int result = rb->_buffer[rb->_i];
+  int result = rb->_data[rb->_i];
   rb->_i++;
   return result;
 }
@@ -545,7 +586,7 @@ rle_bwd_create_rb(RBuffer *rb) {
   GBitmap *image = gbitmap_create_blank_with_palette(GSize(width, height), format, palette, true);
   if (image == NULL) {
     free(palette);
-    return bwd_create(NULL);
+    return bwd_create(NULL, NULL);
   }
   int stride = gbitmap_get_bytes_per_row(image);
   uint8_t *bitmap_data = gbitmap_get_data(image);
@@ -606,28 +647,19 @@ rle_bwd_create_rb(RBuffer *rb) {
     unscreen_bitmap(image);
   }
 
-  /*
   if (palette_count != 0) {
     // Now we need to apply the palette.
-    ResHandle rh = rb->_rh;  // hack.
-    size_t total_size = resource_size(rh);
-    assert(total_size > po);
-    size_t palette_size = total_size - po;
-    assert(palette_size <= palette_count);
-    assert(palette == gbitmap_get_palette(image));
-    size_t bytes_read = resource_load_byte_range(rh, po, (uint8_t *)palette, palette_size);
-    assert(bytes_read == palette_size);
+    RBuffer rb_po;
+    rbuffer_split(&rb_vo, &rb_po, po);
+    for (int i = 0; i < (int)palette_count; ++i) {
+      palette[i].argb = rbuffer_getc(&rb_po);
+    }
+    rbuffer_deinit(&rb_po);
   }
-  */
-
-  // Now we need to apply the palette.
-  for (int i = 0; i < (int)palette_count; ++i) {
-    palette[i].argb = rbuffer_getc(&rb_vo);
-  }
-
+  
   rbuffer_deinit(&rb_vo);
   
-  return bwd_create(image);
+  return bwd_create(image, NULL);
 }
 
 #else  // PBL_PLATFORM_APLITE
@@ -654,7 +686,7 @@ rle_bwd_create_rb(RBuffer *rb) {
   int format = rbuffer_getc(rb);
   if (format != 0) {
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "cannot support format %d", format);
-    return bwd_create(NULL);
+    return bwd_create(NULL, NULL);
   }
 
   /*uint8_t vo_lo = */rbuffer_getc(rb);
@@ -669,7 +701,7 @@ rle_bwd_create_rb(RBuffer *rb) {
   
   GBitmap *image = __gbitmap_create_blank(GSize(width, height));
   if (image == NULL) {
-    return bwd_create(NULL);
+    return bwd_create(NULL, NULL);
   }
   int stride = gbitmap_get_bytes_per_row(image);
   uint8_t *bitmap_data = gbitmap_get_data(image);
@@ -707,7 +739,7 @@ rle_bwd_create_rb(RBuffer *rb) {
     unscreen_bitmap(image);
   }
   
-  return bwd_create(image);
+  return bwd_create(image, NULL);
 }
 
 #endif // PBL_PLATFORM_APLITE
@@ -718,14 +750,31 @@ rle_bwd_create(int resource_id) {
   ++bwd_resource_reads;
   
   RBuffer rb;
-  rbuffer_init(resource_id, &rb, 0);
+  rbuffer_init_resource(&rb, resource_id, 0);
   BitmapWithData result = rle_bwd_create_rb(&rb);
   rbuffer_deinit(&rb);
   return result;
 }
 
 BitmapWithData rle_bwd_create_with_cache(int resource_id_offset, int resource_id, struct ResourceCache *resource_cache, size_t resource_cache_size) {
-  return rle_bwd_create(resource_id);
+  int index = resource_id - resource_id_offset;
+  if (index >= (int)resource_cache_size) {
+    // No cache in use.
+    return rle_bwd_create(resource_id);
+  }
+
+  struct ResourceCache *cache = &resource_cache[index];
+  fill_cache(cache, resource_id);
+  if (cache->data == NULL) {
+    // Whoops, not enough RAM.
+    return bwd_create(NULL, NULL);
+  }
+
+  RBuffer rb;
+  rbuffer_init_data(&rb, cache->data, cache->data_size);
+  BitmapWithData result = rle_bwd_create_rb(&rb);
+  rbuffer_deinit(&rb);
+  return result;
 }
 
 #endif  // SUPPORT_RLE

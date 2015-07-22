@@ -529,7 +529,7 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct ResourceCache *resour
     if (hand_cache->image.bitmap == NULL) {
       // All right, load it from the resource file.
       if (hand_def->use_rle) {
-        hand_cache->image = rle_bwd_create(hand_resource_id);
+        hand_cache->image = rle_bwd_create_with_cache(hand_def->resource_id, hand_resource_id, resource_cache, resource_cache_size);
       } else {
         hand_cache->image = png_bwd_create_with_cache(hand_def->resource_id, hand_resource_id, resource_cache, resource_cache_size);
       }
@@ -577,11 +577,11 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct ResourceCache *resour
     // The hand has a mask, so use it to draw the hand opaquely.
     if (hand_cache->image.bitmap == NULL) {
       if (hand_def->use_rle) {
-	hand_cache->image = rle_bwd_create(hand_resource_id);
-	hand_cache->mask = rle_bwd_create(hand_resource_mask_id);
+        hand_cache->image = rle_bwd_create_with_cache(hand_def->resource_id, hand_resource_id, resource_cache, resource_cache_size);
+        hand_cache->mask = rle_bwd_create_with_cache(hand_def->resource_id, hand_resource_mask_id, resource_cache, resource_cache_size);
       } else {
-	hand_cache->image = png_bwd_create(hand_resource_id);
-	hand_cache->mask = png_bwd_create(hand_resource_mask_id);
+        hand_cache->image = png_bwd_create_with_cache(hand_def->resource_id, hand_resource_id, resource_cache, resource_cache_size);
+        hand_cache->mask = png_bwd_create_with_cache(hand_def->resource_id, hand_resource_mask_id, resource_cache, resource_cache_size);
       }
       if (hand_cache->image.bitmap == NULL || hand_cache->mask.bitmap == NULL) {
         hand_cache_destroy(hand_cache);

@@ -9,8 +9,7 @@
 
 typedef struct __attribute__((__packed__)) {
   GBitmap *bitmap;
-  // We used to piggyback additional data here, but this is no longer
-  // needed.  Who knows, maybe one day we'll add something else.
+  unsigned char *data;
 } BitmapWithData;
 
 // An array of these elements maintains an in-memory cache of resource
@@ -25,7 +24,7 @@ extern int bwd_cache_hits;
 extern size_t bwd_cache_total_size;
 
 void bwd_clear_cache(struct ResourceCache *resource_cache, size_t resource_cache_size);
-BitmapWithData bwd_create(GBitmap *bitmap);
+BitmapWithData bwd_create(GBitmap *bitmap, unsigned char *data);
 void bwd_destroy(BitmapWithData *bwd);
 BitmapWithData bwd_copy(BitmapWithData *source);
 BitmapWithData png_bwd_create(int resource_id);
