@@ -36,21 +36,36 @@
 #define NUM_STEPS_CHRONO_TENTH %(numStepsChronoTenth)s
 #define NUM_STEPS_MOON %(numStepsMoon)s
 
-#define HOUR_RESOURCE_CACHE_SIZE %(hourResourceCacheSize)s
-#define MINUTE_RESOURCE_CACHE_SIZE %(minuteResourceCacheSize)s
 #define SECOND_RESOURCE_CACHE_SIZE %(secondResourceCacheSize)s
 
 #ifndef PBL_PLATFORM_APLITE
+#define HOUR_RESOURCE_CACHE_SIZE %(hourResourceCacheSize)s
+#define MINUTE_RESOURCE_CACHE_SIZE %(minuteResourceCacheSize)s
 #define CHRONO_MINUTE_RESOURCE_CACHE_SIZE %(chronoMinuteResourceCacheSize)s
 #define CHRONO_SECOND_RESOURCE_CACHE_SIZE %(chronoSecondResourceCacheSize)s
 #define CHRONO_TENTH_RESOURCE_CACHE_SIZE %(chronoTenthResourceCacheSize)s
 #else  // PBL_PLATFORM_APLITE
 // On Aplite, we never cache these--not enough RAM to play with.
+#define HOUR_RESOURCE_CACHE_SIZE 0
+#define MINUTE_RESOURCE_CACHE_SIZE 0
 #define CHRONO_MINUTE_RESOURCE_CACHE_SIZE 0
 #define CHRONO_SECOND_RESOURCE_CACHE_SIZE 0
 #define CHRONO_TENTH_RESOURCE_CACHE_SIZE 0
 #endif  // PBL_PLATFORM_APLITE
 
+#ifndef PBL_PLATFORM_APLITE
+// For now, Basalt doesn't use masks, so doesn't need to cache them.
+#define SECOND_MASK_RESOURCE_CACHE_SIZE 0
+#else
+#define SECOND_MASK_RESOURCE_CACHE_SIZE %(secondMaskResourceCacheSize)s
+#endif  //  PBL_PLATFORM_APLITE
+
+// Also for now, these are never used.
+#define HOUR_MASK_RESOURCE_CACHE_SIZE 0
+#define MINUTE_MASK_RESOURCE_CACHE_SIZE 0
+#define CHRONO_MINUTE_MASK_RESOURCE_CACHE_SIZE 0
+#define CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE 0
+#define CHRONO_TENTH_MASK_RESOURCE_CACHE_SIZE 0
 
 // The order in which the hands are layered on top of each other.
 #define STACKING_ORDER_LIST  %(stackingOrder)s

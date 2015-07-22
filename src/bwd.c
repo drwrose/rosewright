@@ -26,9 +26,9 @@ static void fill_cache(struct ResourceCache *cache, int resource_id) {
     ++bwd_resource_reads;
     ResHandle rh = resource_get_handle(resource_id);
     cache->data_size = resource_size(rh);
-    bwd_cache_total_size += cache->data_size;
     cache->data = (unsigned char *)malloc(cache->data_size);
     if (cache->data != NULL) {
+      bwd_cache_total_size += cache->data_size;
       size_t bytes_copied = resource_load(rh, cache->data, cache->data_size);
       assert(bytes_copied == cache->data_size);
     }

@@ -334,7 +334,7 @@ numStepsSweep = {
 
 # This gets populated with the number of bitmap images for each hand
 # type, if we are enabling caching.
-bitmapCacheSize = {}
+resourceCacheSize = {}
 
 thresholdMask = [0] + [255] * 255
 threshold1Bit = [0] * 128 + [255] * 128
@@ -515,7 +515,10 @@ def getNumSteps(hand):
     return numStepsHand
 
 def getResourceCacheSize(hand):
-    return bitmapCacheSize.get(hand, 0)
+    return resourceCacheSize.get(hand, [0, 0])[0]
+
+def getMaskResourceCacheSize(hand):
+    return resourceCacheSize.get(hand, [0, 0])[1]
 
 def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename, colorMode, asymmetric, pivot, scale):
     resourceStr = ''
@@ -794,7 +797,11 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
         handTableLines.append(line)
 
     numBitmaps = maxLookupIndex + 1
-    bitmapCacheSize[hand] = numBitmaps
+    if useTransparency:
+        numMaskBitmaps = numBitmaps
+    else:
+        numMaskBitmaps = 0
+    resourceCacheSize[hand] = numBitmaps, numMaskBitmaps
     
     print >> generatedTable, "struct BitmapHandCenterRow %s_hand_bitmap_lookup[] = {" % (hand)
     for i in range(numBitmaps):
@@ -1187,6 +1194,12 @@ def configWatch():
         'chronoMinuteResourceCacheSize' : getResourceCacheSize('chrono_minute'),
         'chronoSecondResourceCacheSize' : getResourceCacheSize('chrono_second'),
         'chronoTenthResourceCacheSize' : getResourceCacheSize('chrono_tenth'),
+        'hourMaskResourceCacheSize' : getMaskResourceCacheSize('hour'),
+        'minuteMaskResourceCacheSize' : getMaskResourceCacheSize('minute'),
+        'secondMaskResourceCacheSize' : getMaskResourceCacheSize('second'),
+        'chronoMinuteMaskResourceCacheSize' : getMaskResourceCacheSize('chrono_minute'),
+        'chronoSecondMaskResourceCacheSize' : getMaskResourceCacheSize('chrono_second'),
+        'chronoTenthMaskResourceCacheSize' : getMaskResourceCacheSize('chrono_tenth'),
         'compileDebugging' : int(compileDebugging),
         'screenshotBuild' : int(screenshotBuild),
         'defaultDateWindows' : repr(defaultDateWindows)[1:-1],

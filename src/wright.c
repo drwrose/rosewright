@@ -101,12 +101,12 @@ struct HandCache hour_cache;
 struct HandCache minute_cache;
 struct HandCache second_cache;
 
-struct ResourceCache hour_resource_cache[HOUR_RESOURCE_CACHE_SIZE];
-struct ResourceCache minute_resource_cache[MINUTE_RESOURCE_CACHE_SIZE];
-struct ResourceCache second_resource_cache[SECOND_RESOURCE_CACHE_SIZE];
-size_t hour_resource_cache_size = HOUR_RESOURCE_CACHE_SIZE;
-size_t minute_resource_cache_size = MINUTE_RESOURCE_CACHE_SIZE;
-size_t second_resource_cache_size = SECOND_RESOURCE_CACHE_SIZE;
+struct ResourceCache hour_resource_cache[HOUR_RESOURCE_CACHE_SIZE + HOUR_MASK_RESOURCE_CACHE_SIZE];
+struct ResourceCache minute_resource_cache[MINUTE_RESOURCE_CACHE_SIZE + MINUTE_MASK_RESOURCE_CACHE_SIZE];
+struct ResourceCache second_resource_cache[SECOND_RESOURCE_CACHE_SIZE + SECOND_MASK_RESOURCE_CACHE_SIZE];
+size_t hour_resource_cache_size = HOUR_RESOURCE_CACHE_SIZE + HOUR_MASK_RESOURCE_CACHE_SIZE;
+size_t minute_resource_cache_size = MINUTE_RESOURCE_CACHE_SIZE + MINUTE_MASK_RESOURCE_CACHE_SIZE;
+size_t second_resource_cache_size = SECOND_RESOURCE_CACHE_SIZE + SECOND_MASK_RESOURCE_CACHE_SIZE;
 
 struct HandPlacement current_placement;
 
@@ -1444,14 +1444,14 @@ void destroy_objects() {
   deinit_battery_gauge();
   deinit_bluetooth_indicator();
 
-  bwd_clear_cache(hour_resource_cache, HOUR_RESOURCE_CACHE_SIZE);
-  bwd_clear_cache(minute_resource_cache, MINUTE_RESOURCE_CACHE_SIZE);
-  bwd_clear_cache(second_resource_cache, SECOND_RESOURCE_CACHE_SIZE);
+  bwd_clear_cache(hour_resource_cache, HOUR_RESOURCE_CACHE_SIZE + HOUR_MASK_RESOURCE_CACHE_SIZE);
+  bwd_clear_cache(minute_resource_cache, MINUTE_RESOURCE_CACHE_SIZE + MINUTE_MASK_RESOURCE_CACHE_SIZE);
+  bwd_clear_cache(second_resource_cache, SECOND_RESOURCE_CACHE_SIZE + SECOND_MASK_RESOURCE_CACHE_SIZE);
 
 #ifdef MAKE_CHRONOGRAPH
-  bwd_clear_cache(chrono_minute_resource_cache, CHRONO_MINUTE_RESOURCE_CACHE_SIZE);
-  bwd_clear_cache(chrono_second_resource_cache, CHRONO_SECOND_RESOURCE_CACHE_SIZE);
-  bwd_clear_cache(chrono_tenth_resource_cache, CHRONO_TENTH_RESOURCE_CACHE_SIZE);
+  bwd_clear_cache(chrono_minute_resource_cache, CHRONO_MINUTE_RESOURCE_CACHE_SIZE + CHRONO_MINUTE_MASK_RESOURCE_CACHE_SIZE);
+  bwd_clear_cache(chrono_second_resource_cache, CHRONO_SECOND_RESOURCE_CACHE_SIZE + CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE);
+  bwd_clear_cache(chrono_tenth_resource_cache, CHRONO_TENTH_RESOURCE_CACHE_SIZE + CHRONO_TENTH_MASK_RESOURCE_CACHE_SIZE);
 #endif  // MAKE_CHRONOGRAPH
   
   for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
