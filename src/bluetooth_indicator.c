@@ -97,11 +97,11 @@ void handle_bluetooth(bool connected) {
   layer_mark_dirty(bluetooth_layer);
 }
 
-void init_bluetooth_indicator(Layer *window_layer, int x, int y, bool invert) {
+void init_bluetooth_indicator(Layer *window_layer) {
 #ifdef PBL_PLATFORM_APLITE
-  bluetooth_invert = invert;
+  bluetooth_invert = false;
 #endif  // PBL_PLATFORM_APLITE
-  bluetooth_layer = layer_create(GRect(x, y, 18, 18));
+  bluetooth_layer = layer_create(GRect(0, 0, 18, 18));
   layer_set_update_proc(bluetooth_layer, &bluetooth_layer_update_callback);
   layer_add_child(window_layer, bluetooth_layer);
   bluetooth_connection_service_subscribe(&handle_bluetooth);

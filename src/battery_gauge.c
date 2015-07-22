@@ -117,9 +117,9 @@ void handle_battery(BatteryChargeState charge_state) {
   layer_mark_dirty(battery_gauge_layer);
 }
 
-void init_battery_gauge(Layer *window_layer, int x, int y, bool invert) {
-  battery_gauge_invert = invert;
-  battery_gauge_layer = layer_create(GRect(x - 6, y, 24, 10));
+void init_battery_gauge(Layer *window_layer) {
+  battery_gauge_invert = false;
+  battery_gauge_layer = layer_create(GRect(0, 0, 24, 10));
   layer_set_update_proc(battery_gauge_layer, &battery_gauge_layer_update_callback);
   layer_add_child(window_layer, battery_gauge_layer);
   battery_state_service_subscribe(&handle_battery);

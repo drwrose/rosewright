@@ -185,7 +185,7 @@ static unsigned int current_config_index = 0;
 static void int_to_config() {
   static ConfigOptions screenshot_options[] = {
     {
-      DEFAULT_BATTERY_GAUGE, DEFAULT_BLUETOOTH, ENABLE_SECOND_HAND, ENABLE_HOUR_BUZZER,
+      DEFAULT_BATTERY_GAUGE, DEFAULT_BLUETOOTH, DEFAULT_SECOND_HAND, DEFAULT_HOUR_BUZZER,
       true, 0, CDM_tenths, false,
       0, DEFAULT_FACE_INDEX,
       { DEFAULT_DATE_WINDOWS },
@@ -253,7 +253,7 @@ static void int_to_config() {
 #elif PERSIST_KEY == 0x5151 + 0xc7  // Rosewright Chronograph
 
 #elif PERSIST_KEY == 0x5151 + 0xc8  // Rosewright D
-    { IM_off, IM_off, true, false,
+    { IM_always, IM_always, true, false,
       true, 0, CDM_tenths, false,
       0, 1,
       { DWM_weekday, DWM_date, DWM_month, DWM_ampm },
@@ -267,14 +267,14 @@ static void int_to_config() {
       false, false, 2, TSM_off,
     },
     
-    { IM_always, IM_always, false, false,
+    { IM_off, IM_off, false, false,
       true, 0, CDM_tenths, false,
       0, 0,
       { DWM_off, DWM_off, DWM_off, DWM_off },
       true, false, 3, TSM_off,
     },
     
-    { IM_always, IM_always, false, false,
+    { IM_always, IM_always, true, false,
       true, 1, CDM_tenths, false,
       0, 0,
       { DWM_off, DWM_off, DWM_off, DWM_off },

@@ -230,8 +230,10 @@ faces = {
         'date_window_d' : (92, 109, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial' : (32, 32, 'b'),
-        'bluetooth' : (26, 0, 'b'),
-        'battery' : (98, 1, 'b'),
+        'bluetooth' : [ (37, 47, 'b'), (26, 0, 'b'),
+                        (37, 47, 'b'), (26, 0, 'b'), ],
+        'battery' : [ (92, 51, 'b'), (98, 1, 'b'),
+                      (92, 51, 'b'), (98, 1, 'b'), ],
         'defaults' : [ 'date:b', 'moon_phase', 'moon_dark', 'second' ],
         },
     'b' : {
@@ -261,8 +263,10 @@ faces = {
         'date_window_a' : (52, 45, 'b'),
         'date_window_b' : (92, 45, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
-        'bluetooth' : [ (16, 18, 'b'), (0, 0, 'b'), ],
-        'battery' : [ (109, 21, 'b'), (123, 3, 'b'), ],
+        'bluetooth' : [ (16, 18, 'b'),
+                        (0, 0, 'b'), ],
+        'battery' : [ (109, 21, 'b'),
+                      (123, 3, 'b'), ],
         'defaults' : [ 'second' ],
         },
     'd' : {
@@ -278,9 +282,11 @@ faces = {
         'date_window_d' : [ (95, 125, 'w'), (95, 125, 'b') ],
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial' : [ (32, 34, 'w'), (32, 34, 'b'), ],
-        'bluetooth' : [ (36, 29, 'b'), (36, 29, 'b') ],
-        'battery' : [ (95, 33, 'b'), (95, 33, 'b') ],
-        'defaults' : [ 'day:c', 'date:d', 'bluetooth', 'battery', 'moon_phase' ],
+        'bluetooth' : [ (49, 45, 'b'), (36, 29, 'b'),
+                        (49, 45, 'b'), (36, 29, 'b') ],
+        'battery' : [ (79, 49, 'b'), (95, 33, 'b'),
+                      (79, 49, 'b'), (95, 33, 'b') ],
+        'defaults' : [ 'day:c', 'date:d', 'bluetooth', 'battery' ],
         },
     'e' : {
         'filename' : ['e_face.png', 'e_face_white.png'],
@@ -295,8 +301,10 @@ faces = {
         'date_window_d' : (72, 146, 'w'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial' : (32, 32, 'w'),
-        'bluetooth' : [ (11, 12, 'b'), (11, 12, 'w'), ],
-        'battery' : [ (115, 16, 'b'), (115, 16, 'w'), ],
+        'bluetooth' : [ (11, 12, 'b'), (11, 12, 'b'),
+                        (11, 12, 'w'), (11, 12, 'w'), ],
+        'battery' : [ (115, 16, 'b'), (115, 16, 'b'),
+                      (115, 16, 'w'), (115, 16, 'w'), ],
         'defaults' : [ 'date:c', 'moon_dark', 'second' ],
         },
     }
@@ -900,7 +908,7 @@ def getIndicator(fd, indicator):
 
     return list
 
-def makeIndicatorTable(generatedTable, generatedDefs, name, indicator, anonymous = False):
+def makeIndicatorTable(generatedTable, generatedDefs, name, indicator, numFaces, anonymous = False):
     """ Makes an array of IndicatorTable values to define how a given
     indicator (that is, a bluetooth or battery indicator, or a
     day/date window) is meant to be rendered for each of the alternate
@@ -918,8 +926,8 @@ def makeIndicatorTable(generatedTable, generatedDefs, name, indicator, anonymous
         print >> generatedTable, "  { // %s" % (name)
     else:
         # Standalone named structure
-        print >> generatedDefs, "extern struct IndicatorTable %s[NUM_FACES];" % (name)
-        print >> generatedTable, "struct IndicatorTable %s[NUM_FACES] = {" % (name)
+        print >> generatedDefs, "extern struct IndicatorTable %s[%s];" % (name, numFaces)
+        print >> generatedTable, "struct IndicatorTable %s[%s] = {" % (name, numFaces)
     for x, y, c in indicator:
         print >> generatedTable, "   { %s, %s, %s }," % (
             x, y, int(c[0] == 'b'))
@@ -1097,12 +1105,12 @@ def configWatch():
     print >> generatedTable, "struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_FACES] = {"
     for i in range(len(date_windows)):
         ch = chr(97 + i)
-        makeIndicatorTable(generatedTable, generatedDefs, ch, date_windows[i], anonymous = True)
+        makeIndicatorTable(generatedTable, generatedDefs, ch, date_windows[i], numFaces, anonymous = True)
     print >> generatedTable, "};\n"
 
-    makeIndicatorTable(generatedTable, generatedDefs, 'battery_table', battery)
-    makeIndicatorTable(generatedTable, generatedDefs, 'bluetooth_table', bluetooth)
-    makeIndicatorTable(generatedTable, generatedDefs, 'top_subdial', top_subdial)
+    makeIndicatorTable(generatedTable, generatedDefs, 'battery_table', battery, numIndicatorFaces)
+    makeIndicatorTable(generatedTable, generatedDefs, 'bluetooth_table', bluetooth, numIndicatorFaces)
+    makeIndicatorTable(generatedTable, generatedDefs, 'top_subdial', top_subdial, numFaces)
 
     resourceIn = open('%s/appinfo.json.in' % (rootDir), 'r').read()
     resource = open('%s/appinfo.json' % (rootDir), 'w')
@@ -1177,6 +1185,7 @@ def configWatch():
         'supportRle' : int(bool(supportRle)),
         'apliteInvert' : int(bool(apliteInvert)),
         'numFaces' : numFaces,
+        'numIndicatorFaces' : numIndicatorFaces,
         'numFaceColors' : numFaceColors,
         'defaultFaceIndex' : defaultFaceIndex,
         'numDateWindows' : len(date_windows),
@@ -1296,6 +1305,10 @@ numFaceColors = len(faceColors)
 defaultFaceIndex = fd.get('default_face', 0)
 
 top_subdial = getIndicator(fd, 'top_subdial')
+if top_subdial[0]:
+    numIndicatorFaces = numFaces * 2
+else:
+    numIndicatorFaces = numFaces
 
 # Get the set of date_windows defined for the watchface.
 date_windows = []

@@ -14,6 +14,11 @@
 // The number of different clock faces available.
 #define NUM_FACES %(numFaces)s
 
+// The number of "faces" for the purposes of defining indicator
+// placements; this doubles the face count when the top subdial is
+// enabled.
+#define NUM_INDICATOR_FACES %(numIndicatorFaces)s
+
 // The number of different color options available for the face.
 #define NUM_FACE_COLORS %(numFaceColors)s
 

@@ -1251,6 +1251,40 @@ void fill_date_names(char *date_names[], int num_date_names, char date_names_buf
   }
 }
 
+void move_layers() {
+  // Move any subordinate layers to their correct position on the face.
+  for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
+    const struct IndicatorTable *window = &date_windows[i][config.face_index];
+    layer_set_frame((Layer *)date_window_layers[i], GRect(window->x - 19, window->y - 8, 39, 19));
+  }
+  
+#ifdef TOP_SUBDIAL
+  {
+    const struct IndicatorTable *window = &top_subdial[config.face_index];
+    layer_set_frame(top_subdial_layer, GRect(window->x, window->y, 80, 41));
+  }
+#endif  // TOP_SUBDIAL
+
+  // The indicator_face_index is like config.face_index, but also
+  // includes the top_subdial setting--having top_subdial enabled is
+  // like a separate face for this purpose, which allows us to
+  // reposition the indicators around the subdial when necessary.
+#ifdef TOP_SUBDIAL
+  int indicator_face_index = config.face_index * 2 + (config.top_subdial != TSM_off);
+#else  // TOP_SUBDIAL
+  int indicator_face_index = config.face_index;
+#endif  // TOP_SUBDIAL
+  assert(indicator_face_index < NUM_INDICATOR_FACES);
+  {
+    const struct IndicatorTable *window = &battery_table[indicator_face_index];
+    move_battery_gauge(window->x, window->y, window->invert);
+  }
+  {
+    const struct IndicatorTable *window = &bluetooth_table[indicator_face_index];
+    move_bluetooth_indicator(window->x, window->y, window->invert);
+  }
+}
+
 // Updates any runtime settings as needed when the config changes.
 void apply_config() {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "apply_config");
@@ -1263,21 +1297,7 @@ void apply_config() {
     // Update the face bitmap if it's changed.
     face_index = config.face_index;
     bwd_destroy(&clock_face);
-
-    // Also move any layers to their new position on this face.
-    for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
-      const struct IndicatorTable *window = &date_windows[i][config.face_index];
-      layer_set_frame((Layer *)date_window_layers[i], GRect(window->x - 19, window->y - 8, 39, 19));
-    }
-
-    {
-      const struct IndicatorTable *window = &battery_table[config.face_index];
-      move_battery_gauge(window->x, window->y, window->invert);
-    }
-    {
-      const struct IndicatorTable *window = &bluetooth_table[config.face_index];
-      move_bluetooth_indicator(window->x, window->y, window->invert);
-    }
+    move_layers();
   }
 
   if (display_lang != config.display_lang) {
@@ -1339,8 +1359,7 @@ void create_objects() {
 
 #ifdef TOP_SUBDIAL
   {
-    const struct IndicatorTable *window = &top_subdial[config.face_index];
-    top_subdial_layer = layer_create(GRect(window->x, window->y, 80, 41));
+    top_subdial_layer = layer_create(GRect(0, 0, 80, 41));
     assert(top_subdial_layer != NULL);
     layer_set_update_proc(top_subdial_layer, &top_subdial_layer_update_callback);
     layer_add_child(window_layer, top_subdial_layer);
@@ -1348,8 +1367,7 @@ void create_objects() {
 #endif  // TOP_SUBDIAL
   
   for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
-    const struct IndicatorTable *window = &date_windows[i][config.face_index];
-    Layer *layer = layer_create_with_data(GRect(window->x - 19, window->y - 8, 39, 19), sizeof(DateWindowData));
+    Layer *layer = layer_create_with_data(GRect(0, 0, 39, 19), sizeof(DateWindowData));
     assert(layer != NULL);
     date_window_layers[i] = layer;
     DateWindowData *data = (DateWindowData *)layer_get_data(layer);
@@ -1359,14 +1377,12 @@ void create_objects() {
     layer_add_child(window_layer, layer);
   }
   
-  {
-    const struct IndicatorTable *window = &battery_table[config.face_index];
-    init_battery_gauge(window_layer, window->x, window->y, window->invert);
-  }
-  {
-    const struct IndicatorTable *window = &bluetooth_table[config.face_index];
-    init_bluetooth_indicator(window_layer, window->x, window->y, window->invert);
-  }
+  init_battery_gauge(window_layer);
+  init_bluetooth_indicator(window_layer);
+
+  // Now put all of the layers we just created into their correct
+  // positions.
+  move_layers();
 
 #ifdef MAKE_CHRONOGRAPH
   create_chrono_objects();
