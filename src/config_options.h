@@ -60,6 +60,9 @@ typedef enum {
   // Debug options.
   DWM_debug_heap_free = 8,
   DWM_debug_memory_panic_count = 9,
+  DWM_debug_resource_reads = 10,
+  DWM_debug_cache_hits = 11,
+  DWM_debug_cache_total_size = 12,
 } DateWindowMode;
 
 typedef enum {

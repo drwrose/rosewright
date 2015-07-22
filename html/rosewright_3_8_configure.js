@@ -148,6 +148,9 @@ var date_window_options = [
 if ($.url().param("debug")) {
     date_window_options.push([8, "(debug) heap free"]);
     date_window_options.push([9, "(debug) memory panic count"]);
+    date_window_options.push([10, "(debug) resource reads"]);
+    date_window_options.push([11, "(debug) cache hits"]);
+    date_window_options.push([12, "(debug) cache total size"]);
 }
 
 var top_subdial_options = [

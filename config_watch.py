@@ -514,7 +514,7 @@ def getNumSteps(hand):
 
     return numStepsHand
 
-def getBitmapCacheSize(hand):
+def getResourceCacheSize(hand):
     return bitmapCacheSize.get(hand, 0)
 
 def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename, colorMode, asymmetric, pivot, scale):
@@ -1181,12 +1181,12 @@ def configWatch():
         'numStepsChronoSecond' : getNumSteps('chrono_second'),
         'numStepsChronoTenth' : numSteps['chrono_tenth'],
         'numStepsMoon' : numSteps['moon'],
-        'hourBitmapCacheSize' : getBitmapCacheSize('hour'),
-        'minuteBitmapCacheSize' : getBitmapCacheSize('minute'),
-        'secondBitmapCacheSize' : getBitmapCacheSize('second'),
-        'chronoMinuteBitmapCacheSize' : getBitmapCacheSize('chrono_minute'),
-        'chronoSecondBitmapCacheSize' : getBitmapCacheSize('chrono_second'),
-        'chronoTenthBitmapCacheSize' : getBitmapCacheSize('chrono_tenth'),
+        'hourResourceCacheSize' : getResourceCacheSize('hour'),
+        'minuteResourceCacheSize' : getResourceCacheSize('minute'),
+        'secondResourceCacheSize' : getResourceCacheSize('second'),
+        'chronoMinuteResourceCacheSize' : getResourceCacheSize('chrono_minute'),
+        'chronoSecondResourceCacheSize' : getResourceCacheSize('chrono_second'),
+        'chronoTenthResourceCacheSize' : getResourceCacheSize('chrono_tenth'),
         'compileDebugging' : int(compileDebugging),
         'screenshotBuild' : int(screenshotBuild),
         'defaultDateWindows' : repr(defaultDateWindows)[1:-1],

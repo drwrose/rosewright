@@ -25,7 +25,7 @@ void sanitize_config() {
   config.display_lang = config.display_lang % num_langs;
   config.face_index = config.face_index % NUM_FACES;
   for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
-    config.date_windows[i] = config.date_windows[i] % (DWM_debug_memory_panic_count + 1);
+    config.date_windows[i] = config.date_windows[i] % (DWM_debug_cache_total_size + 1);
   }
   config.top_subdial = config.top_subdial % (TSM_moon_phase + 1);
   config.color_mode = config.color_mode % NUM_FACE_COLORS;

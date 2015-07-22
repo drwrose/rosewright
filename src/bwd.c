@@ -5,6 +5,21 @@
 #include "wright.h"  // for app_log() macro
 //#define SUPPORT_RLE 1
 
+int bwd_resource_reads = 0;
+int bwd_cache_hits = 0;
+size_t bwd_cache_total_size = 0;
+
+void bwd_clear_cache(struct ResourceCache *resource_cache, size_t resource_cache_size) {
+  for (int i = 0; i < (int)resource_cache_size; ++i) {
+    struct ResourceCache *cache = &resource_cache[i];
+    if (cache->data != NULL) {
+      bwd_cache_total_size -= cache->data_size;
+      free(cache->data);
+      cache->data = NULL;
+    }
+  }
+}
+
 BitmapWithData bwd_create(GBitmap *bitmap) {
   BitmapWithData bwd;
   bwd.bitmap = bitmap;
@@ -79,7 +94,41 @@ BitmapWithData bwd_copy(BitmapWithData *source) {
 // BitmapWithData interface to be consistent with rle_bwd_create().
 // The returned bitmap must be released with bwd_destroy().
 BitmapWithData png_bwd_create(int resource_id) {
+  ++bwd_resource_reads;
   GBitmap *image = gbitmap_create_with_resource(resource_id);
+  return bwd_create(image);
+}
+
+BitmapWithData png_bwd_create_with_cache(int resource_id_offset, int resource_id, struct ResourceCache *resource_cache, size_t resource_cache_size) {
+  int index = resource_id - resource_id_offset;
+  if (index >= (int)resource_cache_size) {
+    // No cache in use.
+    return png_bwd_create(resource_id);
+  }
+
+  struct ResourceCache *cache = &resource_cache[index];
+  if (cache->data == NULL) {
+    // Go read the resource data.
+    ++bwd_resource_reads;
+    ResHandle rh = resource_get_handle(resource_id);
+    cache->data_size = resource_size(rh);
+    bwd_cache_total_size += cache->data_size;
+    cache->data = (unsigned char *)malloc(cache->data_size);
+    if (cache->data == NULL) {
+      // Whoops, not enough RAM.
+      return bwd_create(NULL);
+    }
+    size_t bytes_copied = resource_load(rh, cache->data, cache->data_size);
+    assert(bytes_copied == cache->data_size);
+  } else {
+    ++bwd_cache_hits;
+  }
+
+#ifndef PBL_PLATFORM_APLITE
+  GBitmap *image = gbitmap_create_from_png_data(cache->data, cache->data_size);
+#else  // PBL_PLATFORM_APLITE
+  GBitmap *image = gbitmap_create_with_data(cache->data);
+#endif  // PBL_PLATFORM_APLITE
   return bwd_create(image);
 }
 
@@ -89,6 +138,10 @@ BitmapWithData png_bwd_create(int resource_id) {
 // is not defined.
 BitmapWithData rle_bwd_create(int resource_id) {
   return png_bwd_create(resource_id);
+}
+
+BitmapWithData rle_bwd_create_with_cache(int resource_id_offset, int resource_id, struct ResourceCache *resource_cache, size_t resource_cache_size) {
+  return png_bwd_create_with_cache(resource_id_offset, resource_id, resource_cache, resource_cache_size);
 }
 
 #else  // SUPPORT_RLE
@@ -118,20 +171,30 @@ static void rbuffer_init(int resource_id, RBuffer *rb, size_t offset) {
   rb->_bytes_read = offset;
 }
 
-// Specifies the maximum number of bytes that may be read from this
-// rbuffer.  Effectively shortens the buffer to the indicated size.
-static void rbuffer_set_limit(RBuffer *rb, size_t limit) {
-  if (rb->_total_size > limit) {
-    rb->_total_size = limit;
+// Splits an RBuffer into two discrete parts.  rb_front is truncated
+// at the specified byte (it reads up to but not including point), and
+// the rb_back is initialized with a new RBuffer that receives all of
+// the bytes of the first RBuffer from point to the end.  The caller
+// should eventually call rbuffer_deinit() on rb_back, which should
+// not persist longer than rb_front does.
+static void rbuffer_split(RBuffer *rb_front, RBuffer *rb_back, size_t point) {
+  rb_back->_rh = rb_front->_rh;
+  rb_back->_total_size = rb_front->_total_size;
+  rb_back->_i = 0;
+  rb_back->_filled_size = 0;
+  rb_back->_bytes_read = point;
+  
+  if (rb_front->_total_size > point) {
+    rb_front->_total_size = point;
 
-    if (rb->_bytes_read > limit) {
-      size_t bytes_over = rb->_bytes_read - limit;
-      if (rb->_filled_size > bytes_over) {
-        rb->_filled_size -= bytes_over;
+    if (rb_front->_bytes_read > point) {
+      size_t bytes_over = rb_front->_bytes_read - point;
+      if (rb_front->_filled_size > bytes_over) {
+        rb_front->_filled_size -= bytes_over;
       } else {
-        // Whoops, we've already overrun the new limit.
-        rb->_filled_size = 0;
-        rb->_i = 0;
+        // Whoops, we've already overrun the new point.
+        rb_front->_filled_size = 0;
+        rb_front->_i = 0;
         assert(false);
       }
     }
@@ -417,9 +480,7 @@ void pack_8bit(int value, int count, int *b, uint8_t **dp, uint8_t *dp_stop) {
 // bitmap must be released with bwd_destroy().  See make_rle.py for
 // the program that generates these rle sequences.
 BitmapWithData
-rle_bwd_create(int resource_id) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "rle_bwd_create(%d)", resource_id);
-
+rle_bwd_create_rb(RBuffer *rb) {
   // RLE header (NB: All fields are little-endian)
   //         (uint8_t)  width
   //         (uint8_t)  height
@@ -428,22 +489,20 @@ rle_bwd_create(int resource_id) {
   //         (uint16_t) offset to start of values, or 0 if format == 0
   //         (uint16_t) offset to start of palette, or 0 if format <= 1
   
-  RBuffer rb;
-  rbuffer_init(resource_id, &rb, 0);
-  int width = rbuffer_getc(&rb);
-  int height = rbuffer_getc(&rb);
-  int n = rbuffer_getc(&rb);
-  GBitmapFormat format = (GBitmapFormat)rbuffer_getc(&rb);
+  int width = rbuffer_getc(rb);
+  int height = rbuffer_getc(rb);
+  int n = rbuffer_getc(rb);
+  GBitmapFormat format = (GBitmapFormat)rbuffer_getc(rb);
 
-  uint8_t vo_lo = rbuffer_getc(&rb);
-  uint8_t vo_hi = rbuffer_getc(&rb);
+  uint8_t vo_lo = rbuffer_getc(rb);
+  uint8_t vo_hi = rbuffer_getc(rb);
   unsigned int vo = (vo_hi << 8) | vo_lo;
 
-  uint8_t po_lo = rbuffer_getc(&rb);
-  uint8_t po_hi = rbuffer_getc(&rb);
+  uint8_t po_lo = rbuffer_getc(rb);
+  uint8_t po_hi = rbuffer_getc(rb);
   unsigned int po = (po_hi << 8) | po_lo;
 
-  assert(vo != 0 && po >= vo && po <= rb._total_size);
+  assert(vo != 0 && po >= vo && po <= rb->_total_size);
   
   int do_unscreen = (n & 0x80);
   n = n & 0x7f;
@@ -494,18 +553,16 @@ rle_bwd_create(int resource_id) {
   size_t data_size = height * stride;
 
   Rl2Unpacker rl2;
-  rl2unpacker_init(&rl2, &rb, n, true);
+  rl2unpacker_init(&rl2, rb, n, true);
 
   // The values start at vo; this means the original rb buffer gets
-  // shortened to that point.
-  rbuffer_set_limit(&rb, vo);
-
-  // We create a new rb_vo buffer to read the values data which begins
-  // at vo.
+  // shortened to that point.  We also create a new rb_vo buffer to
+  // read the values data which begins at vo.
   RBuffer rb_vo;
+  rbuffer_split(rb, &rb_vo, vo);
+
   Rl2Unpacker rl2_vo;
   if (vn != 0) {
-    rbuffer_init(resource_id, &rb_vo, vo);
     rl2unpacker_init(&rl2_vo, &rb_vo, vn, false);
   }
 
@@ -544,16 +601,15 @@ rle_bwd_create(int resource_id) {
 
   //app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "wrote %d bytes", dp - bitmap_data);
   assert(dp == dp_stop && b == 0);
-  rbuffer_deinit(&rb);
-  rbuffer_deinit(&rb_vo);
   
   if (do_unscreen) {
     unscreen_bitmap(image);
   }
-  
+
+  /*
   if (palette_count != 0) {
     // Now we need to apply the palette.
-    ResHandle rh = resource_get_handle(resource_id);
+    ResHandle rh = rb->_rh;  // hack.
     size_t total_size = resource_size(rh);
     assert(total_size > po);
     size_t palette_size = total_size - po;
@@ -562,6 +618,14 @@ rle_bwd_create(int resource_id) {
     size_t bytes_read = resource_load_byte_range(rh, po, (uint8_t *)palette, palette_size);
     assert(bytes_read == palette_size);
   }
+  */
+
+  // Now we need to apply the palette.
+  for (int i = 0; i < (int)palette_count; ++i) {
+    palette[i].argb = rbuffer_getc(&rb_vo);
+  }
+
+  rbuffer_deinit(&rb_vo);
   
   return bwd_create(image);
 }
@@ -574,9 +638,7 @@ rle_bwd_create(int resource_id) {
 // bitmap must be released with bwd_destroy().  See make_rle.py for
 // the program that generates these rle sequences.
 BitmapWithData
-rle_bwd_create(int resource_id) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "rle_bwd_create(%d)", resource_id);
-
+rle_bwd_create_rb(RBuffer *rb) {
   // RLE header (NB: All fields are little-endian)
   //         (uint8_t)  width
   //         (uint8_t)  height
@@ -585,22 +647,20 @@ rle_bwd_create(int resource_id) {
   //         (uint16_t) offset to start of values, or 0 if format == 0
   //         (uint16_t) offset to start of palette, or 0 if format <= 1
   
-  RBuffer rb;
-  rbuffer_init(resource_id, &rb, 0);
-  int width = rbuffer_getc(&rb);
-  int height = rbuffer_getc(&rb);
+  int width = rbuffer_getc(rb);
+  int height = rbuffer_getc(rb);
   assert(width > 0 && width <= 144 && height > 0 && height <= 168);
-  int n = rbuffer_getc(&rb);
-  int format = rbuffer_getc(&rb);
+  int n = rbuffer_getc(rb);
+  int format = rbuffer_getc(rb);
   if (format != 0) {
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "cannot support format %d", format);
     return bwd_create(NULL);
   }
 
-  /*uint8_t vo_lo = */rbuffer_getc(&rb);
-  /*uint8_t vo_hi = */rbuffer_getc(&rb);
-  /*uint8_t po_lo = */rbuffer_getc(&rb);
-  /*uint8_t po_hi = */rbuffer_getc(&rb);
+  /*uint8_t vo_lo = */rbuffer_getc(rb);
+  /*uint8_t vo_hi = */rbuffer_getc(rb);
+  /*uint8_t po_lo = */rbuffer_getc(rb);
+  /*uint8_t po_hi = */rbuffer_getc(rb);
   
   int do_unscreen = (n & 0x80);
   n = n & 0x7f;
@@ -618,7 +678,7 @@ rle_bwd_create(int resource_id) {
   //app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "stride = %d, data_size = %d", stride, data_size);
 
   Rl2Unpacker rl2;
-  rl2unpacker_init(&rl2, &rb, n, true);
+  rl2unpacker_init(&rl2, rb, n, true);
 
   uint8_t *dp = bitmap_data;
   uint8_t *dp_stop = dp + data_size;
@@ -642,7 +702,6 @@ rle_bwd_create(int resource_id) {
 
   //app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "wrote %d bytes", dp - bitmap_data);
   assert(dp == dp_stop && b == 0);
-  rbuffer_deinit(&rb);
   
   if (do_unscreen) {
     unscreen_bitmap(image);
@@ -652,6 +711,22 @@ rle_bwd_create(int resource_id) {
 }
 
 #endif // PBL_PLATFORM_APLITE
+
+BitmapWithData
+rle_bwd_create(int resource_id) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "rle_bwd_create(%d)", resource_id);
+  ++bwd_resource_reads;
+  
+  RBuffer rb;
+  rbuffer_init(resource_id, &rb, 0);
+  BitmapWithData result = rle_bwd_create_rb(&rb);
+  rbuffer_deinit(&rb);
+  return result;
+}
+
+BitmapWithData rle_bwd_create_with_cache(int resource_id_offset, int resource_id, struct ResourceCache *resource_cache, size_t resource_cache_size) {
+  return rle_bwd_create(resource_id);
+}
 
 #endif  // SUPPORT_RLE
 

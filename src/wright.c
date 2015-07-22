@@ -101,12 +101,12 @@ struct HandCache hour_cache;
 struct HandCache minute_cache;
 struct HandCache second_cache;
 
-BitmapWithData hour_bitmap_cache[HOUR_BITMAP_CACHE_SIZE];
-BitmapWithData minute_bitmap_cache[MINUTE_BITMAP_CACHE_SIZE];
-BitmapWithData second_bitmap_cache[SECOND_BITMAP_CACHE_SIZE];
-size_t hour_bitmap_cache_size = HOUR_BITMAP_CACHE_SIZE;
-size_t minute_bitmap_cache_size = MINUTE_BITMAP_CACHE_SIZE;
-size_t second_bitmap_cache_size = SECOND_BITMAP_CACHE_SIZE;
+struct ResourceCache hour_resource_cache[HOUR_RESOURCE_CACHE_SIZE];
+struct ResourceCache minute_resource_cache[MINUTE_RESOURCE_CACHE_SIZE];
+struct ResourceCache second_resource_cache[SECOND_RESOURCE_CACHE_SIZE];
+size_t hour_resource_cache_size = HOUR_RESOURCE_CACHE_SIZE;
+size_t minute_resource_cache_size = MINUTE_RESOURCE_CACHE_SIZE;
+size_t second_resource_cache_size = SECOND_RESOURCE_CACHE_SIZE;
 
 struct HandPlacement current_placement;
 
@@ -500,7 +500,7 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
 }
 
 // Draws a given hand on the face, using the bitmap structures.
-void draw_bitmap_hand(struct HandCache *hand_cache, BitmapWithData *bitmap_cache, size_t bitmap_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx) {
+void draw_bitmap_hand(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx) {
   if (hand_cache->bitmap_hand_index != hand_index) {
     // Force a new bitmap.
     if (hand_cache->image.bitmap != NULL) {
@@ -524,37 +524,22 @@ void draw_bitmap_hand(struct HandCache *hand_cache, BitmapWithData *bitmap_cache
 #else
   if (true)  // On Basalt, we always draw without the mask.
 #endif  // PBL_PLATFORM_APLITE
-    {
+  {
     // The hand does not have a mask.  Draw the hand on top of the scene.
     if (hand_cache->image.bitmap == NULL) {
-      if (bitmap_index < (int)bitmap_cache_size) {
-        // Check to see if this bitmap was saved in the cache, so we
-        // don't have to hit the resource file.
-        if (bitmap_cache[bitmap_index].bitmap != NULL) {
-          hand_cache->image = bwd_copy(&bitmap_cache[bitmap_index]);
-        }
+      // All right, load it from the resource file.
+      if (hand_def->use_rle) {
+        hand_cache->image = rle_bwd_create(hand_resource_id);
+      } else {
+        hand_cache->image = png_bwd_create_with_cache(hand_def->resource_id, hand_resource_id, resource_cache, resource_cache_size);
       }
       if (hand_cache->image.bitmap == NULL) {
-        // All right, load it from the resource file.
-        if (hand_def->use_rle) {
-          hand_cache->image = rle_bwd_create(hand_resource_id);
-        } else {
-          hand_cache->image = png_bwd_create(hand_resource_id);
-        }
-        if (hand_cache->image.bitmap == NULL) {
-          hand_cache_destroy(hand_cache);
-          trigger_memory_panic(__LINE__);
-          return;
-        }
-        remap_colors_clock(&hand_cache->image);
-        
-        if (bitmap_index < (int)bitmap_cache_size) {
-          // Record it in the cache for next time.
-          if (bitmap_cache[bitmap_index].bitmap == NULL) {
-            bitmap_cache[bitmap_index] = bwd_copy(&hand_cache->image);
-          }
-        }
+        hand_cache_destroy(hand_cache);
+        trigger_memory_panic(__LINE__);
+        return;
       }
+      remap_colors_clock(&hand_cache->image);
+
       hand_cache->cx = lookup->cx;
       hand_cache->cy = lookup->cy;
 
@@ -637,13 +622,13 @@ void draw_bitmap_hand(struct HandCache *hand_cache, BitmapWithData *bitmap_cache
 // Draws a given hand on the face, using the vector and/or bitmap
 // structures.  A given hand may be represented by a bitmap or a
 // vector, or a combination of both.
-void draw_hand(struct HandCache *hand_cache, BitmapWithData *bitmap_cache, size_t bitmap_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx) {
+void draw_hand(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx) {
   if (hand_def->vector_hand != NULL) {
     draw_vector_hand(hand_cache, hand_def, hand_index, ctx);
   }
 
   if (hand_def->bitmap_table != NULL) {
-    draw_bitmap_hand(hand_cache, bitmap_cache, bitmap_cache_size, hand_def, hand_index, ctx);
+    draw_bitmap_hand(hand_cache, resource_cache, resource_cache_size, hand_def, hand_index, ctx);
   }
 }
 
@@ -722,20 +707,20 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
 void hour_layer_update_callback(Layer *me, GContext *ctx) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "hour_layer");
 
-  draw_hand(&hour_cache, hour_bitmap_cache, hour_bitmap_cache_size, &hour_hand_def, current_placement.hour_hand_index, ctx);
+  draw_hand(&hour_cache, hour_resource_cache, hour_resource_cache_size, &hour_hand_def, current_placement.hour_hand_index, ctx);
 }
 
 void minute_layer_update_callback(Layer *me, GContext *ctx) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "minute_layer, heap = %d bytes free of %d total", heap_bytes_free(), heap_bytes_free() + heap_bytes_used());
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "minute_layer, heap = %d bytes free of %d total, cache_size = %d", heap_bytes_free(), heap_bytes_free() + heap_bytes_used(), bwd_cache_total_size);
 
-  draw_hand(&minute_cache, minute_bitmap_cache, minute_bitmap_cache_size, &minute_hand_def, current_placement.minute_hand_index, ctx);
+  draw_hand(&minute_cache, minute_resource_cache, minute_resource_cache_size, &minute_hand_def, current_placement.minute_hand_index, ctx);
 }
 
 void second_layer_update_callback(Layer *me, GContext *ctx) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "second_layer");
 
   if (config.second_hand) {
-    draw_hand(&second_cache, second_bitmap_cache, second_bitmap_cache_size, &second_hand_def, current_placement.second_hand_index, ctx);
+    draw_hand(&second_cache, second_resource_cache, second_resource_cache_size, &second_hand_def, current_placement.second_hand_index, ctx);
   }
 }
 
@@ -1021,6 +1006,18 @@ void date_window_layer_update_callback(Layer *me, GContext *ctx) {
 
   case DWM_debug_memory_panic_count:
     snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d!", memory_panic_count);
+    break;
+
+  case DWM_debug_resource_reads:
+    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", bwd_resource_reads);
+    break;
+
+  case DWM_debug_cache_hits:
+    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", bwd_cache_hits);
+    break;
+
+  case DWM_debug_cache_total_size:
+    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%dk", bwd_cache_total_size / 1024);
     break;
     
   case DWM_weekday:
@@ -1447,15 +1444,15 @@ void destroy_objects() {
   deinit_battery_gauge();
   deinit_bluetooth_indicator();
 
-  for (int i = 0; i < HOUR_BITMAP_CACHE_SIZE; ++i) {
-    bwd_destroy(&hour_bitmap_cache[i]);
-  }
-  for (int i = 0; i < MINUTE_BITMAP_CACHE_SIZE; ++i) {
-    bwd_destroy(&minute_bitmap_cache[i]);
-  }
-  for (int i = 0; i < SECOND_BITMAP_CACHE_SIZE; ++i) {
-    bwd_destroy(&second_bitmap_cache[i]);
-  }
+  bwd_clear_cache(hour_resource_cache, HOUR_RESOURCE_CACHE_SIZE);
+  bwd_clear_cache(minute_resource_cache, MINUTE_RESOURCE_CACHE_SIZE);
+  bwd_clear_cache(second_resource_cache, SECOND_RESOURCE_CACHE_SIZE);
+
+#ifdef MAKE_CHRONOGRAPH
+  bwd_clear_cache(chrono_minute_resource_cache, CHRONO_MINUTE_RESOURCE_CACHE_SIZE);
+  bwd_clear_cache(chrono_second_resource_cache, CHRONO_SECOND_RESOURCE_CACHE_SIZE);
+  bwd_clear_cache(chrono_tenth_resource_cache, CHRONO_TENTH_RESOURCE_CACHE_SIZE);
+#endif  // MAKE_CHRONOGRAPH
   
   for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
     layer_destroy(date_window_layers[i]);
@@ -1571,21 +1568,21 @@ void reset_memory_panic() {
 
   // Start resetting some options if the memory panic count grows too high.
   if (memory_panic_count > 1) {
-    hour_bitmap_cache_size = 0;
+    hour_resource_cache_size = 0;
 #ifdef MAKE_CHRONOGRAPH
-    chrono_tenth_bitmap_cache_size = 0;
+    chrono_tenth_resource_cache_size = 0;
 #endif  // MAKE_CHRONOGRAPH
   }
   if (memory_panic_count > 2) {
-    minute_bitmap_cache_size = 0;
+    minute_resource_cache_size = 0;
 #ifdef MAKE_CHRONOGRAPH
-    chrono_minute_bitmap_cache_size = 0;
+    chrono_minute_resource_cache_size = 0;
 #endif  // MAKE_CHRONOGRAPH
   }
   if (memory_panic_count > 3) {
-    second_bitmap_cache_size = 0;
+    second_resource_cache_size = 0;
 #ifdef MAKE_CHRONOGRAPH
-    chrono_second_bitmap_cache_size = 0;
+    chrono_second_resource_cache_size = 0;
 #endif  // MAKE_CHRONOGRAPH
   }
   if (memory_panic_count > 4) {

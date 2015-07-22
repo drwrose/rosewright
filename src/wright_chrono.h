@@ -8,19 +8,22 @@
 // Number of laps preserved for the laps digital display
 #define CHRONO_MAX_LAPS 4
 
-typedef struct {
+typedef struct __attribute__((__packed__)) {
   unsigned int start_ms;              // consulted if chrono_data.running && !chrono_data.lap_paused
   unsigned int hold_ms;               // consulted if !chrono_data.running || chrono_data.lap_paused
   unsigned char running;              // the chronograph has been started
   unsigned char lap_paused;           // the "lap" button has been pressed
   unsigned int laps[CHRONO_MAX_LAPS];
-} __attribute__((__packed__)) ChronoData;
+} ChronoData;
 
 extern ChronoData chrono_data;
 
-extern size_t chrono_minute_bitmap_cache_size;
-extern size_t chrono_second_bitmap_cache_size;
-extern size_t chrono_tenth_bitmap_cache_size;
+extern struct ResourceCache chrono_minute_resource_cache[CHRONO_MINUTE_RESOURCE_CACHE_SIZE];
+extern struct ResourceCache chrono_second_resource_cache[CHRONO_SECOND_RESOURCE_CACHE_SIZE];
+extern struct ResourceCache chrono_tenth_resource_cache[CHRONO_TENTH_RESOURCE_CACHE_SIZE];
+extern size_t chrono_minute_resource_cache_size;
+extern size_t chrono_second_resource_cache_size;
+extern size_t chrono_tenth_resource_cache_size;
 
 extern Layer *chrono_minute_layer;
 extern Layer *chrono_second_layer;

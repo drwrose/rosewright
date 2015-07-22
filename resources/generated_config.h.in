@@ -36,19 +36,19 @@
 #define NUM_STEPS_CHRONO_TENTH %(numStepsChronoTenth)s
 #define NUM_STEPS_MOON %(numStepsMoon)s
 
-#define HOUR_BITMAP_CACHE_SIZE %(hourBitmapCacheSize)s
-#define MINUTE_BITMAP_CACHE_SIZE %(minuteBitmapCacheSize)s
-#define SECOND_BITMAP_CACHE_SIZE %(secondBitmapCacheSize)s
+#define HOUR_RESOURCE_CACHE_SIZE %(hourResourceCacheSize)s
+#define MINUTE_RESOURCE_CACHE_SIZE %(minuteResourceCacheSize)s
+#define SECOND_RESOURCE_CACHE_SIZE %(secondResourceCacheSize)s
 
 #ifndef PBL_PLATFORM_APLITE
-#define CHRONO_MINUTE_BITMAP_CACHE_SIZE %(chronoMinuteBitmapCacheSize)s
-#define CHRONO_SECOND_BITMAP_CACHE_SIZE %(chronoSecondBitmapCacheSize)s
-#define CHRONO_TENTH_BITMAP_CACHE_SIZE %(chronoTenthBitmapCacheSize)s
+#define CHRONO_MINUTE_RESOURCE_CACHE_SIZE %(chronoMinuteResourceCacheSize)s
+#define CHRONO_SECOND_RESOURCE_CACHE_SIZE %(chronoSecondResourceCacheSize)s
+#define CHRONO_TENTH_RESOURCE_CACHE_SIZE %(chronoTenthResourceCacheSize)s
 #else  // PBL_PLATFORM_APLITE
 // On Aplite, we never cache these--not enough RAM to play with.
-#define CHRONO_MINUTE_BITMAP_CACHE_SIZE 0
-#define CHRONO_SECOND_BITMAP_CACHE_SIZE 0
-#define CHRONO_TENTH_BITMAP_CACHE_SIZE 0
+#define CHRONO_MINUTE_RESOURCE_CACHE_SIZE 0
+#define CHRONO_SECOND_RESOURCE_CACHE_SIZE 0
+#define CHRONO_TENTH_RESOURCE_CACHE_SIZE 0
 #endif  // PBL_PLATFORM_APLITE
 
 
