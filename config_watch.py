@@ -305,7 +305,7 @@ faces = {
                         (11, 12, 'w'), (11, 12, 'w'), ],
         'battery' : [ (115, 16, 'b'), (115, 16, 'b'),
                       (115, 16, 'w'), (115, 16, 'w'), ],
-        'defaults' : [ 'date:c', 'moon_dark', 'second' ],
+        'defaults' : [ 'date:c', 'moon_dark', 'second', 'limit_cache_aplite' ],
         },
     }
 
