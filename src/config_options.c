@@ -258,14 +258,14 @@ static void int_to_config() {
 #elif PERSIST_KEY == 0x5151 + 0xc7  // Rosewright Chronograph
 
 #elif PERSIST_KEY == 0x5151 + 0xc8  // Rosewright D
-    { IM_always, IM_always, true, false,
+    { IM_off, IM_off, true, false,
       true, 0, CDM_tenths, false,
       0, 1,
       { DWM_weekday, DWM_date, DWM_month, DWM_ampm },
       false, false, 1, TSM_moon_phase, false,
     },
 
-    { IM_off, IM_off, true, false,
+    { IM_always, IM_always, true, false,
       true, 0, CDM_tenths, false,
       11, 0,
       { DWM_off, DWM_off, DWM_weekday, DWM_month },

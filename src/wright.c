@@ -220,7 +220,9 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
   {
     ms = ((10*60 + 9)*60 + 36) * 1000;  // 10:09:36
     if (time != NULL) {
+      time->tm_wday = 3;
       time->tm_mday = 9;
+      time->tm_mon = 6;
     }
 
     int moon_phase = 3;  // gibbous moon
