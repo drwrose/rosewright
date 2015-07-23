@@ -509,3 +509,4 @@ function saveOptions() {
 }
 
 makeButtons('b');
+document.getElementById('loading_header').innerHTML = '<h3>' + $.url().param("watch_name") + '</h3>'
