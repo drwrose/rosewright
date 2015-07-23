@@ -9,6 +9,7 @@ int bwd_resource_reads = 0;
 int bwd_cache_hits = 0;
 size_t bwd_cache_total_size = 0;
 
+#ifdef SUPPORT_RESOURCE_CACHE
 void bwd_clear_cache(struct ResourceCache *resource_cache, size_t resource_cache_size) {
   for (int i = 0; i < (int)resource_cache_size; ++i) {
     struct ResourceCache *cache = &resource_cache[i];
@@ -19,7 +20,9 @@ void bwd_clear_cache(struct ResourceCache *resource_cache, size_t resource_cache
     }
   }
 }
+#endif  // SUPPORT_RESOURCE_CACHE
 
+#ifdef SUPPORT_RESOURCE_CACHE
 static void fill_cache(struct ResourceCache *cache, int resource_id) {
   if (cache->data == NULL) {
     // Go read the resource data.
@@ -36,6 +39,7 @@ static void fill_cache(struct ResourceCache *cache, int resource_id) {
     ++bwd_cache_hits;
   }
 }
+#endif  // SUPPORT_RESOURCE_CACHE
 
 BitmapWithData bwd_create(GBitmap *bitmap, unsigned char *data) {
   BitmapWithData bwd;
@@ -121,6 +125,7 @@ BitmapWithData png_bwd_create(int resource_id) {
   return bwd_create(image, NULL);
 }
 
+#ifdef SUPPORT_RESOURCE_CACHE
 BitmapWithData png_bwd_create_with_cache(int resource_id_offset, int resource_id, struct ResourceCache *resource_cache, size_t resource_cache_size) {
   int index = resource_id - resource_id_offset;
   if (index >= (int)resource_cache_size) {
@@ -148,6 +153,7 @@ BitmapWithData png_bwd_create_with_cache(int resource_id_offset, int resource_id
   return bwd_create(image, data);
 #endif  // PBL_PLATFORM_APLITE
 }
+#endif  // SUPPORT_RESOURCE_CACHE
 
 #ifndef SUPPORT_RLE
 
@@ -157,9 +163,11 @@ BitmapWithData rle_bwd_create(int resource_id) {
   return png_bwd_create(resource_id);
 }
 
+#ifdef SUPPORT_RESOURCE_CACHE
 BitmapWithData rle_bwd_create_with_cache(int resource_id_offset, int resource_id, struct ResourceCache *resource_cache, size_t resource_cache_size) {
   return png_bwd_create_with_cache(resource_id_offset, resource_id, resource_cache, resource_cache_size);
 }
+#endif  // SUPPORT_RESOURCE_CACHE
 
 #else  // SUPPORT_RLE
 
@@ -756,6 +764,7 @@ rle_bwd_create(int resource_id) {
   return result;
 }
 
+#ifdef SUPPORT_RESOURCE_CACHE
 BitmapWithData rle_bwd_create_with_cache(int resource_id_offset, int resource_id, struct ResourceCache *resource_cache, size_t resource_cache_size) {
   int index = resource_id - resource_id_offset;
   if (index >= (int)resource_cache_size) {
@@ -776,6 +785,7 @@ BitmapWithData rle_bwd_create_with_cache(int resource_id_offset, int resource_id
   rbuffer_deinit(&rb);
   return result;
 }
+#endif  // SUPPORT_RESOURCE_CACHE
 
 #endif  // SUPPORT_RLE
 

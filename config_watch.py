@@ -267,7 +267,7 @@ faces = {
                         (0, 0, 'b'), ],
         'battery' : [ (109, 21, 'b'),
                       (123, 3, 'b'), ],
-        'defaults' : [ 'second' ],
+        'defaults' : [ 'second', 'limit_cache_aplite' ],
         },
     'd' : {
         'filename' : ['d_face_rect.png', 'd_face_rect_clean.png'],
@@ -1227,6 +1227,7 @@ def configWatch():
         'enableChronoSecondHand' : int(enableChronoSecondHand),
         'enableChronoTenthHand' : int(enableChronoTenthHand),
         'stackingOrder' : ', '.join(stackingOrder),
+        'limitResourceCacheAplite' : int('limit_cache_aplite' in defaults),
         }
 
 

@@ -1012,6 +1012,7 @@ void date_window_layer_update_callback(Layer *me, GContext *ctx) {
     snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", bwd_resource_reads);
     break;
 
+#ifdef SUPPORT_RESOURCE_CACHE
   case DWM_debug_cache_hits:
     snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", bwd_cache_hits);
     break;
@@ -1019,6 +1020,7 @@ void date_window_layer_update_callback(Layer *me, GContext *ctx) {
   case DWM_debug_cache_total_size:
     snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%dk", bwd_cache_total_size / 1024);
     break;
+#endif  // SUPPORT_RESOURCE_CACHE
     
   case DWM_weekday:
     text = date_names[current_placement.day_index];

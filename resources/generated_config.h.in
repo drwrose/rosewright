@@ -41,6 +41,15 @@
 #define NUM_STEPS_CHRONO_TENTH %(numStepsChronoTenth)s
 #define NUM_STEPS_MOON %(numStepsMoon)s
 
+#if %(limitResourceCacheAplite)s && defined(PBL_PLATFORM_APLITE)
+  // If this symbol is defined, we don't implement the resource-cache
+  // feature on Aplite, to save a few bytes of code.
+  #undef SUPPORT_RESOURCE_CACHE
+#else
+  #define SUPPORT_RESOURCE_CACHE 1
+#endif
+
+#ifdef SUPPORT_RESOURCE_CACHE
 #define SECOND_RESOURCE_CACHE_SIZE %(secondResourceCacheSize)s
 
 #ifndef PBL_PLATFORM_APLITE
@@ -71,6 +80,25 @@
 #define CHRONO_MINUTE_MASK_RESOURCE_CACHE_SIZE 0
 #define CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE 0
 #define CHRONO_TENTH_MASK_RESOURCE_CACHE_SIZE 0
+
+#else
+// If !SUPPORT_RESOURCE_CACHE, then all of these are zero.
+#define SECOND_RESOURCE_CACHE_SIZE 0
+#define HOUR_RESOURCE_CACHE_SIZE 0
+#define MINUTE_RESOURCE_CACHE_SIZE 0
+#define CHRONO_MINUTE_RESOURCE_CACHE_SIZE 0
+#define CHRONO_SECOND_RESOURCE_CACHE_SIZE 0
+#define CHRONO_TENTH_RESOURCE_CACHE_SIZE 0
+
+#define SECOND_MASK_RESOURCE_CACHE_SIZE 0
+#define HOUR_MASK_RESOURCE_CACHE_SIZE 0
+#define MINUTE_MASK_RESOURCE_CACHE_SIZE 0
+#define CHRONO_MINUTE_MASK_RESOURCE_CACHE_SIZE 0
+#define CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE 0
+#define CHRONO_TENTH_MASK_RESOURCE_CACHE_SIZE 0
+
+#endif  // SUPPORT_RESOURCE_CACHE
+
 
 // The order in which the hands are layered on top of each other.
 #define STACKING_ORDER_LIST  %(stackingOrder)s
