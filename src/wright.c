@@ -196,6 +196,12 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
   unsigned int s = (unsigned int)(tm->tm_hour * 60 + tm->tm_min) * 60 + tm->tm_sec;
   unsigned int ms = (unsigned int)(s * 1000 + t_ms);
 
+#ifdef MAKE_CHRONOGRAPH
+  // For the chronograph, compute the number of milliseconds elapsed
+  // since midnight, UTC.
+  unsigned int ms_utc = (unsigned int)((gmt % SECONDS_PER_DAY) * 1000 + t_ms);
+#endif  // MAKE_CHRONOGRAPH
+  
 #ifdef FAST_TIME
   if (time != NULL) {
     time->tm_wday = (s / 3) % 7;
@@ -204,6 +210,9 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
     time->tm_hour = s % 24;
   }
   ms *= 67;
+#ifdef MAKE_CHRONOGRAPH
+  ms_utc *= 67;
+#endif  // MAKE_CHRONOGRAPH
 #endif  // FAST_TIME
 
 #ifdef SCREENSHOT_BUILD
@@ -303,7 +312,7 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
   placement->hour_buzzer = (ms / (SECONDS_PER_HOUR * 1000)) % 24;
 
 #ifdef MAKE_CHRONOGRAPH
-  compute_chrono_hands(ms, placement);
+  compute_chrono_hands(ms_utc, placement);
 #endif  // MAKE_CHRONOGRAPH
 }
 

@@ -61,18 +61,18 @@ VibePattern tap = {
 
 // Returns the number of milliseconds since midnight, UTC.
 unsigned int get_time_ms() {
-  time_t s;
-  uint16_t ms;
-  unsigned int result;
+  time_t gmt;
+  uint16_t t_ms;
+  unsigned int ms_utc;
 
-  time_ms(&s, &ms);
-  result = (unsigned int)((s % SECONDS_PER_DAY) * 1000 + ms);
+  time_ms(&gmt, &t_ms);
+  ms_utc = (unsigned int)((gmt % SECONDS_PER_DAY) * 1000 + t_ms);
 
 #ifdef FAST_TIME
-  result *= 67;
+  ms_utc *= 67;
 #endif  // FAST_TIME
 
-  return result;
+  return ms_utc;
 }
 
 // Returns the time showing on the chronograph, given the ms returned
