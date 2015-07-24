@@ -91,7 +91,6 @@ typedef struct {
   bool lunar_direction;    // true for southern hemisphere (left-to-right).
   unsigned char color_mode;
   TopSubdialMode top_subdial;
-
   bool show_debug;
 } __attribute__((__packed__)) ConfigOptions;
 

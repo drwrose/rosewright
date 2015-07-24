@@ -230,7 +230,8 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 
 #ifdef MAKE_CHRONOGRAPH
     chrono_data.running = false;
-    chrono_data.hold_ms = ((6 * 60) + 36) * 1000 + 900;  // 0:06:36.9
+    ms = ((10*60 + 9)*60 + 24) * 1000;  // 10:09:24
+    chrono_data.hold_ms = (((1*60 + 36) * 60) + 36) * 1000 + 900;  // 1:36:36.9
 #endif  // MAKE_CHRONOGRAPH
   }
 #endif  // SCREENSHOT_BUILD
