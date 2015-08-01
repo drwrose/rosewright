@@ -103,12 +103,11 @@ struct __attribute__((__packed__)) HandDef {
 };
 
 // These symbols are used to define the stacking order for hands.
-#define STACKING_ORDER_HOUR 1
-#define STACKING_ORDER_MINUTE 2
-#define STACKING_ORDER_SECOND 3
-#define STACKING_ORDER_CHRONO_MINUTE 4
-#define STACKING_ORDER_CHRONO_SECOND 5
-#define STACKING_ORDER_CHRONO_TENTH 6
+#define STACKING_ORDER_HOUR_MINUTE 1
+#define STACKING_ORDER_SECOND 2
+#define STACKING_ORDER_CHRONO_MINUTE 3
+#define STACKING_ORDER_CHRONO_SECOND 4
+#define STACKING_ORDER_CHRONO_TENTH 5
 #define STACKING_ORDER_DONE 0
 
 // A table for bluetooth and battery icons, as well as date windows.

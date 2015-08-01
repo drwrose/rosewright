@@ -91,8 +91,7 @@ int sweep_timer_ms = 1000;
 
 int sweep_seconds_ms = 60 * 1000 / NUM_STEPS_SECOND;
 
-Layer *hour_layer;
-Layer *minute_layer;
+Layer *hour_minute_layer;
 Layer *second_layer;
 
 Layer *date_window_layers[NUM_DATE_WINDOWS];
@@ -511,19 +510,69 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
   }
 }
 
-// Draws a given hand on the face, using the bitmap structures.
-void draw_bitmap_hand(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx) {
-  if (hand_cache->bitmap_hand_index != hand_index) {
-    // Force a new bitmap.
-    if (hand_cache->image.bitmap != NULL) {
-      bwd_destroy(&hand_cache->image);
-    }
-    if (hand_cache->mask.bitmap != NULL) {
-      bwd_destroy(&hand_cache->mask);
-    }
-    hand_cache->bitmap_hand_index = hand_index;
-  }
+// Clears the mask given hand on the face, using the bitmap
+// structures, if the mask is in use.  This must be called before
+// draw_bitmap_hand().
+void draw_bitmap_hand_mask(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx) {
+  struct BitmapHandTableRow *hand = &hand_def->bitmap_table[hand_index];
+  int bitmap_index = hand->bitmap_index;
+  struct BitmapHandCenterRow *lookup = &hand_def->bitmap_centers[bitmap_index];
 
+  int hand_resource_id = hand_def->resource_id + bitmap_index;
+  int hand_resource_mask_id = hand_def->resource_mask_id + bitmap_index;
+
+#ifdef PBL_PLATFORM_APLITE
+  if (hand_def->resource_id == hand_def->resource_mask_id)
+#else
+  if (true)  // On Basalt, we always draw without the mask.
+#endif  // PBL_PLATFORM_APLITE
+  {
+    // Do nothing here.
+  } else {
+    // The hand has a mask, so use it to draw the hand opaquely.
+    if (hand_cache->image.bitmap == NULL) {
+      if (hand_def->use_rle) {
+        hand_cache->image = rle_bwd_create_with_cache(hand_def->resource_id, hand_resource_id, resource_cache, resource_cache_size);
+        hand_cache->mask = rle_bwd_create_with_cache(hand_def->resource_id, hand_resource_mask_id, resource_cache, resource_cache_size);
+      } else {
+        hand_cache->image = png_bwd_create_with_cache(hand_def->resource_id, hand_resource_id, resource_cache, resource_cache_size);
+        hand_cache->mask = png_bwd_create_with_cache(hand_def->resource_id, hand_resource_mask_id, resource_cache, resource_cache_size);
+      }
+      if (hand_cache->image.bitmap == NULL || hand_cache->mask.bitmap == NULL) {
+        hand_cache_destroy(hand_cache);
+	trigger_memory_panic(__LINE__);
+        return;
+      }
+      hand_cache->cx = lookup->cx;
+      hand_cache->cy = lookup->cy;
+    
+      if (hand->flip_x) {
+        // To minimize wasteful resource usage, if the hand is symmetric
+        // we can store only the bitmaps for the right half of the clock
+        // face, and flip them for the left half.
+        flip_bitmap_x(hand_cache->image.bitmap, &hand_cache->cx);
+        flip_bitmap_x(hand_cache->mask.bitmap, NULL);
+      }
+    
+      if (hand->flip_y) {
+        // We can also do this vertically.
+        flip_bitmap_y(hand_cache->image.bitmap, &hand_cache->cy);
+        flip_bitmap_y(hand_cache->mask.bitmap, NULL);
+      }
+    }
+    
+    GRect destination = gbitmap_get_bounds(hand_cache->image.bitmap);
+    destination.origin.x = hand_def->place_x - hand_cache->cx;
+    destination.origin.y = hand_def->place_y - hand_cache->cy;
+
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_fg);
+    graphics_draw_bitmap_in_rect(ctx, hand_cache->mask.bitmap, destination);
+  }
+}
+
+// Draws a given hand on the face, using the bitmap structures.  You
+// must have already called draw_bitmap_hand_mask().
+void draw_bitmap_hand(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx) {
   struct BitmapHandTableRow *hand = &hand_def->bitmap_table[hand_index];
   int bitmap_index = hand->bitmap_index;
   struct BitmapHandCenterRow *lookup = &hand_def->bitmap_centers[bitmap_index];
@@ -588,53 +637,44 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct ResourceCache *resour
   } else {
     // The hand has a mask, so use it to draw the hand opaquely.
     if (hand_cache->image.bitmap == NULL) {
-      if (hand_def->use_rle) {
-        hand_cache->image = rle_bwd_create_with_cache(hand_def->resource_id, hand_resource_id, resource_cache, resource_cache_size);
-        hand_cache->mask = rle_bwd_create_with_cache(hand_def->resource_id, hand_resource_mask_id, resource_cache, resource_cache_size);
-      } else {
-        hand_cache->image = png_bwd_create_with_cache(hand_def->resource_id, hand_resource_id, resource_cache, resource_cache_size);
-        hand_cache->mask = png_bwd_create_with_cache(hand_def->resource_id, hand_resource_mask_id, resource_cache, resource_cache_size);
-      }
-      if (hand_cache->image.bitmap == NULL || hand_cache->mask.bitmap == NULL) {
-        hand_cache_destroy(hand_cache);
-	trigger_memory_panic(__LINE__);
-        return;
-      }
-      hand_cache->cx = lookup->cx;
-      hand_cache->cy = lookup->cy;
-    
-      if (hand->flip_x) {
-        // To minimize wasteful resource usage, if the hand is symmetric
-        // we can store only the bitmaps for the right half of the clock
-        // face, and flip them for the left half.
-        flip_bitmap_x(hand_cache->image.bitmap, &hand_cache->cx);
-        flip_bitmap_x(hand_cache->mask.bitmap, NULL);
-      }
-    
-      if (hand->flip_y) {
-        // We can also do this vertically.
-        flip_bitmap_y(hand_cache->image.bitmap, &hand_cache->cy);
-        flip_bitmap_y(hand_cache->mask.bitmap, NULL);
-      }
+      // We have already loaded the image in draw_bitmap_hand_mask(),
+      // so if it's NULL now then something's gone wrong (e.g. memory
+      // panic).
+      return;
     }
-    
+
     GRect destination = gbitmap_get_bounds(hand_cache->image.bitmap);
-    
     destination.origin.x = hand_def->place_x - hand_cache->cx;
     destination.origin.y = hand_def->place_y - hand_cache->cy;
-
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_fg);
-    graphics_draw_bitmap_in_rect(ctx, hand_cache->mask.bitmap, destination);
     
     graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_bg);
     graphics_draw_bitmap_in_rect(ctx, hand_cache->image.bitmap, destination);
   }
 }
 
-// Draws a given hand on the face, using the vector and/or bitmap
-// structures.  A given hand may be represented by a bitmap or a
-// vector, or a combination of both.
-void draw_hand(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx) {
+// In general, prepares a hand for being drawn.  Specifically, this
+// clears the background behind a hand, if necessary.
+void draw_hand_mask(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx) {
+  if (hand_def->bitmap_table != NULL) {
+    if (hand_cache->bitmap_hand_index != hand_index) {
+      // Force a new bitmap.
+      if (hand_cache->image.bitmap != NULL) {
+        bwd_destroy(&hand_cache->image);
+      }
+      if (hand_cache->mask.bitmap != NULL) {
+        bwd_destroy(&hand_cache->mask);
+      }
+      hand_cache->bitmap_hand_index = hand_index;
+    }
+
+    draw_bitmap_hand_mask(hand_cache, resource_cache, resource_cache_size, hand_def, hand_index, ctx);
+  }
+}
+
+// Draws a given hand on the face, after draw_hand_mask(), using the
+// vector and/or bitmap structures.  A given hand may be represented
+// by a bitmap or a vector, or a combination of both.
+void draw_hand_fg(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx) {
   if (hand_def->vector_hand != NULL) {
     draw_vector_hand(hand_cache, hand_def, hand_index, ctx);
   }
@@ -642,6 +682,11 @@ void draw_hand(struct HandCache *hand_cache, struct ResourceCache *resource_cach
   if (hand_def->bitmap_table != NULL) {
     draw_bitmap_hand(hand_cache, resource_cache, resource_cache_size, hand_def, hand_index, ctx);
   }
+}
+
+void draw_hand(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx) {
+  draw_hand_mask(hand_cache, resource_cache, resource_cache_size, hand_def, hand_index, ctx);
+  draw_hand_fg(hand_cache, resource_cache, resource_cache_size, hand_def, hand_index, ctx);
 }
 
 // Applies the appropriate Basalt color-remapping according to the
@@ -716,16 +761,25 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
   graphics_draw_bitmap_in_rect(ctx, clock_face.bitmap, destination);
 }
   
-void hour_layer_update_callback(Layer *me, GContext *ctx) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "hour_layer");
+void hour_minute_layer_update_callback(Layer *me, GContext *ctx) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "hour_minute_layer");
 
+#ifdef HOUR_MINUTE_OVERLAP
+  // Draw the hour and minute hands overlapping, so they share a
+  // common mask.
+  draw_hand_mask(&hour_cache, hour_resource_cache, hour_resource_cache_size, &hour_hand_def, current_placement.hour_hand_index, ctx);
+  draw_hand_mask(&minute_cache, minute_resource_cache, minute_resource_cache_size, &minute_hand_def, current_placement.minute_hand_index, ctx);
+
+  draw_hand_fg(&hour_cache, hour_resource_cache, hour_resource_cache_size, &hour_hand_def, current_placement.hour_hand_index, ctx);
+  draw_hand_fg(&minute_cache, minute_resource_cache, minute_resource_cache_size, &minute_hand_def, current_placement.minute_hand_index, ctx);
+
+#else  //  HOUR_MINUTE_OVERLAP
+
+  // Draw the hour and minute hands separately.
   draw_hand(&hour_cache, hour_resource_cache, hour_resource_cache_size, &hour_hand_def, current_placement.hour_hand_index, ctx);
-}
-
-void minute_layer_update_callback(Layer *me, GContext *ctx) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "minute_layer, heap = %d bytes free of %d total, cache_size = %d", heap_bytes_free(), heap_bytes_free() + heap_bytes_used(), bwd_cache_total_size);
 
   draw_hand(&minute_cache, minute_resource_cache, minute_resource_cache_size, &minute_hand_def, current_placement.minute_hand_index, ctx);
+#endif  //  HOUR_MINUTE_OVERLAP
 }
 
 void second_layer_update_callback(Layer *me, GContext *ctx) {
@@ -1083,12 +1137,12 @@ void update_hands(struct tm *time) {
   compute_hands(time, &new_placement);
   if (new_placement.hour_hand_index != current_placement.hour_hand_index) {
     current_placement.hour_hand_index = new_placement.hour_hand_index;
-    layer_mark_dirty(hour_layer);
+    layer_mark_dirty(hour_minute_layer);
   }
 
   if (new_placement.minute_hand_index != current_placement.minute_hand_index) {
     current_placement.minute_hand_index = new_placement.minute_hand_index;
-    layer_mark_dirty(minute_layer);
+    layer_mark_dirty(hour_minute_layer);
   }
 
   if (new_placement.second_hand_index != current_placement.second_hand_index) {
@@ -1407,18 +1461,11 @@ void create_objects() {
   int i;
   for (i = 0; stacking_order[i] != STACKING_ORDER_DONE; ++i) {
     switch (stacking_order[i]) {
-    case STACKING_ORDER_HOUR:
-      hour_layer = layer_create(window_frame);
-      assert(hour_layer != NULL);
-      layer_set_update_proc(hour_layer, &hour_layer_update_callback);
-      layer_add_child(window_layer, hour_layer);
-      break;
-
-    case STACKING_ORDER_MINUTE:
-      minute_layer = layer_create(window_frame);
-      assert(minute_layer != NULL);
-      layer_set_update_proc(minute_layer, &minute_layer_update_callback);
-      layer_add_child(window_layer, minute_layer);
+    case STACKING_ORDER_HOUR_MINUTE:
+      hour_minute_layer = layer_create(window_frame);
+      assert(hour_minute_layer != NULL);
+      layer_set_update_proc(hour_minute_layer, &hour_minute_layer_update_callback);
+      layer_add_child(window_layer, hour_minute_layer);
       break;
 
     case STACKING_ORDER_SECOND:
@@ -1500,8 +1547,7 @@ void destroy_objects() {
   layer_destroy(top_subdial_layer);
 #endif  // TOP_SUBDIAL
   
-  layer_destroy(minute_layer);
-  layer_destroy(hour_layer);
+  layer_destroy(hour_minute_layer);
   layer_destroy(second_layer);
 
   hand_cache_destroy(&hour_cache);

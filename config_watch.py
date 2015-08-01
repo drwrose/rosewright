@@ -234,7 +234,7 @@ faces = {
                         (37, 47, 'b'), (26, 0, 'b'), ],
         'battery' : [ (92, 51, 'b'), (98, 1, 'b'),
                       (92, 51, 'b'), (98, 1, 'b'), ],
-        'defaults' : [ 'date:b', 'moon_phase', 'moon_dark', 'second' ],
+        'defaults' : [ 'date:b', 'moon_phase', 'moon_dark', 'second', 'hour_minute_overlap' ],
         },
     'b' : {
         'filename' : ['b_face_rect.png'],
@@ -250,7 +250,7 @@ faces = {
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : (0, 0, 'b'),
         'battery' : (125, 3, 'b'),
-        'defaults' : [ 'day:a', 'date:b', 'moon_phase', 'second' ],
+        'defaults' : [ 'day:a', 'date:b', 'moon_phase', 'second', 'hour_minute_overlap' ],
         },
     'c' : {
         'filename' : ['c_face_rect.png', 'c_face.png'],
@@ -1171,7 +1171,7 @@ def configWatch():
     config = open('%s/generated_config.h' % (resourcesDir), 'w')
 
     # Get the stacking orders of the hands too.
-    implicitStackingOrder = ['hour', 'minute', 'second', 'chrono_minute', 'chrono_second', 'chrono_tenth']
+    implicitStackingOrder = ['hour_minute', 'second', 'chrono_minute', 'chrono_second', 'chrono_tenth']
     explicitStackingOrder = []
     for hand, x, y in centers:
         if hand in implicitStackingOrder:
@@ -1227,6 +1227,7 @@ def configWatch():
         'enableChronoSecondHand' : int(enableChronoSecondHand),
         'enableChronoTenthHand' : int(enableChronoTenthHand),
         'stackingOrder' : ', '.join(stackingOrder),
+        'hourMinuteOverlap' : int('hour_minute_overlap' in defaults),
         'limitResourceCacheAplite' : int('limit_cache_aplite' in defaults),
         }
 
