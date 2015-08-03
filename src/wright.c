@@ -512,8 +512,8 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
 
 // Clears the mask given hand on the face, using the bitmap
 // structures, if the mask is in use.  This must be called before
-// draw_bitmap_hand().
-void draw_bitmap_hand_mask(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx) {
+// draw_bitmap_hand_fg().
+void draw_bitmap_hand_mask(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, bool no_basalt_mask, GContext *ctx) {
   struct BitmapHandTableRow *hand = &hand_def->bitmap_table[hand_index];
   int bitmap_index = hand->bitmap_index;
   struct BitmapHandCenterRow *lookup = &hand_def->bitmap_centers[bitmap_index];
@@ -524,10 +524,10 @@ void draw_bitmap_hand_mask(struct HandCache *hand_cache, struct ResourceCache *r
 #ifdef PBL_PLATFORM_APLITE
   if (hand_def->resource_id == hand_def->resource_mask_id)
 #else
-  if (true)  // On Basalt, we always draw without the mask.
+  if (no_basalt_mask || hand_def->resource_id == hand_def->resource_mask_id)
 #endif  // PBL_PLATFORM_APLITE
   {
-    // Do nothing here.
+    // The draw-without-a-mask case.  Do nothing here.
   } else {
     // The hand has a mask, so use it to draw the hand opaquely.
     if (hand_cache->image.bitmap == NULL) {
@@ -543,6 +543,9 @@ void draw_bitmap_hand_mask(struct HandCache *hand_cache, struct ResourceCache *r
 	trigger_memory_panic(__LINE__);
         return;
       }
+      remap_colors_clock(&hand_cache->image);
+      remap_colors_clock(&hand_cache->mask);
+
       hand_cache->cx = lookup->cx;
       hand_cache->cy = lookup->cy;
     
@@ -572,18 +575,17 @@ void draw_bitmap_hand_mask(struct HandCache *hand_cache, struct ResourceCache *r
 
 // Draws a given hand on the face, using the bitmap structures.  You
 // must have already called draw_bitmap_hand_mask().
-void draw_bitmap_hand(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx) {
+void draw_bitmap_hand_fg(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, bool no_basalt_mask, GContext *ctx) {
   struct BitmapHandTableRow *hand = &hand_def->bitmap_table[hand_index];
   int bitmap_index = hand->bitmap_index;
   struct BitmapHandCenterRow *lookup = &hand_def->bitmap_centers[bitmap_index];
 
   int hand_resource_id = hand_def->resource_id + bitmap_index;
-  int hand_resource_mask_id = hand_def->resource_mask_id + bitmap_index;
 
 #ifdef PBL_PLATFORM_APLITE
   if (hand_def->resource_id == hand_def->resource_mask_id)
 #else
-  if (true)  // On Basalt, we always draw without the mask.
+  if (no_basalt_mask || hand_def->resource_id == hand_def->resource_mask_id)
 #endif  // PBL_PLATFORM_APLITE
   {
     // The hand does not have a mask.  Draw the hand on top of the scene.
@@ -654,7 +656,7 @@ void draw_bitmap_hand(struct HandCache *hand_cache, struct ResourceCache *resour
 
 // In general, prepares a hand for being drawn.  Specifically, this
 // clears the background behind a hand, if necessary.
-void draw_hand_mask(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx) {
+void draw_hand_mask(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, bool no_basalt_mask, GContext *ctx) {
   if (hand_def->bitmap_table != NULL) {
     if (hand_cache->bitmap_hand_index != hand_index) {
       // Force a new bitmap.
@@ -667,26 +669,26 @@ void draw_hand_mask(struct HandCache *hand_cache, struct ResourceCache *resource
       hand_cache->bitmap_hand_index = hand_index;
     }
 
-    draw_bitmap_hand_mask(hand_cache, resource_cache, resource_cache_size, hand_def, hand_index, ctx);
+    draw_bitmap_hand_mask(hand_cache, resource_cache, resource_cache_size, hand_def, hand_index, no_basalt_mask, ctx);
   }
 }
 
 // Draws a given hand on the face, after draw_hand_mask(), using the
 // vector and/or bitmap structures.  A given hand may be represented
 // by a bitmap or a vector, or a combination of both.
-void draw_hand_fg(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx) {
+void draw_hand_fg(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, bool no_basalt_mask, GContext *ctx) {
   if (hand_def->vector_hand != NULL) {
     draw_vector_hand(hand_cache, hand_def, hand_index, ctx);
   }
 
   if (hand_def->bitmap_table != NULL) {
-    draw_bitmap_hand(hand_cache, resource_cache, resource_cache_size, hand_def, hand_index, ctx);
+    draw_bitmap_hand_fg(hand_cache, resource_cache, resource_cache_size, hand_def, hand_index, no_basalt_mask, ctx);
   }
 }
 
 void draw_hand(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx) {
-  draw_hand_mask(hand_cache, resource_cache, resource_cache_size, hand_def, hand_index, ctx);
-  draw_hand_fg(hand_cache, resource_cache, resource_cache_size, hand_def, hand_index, ctx);
+  draw_hand_mask(hand_cache, resource_cache, resource_cache_size, hand_def, hand_index, true, ctx);
+  draw_hand_fg(hand_cache, resource_cache, resource_cache_size, hand_def, hand_index, true, ctx);
 }
 
 // Applies the appropriate Basalt color-remapping according to the
@@ -767,11 +769,11 @@ void hour_minute_layer_update_callback(Layer *me, GContext *ctx) {
 #ifdef HOUR_MINUTE_OVERLAP
   // Draw the hour and minute hands overlapping, so they share a
   // common mask.
-  draw_hand_mask(&hour_cache, hour_resource_cache, hour_resource_cache_size, &hour_hand_def, current_placement.hour_hand_index, ctx);
-  draw_hand_mask(&minute_cache, minute_resource_cache, minute_resource_cache_size, &minute_hand_def, current_placement.minute_hand_index, ctx);
+  draw_hand_mask(&hour_cache, hour_resource_cache, hour_resource_cache_size, &hour_hand_def, current_placement.hour_hand_index, false, ctx);
+  draw_hand_mask(&minute_cache, minute_resource_cache, minute_resource_cache_size, &minute_hand_def, current_placement.minute_hand_index, false, ctx);
 
-  draw_hand_fg(&hour_cache, hour_resource_cache, hour_resource_cache_size, &hour_hand_def, current_placement.hour_hand_index, ctx);
-  draw_hand_fg(&minute_cache, minute_resource_cache, minute_resource_cache_size, &minute_hand_def, current_placement.minute_hand_index, ctx);
+  draw_hand_fg(&hour_cache, hour_resource_cache, hour_resource_cache_size, &hour_hand_def, current_placement.hour_hand_index, false, ctx);
+  draw_hand_fg(&minute_cache, minute_resource_cache, minute_resource_cache_size, &minute_hand_def, current_placement.minute_hand_index, false, ctx);
 
 #else  //  HOUR_MINUTE_OVERLAP
 

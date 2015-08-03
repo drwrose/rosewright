@@ -136,37 +136,37 @@ watches = {
 #
 
 hands = {
-    'a' : [('hour', ('a_hour_hand.png', 't', False, (90, 410), 0.12), None),
-           ('minute', ('a_minute_hand.png', 't', True, (49, 565), 0.12), None),
-           ('second', ('a_second_hand.png', 2, False, (37, 37), 0.12),
+    'a' : [('hour', ('a_hour_hand', 't', False, (90, 410), 0.12), None),
+           ('minute', ('a_minute_hand', 't', True, (49, 565), 0.12), None),
+           ('second', ('a_second_hand', 2, False, (37, 37), 0.12),
             [(2, [(0, -5), (0, -70)])]),
            ],
-    'b' : [('hour', ('b_hour_hand.png', 't', False, (33, 211), 0.27), None),
-           ('minute', ('b_minute_hand.png', 't', False, (24, 292), 0.27), None),
-           ('second', ('b_second_hand.png', 2, False, (32, 21), 0.27),
+    'b' : [('hour', ('b_hour_hand', 't', False, (33, 211), 0.27), None),
+           ('minute', ('b_minute_hand', 't', False, (24, 292), 0.27), None),
+           ('second', ('b_second_hand', 2, False, (32, 21), 0.27),
             [(2, [(0, -5), (0, -75)]),
              ]),
            ],
-    'c' : [('hour', ('c_hour_hand.png', 't%', False, (59, 434), 0.14), None),
-           ('minute', ('c_minute_hand.png', 't%', False, (38, 584), 0.14), None),
-           ('second', ('c_chrono1_hand.png', 2, False, (32, -27), 0.14),
+    'c' : [('hour', ('c_hour_hand', 't%', False, (59, 434), 0.14), None),
+           ('minute', ('c_minute_hand', 't%', False, (38, 584), 0.14), None),
+           ('second', ('c_chrono1_hand', 2, False, (32, -27), 0.14),
             [(2, [(0, -2), (0, -26)]),
              ]),
-           ('chrono_minute', ('c_chrono2_hand.png', 2, False, (37, 195), 0.14), None),
-           ('chrono_second', ('c_second_hand.png', 1, False, (41, -29), 0.14),
+           ('chrono_minute', ('c_chrono2_hand', 2, False, (37, 195), 0.14), None),
+           ('chrono_second', ('c_second_hand', 1, False, (41, -29), 0.14),
             [(1, [(0, -4), (0, -88)]),
              ]),
-           ('chrono_tenth', ('c_chrono2_hand.png', 2, False, (37, 195), 0.14), None),
+           ('chrono_tenth', ('c_chrono2_hand', 2, False, (37, 195), 0.14), None),
            ],
-    'd' : [('hour', ('d_hour_hand.png', 't', False, (24, 193), 0.24), None),
-           ('minute', ('d_minute_hand.png', 't', False, (27, 267), 0.24), None),
-           ('second', ('d_second_hand.png', 1, False, (14, -8), 0.24),
+    'd' : [('hour', ('d_hour_hand', 't', False, (24, 193), 0.24), None),
+           ('minute', ('d_minute_hand', 't', False, (27, 267), 0.24), None),
+           ('second', ('d_second_hand', 1, False, (14, -8), 0.24),
             [(1, [(0, -3), (0, -64)]),
              ]),
            ],
-    'e' : [('hour', ('e_hour_hand.png', 't%', False, (28, 99), 0.53), None),
-           ('minute', ('e_minute_hand.png', 't%', False, (22, 142), 0.53), None),
-           ('second', ('e_second_hand.png', 't%', False, (18, 269), 0.24), None),
+    'e' : [('hour', ('e_hour_hand', 't%', False, (28, 99), 0.53), None),
+           ('minute', ('e_minute_hand', 't%', False, (22, 142), 0.53), None),
+           ('second', ('e_second_hand', 't%', False, (18, 269), 0.24), None),
            ],
     }
 
@@ -348,6 +348,8 @@ thresholdMask = [0] + [255] * 255
 threshold1Bit = [0] * 128 + [255] * 128
 threshold2Bit = [0] * 64 + [85] * 64 + [170] * 64 + [255] * 64
 
+trivialImage = PIL.Image.new('L', (1, 1), 255)
+
 # Attempt to determine the directory in which we're operating.
 rootDir = os.path.dirname(__file__) or '.'
 resourcesDir = os.path.join(rootDir, 'resources')
@@ -528,7 +530,7 @@ def getResourceCacheSize(hand):
 def getMaskResourceCacheSize(hand):
     return resourceCacheSize.get(hand, [0, 0])[1]
 
-def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename, colorMode, asymmetric, pivot, scale):
+def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale):
     resourceStr = ''
     maskResourceStr = ''
 
@@ -537,16 +539,6 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
       "name": "%(defName)s",
       "file": "%(targetFilename)s",
       "type": "%(ptype)s"
-    },"""
-
-    maskResourceEntry = """
-    {
-      "name": "%(defName)s",
-      "file": "%(targetFilename)s",
-      "type": "%(ptype)s",
-      "targetPlatforms": [
-        "aplite"
-      ]
     },"""
 
     handLookupEntry = """  { %(cx)s, %(cy)s },  // %(symbolName)s"""
@@ -558,11 +550,10 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
 
     paintChannel, useTransparency, dither = parseColorMode(colorMode)
 
-    sourcePathname = '%s/clock_hands/%s' % (resourcesDir, sourceFilename)
+    sourcePathname = '%s/clock_hands/%s.png' % (resourcesDir, sourceBasename)
     source = PIL.Image.open(sourcePathname)
 
-    basename, ext = os.path.splitext(sourcePathname)
-    source1Pathname = basename + '~bw' + ext
+    source1Pathname = '%s/clock_hands/%s~bw.png' % (resourcesDir, sourceBasename)
     if os.path.exists(source1Pathname):
         # If there's an explicit ~bw source file, use it for the 1-bit
         # version.
@@ -577,8 +568,8 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
     r, g, b, source1Mask = source1.convert('RGBA').split()
     source1 = PIL.Image.merge('RGB', [r, g, b])
 
-    # Ensure that the source image is black anywhere the
-    # mask is black.
+    # Ensure that the source image is black anywhere its alpha channel
+    # is black.
     black = PIL.Image.new('L', source.size, 0)
     r, g, b = source.split()
     mask = sourceMask.point(thresholdMask)
@@ -595,6 +586,21 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
     b = PIL.Image.composite(b, black, mask)
     source1 = PIL.Image.merge('RGB', [r, g, b])
 
+    # Now check for an explicit mask image.  In the basalt case, an
+    # explicit (separate) mask image is maintained in addition to the
+    # implicit (alpha channel) mask above.
+    sourceMaskPathname = '%s/clock_hands/%s_mask.png' % (resourcesDir, sourceBasename)
+    sourceMaskExplicit = None
+    if os.path.exists(sourceMaskPathname):
+        sourceMaskExplicit = PIL.Image.open(sourceMaskPathname).convert('RGBA')
+
+    # In the aplite case, we don't need to make a distinction between
+    # the explicit and implicit masks.  An explicit mask completely
+    # replaces the implicit mask.
+    source1MaskPathname = '%s/clock_hands/%s_mask~bw.png' % (resourcesDir, sourceBasename)
+    if os.path.exists(source1MaskPathname):
+        source1Mask = PIL.Image.open(source1MaskPathname).convert('L')
+
     # Center the source image on its pivot, and pad it with black.
     border = (pivot[0], pivot[1], source.size[0] - pivot[0], source.size[1] - pivot[1])
     size = (max(border[0], border[2]) * 2, max(border[1], border[3]) * 2)
@@ -608,6 +614,10 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
     largeMask.paste(sourceMask, (center[0] - pivot[0], center[1] - pivot[1]))
     large1Mask = PIL.Image.new('L', size, 0)
     large1Mask.paste(source1Mask, (center[0] - pivot[0], center[1] - pivot[1]))
+
+    if sourceMaskExplicit:
+        largeMaskExplicit = PIL.Image.new('RGBA', size, (0, 0, 0, 0))
+        largeMaskExplicit.paste(sourceMaskExplicit, (center[0] - pivot[0], center[1] - pivot[1]))
 
     numStepsHand = getNumSteps(hand)
     for i in range(numStepsHand):
@@ -712,11 +722,21 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
             # It's important to take the crop from the alpha mask, not
             # from the color.
             cropbox = pm2.getbbox()
+            p1 = p1.crop(cropbox)
+            p2 = p2.crop(cropbox)
             pm1 = pm1.crop(cropbox)
             pm2 = pm2.crop(cropbox)
 
-            p1 = p1.crop(cropbox)
-            p2 = p2.crop(cropbox)
+            if sourceMaskExplicit:
+                pme = largeMaskExplicit.rotate(-angle, PIL.Image.BICUBIC, True)
+                pme = pme.resize(scaledSize, PIL.Image.ANTIALIAS)
+                r, g, b, a = pme.split()
+                r = r.point(threshold2Bit).convert('L')
+                g = g.point(threshold2Bit).convert('L')
+                b = b.point(threshold2Bit).convert('L')
+                a = a.point(threshold2Bit).convert('L')
+                pme2 = PIL.Image.merge('RGBA', [r, g, b, a])
+                pme2 = pme2.crop(cropbox)
 
             if not useTransparency:
                 # Force the foreground pixels to the appropriate color
@@ -753,6 +773,10 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
                 pt = PIL.Image.new('L', (w, pm2.size[1]), 0)
                 pt.paste(pm2, (0, 0))
                 pm2 = pt
+                if sourceMaskExplicit:
+                    pt = PIL.Image.new('RGBA', (w, pme2.size[1]), (0, 0, 0, 0))
+                    pt.paste(pme2, (0, 0))
+                    pme2 = pt
 
             # In the Basalt case, apply the mask as the alpha channel.
             r, g, b = p2.split()
@@ -763,16 +787,29 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceFilename,
             p2 = p2.convert("P", palette = PIL.Image.ADAPTIVE, colors = 16)
 
             if not useTransparency:
-                # In the Aplite non-transparency case, the mask
-                # becomes the image itself.
+                # In the non-transparency case, the aplite mask is the
+                # aplite image we actually write out.
                 p1 = pm1
             else:
-                # In the Aplite transparency case, we need to load the mask
+                # In the transparency case, we need to write the mask
                 # image separately.
                 targetMaskFilename = 'build/flat_%s_%s_%s_mask.png' % (handStyle, hand, i)
-                pm1.save('%s/%s' % (resourcesDir, targetMaskFilename))
+                targetMask1Filename = 'build/flat_%s_%s_%s_mask~bw.png' % (handStyle, hand, i)
+                if sourceMaskExplicit:
+                    # An explicit basalt mask.
+                    pme2 = pme2.convert("P", palette = PIL.Image.ADAPTIVE, colors = 16)
+                    pme2.save('%s/%s' % (resourcesDir, targetMaskFilename))
+                else:
+                    # With only an implicit basalt mask, we won't be
+                    # using the mask image in basalt, so save a
+                    # trivial image.
+                    trivialImage.save('%s/%s' % (resourcesDir, targetMaskFilename))
+
+                # Save the aplite mask.
+                pm1.save('%s/%s' % (resourcesDir, targetMask1Filename))
+
                 rleFilename, ptype = make_rle(targetMaskFilename, useRle = useRle)
-                maskResourceStr += maskResourceEntry % {
+                maskResourceStr += resourceEntry % {
                     'defName' : symbolMaskName,
                     'targetFilename' : rleFilename,
                     'ptype' : ptype,
@@ -832,7 +869,7 @@ def makeHands(generatedTable, generatedDefs):
 
     handDefEntry = """struct HandDef %(hand)s_hand_def = {
     NUM_STEPS_%(handUpper)s,
-    %(resourceId)s, APLITE_RESOURCE(%(resourceMaskId)s),
+    %(resourceId)s, %(resourceMaskId)s,
     %(placeX)s, %(placeY)s,
     %(useRle)s,
     %(bitmapCenters)s,
