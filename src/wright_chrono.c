@@ -46,10 +46,6 @@ bool chrono_dial_shows_tenths = false;
 
 int sweep_chrono_seconds_ms = 60 * 1000 / NUM_STEPS_CHRONO_SECOND;
 
-Layer *chrono_minute_layer;
-Layer *chrono_second_layer;
-Layer *chrono_tenth_layer;
-
 ChronoData chrono_data = { false, false, 0, 0, { 0, 0, 0, 0 } };
 ChronoData saved_chrono_data;
 
@@ -209,38 +205,6 @@ void compute_chrono_hands(unsigned int ms, struct HandPlacement *placement) {
 #endif  // ENABLE_CHRONO_TENTH_HAND
 }
 
-#ifdef ENABLE_CHRONO_MINUTE_HAND
-void chrono_minute_layer_update_callback(Layer *me, GContext *ctx) {
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_minute_layer");
-
-  if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
-    draw_hand(&chrono_minute_cache, chrono_minute_resource_cache, chrono_minute_resource_cache_size, &chrono_minute_hand_def, current_placement.chrono_minute_hand_index, ctx);
-  }
-}
-#endif  // ENABLE_CHRONO_MINUTE_HAND
-
-#ifdef ENABLE_CHRONO_SECOND_HAND
-void chrono_second_layer_update_callback(Layer *me, GContext *ctx) {
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_second_layer");
-
-  if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
-    draw_hand(&chrono_second_cache, chrono_second_resource_cache, chrono_second_resource_cache_size, &chrono_second_hand_def, current_placement.chrono_second_hand_index, ctx);
-  }
-}
-#endif  // ENABLE_CHRONO_SECOND_HAND
-
-#ifdef ENABLE_CHRONO_TENTH_HAND
-void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx) {
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_tenth_layer");
-
-  if (config.chrono_dial != CDM_off) {
-    if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
-      draw_hand(&chrono_tenth_cache, chrono_tenth_resource_cache, chrono_tenth_resource_cache_size, &chrono_tenth_hand_def, current_placement.chrono_tenth_hand_index, ctx);
-    }
-  }
-}
-#endif  // ENABLE_CHRONO_TENTH_HAND
-
 void chrono_dial_layer_update_callback(Layer *me, GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_dial_layer");
   if (config.chrono_dial != CDM_off) {
@@ -272,21 +236,21 @@ void update_chrono_hands(struct HandPlacement *new_placement) {
 #ifdef ENABLE_CHRONO_MINUTE_HAND
   if (new_placement->chrono_minute_hand_index != current_placement.chrono_minute_hand_index) {
     current_placement.chrono_minute_hand_index = new_placement->chrono_minute_hand_index;
-    layer_mark_dirty(chrono_minute_layer);
+    layer_mark_dirty(clock_hands_layer);
   }
 #endif  // ENABLE_CHRONO_MINUTE_HAND
 
 #ifdef ENABLE_CHRONO_SECOND_HAND
   if (new_placement->chrono_second_hand_index != current_placement.chrono_second_hand_index) {
     current_placement.chrono_second_hand_index = new_placement->chrono_second_hand_index;
-    layer_mark_dirty(chrono_second_layer);
+    layer_mark_dirty(clock_hands_layer);
   }
 #endif  // ENABLE_CHRONO_SECOND_HAND
 
 #ifdef ENABLE_CHRONO_TENTH_HAND
   if (new_placement->chrono_tenth_hand_index != current_placement.chrono_tenth_hand_index) {
     current_placement.chrono_tenth_hand_index = new_placement->chrono_tenth_hand_index;
-    layer_mark_dirty(chrono_tenth_layer);
+    layer_mark_dirty(clock_hands_layer);
   }
 #endif  // ENABLE_CHRONO_TENTH_HAND
 
@@ -745,15 +709,6 @@ void destroy_chrono_objects() {
     chrono_digital_window = NULL;
   }
 
-#ifdef ENABLE_CHRONO_MINUTE_HAND
-  layer_destroy(chrono_minute_layer);
-#endif
-#ifdef ENABLE_CHRONO_SECOND_HAND
-  layer_destroy(chrono_second_layer);
-#endif
-#ifdef ENABLE_CHRONO_TENTH_HAND
-  layer_destroy(chrono_tenth_layer);
-#endif
   hand_cache_destroy(&chrono_minute_cache);
   hand_cache_destroy(&chrono_second_cache);
   hand_cache_destroy(&chrono_tenth_cache);

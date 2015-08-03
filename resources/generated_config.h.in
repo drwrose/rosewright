@@ -100,9 +100,6 @@
 #endif  // SUPPORT_RESOURCE_CACHE
 
 
-// The order in which the hands are layered on top of each other.
-#define STACKING_ORDER_LIST  %(stackingOrder)s
-
 #if %(hourMinuteOverlap)s
   // Defined if the hour and minute hands should be drawn in the same
   // operation, so that they share a unified mask (instead of masking

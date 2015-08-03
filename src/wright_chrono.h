@@ -18,6 +18,10 @@ typedef struct __attribute__((__packed__)) {
 
 extern ChronoData chrono_data;
 
+extern struct HandCache chrono_minute_cache;
+extern struct HandCache chrono_second_cache;
+extern struct HandCache chrono_tenth_cache;
+
 extern struct ResourceCache chrono_minute_resource_cache[CHRONO_MINUTE_RESOURCE_CACHE_SIZE];
 extern struct ResourceCache chrono_second_resource_cache[CHRONO_SECOND_RESOURCE_CACHE_SIZE];
 extern struct ResourceCache chrono_tenth_resource_cache[CHRONO_TENTH_RESOURCE_CACHE_SIZE];

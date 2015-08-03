@@ -196,11 +196,7 @@ hands = {
 #   defaults  - a list of things enabled by default: one or more of 'date:X', 'day:X', 'battery', 'bluetooth', 'second'
 #   centers   - a tuple of ((hand, x, y), ...) to indicate the position for
 #               each kind of watch hand.  If the tuple is empty or a
-#               hand is omitted, the default is the center.  This also
-#               defines the stacking order of the hands--any
-#               explicitly listed hands are drawn in the order
-#               specified, followed by all of the implicit hands in
-#               the usual order.
+#               hand is omitted, the default is the center.
 #
 
 # Note that filename may be a single string if the face style supports
@@ -1207,16 +1203,6 @@ def configWatch():
     configIn = open('%s/generated_config.h.in' % (resourcesDir), 'r').read()
     config = open('%s/generated_config.h' % (resourcesDir), 'w')
 
-    # Get the stacking orders of the hands too.
-    implicitStackingOrder = ['hour_minute', 'second', 'chrono_minute', 'chrono_second', 'chrono_tenth']
-    explicitStackingOrder = []
-    for hand, x, y in centers:
-        if hand in implicitStackingOrder:
-            implicitStackingOrder.remove(hand)
-            explicitStackingOrder.append(hand)
-    stackingOrder = map(lambda hand: 'STACKING_ORDER_%s' % (hand.upper()), explicitStackingOrder + implicitStackingOrder)
-    stackingOrder.append('STACKING_ORDER_DONE')
-
     print >> config, configIn % {
         'persistKey' : 0x5151 + uuId[-1],
         'supportRle' : int(bool(supportRle)),
@@ -1263,7 +1249,6 @@ def configWatch():
         'enableChronoMinuteHand' : int(enableChronoMinuteHand),
         'enableChronoSecondHand' : int(enableChronoSecondHand),
         'enableChronoTenthHand' : int(enableChronoTenthHand),
-        'stackingOrder' : ', '.join(stackingOrder),
         'hourMinuteOverlap' : int('hour_minute_overlap' in defaults),
         'limitResourceCacheAplite' : int('limit_cache_aplite' in defaults),
         }

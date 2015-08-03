@@ -91,8 +91,7 @@ int sweep_timer_ms = 1000;
 
 int sweep_seconds_ms = 60 * 1000 / NUM_STEPS_SECOND;
 
-Layer *hour_minute_layer;
-Layer *second_layer;
+Layer *clock_hands_layer;
 
 Layer *date_window_layers[NUM_DATE_WINDOWS];
 
@@ -128,10 +127,6 @@ DrawModeTable draw_mode_table[2] = {
 };
 
 #endif  // PBL_PLATFORM_APLITE
-
-unsigned char stacking_order[] = {
-  STACKING_ORDER_LIST
-};
 
 void destroy_objects();
 void create_objects();
@@ -763,12 +758,49 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
   graphics_draw_bitmap_in_rect(ctx, clock_face.bitmap, destination);
 }
   
-void hour_minute_layer_update_callback(Layer *me, GContext *ctx) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "hour_minute_layer");
+void clock_hands_layer_update_callback(Layer *me, GContext *ctx) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_hands_layer");
 
+#ifdef MAKE_CHRONOGRAPH
+
+  // A special case for Chronograph support.  All six hands are drawn
+  // individually, in a specific order (that's slightly different from
+  // the non-chrono order--we draw the three subdials first, and this
+  // includes the normal second hand).
+  if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
+    draw_hand(&chrono_minute_cache, chrono_minute_resource_cache, chrono_minute_resource_cache_size, &chrono_minute_hand_def, current_placement.chrono_minute_hand_index, ctx);
+  }
+
+  if (config.chrono_dial != CDM_off) {
+    if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
+      draw_hand(&chrono_tenth_cache, chrono_tenth_resource_cache, chrono_tenth_resource_cache_size, &chrono_tenth_hand_def, current_placement.chrono_tenth_hand_index, ctx);
+    }
+  }
+
+  if (config.second_hand) {
+    draw_hand(&second_cache, second_resource_cache, second_resource_cache_size, &second_hand_def, current_placement.second_hand_index, ctx);
+  }
+
+  draw_hand(&hour_cache, hour_resource_cache, hour_resource_cache_size, &hour_hand_def, current_placement.hour_hand_index, ctx);
+
+  draw_hand(&minute_cache, minute_resource_cache, minute_resource_cache_size, &minute_hand_def, current_placement.minute_hand_index, ctx);
+
+  if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
+    draw_hand(&chrono_second_cache, chrono_second_resource_cache, chrono_second_resource_cache_size, &chrono_second_hand_def, current_placement.chrono_second_hand_index, ctx);
+  }
+  
+#else  // MAKE_CHRONOGRAPH
+  // The normal, non-chrono implementation, with only hour, minute,
+  // and second hands; and we assume the second hand is a sweep-second
+  // hand that covers the entire face and must be drawn last (rather
+  // than a subdial second hand that must be drawn first).
+  
 #ifdef HOUR_MINUTE_OVERLAP
   // Draw the hour and minute hands overlapping, so they share a
-  // common mask.
+  // common mask.  Rosewright A and B share this property, because
+  // their hands are relatively thin, and their hand masks define an
+  // invisible halo that erases to the background color around the
+  // hands, and we don't want the hands to erase each other.
   draw_hand_mask(&hour_cache, hour_resource_cache, hour_resource_cache_size, &hour_hand_def, current_placement.hour_hand_index, false, ctx);
   draw_hand_mask(&minute_cache, minute_resource_cache, minute_resource_cache_size, &minute_hand_def, current_placement.minute_hand_index, false, ctx);
 
@@ -777,19 +809,21 @@ void hour_minute_layer_update_callback(Layer *me, GContext *ctx) {
 
 #else  //  HOUR_MINUTE_OVERLAP
 
-  // Draw the hour and minute hands separately.
+  // Draw the hour and minute hands separately.  All of the other
+  // Rosewrights share this property, because their hands are wide,
+  // with complex interiors that must be erased; and their haloes (if
+  // present) are comparatively thinner and don't threaten to erase
+  // overlapping hands.
   draw_hand(&hour_cache, hour_resource_cache, hour_resource_cache_size, &hour_hand_def, current_placement.hour_hand_index, ctx);
 
   draw_hand(&minute_cache, minute_resource_cache, minute_resource_cache_size, &minute_hand_def, current_placement.minute_hand_index, ctx);
 #endif  //  HOUR_MINUTE_OVERLAP
-}
-
-void second_layer_update_callback(Layer *me, GContext *ctx) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "second_layer");
 
   if (config.second_hand) {
     draw_hand(&second_cache, second_resource_cache, second_resource_cache_size, &second_hand_def, current_placement.second_hand_index, ctx);
   }
+  
+#endif  // MAKE_CHRONOGRAPH
 }
 
 // Draws the frame and optionally fills the background of the current date window.
@@ -1139,17 +1173,17 @@ void update_hands(struct tm *time) {
   compute_hands(time, &new_placement);
   if (new_placement.hour_hand_index != current_placement.hour_hand_index) {
     current_placement.hour_hand_index = new_placement.hour_hand_index;
-    layer_mark_dirty(hour_minute_layer);
+    layer_mark_dirty(clock_hands_layer);
   }
 
   if (new_placement.minute_hand_index != current_placement.minute_hand_index) {
     current_placement.minute_hand_index = new_placement.minute_hand_index;
-    layer_mark_dirty(hour_minute_layer);
+    layer_mark_dirty(clock_hands_layer);
   }
 
   if (new_placement.second_hand_index != current_placement.second_hand_index) {
     current_placement.second_hand_index = new_placement.second_hand_index;
-    layer_mark_dirty(second_layer);
+    layer_mark_dirty(clock_hands_layer);
   }
 
   if (new_placement.hour_buzzer != current_placement.hour_buzzer) {
@@ -1458,53 +1492,10 @@ void create_objects() {
   create_chrono_objects();
 #endif  // MAKE_CHRONOGRAPH
 
-  // Init all of the hands, taking care to arrange them in the correct
-  // stacking order.
-  int i;
-  for (i = 0; stacking_order[i] != STACKING_ORDER_DONE; ++i) {
-    switch (stacking_order[i]) {
-    case STACKING_ORDER_HOUR_MINUTE:
-      hour_minute_layer = layer_create(window_frame);
-      assert(hour_minute_layer != NULL);
-      layer_set_update_proc(hour_minute_layer, &hour_minute_layer_update_callback);
-      layer_add_child(window_layer, hour_minute_layer);
-      break;
-
-    case STACKING_ORDER_SECOND:
-      second_layer = layer_create(window_frame);
-      assert(second_layer != NULL);
-      layer_set_update_proc(second_layer, &second_layer_update_callback);
-      layer_add_child(window_layer, second_layer);
-      break;
-
-    case STACKING_ORDER_CHRONO_MINUTE:
-#if defined(ENABLE_CHRONO_MINUTE_HAND) && defined(MAKE_CHRONOGRAPH)
-      chrono_minute_layer = layer_create(window_frame);
-      assert(chrono_minute_layer != NULL);
-      layer_set_update_proc(chrono_minute_layer, &chrono_minute_layer_update_callback);
-      layer_add_child(window_layer, chrono_minute_layer);
-#endif  // ENABLE_CHRONO_MINUTE_HAND
-      break;
-
-    case STACKING_ORDER_CHRONO_SECOND:
-#if defined(ENABLE_CHRONO_SECOND_HAND) && defined(MAKE_CHRONOGRAPH)
-      chrono_second_layer = layer_create(window_frame);
-      assert(chrono_second_layer != NULL);
-      layer_set_update_proc(chrono_second_layer, &chrono_second_layer_update_callback);
-      layer_add_child(window_layer, chrono_second_layer);
-#endif  // ENABLE_CHRONO_SECOND_HAND
-      break;
-
-    case STACKING_ORDER_CHRONO_TENTH:
-#if defined(ENABLE_CHRONO_TENTH_HAND) && defined(MAKE_CHRONOGRAPH)
-      chrono_tenth_layer = layer_create(window_frame);
-      assert(chrono_tenth_layer != NULL);
-      layer_set_update_proc(chrono_tenth_layer, &chrono_tenth_layer_update_callback);
-      layer_add_child(window_layer, chrono_tenth_layer);
-#endif  // ENABLE_CHRONO_TENTH_HAND
-      break;
-    }
-  }
+  clock_hands_layer = layer_create(window_frame);
+  assert(clock_hands_layer != NULL);
+  layer_set_update_proc(clock_hands_layer, &clock_hands_layer_update_callback);
+  layer_add_child(window_layer, clock_hands_layer);
 }
 
 // Destroys the objects created by create_objects().
@@ -1549,8 +1540,7 @@ void destroy_objects() {
   layer_destroy(top_subdial_layer);
 #endif  // TOP_SUBDIAL
   
-  layer_destroy(hour_minute_layer);
-  layer_destroy(second_layer);
+  layer_destroy(clock_hands_layer);
 
   hand_cache_destroy(&hour_cache);
   hand_cache_destroy(&minute_cache);
