@@ -290,6 +290,8 @@ faces = {
                      (('Black', 'Yellow', 'PastelYellow', 'Yellow'), ('White', 'Black')),                     
                      (('Black', 'BlueMoon', 'ShockingPink', 'White'), ('RichBrilliantLavender', 'Black')),
                      (('Black', 'PastelYellow', 'BabyBlueEyes', 'White'), ('Celeste', 'Black')),
+                     (('Black', 'Red', 'Melon', 'White'), ('BrilliantRose', 'Black')),
+                     (('Black', 'Magenta', 'Rajah', 'Orange'), ('ImperialPurple', 'White')),                     
                      ],
         'date_window_a' : (72, 21, 'w'),
         'date_window_b' : (21, 82, 'w'),

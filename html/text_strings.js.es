@@ -15,6 +15,10 @@ __Three = "Tres"
 __Four = "Cuatro"
 __Five = "Cinco"
 __Six = "Seis"
+__Seven = "Siete"
+__Eight = "Ocho"
+__Nine = "Nueve"
+__Ten = "Diez"
 
 __LunarPhase = "Fase de la luna"
 

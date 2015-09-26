@@ -62,6 +62,10 @@ if (num_faces > 1) {
 	[ 3, __Four ],
 	[ 4, __Five ],
 	[ 5, __Six ],
+	[ 6, __Seven ],
+	[ 7, __Eight ],
+	[ 8, __Nine ],
+	[ 9, __Ten ],
     ];
     makeOption("face_index", __FaceIndex, faces.slice(0, num_faces));
 }
@@ -75,6 +79,10 @@ if (num_face_colors > 1) {
 	[ 3, __Four ],
 	[ 4, __Five ],
 	[ 5, __Six ],
+	[ 6, __Seven ],
+	[ 7, __Eight ],
+	[ 8, __Nine ],
+	[ 9, __Ten ],
     ];
     makeOption("color_mode", __ColorMode, face_colors.slice(0, num_face_colors));
 }
