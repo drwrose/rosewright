@@ -57,6 +57,7 @@ __BluetoothIndicator = "Indicateur de connexion"
 __BatteryGauge = "Jauge de la batterie"
 
 __lang_ar_SA = "arabe"
+__lang_bg_BG = "bulgare"
 __lang_cs_CZ = "tchèque"
 __lang_da_DK = "danois"
 __lang_de_DE = "allemand"

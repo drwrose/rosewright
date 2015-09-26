@@ -78,6 +78,9 @@ var display_lang_lookup = {
   'hi_IN' : 26,
   'hi' : 26,
   'hi-IN' : 26,
+  'bg_BG' : 27,
+  'bg' : 27,
+  'bg-BG' : 27,
 };
 var display_lang_reverse = {
   0 : 'en_US',
@@ -107,4 +110,5 @@ var display_lang_reverse = {
   24 : 'th_TH',
   25 : 'ta_IN',
   26 : 'hi_IN',
+  27 : 'bg_BG',
 };
