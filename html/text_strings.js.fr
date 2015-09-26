@@ -15,6 +15,10 @@ __Three = "Trois"
 __Four = "Quatre"
 __Five = "Cinq"
 __Six = "Six"
+__Seven = "Sept"
+__Eight = "Huit"
+__Nine = "Neuf"
+__Ten = "Dix"
 
 __LunarPhase = "Phase lunaire"
 
@@ -57,6 +61,7 @@ __BluetoothIndicator = "Indicateur de connexion"
 __BatteryGauge = "Jauge de la batterie"
 
 __lang_ar_SA = "arabe"
+__lang_bg_BG = "bulgare"
 __lang_cs_CZ = "tchèque"
 __lang_da_DK = "danois"
 __lang_de_DE = "allemand"

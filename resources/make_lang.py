@@ -33,7 +33,8 @@ fontNames = {
     'hi' : ('lohit_hi.ttf', 16),
     }
 
-# This list is duplicated in html/rosewright_X_configure.js.
+# This list is duplicated in html/rosewright_X_configure.js, and the
+# language names also appear in text_strings.js.*.
 langs = [
     [ 'en_US', 'English', 'latin', 0 ],
     [ 'fr_FR', 'French', 'latin', 1 ],
@@ -62,6 +63,7 @@ langs = [
     [ 'th_TH', 'Thai', 'th', 24 ],
     [ 'ta_IN', 'Tamil', 'ta', 25 ],
     [ 'hi_IN', 'Hindi', 'hi', 26 ],
+    [ 'bg_BG', 'Bulgarian', 'extended', 27 ],
     ]
 
 # In the above list, the third parameter is the font code:
