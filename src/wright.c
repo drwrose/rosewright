@@ -330,16 +330,7 @@ uint8_t reverse_nibbles(uint8_t b) {
   return ((b & 0xf) << 4) | ((b >> 4) & 0xf);
 }
 
-// Horizontally flips the indicated GBitmap in-place.  Requires
-// that the width be a multiple of 8 pixels.
-void flip_bitmap_x(GBitmap *image, short *cx) {
-  if (image == NULL) {
-    // Trivial no-op.
-    return;
-  }
-  
-  int height = gbitmap_get_bounds(image).size.h;
-  int width = gbitmap_get_bounds(image).size.w;
+int get_pixels_per_byte(GBitmap *image) {
   int pixels_per_byte = 8;
 
 #ifndef PBL_PLATFORM_APLITE
@@ -358,11 +349,27 @@ void flip_bitmap_x(GBitmap *image, short *cx) {
     break;
 
   case GBitmapFormat8Bit:
+  case GBitmapFormat8BitCircular:
     pixels_per_byte = 1;
     break;
   }
 #endif  // PBL_PLATFORM_APLITE
-    
+
+  return pixels_per_byte;
+}
+
+// Horizontally flips the indicated GBitmap in-place.  Requires
+// that the width be a multiple of 8 pixels.
+void flip_bitmap_x(GBitmap *image, short *cx) {
+  if (image == NULL) {
+    // Trivial no-op.
+    return;
+  }
+  
+  int height = gbitmap_get_bounds(image).size.h;
+  int width = gbitmap_get_bounds(image).size.w;
+  int pixels_per_byte = get_pixels_per_byte(image);
+  
   assert(width % pixels_per_byte == 0);  // This must be an even divisor, by our convention.
   int width_bytes = width / pixels_per_byte;
   int stride = gbitmap_get_bytes_per_row(image);
@@ -373,7 +380,17 @@ void flip_bitmap_x(GBitmap *image, short *cx) {
   uint8_t *data = gbitmap_get_data(image);
 
   for (int y = 0; y < height; ++y) {
+#ifdef PBL_SDK_2
     uint8_t *row = data + y * stride;
+#else
+    // Get the min and max x values for this row
+    GBitmapDataRowInfo info = gbitmap_get_data_row_info(image, y);
+    uint8_t *row = &info.data[info.min_x];
+    width = info.max_x - info.min_x + 1;
+    assert(width % pixels_per_byte == 0);
+    int width_bytes = width / pixels_per_byte;
+#endif  // PBL_SDK_2
+
     switch (pixels_per_byte) {
     case 8:
       for (int x1 = (width_bytes - 1) / 2; x1 >= 0; --x1) {
@@ -423,16 +440,35 @@ void flip_bitmap_x(GBitmap *image, short *cx) {
 // Vertically flips the indicated GBitmap in-place.
 void flip_bitmap_y(GBitmap *image, short *cy) {
   int height = gbitmap_get_bounds(image).size.h;
+  int width = gbitmap_get_bounds(image).size.w;
+  int pixels_per_byte = get_pixels_per_byte(image);
   int stride = gbitmap_get_bytes_per_row(image); // multiple of 4.
+  int width_bytes = width / pixels_per_byte;
   uint8_t *data = gbitmap_get_data(image);
 
-  uint8_t buffer[stride]; // gcc lets us do this.
+  uint8_t buffer[width_bytes]; // gcc lets us do this.
   for (int y1 = (height - 1) / 2; y1 >= 0; --y1) {
     int y2 = height - 1 - y1;
+
+#ifdef PBL_SDK_2
+    uint8_t *row1 = data + y1 * stride;
+    uint8_t *row2 = data + y2 * stride;
+#else
+    // Get the min and max x values for this row
+    GBitmapDataRowInfo info1 = gbitmap_get_data_row_info(image, y1);
+    GBitmapDataRowInfo info2 = gbitmap_get_data_row_info(image, y2);
+    int width1 = info1.max_x - info1.min_x + 1;
+    int width2 = info2.max_x - info2.min_x + 1;
+    assert(width1 == width2);  // We hope the bitmap is vertically symmetric
+    uint8_t *row1 = &info1.data[info1.min_x];
+    uint8_t *row2 = &info2.data[info2.min_x];
+    width_bytes = width1 / pixels_per_byte;
+#endif  // PBL_SDK_2
+    
     // Swap rows y1 and y2.
-    memcpy(buffer, data + y1 * stride, stride);
-    memcpy(data + y1 * stride, data + y2 * stride, stride);
-    memcpy(data + y2 * stride, buffer, stride);
+    memcpy(buffer, row1, width_bytes);
+    memcpy(row1, row2, width_bytes);
+    memcpy(row2, buffer, width_bytes);
   }
 
   if (cy != NULL) {

@@ -104,7 +104,7 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
     // Draw the digital text percentage.
     char text_buffer[4];
     snprintf(text_buffer, 4, "%d", charge_state.charge_percent);
-    GFont *font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+    GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
     graphics_context_set_text_color(ctx, fg_color);
     graphics_draw_text(ctx, text_buffer, font, GRect(6, -4, 18, 10),
 		       GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,

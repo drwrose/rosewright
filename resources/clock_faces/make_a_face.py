@@ -4,18 +4,21 @@
 
 import FaceMaker
 
-face = FaceMaker.FaceMaker(zoom = 0.92)
+# aplite, basalt
+#face = FaceMaker.FaceMaker(zoom = 0.92, screenSize = (144, 168))
 
-face.drawRing(1.0)
+# chalk
+face = FaceMaker.FaceMaker(zoom = 1.01, screenSize = (180, 180))
+
+#face.drawRing(1.0)
+
 face.drawTicks(60, 0.95, 1.0, width = 0.003)
 face.drawTicks(12, 0.95, 1.0, width = 0.009)
 face.drawRing(0.0512, 0.0225)
-#face.drawRing(0.0540, 0.0225)
-#face.drawRing(0.0470, 0.0225)
 
 font = face.loadFont('effloresce.otf', 0.12)
 #face.drawCircularLabels(face.romanLabels, 0.95, font, align = 'i', rotate = True)
-face.drawCircularLabels(face.romanLabels, 0.92, font, align = 'i', rotate = False)
+#face.drawCircularLabels(face.romanLabels, 0.92, font, align = 'i', rotate = False)
 
 face.pasteImage((0, -0.2), 'pebble_label.png', (13, 4), None)
 face.pasteImage((0.47, 0.53), 'corner_trim.png', (29, 29), None)

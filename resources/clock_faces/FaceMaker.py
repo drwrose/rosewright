@@ -40,7 +40,7 @@ class FaceMaker:
     defaultFormat = { '1bit' : '1', '8bit' : 'L' }
 
     def __init__(self, filter = 4.0, zoom = 1.0, origin = (0.5, 0.5),
-                 bg = 255, fg = 0, upscale = 1.0, format = None, mode = None):
+                 bg = 255, fg = 0, upscale = 1.0, format = None, mode = None, screenSize = (144, 168)):
         """ Sets up the buffers to generate a face.
 
         filter - the scale factor to enlarge the internal buffer.
@@ -77,7 +77,7 @@ class FaceMaker:
         self.format = format
 
         # Size of the target screen.
-        self.targetSize = (round(144 * self.upscale), round(168 * self.upscale))
+        self.targetSize = (round(screenSize[0] * self.upscale), round(screenSize[1] * self.upscale))
         self.maxTargetSize = max(self.targetSize)
         self.cropOrigin = ((self.maxTargetSize - self.targetSize[0]) / 2,
                            (self.maxTargetSize - self.targetSize[1]) / 2)

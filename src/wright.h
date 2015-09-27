@@ -23,8 +23,13 @@
 #define SECONDS_PER_HOUR 3600
 #define MS_PER_DAY (SECONDS_PER_DAY * 1000)
 
+#ifdef PBL_ROUND
+#define SCREEN_WIDTH 180
+#define SCREEN_HEIGHT 180
+#else  // PBL_ROUND
 #define SCREEN_WIDTH 144
 #define SCREEN_HEIGHT 168
+#endif  // PBL_ROUND
 
 // This structure keeps track of the things that change on the visible
 // watch face and their current state.

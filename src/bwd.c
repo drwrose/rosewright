@@ -72,6 +72,7 @@ BitmapWithData bwd_copy(BitmapWithData *source) {
   switch (format) {
   case GBitmapFormat1Bit:
   case GBitmapFormat8Bit:
+  case GBitmapFormat8BitCircular:
     break;
     
   case GBitmapFormat1BitPalette:
@@ -689,7 +690,7 @@ rle_bwd_create_rb(RBuffer *rb) {
   
   int width = rbuffer_getc(rb);
   int height = rbuffer_getc(rb);
-  assert(width > 0 && width <= 144 && height > 0 && height <= 168);
+  assert(width > 0 && width <= SCREEN_WIDTH && height > 0 && height <= SCREEN_HEIGHT);
   int n = rbuffer_getc(rb);
   int format = rbuffer_getc(rb);
   if (format != 0) {
