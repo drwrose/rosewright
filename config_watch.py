@@ -285,7 +285,7 @@ faces = {
         'defaults' : [ 'second', 'limit_cache_aplite' ],
         },
     'd' : {
-        'filename' : ['d_face_rect.png', 'd_face_rect_clean.png'],
+        'filename' : ['d_face.png', 'd_face_white.png'],
         'aplite_invert' : True,
         'colors' : [ (('White', 'BulgarianRose', 'White', 'ElectricBlue'), ('OxfordBlue', 'White')),
                      (('Black', 'DarkGreen', 'BrightGreen', 'PastelYellow'), ('White', 'Black')),
