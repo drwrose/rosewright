@@ -4,13 +4,18 @@
 
 import FaceMaker
 
-face = FaceMaker.FaceMaker(zoom = 1.0)
+# aplite, basalt
+#face = FaceMaker.FaceMaker(zoom = 1.0, screenSize = (144, 168))
 
-face.setFg(128)
-face.drawRing(1.1, width = 0.05)
-face.setFg(0)
-face.drawRing(1.1)
-face.drawRing(1.0)
+# chalk
+face = FaceMaker.FaceMaker(zoom = 1.01, screenSize = (180, 180))
+
+#face.setFg(128)
+#face.drawRing(1.1, width = 0.05)
+#face.setFg(0)
+#face.drawRing(1.1)
+#face.drawRing(1.0)
+
 face.drawRing(0.093, width = 0.028)
 
 face.drawTicks(60, 0.95, 1.0, width = 0.003)
