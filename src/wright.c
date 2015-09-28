@@ -20,6 +20,22 @@ BitmapWithData date_window;
 BitmapWithData date_window_mask;
 
 // For now, the size of the date window is hardcoded.
+#ifdef PBL_ROUND
+const GRect date_window_layer_size = {
+  { 0, 0 }, { 48, 24 }
+};
+const GRect date_window_box = {
+  { 2, 0 }, { 46, 24 }
+};
+// This is the position to draw the lunar image if it's inverted.
+const GRect date_window_box_offset = {
+  { -1, 0 }, { 49, 24 }
+};
+
+#else  // PBL_ROUND
+const GRect date_window_layer_size = {
+  { 0, 0 }, { 39, 19 }
+};
 const GRect date_window_box = {
   { 2, 0 }, { 37, 19 }
 };
@@ -27,6 +43,7 @@ const GRect date_window_box = {
 const GRect date_window_box_offset = {
   { -1, 0 }, { 40, 19 }
 };
+#endif  // PBL_ROUND
 
 BitmapWithData moon_phase_bitmap;
 
@@ -52,11 +69,19 @@ struct FontPlacement {
   signed char vshift;  // Value determined empirically for each font.
 };
 
-struct FontPlacement date_numeric_font_placement = {
-  0, -3
-};
 #define NUM_DATE_LANG_FONTS 9
 struct FontPlacement date_lang_font_placement[NUM_DATE_LANG_FONTS] = {
+#ifdef PBL_ROUND
+  { RESOURCE_ID_DAY_FONT_LATIN_20, -1 },
+  { RESOURCE_ID_DAY_FONT_EXTENDED_17, 1 },
+  { RESOURCE_ID_DAY_FONT_RTL_17, 1 },
+  { RESOURCE_ID_DAY_FONT_ZH_20, -1 },  // Chinese
+  { RESOURCE_ID_DAY_FONT_JA_20, -1 },  // Japanese
+  { RESOURCE_ID_DAY_FONT_KO_20, -2 },  // Korean
+  { RESOURCE_ID_DAY_FONT_TH_20, -1 },  // Thai
+  { RESOURCE_ID_DAY_FONT_TA_20, -2 },  // Tamil
+  { RESOURCE_ID_DAY_FONT_HI_20, 0 },  // Hindi
+#else  // PBL_ROUND
   { RESOURCE_ID_DAY_FONT_LATIN_16, -1 },
   { RESOURCE_ID_DAY_FONT_EXTENDED_14, 1 },
   { RESOURCE_ID_DAY_FONT_RTL_14, 1 },
@@ -66,6 +91,7 @@ struct FontPlacement date_lang_font_placement[NUM_DATE_LANG_FONTS] = {
   { RESOURCE_ID_DAY_FONT_TH_16, -1 },  // Thai
   { RESOURCE_ID_DAY_FONT_TA_16, -2 },  // Tamil
   { RESOURCE_ID_DAY_FONT_HI_16, 0 },  // Hindi
+#endif  // PBL_ROUND
 };
 
 // These structures are filled in from the appropriate resource file
@@ -1115,7 +1141,7 @@ void date_window_layer_update_callback(Layer *me, GContext *ctx) {
   char buffer[DATE_WINDOW_BUFFER_SIZE];
 
   GFont *font = &date_numeric_font;
-  struct FontPlacement *font_placement = &date_numeric_font_placement;
+  struct FontPlacement *font_placement = &date_lang_font_placement[0];
   if (dwm >= DWM_weekday && dwm < DWM_moon) {
     // Draw text using date_lang_font.
     const LangDef *lang = &lang_table[config.display_lang];
@@ -1395,7 +1421,7 @@ void move_layers() {
   // Move any subordinate layers to their correct position on the face.
   for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
     const struct IndicatorTable *window = &date_windows[i][config.face_index];
-    layer_set_frame((Layer *)date_window_layers[i], GRect(window->x - 19, window->y - 8, 39, 19));
+    layer_set_frame((Layer *)date_window_layers[i], GRect(window->x - 19, window->y - 8, date_window_layer_size.size.w, date_window_layer_size.size.h));
   }
   
 #ifdef TOP_SUBDIAL
@@ -1507,7 +1533,7 @@ void create_objects() {
 #endif  // TOP_SUBDIAL
   
   for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
-    Layer *layer = layer_create_with_data(GRect(0, 0, 39, 19), sizeof(DateWindowData));
+    Layer *layer = layer_create_with_data(date_window_layer_size, sizeof(DateWindowData));
     assert(layer != NULL);
     date_window_layers[i] = layer;
     DateWindowData *data = (DateWindowData *)layer_get_data(layer);
@@ -1585,6 +1611,9 @@ void destroy_objects() {
   if (date_lang_font != NULL) {
     safe_unload_custom_font(&date_lang_font);
   }
+  if (date_numeric_font != NULL) {
+    safe_unload_custom_font(&date_numeric_font);
+  }
   display_lang = -1;
 
   window_destroy(window);
@@ -1641,9 +1670,7 @@ void handle_init() {
 
   time_t now = time(NULL);
   struct tm *startup_time = localtime(&now);
-
-  date_numeric_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
-
+  
   create_objects();
   compute_hands(startup_time, &current_placement);
   apply_config();
