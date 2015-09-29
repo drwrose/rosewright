@@ -22,14 +22,14 @@ BitmapWithData date_window_mask;
 // For now, the size of the date window is hardcoded.
 #ifdef PBL_ROUND
 const GRect date_window_layer_size = {
-  { 0, 0 }, { 48, 24 }
+  { 0, 0 }, { 44, 24 }
 };
 const GRect date_window_box = {
-  { 2, 0 }, { 46, 24 }
+  { 2, 0 }, { 42, 22 }
 };
 // This is the position to draw the lunar image if it's inverted.
 const GRect date_window_box_offset = {
-  { -1, 0 }, { 49, 24 }
+  { -1, 0 }, { 45, 22 }
 };
 
 #else  // PBL_ROUND
@@ -72,17 +72,17 @@ struct FontPlacement {
 #define NUM_DATE_LANG_FONTS 9
 struct FontPlacement date_lang_font_placement[NUM_DATE_LANG_FONTS] = {
 #ifdef PBL_ROUND
-  { RESOURCE_ID_DAY_FONT_LATIN_20, -1 },
-  { RESOURCE_ID_DAY_FONT_EXTENDED_17, 1 },
-  { RESOURCE_ID_DAY_FONT_RTL_17, 1 },
-  { RESOURCE_ID_DAY_FONT_ZH_20, -1 },  // Chinese
-  { RESOURCE_ID_DAY_FONT_JA_20, -1 },  // Japanese
-  { RESOURCE_ID_DAY_FONT_KO_20, -2 },  // Korean
-  { RESOURCE_ID_DAY_FONT_TH_20, -1 },  // Thai
-  { RESOURCE_ID_DAY_FONT_TA_20, -2 },  // Tamil
-  { RESOURCE_ID_DAY_FONT_HI_20, 0 },  // Hindi
+  { RESOURCE_ID_DAY_FONT_LATIN_20, -2 },
+  { RESOURCE_ID_DAY_FONT_EXTENDED_16, 1 },
+  { RESOURCE_ID_DAY_FONT_RTL_16, 1 },
+  { RESOURCE_ID_DAY_FONT_ZH_18, -1 },  // Chinese
+  { RESOURCE_ID_DAY_FONT_JA_18, -1 },  // Japanese
+  { RESOURCE_ID_DAY_FONT_KO_18, -2 },  // Korean
+  { RESOURCE_ID_DAY_FONT_TH_18, -1 },  // Thai
+  { RESOURCE_ID_DAY_FONT_TA_18, -2 },  // Tamil
+  { RESOURCE_ID_DAY_FONT_HI_18, 0 },  // Hindi
 #else  // PBL_ROUND
-  { RESOURCE_ID_DAY_FONT_LATIN_16, -1 },
+  { RESOURCE_ID_DAY_FONT_LATIN_18, -3 },
   { RESOURCE_ID_DAY_FONT_EXTENDED_14, 1 },
   { RESOURCE_ID_DAY_FONT_RTL_14, 1 },
   { RESOURCE_ID_DAY_FONT_ZH_16, -1 },  // Chinese
@@ -168,6 +168,7 @@ GFont safe_load_custom_font(int resource_id) {
     app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "font %d failed to load", resource_id);
     trigger_memory_panic(__LINE__);
   }
+  app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "loaded font %d as %p", resource_id, font);
   return font;
 }
 

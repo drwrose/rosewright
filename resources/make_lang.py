@@ -8,7 +8,6 @@ import sys
 import os
 import getopt
 import icu
-import string
 
 help = """
 make_lang.py
@@ -21,17 +20,18 @@ make_lang.py [opts]
 
 fontChoices = [ 'latin', 'extended', 'rtl', 'zh', 'ja', 'ko', 'th', 'ta', 'hi' ]
 
-# Font filenames and (rect, round) pixel sizes.
+# Font (rect, round) filenames and (rect, round) pixel sizes.
 fontNames = {
-    'latin' : ('ArchivoNarrow-Bold.ttf', (16, 20)),
-    'extended' : ('DejaVuSansCondensed-Bold.ttf', (14, 17)),
-    'rtl' : ('DejaVuSansCondensed-Bold.ttf', (14, 17)),
-    'zh' : ('wqy-microhei.ttc', (16, 20)),
-    'ja' : ('TakaoPGothic.ttf', (16, 20)),
-    'ko' : ('UnDotum.ttf', (16, 20)),
-    'th' : ('Waree.ttf', (16, 20)),
-    'ta' : ('TAMu_Kalyani.ttf', (16, 20)),
-    'hi' : ('lohit_hi.ttf', (16, 20)),
+    #'latin' : ('ArchivoNarrow-Bold.ttf', (16, 18)),
+    'latin' : (('9x18B.pcf.gz', '10x20.pcf.gz'), (18, 20)),
+    'extended' : ('DejaVuSansCondensed-Bold.ttf', (14, 16)),
+    'rtl' : ('DejaVuSansCondensed-Bold.ttf', (14, 16)),
+    'zh' : ('wqy-microhei.ttc', (16, 18)),
+    'ja' : ('TakaoPGothic.ttf', (16, 18)),
+    'ko' : ('UnDotum.ttf', (16, 18)),
+    'th' : ('Waree.ttf', (16, 18)),
+    'ta' : ('TAMu_Kalyani.ttf', (16, 18)),
+    'hi' : ('lohit_hi.ttf', (16, 18)),
     }
 
 # This list is duplicated in html/rosewright_X_configure.js, and the
@@ -293,15 +293,16 @@ def makeLang():
     print >> generatedTable, "// maximum characters: %s" % (maxNumChars)
     print >> generatedTable, "#define DATE_NAMES_MAX_BUFFER %s\n" % (maxTotalLen)
 
-    # Ensure the latin font includes the digits.
-    for char in string.digits:
+    # Ensure the latin font includes the digits, plus whatever other
+    # characters we might need there.
+    for char in '0123456789ABCDk!':
         neededChars['latin'].add(ord(char))
 
     fontEntry = """    {
       "type": "font",
       "characterRegex": "[%(regex)s]",
       "name": "DAY_FONT_%(upperKey)s_%(size_rect)s",
-      "file": "%(filename)s",
+      "file": "%(filename_rect)s",
       "targetPlatforms" : [
         "aplite", "basalt"
       ]
@@ -310,20 +311,26 @@ def makeLang():
       "type": "font",
       "characterRegex": "[%(regex)s]",
       "name": "DAY_FONT_%(upperKey)s_%(size_round)s",
-      "file": "%(filename)s",
+      "file": "%(filename_round)s",
       "targetPlatforms" : [
         "chalk"
       ]
     },"""    
 
     for fontKey in fontChoices:
-        filename, (size_rect, size_round) = fontNames[fontKey]
+        filenames, (size_rect, size_round) = fontNames[fontKey]
+        if isinstance(filenames, type(())):
+            filename_rect, filename_round = filenames
+        else:
+            filename_rect = filenames
+            filename_round = filenames
         print >> generatedJson, fontEntry % {
             'regex' : makeCharacterRegex(neededChars[fontKey]),
             'upperKey' : fontKey.upper(),
             'size_rect' : size_rect,
             'size_round' : size_round,
-            'filename' : filename,
+            'filename_rect' : filename_rect,
+            'filename_round' : filename_round,
             }
 
 # Main.

@@ -107,7 +107,14 @@
   #define HOUR_MINUTE_OVERLAP 1
 #endif
 
-#if %(compileDebugging)s
+
+#if %(screenshotBuild)s
+  // If this is set, it means this build is made specifically for the
+  // purpose of capturing screenshots.  This freezes the time to
+  // 10:09, and also enables the buttons for scrolling through
+  // different configuration options.
+  #define SCREENSHOT_BUILD 1
+#elif %(compileDebugging)s
   // The following definition is meant for debugging only.  It enables
   // a quick hack to make minutes fly by like seconds, so you can
   // easily see the hands in several different orientations around the
@@ -116,14 +123,6 @@
 #else
   // Declare full optimizations.
   #define NDEBUG 1
-#endif
-
-#if %(screenshotBuild)s
-  // If this is set, it means this build is made specifically for the
-  // purpose of capturing screenshots.  This freezes the time to
-  // 10:09, and also enables the buttons for scrolling through
-  // different configuration options.
-  #define SCREENSHOT_BUILD 1
 #endif
 
 #define DEFAULT_FACE_INDEX %(defaultFaceIndex)s
