@@ -6,7 +6,14 @@ import FaceMaker
 import PIL.Image
 import sys
 
-face = FaceMaker.FaceMaker(zoom = 0.92)
+# aplite, basalt
+screenSize = (144, 168); zoom = 0.92
+
+# chalk
+screenSize = (180, 180); zoom = 0.98
+
+face = FaceMaker.FaceMaker(zoom = zoom, screenSize = screenSize)
+
 #face.drawTicks(60, 0.2, 1.7, width = 0.003); face.save('d_face_ticks.png'); sys.exit()
 
 # 1.0 = 634 ref pixels
@@ -26,13 +33,13 @@ face.drawRing(1.0, width = None)
 face.drawCircularSpots(12, 0.95, spotDiameter = 0.05, width = 0.005)
 face.save('d_face_fg.png')
 
-face = FaceMaker.FaceMaker(zoom = 0.92)
+face = FaceMaker.FaceMaker(zoom = zoom, screenSize = screenSize)
 face.setFg(0)
 face.drawRing(1.0, width = 0.01)
 face.drawCircularSpots(12, 0.95, spotDiameter = 0.05, width = None)
 face.save('d_face_bg.png')
 
-face = FaceMaker.FaceMaker(zoom = 0.92)
+face = FaceMaker.FaceMaker(zoom = zoom, screenSize = screenSize)
 face.setFg(0)
 
 face.drawRing(0.084, width = 0.0347)
