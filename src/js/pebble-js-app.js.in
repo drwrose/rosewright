@@ -45,7 +45,7 @@ var lunar_background;
 var lunar_direction;
 var show_debug;
 
-var config_langs = [ 'en', 'es', 'de', 'fr' ];
+var config_langs = [ 'en', 'es', 'de', 'fr', 'bg' ];
 
 %(displayLangLookup)s
 
