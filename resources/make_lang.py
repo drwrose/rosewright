@@ -20,10 +20,12 @@ make_lang.py [opts]
 
 fontChoices = [ 'latin', 'extended', 'rtl', 'zh', 'ja', 'ko', 'th', 'ta', 'hi' ]
 
-# Font (rect, round) filenames and (rect, round) pixel sizes.
+# Font (rect, round) filenames and (rect, round) pixel sizes.  Font
+# sizes are encoded into the resource names, which appear in wright.c.
 fontNames = {
     #'latin' : ('ArchivoNarrow-Bold.ttf', (16, 18)),
-    'latin' : (('9x18B.pcf.gz', '10x20.pcf.gz'), (18, 20)),
+    #'latin' : (('9x18B.pcf.gz', '10x20.pcf.gz'), (18, 20)),
+    'latin' : (('ArchivoNarrow-Bold.ttf', '10x20.pcf.gz'), (16, 20)),
     'extended' : ('DejaVuSansCondensed-Bold.ttf', (14, 16)),
     'rtl' : ('DejaVuSansCondensed-Bold.ttf', (14, 16)),
     'zh' : ('wqy-microhei.ttc', (16, 18)),

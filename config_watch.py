@@ -278,7 +278,7 @@ faces = {
         'battery_round' : [ (110, 57, 'b'), (132, 33, 'b'),
                             (110, 57, 'b'), (132, 33, 'b'),
                             ],
-        'defaults' : [ 'day:b', 'date:c', 'moon_phase', 'second', 'hour_minute_overlap' ],
+        'defaults' : [ 'day:c', 'date:d', 'moon_phase', 'second', 'hour_minute_overlap' ],
         },
     'c' : {
         'filename' : ['c_face.png'],

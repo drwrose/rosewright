@@ -82,7 +82,7 @@ struct FontPlacement date_lang_font_placement[NUM_DATE_LANG_FONTS] = {
   { RESOURCE_ID_DAY_FONT_TA_18, -2 },  // Tamil
   { RESOURCE_ID_DAY_FONT_HI_18, 0 },  // Hindi
 #else  // PBL_ROUND
-  { RESOURCE_ID_DAY_FONT_LATIN_18, -3 },
+  { RESOURCE_ID_DAY_FONT_LATIN_16, -1 },
   { RESOURCE_ID_DAY_FONT_EXTENDED_14, 1 },
   { RESOURCE_ID_DAY_FONT_RTL_14, 1 },
   { RESOURCE_ID_DAY_FONT_ZH_16, -1 },  // Chinese
