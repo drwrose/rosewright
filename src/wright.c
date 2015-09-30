@@ -1422,7 +1422,7 @@ void move_layers() {
   // Move any subordinate layers to their correct position on the face.
   for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
     const struct IndicatorTable *window = &date_windows[i][config.face_index];
-    layer_set_frame((Layer *)date_window_layers[i], GRect(window->x - 19, window->y - 8, date_window_layer_size.size.w, date_window_layer_size.size.h));
+    layer_set_frame((Layer *)date_window_layers[i], GRect(window->x - 2, window->y, date_window_layer_size.size.w, date_window_layer_size.size.h));
   }
   
 #ifdef TOP_SUBDIAL

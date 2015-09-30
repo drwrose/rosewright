@@ -581,6 +581,7 @@ rle_bwd_create_rb(RBuffer *rb) {
     break;
 
   case GBitmapFormat8Bit:
+  case GBitmapFormat8BitCircular:
     vn = 8;
     packer_func = pack_8bit;
     break;

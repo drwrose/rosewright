@@ -166,9 +166,9 @@ hands = {
             [(1, [(0, -3), (0, -64)], (1.0, 1.19)),
              ]),
            ],
-    'e' : [('hour', ('e_hour_hand', 't%', False, (28, 99), 0.53), None),
-           ('minute', ('e_minute_hand', 't%', False, (22, 142), 0.53), None),
-           ('second', ('e_second_hand', 't%', False, (18, 269), 0.24), None),
+    'e' : [('hour', ('e_hour_hand', 't%', False, (28, 99), (0.53, 0.60)), None),
+           ('minute', ('e_minute_hand', 't%', False, (22, 142), (0.53, 0.60)), None),
+           ('second', ('e_second_hand', 't%', False, (18, 269), (0.24, 0.27)), None),
            ],
     }
 
@@ -222,14 +222,14 @@ faces = {
                      (('ElectricBlue', 'DukeBlue', 'DarkCandyAppleRed', 'ElectricUltramarine'), ('BabyBlueEyes', 'Black')),
                      (('MediumSpringGreen', 'Black', 'DarkCandyAppleRed', 'DarkGreen'), ('DarkGreen', 'White')),
                      ],
-        'date_window_a_rect': (19, 83, 'b'),
-        'date_window_b_rect': (123, 83, 'b'),
-        'date_window_c_rect' : (52, 109, 'b'),
-        'date_window_d_rect' : (92, 109, 'b'),
-        'date_window_a_round': (21, 87, 'b'),
-        'date_window_b_round': (151, 87, 'b'),
-        'date_window_c_round' : (63, 124, 'b'),
-        'date_window_d_round' : (109, 124, 'b'),
+        'date_window_a_rect': (2, 75, 'b'),
+        'date_window_b_rect': (106, 75, 'b'),
+        'date_window_c_rect': (35, 101, 'b'),
+        'date_window_d_rect': (75, 101, 'b'),
+        'date_window_a_round': (4, 79, 'b'),
+        'date_window_b_round': (134, 79, 'b'),
+        'date_window_c_round': (46, 116, 'b'),
+        'date_window_d_round': (92, 116, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : (32, 32, 'b'),
         'top_subdial_round' : (50, 32, 'b'),
@@ -259,14 +259,14 @@ faces = {
                      (('Yellow', 'BulgarianRose', 'DukeBlue', 'OxfordBlue'), ('PastelYellow', 'Black')),
                      (('BrilliantRose', 'Blue', 'DarkCandyAppleRed', 'BulgarianRose'), ('RichBrilliantLavender', 'Black')),
                      ],
-        'date_window_a_rect': (19, 83, 'b'),
-        'date_window_b_rect' : (52, 109, 'b'),
-        'date_window_c_rect' : (92, 109, 'b'),
-        'date_window_d_rect': (123, 83, 'b'),
-        'date_window_a_round': (21, 87, 'b'),
-        'date_window_b_round' : (63, 124, 'b'),
-        'date_window_c_round' : (109, 124, 'b'),
-        'date_window_d_round': (151, 87, 'b'),
+        'date_window_a_rect': (2, 75, 'b'),
+        'date_window_b_rect': (106, 75, 'b'),
+        'date_window_c_rect': (35, 101, 'b'),
+        'date_window_d_rect': (75, 101, 'b'),
+        'date_window_a_round': (4, 79, 'b'),
+        'date_window_b_round': (134, 79, 'b'),
+        'date_window_c_round': (46, 116, 'b'),
+        'date_window_d_round': (92, 116, 'b'),
         'top_subdial_rect' : (32, 33, 'b'),
         'top_subdial_round' : (50, 34, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
@@ -289,8 +289,8 @@ faces = {
         'chrono' : ('c_face_chrono_tenths.png', 'c_face_chrono_hours.png'),
         'centers_rect' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
         'centers_round' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
-        'date_window_a' : (52, 45, 'b'),
-        'date_window_b' : (92, 45, 'b'),
+        'date_window_a' : (35, 37, 'b'),
+        'date_window_b' : (75, 37, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth' : [ (16, 18, 'b'),
                         (0, 0, 'b'), ],
@@ -305,14 +305,14 @@ faces = {
                      (('Black', 'DarkGreen', 'BrightGreen', 'PastelYellow'), ('White', 'Black')),
                      (('White', 'DukeBlue', 'Yellow', 'FashionMagenta'), ('DukeBlue', 'White')),
                      ],
-        'date_window_a_rect': [ (49, 102, 'w'), (49, 102, 'b'), (49, 102, 'w') ],
-        'date_window_b_rect': [ (95, 102, 'w'), (95, 102, 'b'), (95, 102, 'w') ],
-        'date_window_c_rect' : [ (49, 125, 'w'), (49, 125, 'b'), (49, 125, 'w') ],
-        'date_window_d_rect' : [ (95, 125, 'w'), (95, 125, 'b'), (95, 125, 'w') ],
-        'date_window_a_round': [ (55, 100, 'w'), (67, 108, 'b'), (67, 108, 'w') ],
-        'date_window_b_round': [ (117, 100, 'w'), (113, 108, 'b'), (113, 108, 'w') ],
-        'date_window_c_round' : [ (63, 123, 'w'), (67, 131, 'b'), (67, 131, 'w') ],
-        'date_window_d_round' : [ (109, 123, 'w'), (113, 131, 'b'), (113, 131, 'w') ],
+        'date_window_a_rect': [ (32, 94, 'w'), (32, 94, 'b'), (32, 94, 'w'), ],
+        'date_window_b_rect': [ (78, 94, 'w'), (78, 94, 'b'), (78, 94, 'w'), ],
+        'date_window_c_rect' : [ (32, 117, 'w'), (32, 117, 'b'), (32, 117, 'w'), ],
+        'date_window_d_rect' : [ (78, 117, 'w'), (78, 117, 'b'), (78, 117, 'w'), ],
+        'date_window_a_round': [ (38, 92, 'w'), (38, 92, 'b'), (38, 92, 'w'), ],
+        'date_window_b_round': [ (100, 92, 'w'), (100, 92, 'b'), (100, 92, 'w'), ],
+        'date_window_c_round' : [ (46, 115, 'w'), (46, 115, 'b'), (46, 115, 'w'), ],
+        'date_window_d_round' : [ (92, 115, 'w'), (92, 115, 'b'), (92, 115, 'w'), ],
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : [ (32, 34, 'w'), (32, 34, 'b'), (32, 34, 'w') ],
         'top_subdial_round' : [ (50, 34, 'w'), (50, 34, 'b'), (50, 34, 'w') ],
@@ -343,20 +343,30 @@ faces = {
                      (('Black', 'Red', 'Melon', 'White'), ('BrilliantRose', 'Black')),
                      (('Black', 'Magenta', 'Rajah', 'Orange'), ('ImperialPurple', 'White')),                     
                      ],
-        'date_window_a' : (72, 21, 'w'),
-        'date_window_b' : (21, 82, 'w'),
-        'date_window_c' : (123, 82, 'w'),
-        'date_window_d' : (72, 146, 'w'),
+        'date_window_a_rect' : (55, 13, 'w'),
+        'date_window_b_rect' : (4, 74, 'w'),
+        'date_window_c_rect' : (106, 74, 'w'),
+        'date_window_d_rect' : (55, 138, 'w'),
+        'date_window_a_round' : (69, 11, 'w'),
+        'date_window_b_round' : (11, 78, 'w'),
+        'date_window_c_round' : (128, 78, 'w'),
+        'date_window_d_round' : (69, 144, 'w'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial' : (32, 32, 'w'),
-        'bluetooth' : [ (11, 12, 'b'), (11, 12, 'b'),
-                        (11, 12, 'w'), (11, 12, 'w'),
-                        (11, 12, 'b'), (11, 12, 'b'),                        
-                        ],
-        'battery' : [ (115, 16, 'b'), (115, 16, 'b'),
-                      (115, 16, 'w'), (115, 16, 'w'),
-                      (115, 16, 'b'), (115, 16, 'b'),
-                      ],
+        'bluetooth_rect' : [ (11, 12, 'b'), (11, 12, 'b'),
+                             (11, 12, 'w'), (11, 12, 'w'),
+                             (11, 12, 'b'), (11, 12, 'b'),                                                   ],
+        'battery_rect' : [ (115, 16, 'b'), (115, 16, 'b'),
+                           (115, 16, 'w'), (115, 16, 'w'),
+                           (115, 16, 'b'), (115, 16, 'b'),
+                           ],
+        'bluetooth_round' : [ (56, 3, 'b'), (56, 3, 'b'),
+                              (56, 3, 'w'), (56, 3, 'w'),
+                              (56, 3, 'b'), (56, 3, 'b'),                                                   ],
+        'battery_round' : [ (109, 6, 'b'), (109, 6, 'b'),
+                            (109, 6, 'w'), (109, 6, 'w'),
+                            (109, 6, 'b'), (109, 6, 'b'),
+                           ],
         'defaults' : [ 'date:c', 'moon_dark', 'second', 'limit_cache_aplite' ],
         },
     }
@@ -492,7 +502,7 @@ def makeFaces(generatedTable, generatedDefs):
     for i in range(len(faceFilenames)):
         print >> generatedTable, "  { RESOURCE_ID_CLOCK_FACE_%s }," % (i)
 
-        rleFilename, ptype = make_rle('clock_faces/' + faceFilenames[i], useRle = supportRle)
+        rleFilename, ptype = make_rle('clock_faces/' + faceFilenames[i], useRle = supportRle, modes = targetModes)
         resourceStr += faceResourceEntry % {
             'index' : i,
             'rleFilename' : rleFilename,
@@ -512,22 +522,22 @@ def makeFaces(generatedTable, generatedDefs):
     if date_windows_rect and date_window_filename:
         window, mask = date_window_filename
 
-        rleFilename, ptype = make_rle('clock_faces/' + window, useRle = supportRle)
+        rleFilename, ptype = make_rle('clock_faces/' + window, useRle = supportRle, modes = targetModes)
         resourceStr += dateWindowEntry % {
             'rleFilename' : rleFilename,
             'ptype' : ptype,
             }
 
         if mask:
-            rleFilename, ptype = make_rle('clock_faces/' + mask, useRle = supportRle)
+            rleFilename, ptype = make_rle('clock_faces/' + mask, useRle = supportRle, modes = targetModes)
             resourceStr += dateWindowMaskEntry % {
                 'rleFilename' : rleFilename,
                 'ptype' : ptype,
                 }
 
     if targetChronoTenths:
-        tenthsWhite, tenthsBlack, ptype = make_rle_trans('clock_faces/' + targetChronoTenths, useRle = supportRle)
-        hoursWhite, hoursBlack, ptype = make_rle_trans('clock_faces/' + targetChronoHours, useRle = supportRle)
+        tenthsWhite, tenthsBlack, ptype = make_rle_trans('clock_faces/' + targetChronoTenths, useRle = supportRle, modes = targetModes)
+        hoursWhite, hoursBlack, ptype = make_rle_trans('clock_faces/' + targetChronoHours, useRle = supportRle, modes = targetModes)
         resourceStr += chronoResourceEntry % {
             'targetChronoTenthsWhite' : tenthsWhite,
             'targetChronoTenthsBlack' : tenthsBlack,
@@ -1265,7 +1275,7 @@ def makeMoonDateWindow():
 
     for cat in ['white', 'black']:
         for index in range(8):
-            rleFilename, ptype = make_rle('clock_faces/moon_%s_%s.png' % (cat, index), useRle = supportRle)
+            rleFilename, ptype = make_rle('clock_faces/moon_%s_%s.png' % (cat, index), useRle = supportRle, modes = targetModes)
             resourceStr += moonPhaseEntry % {
                 'cat' : cat.upper(),
                 'index' : index,
@@ -1365,13 +1375,13 @@ def makeMoonWheel():
     # rather than dependent on the platform).
     resourceStr = ''
 
-    rleFilename, ptype = make_rle('clock_faces/top_subdial.png', useRle = supportRle)
+    rleFilename, ptype = make_rle('clock_faces/top_subdial.png', useRle = supportRle, modes = targetModes)
     resourceStr += topSubdialEntry % {
         'name' : 'TOP_SUBDIAL',
         'rleFilename' : rleFilename,
         'ptype' : ptype,
         }
-    rleFilename, ptype = make_rle('clock_faces/top_subdial_mask.png', useRle = supportRle)
+    rleFilename, ptype = make_rle('clock_faces/top_subdial_mask.png', useRle = supportRle, modes = targetModes)
     resourceStr += topSubdialEntry % {
         'name' : 'TOP_SUBDIAL_MASK',
         'rleFilename' : rleFilename,
@@ -1380,7 +1390,7 @@ def makeMoonWheel():
     for cat in ['white', 'black']:
         for i in range(numStepsMoon):
             targetBasename = 'build/rot_moon_wheel_%s_%s.png' % (cat, i)
-            rleFilename, ptype = make_rle(targetBasename, useRle = supportRle)
+            rleFilename, ptype = make_rle(targetBasename, useRle = supportRle, modes = targetModes)
             resourceStr += moonWheelEntry % {
                 'cat' : cat.upper(),
                 'index' : i,
@@ -1582,6 +1592,17 @@ if not watchStyle:
 
 if not targetPlatforms:
     targetPlatforms = [ "aplite", "basalt", "chalk" ]
+
+targetModes = set()
+if "aplite" in targetPlatforms:
+    targetModes.add("~bw")
+if "basalt" in targetPlatforms:
+    targetModes.add("~color")
+    targetModes.add("~color~rect")
+if "chalk" in targetPlatforms:
+    targetModes.add("~color")
+    targetModes.add("~color~round")
+targetModes = list(targetModes)
 
 watchName, defaultHandStyle, defaultFaceStyle, uuId = watches[watchStyle]
 

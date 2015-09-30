@@ -518,7 +518,7 @@ def make_rle_image(rleFilename, image, platformType = 'auto'):
     else:
         return make_rle_image_basalt(rleFilename, image)
 
-def make_rle(filename, prefix = 'resources/', useRle = True, platformType = 'auto', modes = ['~bw', '~color']):
+def make_rle(filename, prefix = 'resources/', useRle = True, platformType = 'auto', modes = []):
     if useRle:
         basename, ext = os.path.splitext(filename)
         for mode in modes:
@@ -529,16 +529,17 @@ def make_rle(filename, prefix = 'resources/', useRle = True, platformType = 'aut
                 make_rle_image(prefix + rleFilename, image, platformType = platformType)
 
         # Primary file.
-        image = PIL.Image.open(prefix + filename)
         rleFilename = basename + '.rle'
-        make_rle_image(prefix + rleFilename, image, platformType = platformType)
+        if os.path.exists(prefix + basename + ext):
+            image = PIL.Image.open(prefix + filename)
+            make_rle_image(prefix + rleFilename, image, platformType = platformType)
         return rleFilename, 'raw'
     else:
         ptype = 'png'
         print filename
         return filename, ptype
 
-def make_rle_trans(filename, prefix = 'resources/', useRle = True, platformType = 'auto', modes = ['~bw', '~color']):
+def make_rle_trans(filename, prefix = 'resources/', useRle = True, platformType = 'auto', modes = []):
     basename, ext = os.path.splitext(filename)
     for mode in modes:
         # Handle the specialized mode files.
@@ -546,7 +547,15 @@ def make_rle_trans(filename, prefix = 'resources/', useRle = True, platformType 
             make_rle_trans_file(basename + mode + ext, prefix = prefix, useRle = useRle, platformType = platformType)
 
     # Primary file.
-    rleWhiteFilename, rleBlackFilename, ptype = make_rle_trans_file(filename, prefix = prefix, useRle = useRle, platformType = platformType)
+    if os.path.exists(prefix + basename + ext):
+        rleWhiteFilename, rleBlackFilename, ptype = make_rle_trans_file(filename, prefix = prefix, useRle = useRle, platformType = platformType)
+
+    if useRle:
+        rleWhiteFilename = basename + '_white.rle'
+        rleBlackFilename = basename + '_black.rle'
+    else:
+        rleWhiteFilename = basename + '_white.png'
+        rleBlackFilename = basename + '_black.png'
 
     return rleWhiteFilename, rleBlackFilename, ptype
         
