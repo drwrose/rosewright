@@ -6,6 +6,9 @@
 
 #ifdef MAKE_CHRONOGRAPH
 
+// The screen width of the chrono_digital_layer.  Always 144, even on Chalk.
+#define DIGITAL_LAYER_WIDTH 144
+
 struct HandCache chrono_minute_cache;
 struct HandCache chrono_second_cache;
 struct HandCache chrono_tenth_cache;
@@ -397,7 +400,7 @@ void chrono_digital_window_load_handler(struct Window *window) {
   }    
   layer_add_child(chrono_digital_window_layer, status_bar_layer_get_layer(chrono_status_bar_layer));
   
-  chrono_digital_contents_layer = layer_create(GRect(0, STATUS_BAR_LAYER_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT - STATUS_BAR_LAYER_HEIGHT));
+  chrono_digital_contents_layer = layer_create(GRect((SCREEN_WIDTH - DIGITAL_LAYER_WIDTH) / 2, STATUS_BAR_LAYER_HEIGHT, DIGITAL_LAYER_WIDTH, SCREEN_HEIGHT - STATUS_BAR_LAYER_HEIGHT));
   if (chrono_digital_contents_layer == NULL) {
     trigger_memory_panic(__LINE__);
     return;

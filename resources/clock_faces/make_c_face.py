@@ -5,7 +5,11 @@
 import FaceMaker
 import sys
 
-face = FaceMaker.FaceMaker(zoom = 1.25, bg = 0, fg = 255) #, upscale = 2, format = 'L')
+# aplite, basalt
+#face = FaceMaker.FaceMaker(zoom = 1.25, bg = 0, fg = 255, screenSize = (144, 168)) #, upscale = 2, format = 'L')
+
+# chalk
+face = FaceMaker.FaceMaker(zoom = 1.223, bg = 0, fg = 255, screenSize = (180, 180))
 
 #face.drawTicks(60, 0.2, 1.7, width = 0.004)
 #face.save('c_face_ticks.png')
