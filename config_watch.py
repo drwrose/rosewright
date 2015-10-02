@@ -294,8 +294,8 @@ faces = {
         'date_window_a_round' : (45, 36, 'b'),
         'date_window_b_round' : (94, 36, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
-        'top_subdial_rect' : (32, 33, 'b'),
-        'top_subdial_round' : (50, 34, 'b'),
+        'top_subdial_rect' : (32, 12, 'b'),
+        'top_subdial_round' : (50, 15, 'b'),
         'bluetooth_rect' : (16, 18, 'b'),
         'battery_rect' : (109, 21, 'b'),
         'bluetooth_round' : (33, 41, 'b'),
@@ -356,7 +356,8 @@ faces = {
         'date_window_c_round' : (128, 78, 'w'),
         'date_window_d_round' : (69, 144, 'w'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
-        'top_subdial' : (32, 32, 'w'),
+        'top_subdial_rect' : (32, 32, 'b'),
+        'top_subdial_round' : (50, 32, 'b'),
         'bluetooth_rect' : [ (11, 12, 'b'), (11, 12, 'b'),
                              (11, 12, 'w'), (11, 12, 'w'),
                              (11, 12, 'b'), (11, 12, 'b'),                                                   ],
@@ -1286,7 +1287,10 @@ def makeMoonWheel():
     wheelSize = 80, 80
     subdialSize = 80, 41
 
-    for mode in [ '', '~bw' ]:
+    for mode in [ '~color', '~bw' ]:
+        if mode not in targetModes:
+            continue
+        
         subdialMaskPathname = '%s/clock_faces/top_subdial_mask%s.png' % (resourcesDir, mode)
         subdialMask = PIL.Image.open(subdialMaskPathname)
         assert subdialMask.size == subdialSize
