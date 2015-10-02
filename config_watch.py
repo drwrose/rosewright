@@ -1343,7 +1343,6 @@ def makeMoonWheel():
 
                         p = PIL.Image.merge('RGBA', [r, g, b, subdialMask])
 
-                    if mode == '':
                         # And quantize to 16 colors.
                         p = p.convert("P", palette = PIL.Image.ADAPTIVE, colors = 16)
 
