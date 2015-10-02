@@ -260,13 +260,13 @@ faces = {
                      (('BrilliantRose', 'Blue', 'DarkCandyAppleRed', 'BulgarianRose'), ('RichBrilliantLavender', 'Black')),
                      ],
         'date_window_a_rect': (2, 75, 'b'),
-        'date_window_b_rect': (106, 75, 'b'),
-        'date_window_c_rect': (35, 101, 'b'),
-        'date_window_d_rect': (75, 101, 'b'),
+        'date_window_b_rect': (35, 101, 'b'),
+        'date_window_c_rect': (75, 101, 'b'),
+        'date_window_d_rect': (106, 75, 'b'),
         'date_window_a_round': (4, 79, 'b'),
-        'date_window_b_round': (134, 79, 'b'),
-        'date_window_c_round': (46, 116, 'b'),
-        'date_window_d_round': (92, 116, 'b'),
+        'date_window_b_round': (46, 116, 'b'),
+        'date_window_c_round': (92, 116, 'b'),
+        'date_window_d_round': (134, 79, 'b'),
         'top_subdial_rect' : (32, 33, 'b'),
         'top_subdial_round' : (50, 34, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
@@ -278,7 +278,7 @@ faces = {
         'battery_round' : [ (110, 57, 'b'), (132, 33, 'b'),
                             (110, 57, 'b'), (132, 33, 'b'),
                             ],
-        'defaults' : [ 'day:c', 'date:d', 'moon_phase', 'second', 'hour_minute_overlap' ],
+        'defaults' : [ 'day:b', 'date:c', 'second', 'hour_minute_overlap' ],
         },
     'c' : {
         'filename' : ['c_face.png'],
@@ -294,6 +294,8 @@ faces = {
         'date_window_a_round' : (45, 36, 'b'),
         'date_window_b_round' : (94, 36, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
+        'top_subdial_rect' : (32, 33, 'b'),
+        'top_subdial_round' : (50, 34, 'b'),
         'bluetooth_rect' : (16, 18, 'b'),
         'battery_rect' : (109, 21, 'b'),
         'bluetooth_round' : (33, 41, 'b'),
@@ -1259,34 +1261,6 @@ def makeIndicatorTable(generatedTable, generatedDefs, name, (indicator_rect, ind
     else:
         print >> generatedTable, "};\n";
 
-def makeMoonDateWindow():
-    """ Returns the resource strings needed to include the moon phase
-    icons, for the moon date window. """
-
-    moonPhaseEntry = """
-    {
-      "name": "MOON_%(cat)s_%(index)s",
-      "file": "%(rleFilename)s",
-      "type": "%(ptype)s"
-    },"""
-
-    resourceStr = ''
-
-    # moon_white_*.png is for when the moon is to be drawn as white pixels on black.
-    # moon_black_*.png is for when the moon is to be drawn as black pixels on white.
-
-    for cat in ['white', 'black']:
-        for index in range(8):
-            rleFilename, ptype = make_rle('clock_faces/moon_%s_%s.png' % (cat, index), useRle = supportRle, modes = targetModes)
-            resourceStr += moonPhaseEntry % {
-                'cat' : cat.upper(),
-                'index' : index,
-                'rleFilename' : rleFilename,
-                'ptype' : ptype,
-                }
-
-    return resourceStr
-
 def makeMoonWheel():
     """ Returns the resource strings needed to include the moon wheel
     icons, for the optional moon wheel window. """
@@ -1417,7 +1391,6 @@ def configWatch():
     resourceStr = ''
     resourceStr += makeFaces(generatedTable, generatedDefs)
     resourceStr += makeHands(generatedTable, generatedDefs)
-    resourceStr += makeMoonDateWindow()
 
     if top_subdial_rect[0]:
         resourceStr += makeMoonWheel()

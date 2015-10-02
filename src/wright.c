@@ -313,18 +313,10 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
       lunar_age_s = (s * 255144) / NUM_STEPS_MOON;
 #endif  // FAST_TIME
 
-      // That gives the age of the moon in seconds.  We really want it
-      // in the range 0 .. 7, so we divide by (2551443 / 8) to give us
-      // that.
-      unsigned int lunar_phase = (8 * lunar_age_s) / 2551443;
-
-      // We shouldn't need to take modulo 8 here (since we already
-      // computed modulo 2551443 above), but we do it anyway just in
-      // case there's an unexpected edge condition.
-      placement->lunar_phase = lunar_phase % 8;
+      // That gives the age of the moon in seconds.
 
 #ifdef TOP_SUBDIAL
-      // Also compute the index of the moon wheel for the moon_phase
+      // Compute the index of the moon wheel for the moon_phase
       // variant of the top subdial.  This ranges from 0 to
       // NUM_STEPS_MOON - 1 over the lunar month.
       unsigned int lunar_index = (NUM_STEPS_MOON * lunar_age_s) / 2551443;
@@ -961,68 +953,6 @@ void draw_window(Layer *me, GContext *ctx, const char *text, struct FontPlacemen
                      NULL);
 }
 
-// Draws a date window with the current lunar phase.
-void draw_moon_date_window(Layer *me, GContext *ctx, DateWindowMode dwm, bool invert) {
-  // The draw_mode is the color to draw the frame of the date window.
-  unsigned int draw_mode = invert ^ config.draw_mode ^ APLITE_INVERT;
-
-  // The moon_draw_mode is the color to draw the moon within the date window.
-  unsigned int moon_draw_mode = draw_mode;
-  if (config.lunar_background) {
-    // If the user specified an always-black background, that means moon_draw_mode is always 1.
-    moon_draw_mode = 1;
-  }
-
-  if (moon_phase_bitmap.bitmap == NULL) {
-    assert(current_placement.lunar_phase <= 7);
-#ifdef PBL_PLATFORM_APLITE
-    // On Aplite, we load either "black" or "white" icons, according
-    // to what color we need the background to be.
-    if (moon_draw_mode == 0) {
-      moon_phase_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHITE_0 + current_placement.lunar_phase);
-    } else {
-      moon_phase_bitmap = rle_bwd_create(RESOURCE_ID_MOON_BLACK_0 + current_placement.lunar_phase);
-    }
-#else  // PBL_PLATFORM_APLITE
-    // On Basalt, we only use the "black" icons, and we remap the colors at load time.
-    moon_phase_bitmap = rle_bwd_create(RESOURCE_ID_MOON_BLACK_0 + current_placement.lunar_phase);
-    remap_colors_moon(&moon_phase_bitmap);
-#endif  // PBL_PLATFORM_APLITE
-    if (moon_phase_bitmap.bitmap == NULL) {
-      trigger_memory_panic(__LINE__);
-      return;
-    }
-
-    if (config.lunar_direction) {
-      // Draw the moon phases animating from left-to-right, as seen in
-      // the southern hemisphere.  (This really means drawing the moon
-      // upside-down, as it would be seen by someone facing north.)
-      flip_bitmap_x(moon_phase_bitmap.bitmap, NULL);
-      flip_bitmap_y(moon_phase_bitmap.bitmap, NULL);
-    }
-  }
-
-  draw_date_window_background(ctx, draw_mode, moon_draw_mode);
-
-  // In the Aplite case, we draw the moon in the fg color.  This will
-  // be black-on-white if moon_draw_mode = 0, or white-on-black if
-  // moon_draw_mode = 1.  Since we have selected the particular moon
-  // resource above based on draw_mode, we will always draw the moon
-  // in the correct color, so that it looks like the moon.  (Drawing
-  // the moon in the inverted color would look weird.)
-
-  // In the Basalt case, the only difference between moon_black and
-  // moon_white is the background color; in either case we draw them
-  // both in GCompOpSet.
-  graphics_context_set_compositing_mode(ctx, draw_mode_table[moon_draw_mode].paint_fg);
-
-  if (config.lunar_direction) {
-    graphics_draw_bitmap_in_rect(ctx, moon_phase_bitmap.bitmap, date_window_box_offset);
-  } else {
-    graphics_draw_bitmap_in_rect(ctx, moon_phase_bitmap.bitmap, date_window_box);
-  }
-}
-
 #ifdef TOP_SUBDIAL
 // Draws a special moon subdial window that shows the lunar phase in more detail.
 void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
@@ -1131,19 +1061,13 @@ void date_window_layer_update_callback(Layer *me, GContext *ctx) {
 
   const struct IndicatorTable *window = &date_windows[date_window_index][config.face_index];
 
-  if (dwm == DWM_moon) {
-    // Draw the lunar phase.
-    draw_moon_date_window(me, ctx, dwm, window->invert);
-    return;
-  }
-
   // Format the date or weekday or whatever text for display.
 #define DATE_WINDOW_BUFFER_SIZE 16
   char buffer[DATE_WINDOW_BUFFER_SIZE];
 
   GFont *font = &date_numeric_font;
   struct FontPlacement *font_placement = &date_lang_font_placement[0];
-  if (dwm >= DWM_weekday && dwm < DWM_moon) {
+  if (dwm >= DWM_weekday && dwm <= DWM_ampm) {
     // Draw text using date_lang_font.
     const LangDef *lang = &lang_table[config.display_lang];
     font = &date_lang_font;
@@ -1199,7 +1123,7 @@ void date_window_layer_update_callback(Layer *me, GContext *ctx) {
     text = date_names[current_placement.ampm_value + NUM_WEEKDAY_NAMES + NUM_MONTH_NAMES];
     break;
 
-  case DWM_moon:
+  case DWM_moon_unused:
   default:
     buffer[0] = '\0';
   }
@@ -1287,15 +1211,6 @@ void update_hands(struct tm *time) {
       layer_mark_dirty(date_window_layers[i]);
     }
     */
-  }
-
-  // Also check the lunar phase, in a separate check from the other
-  // date windows, so it doesn't necessarily have to wait till
-  // midnight to flip over to the next phase.
-  if (new_placement.lunar_phase != current_placement.lunar_phase) {
-    current_placement.lunar_phase = new_placement.lunar_phase;
-    bwd_destroy(&moon_phase_bitmap);
-    layer_mark_dirty(clock_face_layer);
   }
 
 #ifdef TOP_SUBDIAL

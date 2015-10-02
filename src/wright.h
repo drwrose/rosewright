@@ -50,7 +50,6 @@ struct __attribute__((__packed__)) HandPlacement {
   unsigned char year_value;  // less 1900.
   bool ampm_value;
 
-  unsigned char lunar_phase;
 #ifdef TOP_SUBDIAL
   unsigned char lunar_index;
 #endif  // TOP_SUBDIAL

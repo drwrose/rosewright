@@ -56,7 +56,7 @@ typedef enum {
   DWM_ampm = 6,
   
   // Special case.
-  DWM_moon = 7,
+  DWM_moon_unused = 7,
 
   // Debug options.
   DWM_debug_heap_free = 8,
