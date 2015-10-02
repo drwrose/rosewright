@@ -294,8 +294,8 @@ faces = {
         'date_window_a_round' : (45, 36, 'b'),
         'date_window_b_round' : (94, 36, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
-        'top_subdial_rect' : (32, 12, 'b'),
-        'top_subdial_round' : (50, 15, 'b'),
+        'top_subdial_rect' : (32, 16, 'b'),
+        'top_subdial_round' : (50, 19, 'b'),
         'bluetooth_rect' : (16, 18, 'b'),
         'battery_rect' : (109, 21, 'b'),
         'bluetooth_round' : (33, 41, 'b'),
@@ -1291,7 +1291,7 @@ def makeMoonWheel():
         if mode not in targetModes:
             continue
         
-        subdialMaskPathname = '%s/clock_faces/top_subdial_mask%s.png' % (resourcesDir, mode)
+        subdialMaskPathname = '%s/clock_faces/top_subdial_internal_mask%s.png' % (resourcesDir, mode)
         subdialMask = PIL.Image.open(subdialMaskPathname)
         assert subdialMask.size == subdialSize
         subdialMask = subdialMask.convert('L')

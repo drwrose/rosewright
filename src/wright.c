@@ -999,7 +999,7 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
     }
   }
 
-  GRect destination = layer_get_bounds(me);
+  GRect destination = GRect(0, 0, 80, 42);  //layer_get_bounds(me);
   
   // First draw the subdial details (including the background).
 #ifdef PBL_PLATFORM_APLITE
@@ -1031,6 +1031,9 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
   graphics_draw_bitmap_in_rect(ctx, top_subdial_bitmap.bitmap, destination);
 
   // Now draw the moon wheel.
+
+  // One less pixel for the moon bitmap.
+  destination = GRect(0, 0, 80, 41);
   
   // In the Aplite case, we draw the moon in the fg color.  This will
   // be black-on-white if moon_draw_mode = 0, or white-on-black if
@@ -1343,7 +1346,7 @@ void move_layers() {
 #ifdef TOP_SUBDIAL
   {
     const struct IndicatorTable *window = &top_subdial[config.face_index];
-    layer_set_frame(top_subdial_layer, GRect(window->x, window->y, 80, 41));
+    layer_set_frame(top_subdial_layer, GRect(window->x, window->y, 80, 42));
   }
 #endif  // TOP_SUBDIAL
 
@@ -1441,7 +1444,7 @@ void create_objects() {
 
 #ifdef TOP_SUBDIAL
   {
-    top_subdial_layer = layer_create(GRect(0, 0, 80, 41));
+    top_subdial_layer = layer_create(GRect(0, 0, 80, 42));
     assert(top_subdial_layer != NULL);
     layer_set_update_proc(top_subdial_layer, &top_subdial_layer_update_callback);
     layer_add_child(window_layer, top_subdial_layer);
