@@ -60,36 +60,48 @@ void bwd_destroy(BitmapWithData *bwd) {
 }
 
 BitmapWithData bwd_copy(BitmapWithData *source) {
+  return bwd_copy_bitmap(source->bitmap);
+}
+
+BitmapWithData bwd_copy_bitmap(GBitmap *source) {
   BitmapWithData dest;
 
-  GSize size = gbitmap_get_bounds(source->bitmap).size;
+  GSize size = gbitmap_get_bounds(source).size;
 
 #ifndef PBL_PLATFORM_APLITE
-  GBitmapFormat format = gbitmap_get_format(source->bitmap);
+  GBitmapFormat format = gbitmap_get_format(source);
   dest.bitmap = gbitmap_create_blank(size, format);
+  int pixels_per_byte = 0;
 
   size_t palette_count = 0;
   switch (format) {
   case GBitmapFormat1Bit:
+    pixels_per_byte = 8;
+    break;
+    
   case GBitmapFormat8Bit:
   case GBitmapFormat8BitCircular:
+    pixels_per_byte = 1;
     break;
     
   case GBitmapFormat1BitPalette:
     palette_count = 2;
+    pixels_per_byte = 8;
     break;
     
   case GBitmapFormat2BitPalette:
     palette_count = 4;
+    pixels_per_byte = 4;
     break;
     
   case GBitmapFormat4BitPalette:
     palette_count = 16;
+    pixels_per_byte = 2;
     break;
   }
 
   if (palette_count != 0) {
-    GColor *source_palette = gbitmap_get_palette(source->bitmap);
+    GColor *source_palette = gbitmap_get_palette(source);
     GColor *dest_palette = gbitmap_get_palette(dest.bitmap);
     if (dest_palette == NULL) {
       bwd_destroy(&dest);
@@ -105,12 +117,28 @@ BitmapWithData bwd_copy(BitmapWithData *source) {
     return dest;
   }
 
-  int stride = gbitmap_get_bytes_per_row(source->bitmap);
-  uint8_t *source_data = gbitmap_get_data(source->bitmap);
+#ifdef PBL_SDK_2
+  int stride = gbitmap_get_bytes_per_row(source);
+  uint8_t *source_data = gbitmap_get_data(source);
   size_t data_size = stride * size.h;
   
   uint8_t *dest_data = gbitmap_get_data(dest.bitmap);
   memcpy(dest_data, source_data, data_size);
+
+#else  // PBL_SDK_2
+  for (int y = 0; y < size.h; ++y) {
+    GBitmapDataRowInfo source_info = gbitmap_get_data_row_info(source, y);
+    GBitmapDataRowInfo dest_info = gbitmap_get_data_row_info(dest.bitmap, y);
+
+    uint8_t *source_row = &source_info.data[source_info.min_x];
+    uint8_t *dest_row = &dest_info.data[dest_info.min_x];
+    int width = source_info.max_x - source_info.min_x + 1;
+    assert(width % pixels_per_byte == 0);
+    int width_bytes = width / pixels_per_byte;
+    memcpy(dest_row, source_row, width_bytes);
+  }
+
+#endif  // PBL_SDK_2
 
   return dest;
 }

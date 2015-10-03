@@ -27,6 +27,7 @@ extern size_t bwd_cache_total_size;
 BitmapWithData bwd_create(GBitmap *bitmap, unsigned char *data);
 void bwd_destroy(BitmapWithData *bwd);
 BitmapWithData bwd_copy(BitmapWithData *source);
+BitmapWithData bwd_copy_bitmap(GBitmap *bitmap);
 BitmapWithData png_bwd_create(int resource_id);
 BitmapWithData rle_bwd_create(int resource_id);
 
