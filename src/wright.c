@@ -41,14 +41,6 @@ const GRect date_window_box_offset = {
 };
 #endif  // PBL_ROUND
 
-BitmapWithData moon_phase_bitmap;
-
-#ifdef TOP_SUBDIAL
-BitmapWithData moon_wheel_bitmap;
-BitmapWithData top_subdial_bitmap;
-BitmapWithData top_subdial_mask;
-#endif // TOP_SUBDIAL
-
 // This structure is the data associated with a date window layer.
 typedef struct __attribute__((__packed__)) {
   unsigned char date_window_index;
@@ -793,72 +785,69 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
     moon_draw_mode = 1;
   }
 
-  if (moon_wheel_bitmap.bitmap == NULL) {
-    int index = current_placement.lunar_index;
-    assert(index < NUM_STEPS_MOON);
-
-    if (config.lunar_direction) {
-      // Draw the moon phases animating from left-to-right, as seen in
-      // the southern hemisphere.  This means we spin the moon wheel
-      // counter-clockwise instead of clockwise.  Strictly, we should
-      // also invert the visual representation of the moon, but that
-      // would mean a duplicated set of bitmaps, so (at least for now)
-      // we don't bother.
-      index = NUM_STEPS_MOON - 1 - index;
-    }
-    
-#ifdef PBL_PLATFORM_APLITE
-    // On Aplite, we load either "black" or "white" icons, according
-    // to what color we need the background to be.
-    if (moon_draw_mode == 0) {
-      moon_wheel_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHEEL_WHITE_0 + index);
-    } else {
-      moon_wheel_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHEEL_BLACK_0 + index);
-    }
-#else  // PBL_PLATFORM_APLITE
-    // On Basalt, we only use the "black" icons, and we remap the colors at load time.
-    moon_wheel_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHEEL_BLACK_0 + index);
-    remap_colors_moon(&moon_wheel_bitmap);
-#endif  // PBL_PLATFORM_APLITE
-    if (moon_wheel_bitmap.bitmap == NULL) {
-      trigger_memory_panic(__LINE__);
-      return;
-    }
-  }
-
   const struct IndicatorTable *window = &top_subdial[config.face_index];
   GRect destination = GRect(window->x, window->y, 80, 41);
   
   // First draw the subdial details (including the background).
 #ifdef PBL_PLATFORM_APLITE
-  // We only need the mask on Aplite.
+  BitmapWithData top_subdial_mask;
+  top_subdial_mask = rle_bwd_create(RESOURCE_ID_TOP_SUBDIAL_MASK);
   if (top_subdial_mask.bitmap == NULL) {
-    top_subdial_mask = rle_bwd_create(RESOURCE_ID_TOP_SUBDIAL_MASK);
-    if (top_subdial_mask.bitmap == NULL) {
-      trigger_memory_panic(__LINE__);
-      return;
-    }
+    trigger_memory_panic(__LINE__);
+    return;
   }
   graphics_context_set_compositing_mode(ctx, draw_mode_table[moon_draw_mode].paint_bg);
   graphics_draw_bitmap_in_rect(ctx, top_subdial_mask.bitmap, destination);
+  bwd_destroy(&top_subdial_mask);
 #endif  // PBL_PLATFORM_APLITE
   
+  BitmapWithData top_subdial_bitmap;
+  top_subdial_bitmap = rle_bwd_create(RESOURCE_ID_TOP_SUBDIAL);
   if (top_subdial_bitmap.bitmap == NULL) {
-    top_subdial_bitmap = rle_bwd_create(RESOURCE_ID_TOP_SUBDIAL);
-    if (top_subdial_bitmap.bitmap == NULL) {
-      bwd_destroy(&top_subdial_mask);
-      trigger_memory_panic(__LINE__);
-      return;
-    }
-#ifndef PBL_PLATFORM_APLITE
-    remap_colors_date(&top_subdial_bitmap);
-#endif  // PBL_PLATFORM_APLITE
+    trigger_memory_panic(__LINE__);
+    return;
   }
+#ifndef PBL_PLATFORM_APLITE
+  remap_colors_date(&top_subdial_bitmap);
+#endif  // PBL_PLATFORM_APLITE
   
   graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_fg);
   graphics_draw_bitmap_in_rect(ctx, top_subdial_bitmap.bitmap, destination);
+  bwd_destroy(&top_subdial_bitmap);
 
   // Now draw the moon wheel.
+
+  BitmapWithData moon_wheel_bitmap;
+  int index = current_placement.lunar_index;
+  assert(index < NUM_STEPS_MOON);
+
+  if (config.lunar_direction) {
+    // Draw the moon phases animating from left-to-right, as seen in
+    // the southern hemisphere.  This means we spin the moon wheel
+    // counter-clockwise instead of clockwise.  Strictly, we should
+    // also invert the visual representation of the moon, but that
+    // would mean a duplicated set of bitmaps, so (at least for now)
+    // we don't bother.
+    index = NUM_STEPS_MOON - 1 - index;
+  }
+    
+#ifdef PBL_PLATFORM_APLITE
+  // On Aplite, we load either "black" or "white" icons, according
+  // to what color we need the background to be.
+  if (moon_draw_mode == 0) {
+    moon_wheel_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHEEL_WHITE_0 + index);
+  } else {
+    moon_wheel_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHEEL_BLACK_0 + index);
+  }
+#else  // PBL_PLATFORM_APLITE
+  // On Basalt, we only use the "black" icons, and we remap the colors at load time.
+  moon_wheel_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHEEL_BLACK_0 + index);
+  remap_colors_moon(&moon_wheel_bitmap);
+#endif  // PBL_PLATFORM_APLITE
+  if (moon_wheel_bitmap.bitmap == NULL) {
+    trigger_memory_panic(__LINE__);
+    return;
+  }
   
   // In the Aplite case, we draw the moon in the fg color.  This will
   // be black-on-white if moon_draw_mode = 0, or white-on-black if
@@ -873,6 +862,7 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
   graphics_context_set_compositing_mode(ctx, draw_mode_table[moon_draw_mode].paint_fg);
   //graphics_context_set_compositing_mode(ctx, GCompOpAssign);
   graphics_draw_bitmap_in_rect(ctx, moon_wheel_bitmap.bitmap, destination);
+  bwd_destroy(&moon_wheel_bitmap);
 }
 #endif  // TOP_SUBDIAL
 
@@ -914,6 +904,8 @@ void draw_clock_face(Layer *me, GContext *ctx) {
     for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
       draw_full_date_window(ctx, i);
     }
+    bwd_destroy(&date_window);
+    bwd_destroy(&date_window_mask);
   }
 }
 
@@ -1238,7 +1230,6 @@ void update_hands(struct tm *time) {
   // And the lunar index in the moon subdial.
   if (new_placement.lunar_index != current_placement.lunar_index) {
     current_placement.lunar_index = new_placement.lunar_index;
-    bwd_destroy(&moon_wheel_bitmap);
     layer_mark_dirty(clock_face_layer);
     bwd_destroy(&clock_face);
   }
@@ -1492,16 +1483,6 @@ void destroy_objects() {
   bwd_clear_cache(chrono_second_resource_cache, CHRONO_SECOND_RESOURCE_CACHE_SIZE + CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE);
   bwd_clear_cache(chrono_tenth_resource_cache, CHRONO_TENTH_RESOURCE_CACHE_SIZE + CHRONO_TENTH_MASK_RESOURCE_CACHE_SIZE);
 #endif  // MAKE_CHRONOGRAPH
-
-  bwd_destroy(&date_window);
-  bwd_destroy(&date_window_mask);
-  bwd_destroy(&moon_phase_bitmap);
-
-#ifdef TOP_SUBDIAL
-  bwd_destroy(&moon_wheel_bitmap);
-  bwd_destroy(&top_subdial_bitmap);
-  bwd_destroy(&top_subdial_mask);
-#endif  // TOP_SUBDIAL
   
   layer_destroy(clock_hands_layer);
 
