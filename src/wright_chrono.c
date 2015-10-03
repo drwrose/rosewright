@@ -508,6 +508,13 @@ void chrono_digital_window_unload_handler(struct Window *window) {
 void push_chrono_digital_handler(ClickRecognizerRef recognizer, void *context) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "push chrono digital");
   if (!chrono_digital_window_showing) {
+
+#ifdef PBL_PLATFORM_APLITE
+    // Aplite is really tight on memory.  Gain some back before we
+    // push the window.
+    destroy_objects();
+    create_objects();
+#endif  // PBL_PLATFORM_APLITE
     
     // If we don't already have a chrono_digital_window object
     // created, create it now.

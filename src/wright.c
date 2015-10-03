@@ -154,9 +154,6 @@ DrawModeTable draw_mode_table[2] = {
 
 #endif  // PBL_PLATFORM_APLITE
 
-void destroy_objects();
-void create_objects();
-
 // Loads a font from the resource and returns it.  It may return
 // either the intended font, or the fallback font.  If it returns
 // the fallback font, this function automatically triggers a memory

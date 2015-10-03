@@ -107,4 +107,8 @@ void draw_hand_fg(struct HandCache *hand_cache, struct ResourceCache *resource_c
 void draw_hand(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx);
 void remap_colors_clock(BitmapWithData *bwd);
 
+void destroy_objects();
+void create_objects();
+
+
 #endif
