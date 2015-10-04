@@ -118,11 +118,7 @@ struct HandCache hour_cache;
 struct HandCache minute_cache;
 struct HandCache second_cache;
 
-struct ResourceCache hour_resource_cache[HOUR_RESOURCE_CACHE_SIZE + HOUR_MASK_RESOURCE_CACHE_SIZE];
-struct ResourceCache minute_resource_cache[MINUTE_RESOURCE_CACHE_SIZE + MINUTE_MASK_RESOURCE_CACHE_SIZE];
 struct ResourceCache second_resource_cache[SECOND_RESOURCE_CACHE_SIZE + SECOND_MASK_RESOURCE_CACHE_SIZE];
-size_t hour_resource_cache_size = HOUR_RESOURCE_CACHE_SIZE + HOUR_MASK_RESOURCE_CACHE_SIZE;
-size_t minute_resource_cache_size = MINUTE_RESOURCE_CACHE_SIZE + MINUTE_MASK_RESOURCE_CACHE_SIZE;
 size_t second_resource_cache_size = SECOND_RESOURCE_CACHE_SIZE + SECOND_MASK_RESOURCE_CACHE_SIZE;
 
 struct HandPlacement current_placement;
@@ -929,7 +925,7 @@ void draw_clock_face(Layer *me, GContext *ctx) {
 
 void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_face_layer, memory_panic_count = %d, heap_bytes_free = %d", memory_panic_count, heap_bytes_free());
-  if (memory_panic_count > 9) {
+  if (memory_panic_count > 7) {
     // In case we're in extreme memory panic mode--too little
     // available memory to even keep the clock face resident--we do
     // nothing in this function.
@@ -981,12 +977,12 @@ void clock_hands_layer_update_callback(Layer *me, GContext *ctx) {
   // the non-chrono order--we draw the three subdials first, and this
   // includes the normal second hand).
   if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
-    draw_hand(&chrono_minute_cache, chrono_minute_resource_cache, chrono_minute_resource_cache_size, &chrono_minute_hand_def, current_placement.chrono_minute_hand_index, ctx);
+    draw_hand(&chrono_minute_cache, NULL, 0, &chrono_minute_hand_def, current_placement.chrono_minute_hand_index, ctx);
   }
 
   if (config.chrono_dial != CDM_off) {
     if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
-      draw_hand(&chrono_tenth_cache, chrono_tenth_resource_cache, chrono_tenth_resource_cache_size, &chrono_tenth_hand_def, current_placement.chrono_tenth_hand_index, ctx);
+      draw_hand(&chrono_tenth_cache, NULL, 0, &chrono_tenth_hand_def, current_placement.chrono_tenth_hand_index, ctx);
     }
   }
 
@@ -994,9 +990,9 @@ void clock_hands_layer_update_callback(Layer *me, GContext *ctx) {
     draw_hand(&second_cache, second_resource_cache, second_resource_cache_size, &second_hand_def, current_placement.second_hand_index, ctx);
   }
 
-  draw_hand(&hour_cache, hour_resource_cache, hour_resource_cache_size, &hour_hand_def, current_placement.hour_hand_index, ctx);
+  draw_hand(&hour_cache, NULL, 0, &hour_hand_def, current_placement.hour_hand_index, ctx);
 
-  draw_hand(&minute_cache, minute_resource_cache, minute_resource_cache_size, &minute_hand_def, current_placement.minute_hand_index, ctx);
+  draw_hand(&minute_cache, NULL, 0, &minute_hand_def, current_placement.minute_hand_index, ctx);
 
   if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
     draw_hand(&chrono_second_cache, chrono_second_resource_cache, chrono_second_resource_cache_size, &chrono_second_hand_def, current_placement.chrono_second_hand_index, ctx);
@@ -1014,11 +1010,11 @@ void clock_hands_layer_update_callback(Layer *me, GContext *ctx) {
   // their hands are relatively thin, and their hand masks define an
   // invisible halo that erases to the background color around the
   // hands, and we don't want the hands to erase each other.
-  draw_hand_mask(&hour_cache, hour_resource_cache, hour_resource_cache_size, &hour_hand_def, current_placement.hour_hand_index, false, ctx);
-  draw_hand_mask(&minute_cache, minute_resource_cache, minute_resource_cache_size, &minute_hand_def, current_placement.minute_hand_index, false, ctx);
+  draw_hand_mask(&hour_cache, NULL, 0, &hour_hand_def, current_placement.hour_hand_index, false, ctx);
+  draw_hand_mask(&minute_cache, NULL, 0, &minute_hand_def, current_placement.minute_hand_index, false, ctx);
 
-  draw_hand_fg(&hour_cache, hour_resource_cache, hour_resource_cache_size, &hour_hand_def, current_placement.hour_hand_index, false, ctx);
-  draw_hand_fg(&minute_cache, minute_resource_cache, minute_resource_cache_size, &minute_hand_def, current_placement.minute_hand_index, false, ctx);
+  draw_hand_fg(&hour_cache, NULL, 0, &hour_hand_def, current_placement.hour_hand_index, false, ctx);
+  draw_hand_fg(&minute_cache, NULL, 0, &minute_hand_def, current_placement.minute_hand_index, false, ctx);
 
 #else  //  HOUR_MINUTE_OVERLAP
 
@@ -1027,9 +1023,9 @@ void clock_hands_layer_update_callback(Layer *me, GContext *ctx) {
   // with complex interiors that must be erased; and their haloes (if
   // present) are comparatively thinner and don't threaten to erase
   // overlapping hands.
-  draw_hand(&hour_cache, hour_resource_cache, hour_resource_cache_size, &hour_hand_def, current_placement.hour_hand_index, ctx);
+  draw_hand(&hour_cache, NULL, 0, &hour_hand_def, current_placement.hour_hand_index, ctx);
 
-  draw_hand(&minute_cache, minute_resource_cache, minute_resource_cache_size, &minute_hand_def, current_placement.minute_hand_index, ctx);
+  draw_hand(&minute_cache, NULL, 0, &minute_hand_def, current_placement.minute_hand_index, ctx);
 #endif  //  HOUR_MINUTE_OVERLAP
 
   if (config.second_hand) {
@@ -1494,7 +1490,7 @@ void unload_date_fonts() {
 
 void load_date_fonts() {
   unload_date_fonts();
-  if (memory_panic_count > 6) {
+  if (memory_panic_count > 4) {
     // Don't load fonts if the memory panic count is over this
     // threshold.
 
@@ -1584,14 +1580,10 @@ void destroy_objects() {
   deinit_battery_gauge();
   deinit_bluetooth_indicator();
 
-  bwd_clear_cache(hour_resource_cache, HOUR_RESOURCE_CACHE_SIZE + HOUR_MASK_RESOURCE_CACHE_SIZE);
-  bwd_clear_cache(minute_resource_cache, MINUTE_RESOURCE_CACHE_SIZE + MINUTE_MASK_RESOURCE_CACHE_SIZE);
   bwd_clear_cache(second_resource_cache, SECOND_RESOURCE_CACHE_SIZE + SECOND_MASK_RESOURCE_CACHE_SIZE);
 
 #ifdef MAKE_CHRONOGRAPH
-  bwd_clear_cache(chrono_minute_resource_cache, CHRONO_MINUTE_RESOURCE_CACHE_SIZE + CHRONO_MINUTE_MASK_RESOURCE_CACHE_SIZE);
   bwd_clear_cache(chrono_second_resource_cache, CHRONO_SECOND_RESOURCE_CACHE_SIZE + CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE);
-  bwd_clear_cache(chrono_tenth_resource_cache, CHRONO_TENTH_RESOURCE_CACHE_SIZE + CHRONO_TENTH_MASK_RESOURCE_CACHE_SIZE);
 #endif  // MAKE_CHRONOGRAPH
   
   layer_destroy(clock_hands_layer);
@@ -1696,7 +1688,7 @@ void trigger_memory_panic(int line_number) {
 
 void reset_memory_panic() {
   // The memory_panic_flag was set, indicating that something
-  // somewhere failed to allocate memory.  Destory and recreate
+  // somewhere failed to allocate memory.  Destroy and recreate
   // everything, in the hopes this will clear out memory
   // fragmentation.
 
@@ -1710,44 +1702,32 @@ void reset_memory_panic() {
 
   // Start resetting some options if the memory panic count grows too high.
   if (memory_panic_count > 1) {
-    hour_resource_cache_size = 0;
-#ifdef MAKE_CHRONOGRAPH
-    chrono_tenth_resource_cache_size = 0;
-#endif  // MAKE_CHRONOGRAPH
-  }
-  if (memory_panic_count > 2) {
-    minute_resource_cache_size = 0;
-#ifdef MAKE_CHRONOGRAPH
-    chrono_minute_resource_cache_size = 0;
-#endif  // MAKE_CHRONOGRAPH
-  }
-  if (memory_panic_count > 3) {
     second_resource_cache_size = 0;
 #ifdef MAKE_CHRONOGRAPH
     chrono_second_resource_cache_size = 0;
 #endif  // MAKE_CHRONOGRAPH
   }
-  if (memory_panic_count > 4) {
+  if (memory_panic_count > 2) {
     config.battery_gauge = IM_off;
     config.bluetooth_indicator = IM_off;
   }
-  if (memory_panic_count > 5) {
+  if (memory_panic_count > 3) {
     config.second_hand = false;
   } 
-  if (memory_panic_count > 6) {
+  if (memory_panic_count > 4) {
     for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
       if (config.date_windows[i] != DWM_debug_memory_panic_count) {
         config.date_windows[i] = DWM_off;
       }
     }
   } 
-  if (memory_panic_count > 7) {
+  if (memory_panic_count > 5) {
     config.chrono_dial = 0;
   }
-  if (memory_panic_count > 8) {
+  if (memory_panic_count > 6) {
     config.top_subdial = false;
   }
-  if (memory_panic_count > 9) {
+  if (memory_panic_count > 7) {
     // At this point we hide the clock face.  Drastic!
   }
 

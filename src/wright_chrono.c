@@ -13,12 +13,8 @@ struct HandCache chrono_minute_cache;
 struct HandCache chrono_second_cache;
 struct HandCache chrono_tenth_cache;
 
-struct ResourceCache chrono_minute_resource_cache[CHRONO_MINUTE_RESOURCE_CACHE_SIZE + CHRONO_MINUTE_MASK_RESOURCE_CACHE_SIZE];
 struct ResourceCache chrono_second_resource_cache[CHRONO_SECOND_RESOURCE_CACHE_SIZE + CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE];
-struct ResourceCache chrono_tenth_resource_cache[CHRONO_TENTH_RESOURCE_CACHE_SIZE + CHRONO_TENTH_MASK_RESOURCE_CACHE_SIZE];
-size_t chrono_minute_resource_cache_size = CHRONO_MINUTE_RESOURCE_CACHE_SIZE +  + CHRONO_MINUTE_MASK_RESOURCE_CACHE_SIZE;
 size_t chrono_second_resource_cache_size = CHRONO_SECOND_RESOURCE_CACHE_SIZE +  + CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE;
-size_t chrono_tenth_resource_cache_size = CHRONO_TENTH_RESOURCE_CACHE_SIZE +  + CHRONO_TENTH_MASK_RESOURCE_CACHE_SIZE;
 
 // This window is pushed on top of the chrono dial to display the
 // readout in digital form for ease of recording.
