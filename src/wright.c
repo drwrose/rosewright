@@ -1452,7 +1452,6 @@ void apply_config() {
   if (face_index != config.face_index) {
     // Update the face bitmap if it's changed.
     face_index = config.face_index;
-    invalidate_clock_face();
     move_layers();
   }
 
@@ -1460,16 +1459,13 @@ void apply_config() {
     // Reload the weekday, month, and ampm names from the appropriate
     // language resource.
     fill_date_names(date_names, NUM_DATE_NAMES, date_names_buffer, DATE_NAMES_MAX_BUFFER, lang_table[config.display_lang].date_name_id);
-
     display_lang = config.display_lang;
   }
 
   // Reload all bitmaps just for good measure.  Maybe the user changed
   // the draw mode or something else.
   recreate_all_objects();
-
   invalidate_clock_face();
-
   reset_tick_timer();
 }
 
@@ -1509,15 +1505,14 @@ void load_date_fonts() {
     // memory is fragmented, so better to load them up front to avoid
     // this problem.)
 
-    if (config.display_lang < num_langs) {
-      int lang_font_resource_id = date_lang_font_placement[config.display_lang].resource_id;
-      int numeric_font_resource_id = date_lang_font_placement[0].resource_id;
-      date_lang_font = safe_load_custom_font(lang_font_resource_id);
-      if (numeric_font_resource_id == lang_font_resource_id) {
-        date_numeric_font = date_lang_font;
-      } else {
-        date_numeric_font = safe_load_custom_font(numeric_font_resource_id);
-      }
+    const LangDef *lang = &lang_table[config.display_lang];
+    int lang_font_resource_id = date_lang_font_placement[lang->font_index].resource_id;
+    int numeric_font_resource_id = date_lang_font_placement[0].resource_id;
+    date_lang_font = safe_load_custom_font(lang_font_resource_id);
+    if (numeric_font_resource_id == lang_font_resource_id) {
+      date_numeric_font = date_lang_font;
+    } else {
+      date_numeric_font = safe_load_custom_font(numeric_font_resource_id);
     }
   }
 }
