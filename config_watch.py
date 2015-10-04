@@ -1366,6 +1366,12 @@ def makeMoonWheel():
         'rleFilename' : rleFilename,
         'ptype' : ptype,
         }
+    rleFilename, ptype = make_rle('clock_faces/top_subdial_frame_mask.png', useRle = supportRle, modes = targetModes)
+    resourceStr += topSubdialEntry % {
+        'name' : 'TOP_SUBDIAL_FRAME_MASK',
+        'rleFilename' : rleFilename,
+        'ptype' : ptype,
+        }
     for cat in ['white', 'black']:
         for i in range(numStepsMoon):
             targetBasename = 'build/rot_moon_wheel_%s_%s.png' % (cat, i)

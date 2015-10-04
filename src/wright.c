@@ -800,6 +800,16 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
   
   // First draw the subdial details (including the background).
 #ifdef PBL_PLATFORM_APLITE
+  BitmapWithData top_subdial_frame_mask;
+  top_subdial_frame_mask = rle_bwd_create(RESOURCE_ID_TOP_SUBDIAL_FRAME_MASK);
+  if (top_subdial_frame_mask.bitmap == NULL) {
+    trigger_memory_panic(__LINE__);
+    return;
+  }
+  graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_bg);
+  graphics_draw_bitmap_in_rect(ctx, top_subdial_frame_mask.bitmap, destination);
+  bwd_destroy(&top_subdial_frame_mask);
+
   BitmapWithData top_subdial_mask;
   top_subdial_mask = rle_bwd_create(RESOURCE_ID_TOP_SUBDIAL_MASK);
   if (top_subdial_mask.bitmap == NULL) {
