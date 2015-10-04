@@ -8,7 +8,6 @@
 
 bool memory_panic_flag = false;
 int memory_panic_count = 0;
-GFont fallback_font;
 
 Window *window;
 
@@ -20,6 +19,10 @@ Layer *clock_face_layer;
 BitmapWithData date_window;
 BitmapWithData date_window_mask;
 bool date_window_debug = false;
+
+GFont fallback_font;
+GFont date_numeric_font = NULL;
+GFont date_lang_font = NULL;
 
 // For now, the size of the date window is hardcoded.
 #ifdef PBL_ROUND
@@ -140,7 +143,8 @@ DrawModeTable draw_mode_table[2] = {
 
 void destroy_objects();
 void create_objects();
-void draw_full_date_window(GContext *ctx, int date_window_index, GFont *date_numeric_font, GFont *date_lang_font);
+void recreate_all_objects();
+void draw_full_date_window(GContext *ctx, int date_window_index);
 void draw_date_window_debug_text(GContext *ctx, int date_window_index);
 
 // Loads a font from the resource and returns it.  It may return
@@ -149,13 +153,18 @@ void draw_date_window_debug_text(GContext *ctx, int date_window_index);
 // panic alert.
 GFont safe_load_custom_font(int resource_id) {
   ResHandle resource = resource_get_handle(resource_id);
+  app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "loading font %d, heap_bytes_free = %d", resource_id, heap_bytes_free());
+  return fallback_font;
+
+  /*
   GFont font = fonts_load_custom_font(resource);
   if (font == fallback_font) {
     app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "font %d failed to load", resource_id);
     trigger_memory_panic(__LINE__);
   }
-  app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "loaded font %d as %p", resource_id, font);
+  app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "loaded font %d as %p, heap_bytes_free = %d", resource_id, font, heap_bytes_free());
   return font;
+  */
 }
 
 // Unloads a font pointer returned by fonts_load_custom_font()
@@ -902,21 +911,11 @@ void draw_clock_face(Layer *me, GContext *ctx) {
 
   // Draw the date windows.
   {
-    GFont date_numeric_font = NULL;
-    GFont date_lang_font = NULL;
-    
     for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
-      draw_full_date_window(ctx, i, &date_lang_font, &date_numeric_font);
+      draw_full_date_window(ctx, i);
     }
     bwd_destroy(&date_window);
     bwd_destroy(&date_window_mask);
-
-    if (date_lang_font != NULL) {
-      safe_unload_custom_font(&date_lang_font);
-    }
-    if (date_numeric_font != NULL) {
-      safe_unload_custom_font(&date_numeric_font);
-    }
   }
 
 #ifdef MAKE_CHRONOGRAPH
@@ -940,7 +939,13 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
 
     // Now save the render for next time.
     GBitmap *fb = graphics_capture_frame_buffer(ctx);
-    bwd_copy_into_from_bitmap(&clock_face, fb);
+    if (gbitmap_get_format(clock_face.bitmap) != gbitmap_get_format(fb)) {
+      // This shouldn't happen, but it does happen on Basalt.  Whatever.
+      bwd_destroy(&clock_face);
+      clock_face = bwd_copy_bitmap(fb);
+    } else {
+      bwd_copy_into_from_bitmap(&clock_face, fb);
+    }
     graphics_release_frame_buffer(ctx, fb);
     has_clock_face = true;
 
@@ -1066,7 +1071,10 @@ void draw_date_window_background(GContext *ctx, int date_window_index, unsigned 
 
 // Draws a date window with the specified text contents.  Usually this is
 // something like a numeric date or the weekday name.
-void draw_date_window_text(GContext *ctx, int date_window_index, const char *text, struct FontPlacement *font_placement, GFont *font) {
+void draw_date_window_text(GContext *ctx, int date_window_index, const char *text, struct FontPlacement *font_placement, GFont font) {
+  if (font == NULL) {
+    return;
+  }
   const struct IndicatorTable *window = &date_windows[date_window_index][config.face_index];
   GRect box = GRect(window->x, window->y, date_window_box.size.w, date_window_box.size.h);
 
@@ -1093,18 +1101,13 @@ void draw_date_window_text(GContext *ctx, int date_window_index, const char *tex
   box.size.w += 8;
   box.size.h += 4;
 
-  if ((*font) == NULL) {
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "loading font for %d, %s", date_window_index, text);
-    (*font) = safe_load_custom_font(font_placement->resource_id);
-  }
-
-  graphics_draw_text(ctx, text, (*font), box,
+  graphics_draw_text(ctx, text, font, box,
                      GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
                      NULL);
 }
 
 // Draws the background and contents of the specified date window.
-void draw_full_date_window(GContext *ctx, int date_window_index, GFont *date_numeric_font, GFont *date_lang_font) {
+void draw_full_date_window(GContext *ctx, int date_window_index) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_full_date_window %c", date_window_index + 'a');
 
   DateWindowMode dwm = config.date_windows[date_window_index];
@@ -1122,7 +1125,7 @@ void draw_full_date_window(GContext *ctx, int date_window_index, GFont *date_num
 #define DATE_WINDOW_BUFFER_SIZE 16
   char buffer[DATE_WINDOW_BUFFER_SIZE];
   
-  GFont *font = date_numeric_font;
+  GFont font = date_numeric_font;
   struct FontPlacement *font_placement = &date_lang_font_placement[0];
   if (dwm >= DWM_weekday && dwm <= DWM_ampm) {
     // Draw text using date_lang_font.
@@ -1229,7 +1232,7 @@ void draw_date_window_debug_text(GContext *ctx, int date_window_index) {
     buffer[0] = '\0';
   }
 
-  draw_date_window_text(ctx, date_window_index, text, &font_placement, &font);
+  draw_date_window_text(ctx, date_window_index, text, &font_placement, font);
 }
 
 // Called once per epoch (e.g. once per second, or once per minute) to
@@ -1255,7 +1258,6 @@ void update_hands(struct tm *time) {
   if (new_placement.second_hand_index != current_placement.second_hand_index) {
     current_placement.second_hand_index = new_placement.second_hand_index;
     layer_mark_dirty(clock_hands_layer);
-    invalidate_clock_face(); // hack.
   }
 
   if (new_placement.hour_buzzer != current_placement.hour_buzzer) {
@@ -1459,8 +1461,7 @@ void apply_config() {
 
   // Reload all bitmaps just for good measure.  Maybe the user changed
   // the draw mode or something else.
-  destroy_objects();
-  create_objects();
+  recreate_all_objects();
 
   invalidate_clock_face();
 
@@ -1474,6 +1475,45 @@ void invalidate_clock_face() {
   has_clock_face = false;
   if (clock_face_layer != NULL) {
     layer_mark_dirty(clock_face_layer);
+  }
+}
+
+void unload_date_fonts() {
+  if (date_numeric_font == date_lang_font) {
+    // In this case, we just shared the same pointer; don't release it
+    // twice.
+    date_numeric_font = NULL;
+  } else if (date_numeric_font != NULL) {
+    safe_unload_custom_font(&date_numeric_font);
+  }
+  if (date_lang_font != NULL) {
+    safe_unload_custom_font(&date_lang_font);
+  }
+}
+
+void load_date_fonts() {
+  unload_date_fonts();
+  if (memory_panic_count > 6) {
+    // Don't load fonts if the memory panic count is over this
+    // threshold.
+
+  } else {
+    // Load the date_window fonts up early, and keep them loaded, so
+    // they're always here in the top of memory.  (Fonts seem to
+    // sometimes fail to load correctly, with no reported error, when
+    // memory is fragmented, so better to load them up front to avoid
+    // this problem.)
+
+    if (config.display_lang < num_langs) {
+      int lang_font_resource_id = date_lang_font_placement[config.display_lang].resource_id;
+      int numeric_font_resource_id = date_lang_font_placement[0].resource_id;
+      date_lang_font = safe_load_custom_font(lang_font_resource_id);
+      if (numeric_font_resource_id == lang_font_resource_id) {
+        date_numeric_font = date_lang_font;
+      } else {
+        date_numeric_font = safe_load_custom_font(numeric_font_resource_id);
+      }
+    }
   }
 }
 
@@ -1530,6 +1570,7 @@ void create_objects() {
 // Destroys the objects created by create_objects().
 void destroy_objects() {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "destroy_objects");
+
   window_stack_pop_all(false);
   layer_destroy(clock_face_layer);
   clock_face_layer = NULL;
@@ -1565,6 +1606,13 @@ void destroy_objects() {
   window = NULL;
 }
 
+void recreate_all_objects() {
+  unload_date_fonts();
+  destroy_objects();
+  create_objects();
+  load_date_fonts();
+}
+
 // Called at program exit to cleanly shut everything down.
 void handle_deinit() {
 #ifdef MAKE_CHRONOGRAPH
@@ -1573,12 +1621,13 @@ void handle_deinit() {
   tick_timer_service_unsubscribe();
 
   destroy_objects();
+  unload_date_fonts();
 }
 
 // Called at program start to bootstrap everything.
 void handle_init() {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "handle_init");
-
+  
   // Allocate the clock_face bitmap before we allocate anything else,
   // to minimize fragmentation by ensuring that this big buffer sits
   // at the top of memory, instead of in the middle of something
@@ -1587,7 +1636,7 @@ void handle_init() {
     GSize size = { SCREEN_WIDTH, SCREEN_HEIGHT };
 #ifdef PBL_PLATFORM_APLITE
     clock_face.bitmap = __gbitmap_create_blank(size);
-#elif PBL_PLATFORM_CHALK
+#elif defined(PBL_PLATFORM_CHALK)
     GBitmapFormat format = GBitmapFormat8BitCircular;
     clock_face.bitmap = gbitmap_create_blank(size, format);
 #else
@@ -1632,7 +1681,7 @@ void handle_init() {
 
   time_t now = time(NULL);
   struct tm *startup_time = localtime(&now);
-  
+
   create_objects();
   compute_hands(startup_time, &current_placement);
   apply_config();
@@ -1655,9 +1704,9 @@ void reset_memory_panic() {
   ++memory_panic_count;
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "reset_memory_panic begin, count = %d", memory_panic_count);
-
-  destroy_objects();
-  create_objects();
+    
+  recreate_all_objects();
+  invalidate_clock_face();
 
   // Start resetting some options if the memory panic count grows too high.
   if (memory_panic_count > 1) {

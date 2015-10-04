@@ -85,6 +85,9 @@ typedef struct {
   GColor colors[3];     //  { clear, fg color, bg color }
 } __attribute__((__packed__)) DrawModeTable;
 
+extern bool memory_panic_flag;
+extern int memory_panic_count;
+
 extern DrawModeTable draw_mode_table[2];
 extern int sweep_timer_ms;
 

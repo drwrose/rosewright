@@ -31,30 +31,10 @@ void sanitize_config() {
   config.color_mode = config.color_mode % NUM_FACE_COLORS;
 }
 
-#ifndef NDEBUG
-const char *show_config() {
-#define CONFIG_BUFFER_SIZE 100
-  static char buffer[CONFIG_BUFFER_SIZE];
-  snprintf(buffer, CONFIG_BUFFER_SIZE, "bat: %d, bt: %d, sh: %d, hb: %d, bb: %d, dm: %d, cm: %d, cd: %d, sw: %d, dl: %d, fi: %d, lb: %d, ld: %d, dw: ", config.battery_gauge, config.bluetooth_indicator, config.second_hand, config.hour_buzzer, config.bluetooth_buzzer, config.draw_mode, config.color_mode, config.chrono_dial, config.sweep_seconds, config.display_lang, config.face_index, config.lunar_background, config.lunar_direction);
-
-  if (NUM_DATE_WINDOWS > 0) {
-    char b2[12];
-    snprintf(b2, 12, "%d", config.date_windows[0]);
-    strncat(buffer, b2, CONFIG_BUFFER_SIZE);
-    for (int i = 1; i < NUM_DATE_WINDOWS; ++i) {
-      snprintf(b2, 12, ",%d", config.date_windows[i]);
-      strncat(buffer, b2, CONFIG_BUFFER_SIZE);
-    }
-  }
-  
-  return buffer;
-}
-#endif  // NDEBUG
-
 void save_config() {
   int wrote = persist_write_data(PERSIST_KEY, &config, sizeof(config));
   if (wrote == sizeof(config)) {
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Saved config (%d, %d): %s", PERSIST_KEY, sizeof(config), show_config());
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Saved config (%d, %d)", PERSIST_KEY, sizeof(config));
   } else {
     app_log(APP_LOG_LEVEL_ERROR, __FILE__, __LINE__, "Error saving config (%d, %d): %d", PERSIST_KEY, sizeof(config), wrote);
   }
@@ -67,7 +47,7 @@ void load_config() {
   int read_size = persist_read_data(PERSIST_KEY, &local_config, sizeof(local_config));
   if (read_size == sizeof(local_config)) {
     config = local_config;
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Loaded config (%d, %d): %s", PERSIST_KEY, sizeof(config), show_config());
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Loaded config (%d, %d)", PERSIST_KEY, sizeof(config));
   } else {
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "No previous config (%d, %d): %d", PERSIST_KEY, sizeof(config), read_size);
   }
@@ -81,7 +61,7 @@ void dropped_config_handler(AppMessageResult reason, void *context) {
 }
 
 void receive_config_handler(DictionaryIterator *received, void *context) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "receive_config_handler");
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "receive_config_handler, memory_panic_count = %d", memory_panic_count);
   ConfigOptions orig_config = config;
 
   Tuple *battery_gauge = dict_find(received, CK_battery_gauge);
@@ -169,13 +149,26 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
   
   sanitize_config();
 
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "New config: %s", show_config());
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "New config");
   if (memcmp(&orig_config, &config, sizeof(config)) == 0) {
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Config is unchanged.");
   } else {
     save_config();
     apply_config();
   }
+
+  /*
+  if (memory_panic_count > 1000) {
+    // This seems to happen sometimes in the emulator (never on the
+    // physical watch)--something is somehow setting
+    // memory_panic_count to an absurdly high value!  It always
+    // happens when a message is received from Javascript.  I can't
+    // explain it. Followup: maybe I can.  It seems to be related to
+    // displaying a too-long string in the log message.
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Resetting memory_panic_count from %d", memory_panic_count);
+    memory_panic_count = 0;
+  }
+  */
 }
 
 // The following functions are all designed to support rolling through
