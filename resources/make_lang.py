@@ -18,7 +18,7 @@ the resources directory, based on the system language data.
 make_lang.py [opts]
 """
 
-fontChoices = [ 'latin', 'extended', 'rtl', 'zh', 'ja', 'ko', 'th', 'ta', 'hi' ]
+fontChoices = [ 'latin', 'el', 'ru', 'hy', 'rtl_he', 'rtl_ar', 'zh', 'ja', 'ko', 'th', 'ta', 'hi' ]
 
 # Font (rect, round) filenames and (rect, round) pixel sizes.  Font
 # sizes are encoded into the resource names, which appear in wright.c.
@@ -26,8 +26,11 @@ fontNames = {
     #'latin' : ('ArchivoNarrow-Bold.ttf', (16, 18)),
     #'latin' : (('9x18B.pcf.gz', '10x20.pcf.gz'), (18, 20)),
     'latin' : (('ArchivoNarrow-Bold.ttf', '10x20.pcf.gz'), (16, 20)),
-    'extended' : ('DejaVuSansCondensed-Bold.ttf', (14, 16)),
-    'rtl' : ('DejaVuSansCondensed-Bold.ttf', (14, 16)),
+    'el' : ('DejaVuSansCondensed-Bold.ttf', (14, 16)),
+    'ru' : ('DejaVuSansCondensed-Bold.ttf', (14, 16)),
+    'hy' : ('DejaVuSansCondensed-Bold.ttf', (14, 16)),
+    'rtl_he' : ('DejaVuSansCondensed-Bold.ttf', (14, 16)),
+    'rtl_ar' : ('DejaVuSansCondensed-Bold.ttf', (14, 16)),
     'zh' : ('wqy-microhei.ttc', (16, 18)),
     'ja' : ('TakaoPGothic.ttf', (16, 18)),
     'ko' : ('UnDotum.ttf', (16, 18)),
@@ -50,33 +53,34 @@ langs = [
     [ 'sv_SE', 'Swedish', 'latin', 8 ],
     [ 'is_IS', 'Icelandic', 'latin', 9 ],
     [ 'tl', 'Tagalog', 'latin', 10 ],
-    [ 'el_GR', 'Greek', 'extended', 11 ],
+    [ 'el_GR', 'Greek', 'el', 11 ],
     [ 'hu_HU', 'Hungarian', 'latin', 12 ],
-    [ 'ru_RU', 'Russian', 'extended', 13 ],
+    [ 'ru_RU', 'Russian', 'ru', 13 ],
     [ 'pl_PL', 'Polish', 'latin', 14 ],
     [ 'cs_CZ', 'Czech', 'latin', 15 ],
-    [ 'hy_AM', 'Armenian', 'extended', 16 ],
+    [ 'hy_AM', 'Armenian', 'hy', 16 ],
     [ 'tr_TR', 'Turkish', 'latin', 17 ],
-    [ 'he_IL', 'Hebrew', 'rtl', 18 ],
-    [ 'fa_IR', 'Farsi', 'rtl', 19 ],
-    [ 'ar_SA', 'Arabic', 'rtl', 20 ],
+    [ 'he_IL', 'Hebrew', 'rtl_he', 18 ],
+    [ 'fa_IR', 'Farsi', 'rtl_ar', 19 ],
+    [ 'ar_SA', 'Arabic', 'rtl_ar', 20 ],
     [ 'zh_CN', 'Chinese', 'zh', 21 ],
     [ 'ja_JP', 'Japanese', 'ja', 22 ],
     [ 'ko_KR', 'Korean', 'ko', 23 ],
     [ 'th_TH', 'Thai', 'th', 24 ],
     [ 'ta_IN', 'Tamil', 'ta', 25 ],
     [ 'hi_IN', 'Hindi', 'hi', 26 ],
-    [ 'bg_BG', 'Bulgarian', 'extended', 27 ],
+    [ 'bg_BG', 'Bulgarian', 'ru', 27 ],
     ]
 
 # In the above list, the third parameter is the font code:
 
 # 'latin' is the normal Latin font that ships on the Pebble.
 
-# 'extended' means the language is Latinate but makes use of extended
-# characters and therefore requires a different font.
+# The remaining codes are language-specific fonts, though some that
+# share the same alphabet are grouped together.  Some may use the same
+# source font but the resource has a different subset of glyphs.
 
-# 'rtl' are written right-to-left and require special handling for
+# 'rtl_*' are written right-to-left and require special handling for
 # this reason.
 
 # The remaining codes are for language-specific fonts.
@@ -196,7 +200,7 @@ def makeDates(generatedTable, generatedJson, langRow, li):
                 name = name[0].upper() + name[1:]
 
             # Reverse text meant to be written right-to-left.
-            if fontKey == 'rtl':
+            if fontKey.startswith('rtl'):
                 ls = list(name)
                 ls.reverse()
                 name = ''.join(ls)

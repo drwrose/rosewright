@@ -58,12 +58,15 @@ struct FontPlacement {
   signed char vshift;  // Value determined empirically for each font.
 };
 
-#define NUM_DATE_LANG_FONTS 9
+#define NUM_DATE_LANG_FONTS 12
 struct FontPlacement date_lang_font_placement[NUM_DATE_LANG_FONTS] = {
 #ifdef PBL_ROUND
   { RESOURCE_ID_DAY_FONT_LATIN_20, -2 },
-  { RESOURCE_ID_DAY_FONT_EXTENDED_16, 1 },
-  { RESOURCE_ID_DAY_FONT_RTL_16, 1 },
+  { RESOURCE_ID_DAY_FONT_EL_16, 1 },
+  { RESOURCE_ID_DAY_FONT_RU_16, 1 },
+  { RESOURCE_ID_DAY_FONT_HY_16, 1 },
+  { RESOURCE_ID_DAY_FONT_RTL_HE_16, 1 },
+  { RESOURCE_ID_DAY_FONT_RTL_AR_16, 1 },
   { RESOURCE_ID_DAY_FONT_ZH_18, -1 },  // Chinese
   { RESOURCE_ID_DAY_FONT_JA_18, -1 },  // Japanese
   { RESOURCE_ID_DAY_FONT_KO_18, -2 },  // Korean
@@ -72,8 +75,11 @@ struct FontPlacement date_lang_font_placement[NUM_DATE_LANG_FONTS] = {
   { RESOURCE_ID_DAY_FONT_HI_18, 0 },  // Hindi
 #else  // PBL_ROUND
   { RESOURCE_ID_DAY_FONT_LATIN_16, -1 },
-  { RESOURCE_ID_DAY_FONT_EXTENDED_14, 1 },
-  { RESOURCE_ID_DAY_FONT_RTL_14, 1 },
+  { RESOURCE_ID_DAY_FONT_EL_14, 1 },
+  { RESOURCE_ID_DAY_FONT_RU_14, 1 },
+  { RESOURCE_ID_DAY_FONT_HY_14, 1 },
+  { RESOURCE_ID_DAY_FONT_RTL_HE_14, 1 },
+  { RESOURCE_ID_DAY_FONT_RTL_AR_14, 1 },
   { RESOURCE_ID_DAY_FONT_ZH_16, -1 },  // Chinese
   { RESOURCE_ID_DAY_FONT_JA_16, -1 },  // Japanese
   { RESOURCE_ID_DAY_FONT_KO_16, -2 },  // Korean
@@ -154,17 +160,15 @@ void draw_date_window_debug_text(GContext *ctx, int date_window_index);
 GFont safe_load_custom_font(int resource_id) {
   ResHandle resource = resource_get_handle(resource_id);
   app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "loading font %d, heap_bytes_free = %d", resource_id, heap_bytes_free());
-  return fallback_font;
 
-  /*
   GFont font = fonts_load_custom_font(resource);
   if (font == fallback_font) {
     app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "font %d failed to load", resource_id);
-    trigger_memory_panic(__LINE__);
+    //trigger_memory_panic(__LINE__);
+    return font;
   }
   app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "loaded font %d as %p, heap_bytes_free = %d", resource_id, font, heap_bytes_free());
   return font;
-  */
 }
 
 // Unloads a font pointer returned by fonts_load_custom_font()
@@ -390,7 +394,7 @@ void flip_bitmap_x(GBitmap *image, short *cx) {
   int stride = gbitmap_get_bytes_per_row(image);
   assert(stride >= width_bytes);
 
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "flip_bitmap_x, width_bytes = %d, stride=%d", width_bytes, stride);
+  app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "flip_bitmap_x, width_bytes = %d, stride=%d", width_bytes, stride);
 
   uint8_t *data = gbitmap_get_data(image);
 
@@ -1079,6 +1083,7 @@ void draw_date_window_text(GContext *ctx, int date_window_index, const char *tex
   GRect box = GRect(window->x, window->y, date_window_box.size.w, date_window_box.size.h);
 
 #ifdef PBL_PLATFORM_APLITE
+  unsigned int draw_mode = window->invert ^ config.draw_mode ^ APLITE_INVERT;
   graphics_context_set_text_color(ctx, draw_mode_table[draw_mode].colors[1]);
 #else
   struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
