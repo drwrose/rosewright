@@ -44,6 +44,7 @@ void create_chrono_objects();
 void destroy_chrono_objects();
 void load_chrono_data();
 void save_chrono_data();
+void draw_chrono_dial(GContext *ctx);
 
 #ifdef ENABLE_CHRONO_MINUTE_HAND
 void chrono_minute_layer_update_callback(Layer *me, GContext *ctx);
@@ -56,6 +57,7 @@ void chrono_second_layer_update_callback(Layer *me, GContext *ctx);
 #ifdef ENABLE_CHRONO_TENTH_HAND
 void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx);
 #endif
+
 
 #endif  // MAKE_CHRONOGRAPH
 

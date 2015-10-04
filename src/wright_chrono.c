@@ -20,10 +20,6 @@ size_t chrono_minute_resource_cache_size = CHRONO_MINUTE_RESOURCE_CACHE_SIZE +  
 size_t chrono_second_resource_cache_size = CHRONO_SECOND_RESOURCE_CACHE_SIZE +  + CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE;
 size_t chrono_tenth_resource_cache_size = CHRONO_TENTH_RESOURCE_CACHE_SIZE +  + CHRONO_TENTH_MASK_RESOURCE_CACHE_SIZE;
 
-BitmapWithData chrono_dial_white;
-BitmapWithData chrono_dial_black;
-Layer *chrono_dial_layer;
-
 // This window is pushed on top of the chrono dial to display the
 // readout in digital form for ease of recording.
 Window *chrono_digital_window;
@@ -90,41 +86,6 @@ unsigned int get_chrono_ms(unsigned int ms) {
   return chrono_ms;
 }
 
-void load_chrono_dial() {
-#ifdef PBL_PLATFORM_APLITE
-  bwd_destroy(&chrono_dial_white);
-  bwd_destroy(&chrono_dial_black);
-  if (chrono_dial_shows_tenths) {
-    chrono_dial_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_TENTHS_WHITE);
-    chrono_dial_black = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_TENTHS_BLACK);
-  } else {
-    chrono_dial_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_HOURS_WHITE);
-    chrono_dial_black = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_HOURS_BLACK);
-  }
-  if (chrono_dial_white.bitmap == NULL || chrono_dial_black.bitmap == NULL) {
-    bwd_destroy(&chrono_dial_white);
-    bwd_destroy(&chrono_dial_black);
-    trigger_memory_panic(__LINE__);
-  }
-#else  // PBL_PLATFORM_APLITE
-  // In Basalt, we only load the "white" image.
-  bwd_destroy(&chrono_dial_white);
-  if (chrono_dial_shows_tenths) {
-    chrono_dial_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_TENTHS_WHITE);
-  } else {
-    chrono_dial_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_HOURS_WHITE);
-  }
-  if (chrono_dial_white.bitmap == NULL) {
-    bwd_destroy(&chrono_dial_white);
-    trigger_memory_panic(__LINE__);
-    return;
-  }
-
-  // We apply the color scheme as needed.
-  remap_colors_clock(&chrono_dial_white);
-#endif  // PBL_PLATFORM_APLITE
-}
-
 void compute_chrono_hands(unsigned int ms, struct HandPlacement *placement) {
   unsigned int chrono_ms = get_chrono_ms(ms);
 
@@ -151,11 +112,7 @@ void compute_chrono_hands(unsigned int ms, struct HandPlacement *placement) {
   if (chrono_dial_shows_tenths != chrono_dial_wants_tenths) {
     // The dial has changed states; reload and redraw it.
     chrono_dial_shows_tenths = chrono_dial_wants_tenths;
-    bwd_destroy(&chrono_dial_white);
-    bwd_destroy(&chrono_dial_black);
-    if (chrono_dial_layer != NULL) {
-      layer_mark_dirty(chrono_dial_layer);
-    }
+    invalidate_clock_face();
   }
     
 #ifdef ENABLE_CHRONO_MINUTE_HAND
@@ -208,19 +165,48 @@ void compute_chrono_hands(unsigned int ms, struct HandPlacement *placement) {
 #endif  // ENABLE_CHRONO_TENTH_HAND
 }
 
-void chrono_dial_layer_update_callback(Layer *me, GContext *ctx) {
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_dial_layer");
+void draw_chrono_dial(GContext *ctx) {
+  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_chrono_dial");
   if (config.chrono_dial != CDM_off) {
-    if (chrono_dial_white.bitmap == NULL) {
-      load_chrono_dial();
-      if (chrono_dial_white.bitmap == NULL) {
-	trigger_memory_panic(__LINE__);
-        return;
-      }
+    BitmapWithData chrono_dial_white;
+    BitmapWithData chrono_dial_black;
+
+#ifdef PBL_PLATFORM_APLITE
+    if (chrono_dial_shows_tenths) {
+      chrono_dial_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_TENTHS_WHITE);
+      chrono_dial_black = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_TENTHS_BLACK);
+    } else {
+      chrono_dial_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_HOURS_WHITE);
+      chrono_dial_black = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_HOURS_BLACK);
     }
-    GRect destination = layer_get_bounds(me);
-    destination.origin.x = 0;
-    destination.origin.y = 0;
+    if (chrono_dial_white.bitmap == NULL || chrono_dial_black.bitmap == NULL) {
+      bwd_destroy(&chrono_dial_white);
+      bwd_destroy(&chrono_dial_black);
+      trigger_memory_panic(__LINE__);
+    }
+#else  // PBL_PLATFORM_APLITE
+    // In Basalt, we only load the "white" image.
+    bwd_destroy(&chrono_dial_white);
+    if (chrono_dial_shows_tenths) {
+      chrono_dial_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_TENTHS_WHITE);
+    } else {
+      chrono_dial_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_HOURS_WHITE);
+    }
+    if (chrono_dial_white.bitmap == NULL) {
+      trigger_memory_panic(__LINE__);
+      return;
+    }
+    
+    // We apply the color scheme as needed.
+    remap_colors_clock(&chrono_dial_white);
+#endif  // PBL_PLATFORM_APLITE
+  
+    int height = 56;   //chrono_dial_white.bitmap->bounds.size.h;
+    int width = 56;    //chrono_dial_white.bitmap->bounds.size.w;
+    int x = chrono_tenth_hand_def.place_x - width / 2;
+    int y = chrono_tenth_hand_def.place_y - height / 2;
+    
+    GRect destination = GRect(x, y, height, width);
 
 #ifdef PBL_PLATFORM_APLITE
     graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_fg);
@@ -231,6 +217,9 @@ void chrono_dial_layer_update_callback(Layer *me, GContext *ctx) {
     graphics_context_set_compositing_mode(ctx, GCompOpSet);
     graphics_draw_bitmap_in_rect(ctx, chrono_dial_white.bitmap, destination);
 #endif  // PBL_PLATFORM_APLITE
+
+    bwd_destroy(&chrono_dial_white);
+    bwd_destroy(&chrono_dial_black);
   }
 }
 
@@ -689,30 +678,12 @@ void create_chrono_objects() {
 
   Layer *window_layer = window_get_root_layer(window);
 
-  {
-    // We defer loading the chrono dial until we actually need to render it.
-    //load_chrono_dial();
-    int height = 56;   //chrono_dial_white.bitmap->bounds.size.h;
-    int width = 56;    //chrono_dial_white.bitmap->bounds.size.w;
-    int x = chrono_tenth_hand_def.place_x - width / 2;
-    int y = chrono_tenth_hand_def.place_y - height / 2;
-
-    chrono_dial_layer = layer_create(GRect(x, y, width, height));
-    assert(chrono_dial_layer != NULL);
-  }
-  layer_set_update_proc(chrono_dial_layer, &chrono_dial_layer_update_callback);
-  layer_add_child(window_layer, chrono_dial_layer);
-
   update_chrono_laps_time();
 }
 
 
 void destroy_chrono_objects() {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "destroy_chrono_objects");
-
-  layer_destroy(chrono_dial_layer);
-  bwd_destroy(&chrono_dial_white);
-  bwd_destroy(&chrono_dial_black);
 
   if (chrono_digital_window != NULL) {
     window_destroy(chrono_digital_window);

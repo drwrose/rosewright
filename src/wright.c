@@ -907,6 +907,10 @@ void draw_clock_face(Layer *me, GContext *ctx) {
     bwd_destroy(&date_window);
     bwd_destroy(&date_window_mask);
   }
+
+#ifdef MAKE_CHRONOGRAPH
+  draw_chrono_dial(ctx);
+#endif  // MAKE_CHRONOGRAPH
 }
 
 void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
@@ -1221,17 +1225,14 @@ void update_hands(struct tm *time) {
     current_placement.year_value = new_placement.year_value;
     current_placement.ampm_value = new_placement.ampm_value;
 
-    // Shorthand for the below for loop.  This achieves the same thing.
-    layer_mark_dirty(clock_face_layer);
-    bwd_destroy(&clock_face);
+    invalidate_clock_face();
   }
 
 #ifdef TOP_SUBDIAL
   // And the lunar index in the moon subdial.
   if (new_placement.lunar_index != current_placement.lunar_index) {
     current_placement.lunar_index = new_placement.lunar_index;
-    layer_mark_dirty(clock_face_layer);
-    bwd_destroy(&clock_face);
+    invalidate_clock_face();
   }
 #endif  // TOP_SUBDIAL
 }
@@ -1380,7 +1381,7 @@ void apply_config() {
   if (face_index != config.face_index) {
     // Update the face bitmap if it's changed.
     face_index = config.face_index;
-    bwd_destroy(&clock_face);
+    invalidate_clock_face();
     move_layers();
   }
 
@@ -1403,9 +1404,17 @@ void apply_config() {
   destroy_objects();
   create_objects();
 
-  layer_mark_dirty(clock_face_layer);
+  invalidate_clock_face();
 
   reset_tick_timer();
+}
+
+// Call this to force the clock_face bitmap cache to be recomputed and
+// redrawn next frame (e.g. if something on the face needs to be
+// updated).
+void invalidate_clock_face() {
+  layer_mark_dirty(clock_face_layer);
+  bwd_destroy(&clock_face);
 }
 
 // Creates all of the objects needed for the watch.  Normally called
