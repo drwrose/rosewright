@@ -16,8 +16,10 @@ typedef struct __attribute__((__packed__)) {
 // An array of these elements maintains an in-memory cache of resource
 // data so we don't have to go to the resource file all the time.
 struct __attribute__((__packed__)) ResourceCache {
-  unsigned char *data;
-  size_t data_size;
+  // We once kept the raw resource data here, but now we've got so
+  // much elbow room to play with, we'll keep the decoded bitmaps
+  // instead.
+  BitmapWithData bwd;
 };
 
 extern int bwd_resource_reads;
@@ -28,6 +30,7 @@ BitmapWithData bwd_create(GBitmap *bitmap, unsigned char *data);
 void bwd_destroy(BitmapWithData *bwd);
 BitmapWithData bwd_copy(BitmapWithData *source);
 BitmapWithData bwd_copy_bitmap(GBitmap *bitmap);
+void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source);
 BitmapWithData png_bwd_create(int resource_id);
 BitmapWithData rle_bwd_create(int resource_id);
 

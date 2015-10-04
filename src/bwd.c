@@ -13,30 +13,7 @@ size_t bwd_cache_total_size = 0;
 void bwd_clear_cache(struct ResourceCache *resource_cache, size_t resource_cache_size) {
   for (int i = 0; i < (int)resource_cache_size; ++i) {
     struct ResourceCache *cache = &resource_cache[i];
-    if (cache->data != NULL) {
-      bwd_cache_total_size -= cache->data_size;
-      free(cache->data);
-      cache->data = NULL;
-    }
-  }
-}
-#endif  // SUPPORT_RESOURCE_CACHE
-
-#ifdef SUPPORT_RESOURCE_CACHE
-static void fill_cache(struct ResourceCache *cache, int resource_id) {
-  if (cache->data == NULL) {
-    // Go read the resource data.
-    ++bwd_resource_reads;
-    ResHandle rh = resource_get_handle(resource_id);
-    cache->data_size = resource_size(rh);
-    cache->data = (unsigned char *)malloc(cache->data_size);
-    if (cache->data != NULL) {
-      bwd_cache_total_size += cache->data_size;
-      size_t bytes_copied = resource_load(rh, cache->data, cache->data_size);
-      assert(bytes_copied == cache->data_size);
-    }
-  } else {
-    ++bwd_cache_hits;
+    bwd_destroy(&(cache->bwd));
   }
 }
 #endif  // SUPPORT_RESOURCE_CACHE
@@ -65,12 +42,25 @@ BitmapWithData bwd_copy(BitmapWithData *source) {
 
 BitmapWithData bwd_copy_bitmap(GBitmap *source) {
   BitmapWithData dest;
+  dest.bitmap = NULL;
+  dest.data = NULL;
 
   GSize size = gbitmap_get_bounds(source).size;
 
 #ifndef PBL_PLATFORM_APLITE
   GBitmapFormat format = gbitmap_get_format(source);
   dest.bitmap = gbitmap_create_blank(size, format);
+#else
+  dest.bitmap = __gbitmap_create_blank(size);
+#endif
+
+  bwd_copy_into_from_bitmap(&dest, source);
+  return dest;
+}
+
+void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source) {
+#ifndef PBL_PLATFORM_APLITE
+  GBitmapFormat format = gbitmap_get_format(source);
   int pixels_per_byte = 0;
 
   size_t palette_count = 0;
@@ -102,33 +92,38 @@ BitmapWithData bwd_copy_bitmap(GBitmap *source) {
 
   if (palette_count != 0) {
     GColor *source_palette = gbitmap_get_palette(source);
-    GColor *dest_palette = gbitmap_get_palette(dest.bitmap);
+    GColor *dest_palette = gbitmap_get_palette(dest->bitmap);
     if (dest_palette == NULL) {
-      bwd_destroy(&dest);
-      return dest;
+      bwd_destroy(dest);
+      return;
     }
     memcpy(dest_palette, source_palette, palette_count);
   }
-  
-#else  // PBL_PLATFORM_APLITE
-  dest.bitmap = __gbitmap_create_blank(size);
 #endif  // PBL_PLATFORM_APLITE
-  if (dest.bitmap == NULL) {
-    return dest;
+
+  if (dest->bitmap == NULL) {
+    return;
   }
 
+  GSize size = gbitmap_get_bounds(source).size;
+  assert(size.h == gbitmap_get_bounds(dest->bitmap).size.h &&
+         size.w == gbitmap_get_bounds(dest->bitmap).size.w)
+  
 #ifdef PBL_SDK_2
   int stride = gbitmap_get_bytes_per_row(source);
+  assert(stride == gbitmap_get_bytes_per_row(dest->bitmap))
   uint8_t *source_data = gbitmap_get_data(source);
   size_t data_size = stride * size.h;
   
-  uint8_t *dest_data = gbitmap_get_data(dest.bitmap);
+  uint8_t *dest_data = gbitmap_get_data(dest->bitmap);
   memcpy(dest_data, source_data, data_size);
 
 #else  // PBL_SDK_2
+  assert(format == gbitmap_get_format(dest->bitmap));
+
   for (int y = 0; y < size.h; ++y) {
     GBitmapDataRowInfo source_info = gbitmap_get_data_row_info(source, y);
-    GBitmapDataRowInfo dest_info = gbitmap_get_data_row_info(dest.bitmap, y);
+    GBitmapDataRowInfo dest_info = gbitmap_get_data_row_info(dest->bitmap, y);
 
     uint8_t *source_row = &source_info.data[source_info.min_x];
     uint8_t *dest_row = &dest_info.data[dest_info.min_x];
@@ -139,8 +134,6 @@ BitmapWithData bwd_copy_bitmap(GBitmap *source) {
   }
 
 #endif  // PBL_SDK_2
-
-  return dest;
 }
 
 // Initialize a bitmap from a regular unencoded resource (i.e. as
@@ -163,24 +156,10 @@ BitmapWithData png_bwd_create_with_cache(int resource_id_offset, int resource_id
   }
 
   struct ResourceCache *cache = &resource_cache[index];
-  fill_cache(cache, resource_id);
-  if (cache->data == NULL) {
-    // Whoops, not enough RAM.
-    return bwd_create(NULL, NULL);
+  if (cache->bwd.bitmap == NULL) {
+    cache->bwd = png_bwd_create(resource_id);
   }
-
-#ifndef PBL_PLATFORM_APLITE
-  GBitmap *image = gbitmap_create_from_png_data(cache->data, cache->data_size);
-  return bwd_create(image, NULL);
-#else  // PBL_PLATFORM_APLITE
-  unsigned char *data = (unsigned char *)malloc(cache->data_size);
-  if (data == NULL) {
-    return bwd_create(NULL, NULL);
-  }
-  memcpy(data, cache->data, cache->data_size);
-  GBitmap *image = gbitmap_create_with_data(data);
-  return bwd_create(image, data);
-#endif  // PBL_PLATFORM_APLITE
+  return bwd_copy(&(cache->bwd));
 }
 #endif  // SUPPORT_RESOURCE_CACHE
 
@@ -803,17 +782,10 @@ BitmapWithData rle_bwd_create_with_cache(int resource_id_offset, int resource_id
   }
 
   struct ResourceCache *cache = &resource_cache[index];
-  fill_cache(cache, resource_id);
-  if (cache->data == NULL) {
-    // Whoops, not enough RAM.
-    return bwd_create(NULL, NULL);
+  if (cache->bwd.bitmap == NULL) {
+    cache->bwd = rle_bwd_create(resource_id);
   }
-
-  RBuffer rb;
-  rbuffer_init_data(&rb, cache->data, cache->data_size);
-  BitmapWithData result = rle_bwd_create_rb(&rb);
-  rbuffer_deinit(&rb);
-  return result;
+  return bwd_copy(&(cache->bwd));
 }
 #endif  // SUPPORT_RESOURCE_CACHE
 
