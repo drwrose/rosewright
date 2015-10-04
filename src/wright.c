@@ -939,9 +939,11 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
 
     // Now save the render for next time.
     GBitmap *fb = graphics_capture_frame_buffer(ctx);
-    if (gbitmap_get_format(clock_face.bitmap) != gbitmap_get_format(fb)) {
-      // This shouldn't happen, but it does happen on Basalt.  Whatever.
-      bwd_destroy(&clock_face);
+
+    // The first time, we allocate the new clock_face bitmap to
+    // exactly match the framebuffer format.  Thenceforth, we re-use
+    // the same buffer.
+    if (clock_face.bitmap == NULL) {
       clock_face = bwd_copy_bitmap(fb);
     } else {
       bwd_copy_into_from_bitmap(&clock_face, fb);
@@ -1619,23 +1621,6 @@ void handle_deinit() {
 // Called at program start to bootstrap everything.
 void handle_init() {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "handle_init");
-  
-  // Allocate the clock_face bitmap before we allocate anything else,
-  // to minimize fragmentation by ensuring that this big buffer sits
-  // at the top of memory, instead of in the middle of something
-  // useful.
-  {
-    GSize size = { SCREEN_WIDTH, SCREEN_HEIGHT };
-#ifdef PBL_PLATFORM_APLITE
-    clock_face.bitmap = __gbitmap_create_blank(size);
-#elif defined(PBL_PLATFORM_CHALK)
-    GBitmapFormat format = GBitmapFormat8BitCircular;
-    clock_face.bitmap = gbitmap_create_blank(size, format);
-#else
-    GBitmapFormat format = GBitmapFormat8Bit;
-    clock_face.bitmap = gbitmap_create_blank(size, format);
-#endif  // PBL_PLATFORM
-  }
   
   // Record the fallback font pointer so we can identify if this one
   // is accidentally returned from fonts_load_custom_font().
