@@ -46,9 +46,6 @@ typedef struct __attribute__((__packed__)) {
   unsigned char date_window_index;
 } DateWindowData;
 
-GFont date_numeric_font = NULL;
-GFont date_lang_font = NULL;
-
 // This structure specifies how to load, and how to shift each
 // different font to appear properly within the date window.
 struct FontPlacement {
@@ -141,7 +138,7 @@ DrawModeTable draw_mode_table[2] = {
 
 void destroy_objects();
 void create_objects();
-void draw_full_date_window(GContext *ctx, int date_window_index);
+void draw_full_date_window(GContext *ctx, int date_window_index, GFont *date_numeric_font, GFont *date_lang_font);
 
 // Loads a font from the resource and returns it.  It may return
 // either the intended font, or the fallback font.  If it returns
@@ -808,7 +805,7 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
     return;
   }
 #ifndef PBL_PLATFORM_APLITE
-  remap_colors_date(&top_subdial_bitmap);
+  remap_colors_clock(&top_subdial_bitmap);
 #endif  // PBL_PLATFORM_APLITE
   
   graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_fg);
@@ -901,11 +898,21 @@ void draw_clock_face(Layer *me, GContext *ctx) {
 
   // Draw the date windows.
   {
+    GFont date_numeric_font = NULL;
+    GFont date_lang_font = NULL;
+    
     for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
-      draw_full_date_window(ctx, i);
+      draw_full_date_window(ctx, i, &date_lang_font, &date_numeric_font);
     }
     bwd_destroy(&date_window);
     bwd_destroy(&date_window_mask);
+
+    if (date_lang_font != NULL) {
+      safe_unload_custom_font(&date_lang_font);
+    }
+    if (date_numeric_font != NULL) {
+      safe_unload_custom_font(&date_numeric_font);
+    }
   }
 
 #ifdef MAKE_CHRONOGRAPH
@@ -1088,7 +1095,7 @@ void draw_window(GContext *ctx, int date_window_index, const char *text, struct 
 }
 
 // Draws the background and contents of the specified date window.
-void draw_full_date_window(GContext *ctx, int date_window_index) {
+void draw_full_date_window(GContext *ctx, int date_window_index, GFont *date_numeric_font, GFont *date_lang_font) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_full_date_window %c", date_window_index + 'a');
 
   DateWindowMode dwm = config.date_windows[date_window_index];
@@ -1102,13 +1109,13 @@ void draw_full_date_window(GContext *ctx, int date_window_index) {
   // Format the date or weekday or whatever text for display.
 #define DATE_WINDOW_BUFFER_SIZE 16
   char buffer[DATE_WINDOW_BUFFER_SIZE];
-
-  GFont *font = &date_numeric_font;
+  
+  GFont *font = date_numeric_font;
   struct FontPlacement *font_placement = &date_lang_font_placement[0];
   if (dwm >= DWM_weekday && dwm <= DWM_ampm) {
     // Draw text using date_lang_font.
     const LangDef *lang = &lang_table[config.display_lang];
-    font = &date_lang_font;
+    font = date_lang_font;
     font_placement = &date_lang_font_placement[lang->font_index];
   }
 
@@ -1386,12 +1393,6 @@ void apply_config() {
   }
 
   if (display_lang != config.display_lang) {
-    // Unload the day font if it changes with the language.
-    if (date_lang_font != NULL && (display_lang == -1 || lang_table[display_lang].font_index != lang_table[config.display_lang].font_index)) {
-      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "apply_config unload date_lang_font %p", date_lang_font);
-      safe_unload_custom_font(&date_lang_font);
-    }
-
     // Reload the weekday, month, and ampm names from the appropriate
     // language resource.
     fill_date_names(date_names, NUM_DATE_NAMES, date_names_buffer, DATE_NAMES_MAX_BUFFER, lang_table[config.display_lang].date_name_id);
@@ -1499,12 +1500,6 @@ void destroy_objects() {
   hand_cache_destroy(&minute_cache);
   hand_cache_destroy(&second_cache);
 
-  if (date_lang_font != NULL) {
-    safe_unload_custom_font(&date_lang_font);
-  }
-  if (date_numeric_font != NULL) {
-    safe_unload_custom_font(&date_numeric_font);
-  }
   display_lang = -1;
 
   window_destroy(window);
