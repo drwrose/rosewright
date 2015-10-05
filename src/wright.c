@@ -1028,9 +1028,20 @@ void clock_hands_layer_update_callback(Layer *me, GContext *ctx) {
 #endif  // MAKE_CHRONOGRAPH
 }
 
+int get_indicator_face_index() {
+#ifdef TOP_SUBDIAL
+  int indicator_face_index = config.face_index * 2 + (config.top_subdial != TSM_off);
+#else  // TOP_SUBDIAL
+  int indicator_face_index = config.face_index;
+#endif  // TOP_SUBDIAL
+  assert(indicator_face_index < NUM_INDICATOR_FACES);
+  return indicator_face_index;
+}
+
 // Draws the frame and optionally fills the background of the current date window.
 void draw_date_window_background(GContext *ctx, int date_window_index, unsigned int fg_draw_mode, unsigned int bg_draw_mode) {
-  const struct IndicatorTable *window = &date_windows[date_window_index][config.face_index];
+  int indicator_face_index = get_indicator_face_index();
+  const struct IndicatorTable *window = &date_windows[date_window_index][indicator_face_index];
   GRect box = GRect(window->x, window->y, date_window_size.w, date_window_size.h);
 
 #ifdef PBL_PLATFORM_APLITE
@@ -1068,7 +1079,8 @@ void draw_date_window_text(GContext *ctx, int date_window_index, const char *tex
   if (font == NULL) {
     return;
   }
-  const struct IndicatorTable *window = &date_windows[date_window_index][config.face_index];
+  int indicator_face_index = get_indicator_face_index();
+  const struct IndicatorTable *window = &date_windows[date_window_index][indicator_face_index];
   GRect box = GRect(window->x, window->y, date_window_size.w, date_window_size.h);
 
 #ifdef PBL_PLATFORM_APLITE
@@ -1110,7 +1122,8 @@ void draw_full_date_window(GContext *ctx, int date_window_index) {
     return;
   }
 
-  const struct IndicatorTable *window = &date_windows[date_window_index][config.face_index];
+  int indicator_face_index = get_indicator_face_index();
+  const struct IndicatorTable *window = &date_windows[date_window_index][indicator_face_index];
 
   unsigned int draw_mode = window->invert ^ config.draw_mode ^ APLITE_INVERT;
   draw_date_window_background(ctx, date_window_index, draw_mode, draw_mode);
@@ -1414,12 +1427,7 @@ void move_layers() {
   // includes the top_subdial setting--having top_subdial enabled is
   // like a separate face for this purpose, which allows us to
   // reposition the indicators around the subdial when necessary.
-#ifdef TOP_SUBDIAL
-  int indicator_face_index = config.face_index * 2 + (config.top_subdial != TSM_off);
-#else  // TOP_SUBDIAL
-  int indicator_face_index = config.face_index;
-#endif  // TOP_SUBDIAL
-  assert(indicator_face_index < NUM_INDICATOR_FACES);
+  int indicator_face_index = get_indicator_face_index();
   {
     const struct IndicatorTable *window = &battery_table[indicator_face_index];
     move_battery_gauge(window->x, window->y, window->invert);

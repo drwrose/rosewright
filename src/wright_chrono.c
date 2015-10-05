@@ -9,6 +9,8 @@
 // The screen width of the chrono_digital_layer.  Always 144, even on Chalk.
 #define DIGITAL_LAYER_WIDTH 144
 
+const GSize chrono_dial_size = { 56, 56 };
+
 struct HandCache chrono_minute_cache;
 struct HandCache chrono_second_cache;
 struct HandCache chrono_tenth_cache;
@@ -197,12 +199,10 @@ void draw_chrono_dial(GContext *ctx) {
     remap_colors_clock(&chrono_dial_white);
 #endif  // PBL_PLATFORM_APLITE
   
-    int height = 56;   //chrono_dial_white.bitmap->bounds.size.h;
-    int width = 56;    //chrono_dial_white.bitmap->bounds.size.w;
-    int x = chrono_tenth_hand_def.place_x - width / 2;
-    int y = chrono_tenth_hand_def.place_y - height / 2;
+    int x = chrono_tenth_hand_def.place_x - chrono_dial_size.w / 2;
+    int y = chrono_tenth_hand_def.place_y - chrono_dial_size.h / 2;
     
-    GRect destination = GRect(x, y, height, width);
+    GRect destination = GRect(x, y, chrono_dial_size.w, chrono_dial_size.h);
 
 #ifdef PBL_PLATFORM_APLITE
     graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_fg);

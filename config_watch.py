@@ -260,8 +260,12 @@ faces = {
                      (('BrilliantRose', 'Blue', 'DarkCandyAppleRed', 'BulgarianRose'), ('RichBrilliantLavender', 'Black')),
                      ],
         'date_window_a_rect': (2, 75, 'b'),
-        'date_window_b_rect': [ (35, 101, 'b'), (35, 109, 'b') ],
-        'date_window_c_rect': [ (75, 101, 'b'), (75, 109, 'b') ],
+        'date_window_b_rect': [ (35, 101, 'b'), (35, 101, 'b'),
+                                (35, 109, 'b'), (35, 109, 'b'),
+                                ],
+        'date_window_c_rect': [ (75, 101, 'b'), (75, 101, 'b'),
+                                (75, 109, 'b'), (75, 109, 'b'),
+                                ],
         'date_window_d_rect': (106, 75, 'b'),
         'date_window_a_round': (4, 79, 'b'),
         'date_window_b_round': (46, 116, 'b'),
@@ -289,10 +293,10 @@ faces = {
         'chrono' : ('c_face_chrono_tenths.png', 'c_face_chrono_hours.png'),
         'centers_rect' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
         'centers_round' : (('chrono_minute', 135, 90), ('chrono_tenth', 90, 135), ('second', 45, 90)),
-        'date_window_a_rect' : (35, 37, 'b'),
-        'date_window_b_rect' : (75, 37, 'b'),
-        'date_window_a_round' : (45, 36, 'b'),
-        'date_window_b_round' : (94, 36, 'b'),
+        'date_window_a_rect' : [ (35, 37, 'b'), (5, 128, 'b') ],
+        'date_window_b_rect' : [ (75, 37, 'b'), (102, 128, 'b') ],
+        'date_window_a_round' : [ (45, 36, 'b'), (19, 120, 'b') ],
+        'date_window_b_round' : [ (94, 36, 'b'), (119, 120, 'b') ],
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : (32, 16, 'b'),
         'top_subdial_round' : (50, 19, 'b'),
@@ -309,14 +313,38 @@ faces = {
                      (('Black', 'DarkGreen', 'BrightGreen', 'PastelYellow'), ('White', 'Black')),
                      (('White', 'DukeBlue', 'Yellow', 'FashionMagenta'), ('DukeBlue', 'White')),
                      ],
-        'date_window_a_rect': [ (32, 94, 'w'), (32, 94, 'b'), (32, 94, 'w'), ],
-        'date_window_b_rect': [ (78, 94, 'w'), (78, 94, 'b'), (78, 94, 'w'), ],
-        'date_window_c_rect' : [ (32, 117, 'w'), (32, 117, 'b'), (32, 117, 'w'), ],
-        'date_window_d_rect' : [ (78, 117, 'w'), (78, 117, 'b'), (78, 117, 'w'), ],
-        'date_window_a_round': [ (38, 92, 'w'), (38, 92, 'b'), (38, 92, 'w'), ],
-        'date_window_b_round': [ (100, 92, 'w'), (100, 92, 'b'), (100, 92, 'w'), ],
-        'date_window_c_round' : [ (46, 115, 'w'), (46, 115, 'b'), (46, 115, 'w'), ],
-        'date_window_d_round' : [ (92, 115, 'w'), (92, 115, 'b'), (92, 115, 'w'), ],
+        'date_window_a_rect': [ (32, 94, 'w'),
+                                (32, 94, 'b'),
+                                (32, 94, 'w'),
+                                ],
+        'date_window_b_rect': [ (78, 94, 'w'),
+                                (78, 94, 'b'),
+                                (78, 94, 'w'),
+                                ],
+        'date_window_c_rect' : [ (32, 117, 'w'),
+                                 (32, 117, 'b'),
+                                 (32, 117, 'w'),
+                                 ],
+        'date_window_d_rect' : [ (78, 117, 'w'),
+                                 (78, 117, 'b'),
+                                 (78, 117, 'w'),
+                                 ],
+        'date_window_a_round': [ (38, 92, 'w'),
+                                 (38, 92, 'b'),
+                                 (38, 92, 'w'),
+                                 ],
+        'date_window_b_round': [ (100, 92, 'w'),
+                                 (100, 92, 'b'),
+                                 (100, 92, 'w'),
+                                 ],
+        'date_window_c_round' : [ (46, 115, 'w'),
+                                  (46, 115, 'b'),
+                                  (46, 115, 'w'),
+                                  ],
+        'date_window_d_round' : [ (92, 115, 'w'),
+                                  (92, 115, 'b'),
+                                  (92, 115, 'w'),
+                                  ],
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : [ (32, 34, 'w'), (32, 34, 'b'), (32, 34, 'w') ],
         'top_subdial_round' : [ (50, 34, 'w'), (50, 34, 'b'), (50, 34, 'w') ],
@@ -1404,11 +1432,11 @@ def configWatch():
     if top_subdial_rect[0]:
         resourceStr += makeMoonWheel()
 
-    print >> generatedDefs, "extern struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_FACES];"
-    print >> generatedTable, "struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_FACES] = {"
+    print >> generatedDefs, "extern struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_INDICATOR_FACES];"
+    print >> generatedTable, "struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_INDICATOR_FACES] = {"
     for i in range(len(date_window_keys)):
         ch = chr(97 + i)
-        makeIndicatorTable(generatedTable, generatedDefs, ch, (date_windows_rect[i], date_windows_round[i]), numFaces, anonymous = True)
+        makeIndicatorTable(generatedTable, generatedDefs, ch, (date_windows_rect[i], date_windows_round[i]), numIndicatorFaces, anonymous = True)
     print >> generatedTable, "};\n"
 
     makeIndicatorTable(generatedTable, generatedDefs, 'battery_table', (battery_rect, battery_round), numIndicatorFaces)
