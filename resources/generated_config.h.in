@@ -43,7 +43,11 @@
 
 #if %(limitResourceCacheAplite)s && defined(PBL_PLATFORM_APLITE)
   // If this symbol is defined, we don't implement the resource-cache
-  // feature on Aplite, to save a few bytes of code.
+  // feature on Aplite.
+  #undef SUPPORT_RESOURCE_CACHE
+#elif %(limitResourceCache)s
+  // If this symbol is defined, we don't implement the resource-cache
+  // feature on any platform.
   #undef SUPPORT_RESOURCE_CACHE
 #else
   #define SUPPORT_RESOURCE_CACHE 1
@@ -60,7 +64,8 @@
 #endif  // PBL_PLATFORM_APLITE
 
 #ifndef PBL_PLATFORM_APLITE
-// For now, Basalt doesn't use masks, so doesn't need to cache them.
+// For now, Basalt doesn't use masks--at least not on any second
+// hands--so doesn't need to cache them.
 #define SECOND_MASK_RESOURCE_CACHE_SIZE 0
 #else
 #define SECOND_MASK_RESOURCE_CACHE_SIZE %(secondMaskResourceCacheSize)s

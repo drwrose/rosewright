@@ -5,13 +5,16 @@
 import FaceMaker
 import PIL.Image
 
-face = FaceMaker.FaceMaker(zoom = 1.0)
+# aplite, basalt
+#face = FaceMaker.FaceMaker(zoom = 1.0, screenSize = (144, 168))
 
-face.drawTicks(60, 0.5, 2.0, width = 0.003)
+# chalk
+face = FaceMaker.FaceMaker(zoom = 1.0, screenSize = (180, 180))
+
+#face.drawTicks(60, 0.5, 2.0, width = 0.003)
 #face.drawTicks(12, 0.5, 2.0, width = 0.01)
-#face.drawTicks(60, 0.2, 1.7, width = 0.003); face.drawTicks(12, 0.2, 1.7, width = 0.009)
+face.drawTicks(60, 0.2, 1.7, width = 0.003); face.drawTicks(12, 0.2, 1.7, width = 0.009)
 
 # 1.0 = 317 ref pixels
 
-print "handScale = %s" % (face.pixelScaleToHandScale(317))
-face.save('d_face_ticks.png')
+face.save('e_face_ticks.png')

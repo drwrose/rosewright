@@ -7,7 +7,7 @@ import PIL.Image
 import sys
 
 # aplite, basalt
-screenSize = (144, 168); zoom = 0.92
+#screenSize = (144, 168); zoom = 0.92
 
 # chalk
 screenSize = (180, 180); zoom = 0.98

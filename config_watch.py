@@ -313,38 +313,14 @@ faces = {
                      (('Black', 'DarkGreen', 'BrightGreen', 'PastelYellow'), ('White', 'Black')),
                      (('White', 'DukeBlue', 'Yellow', 'FashionMagenta'), ('DukeBlue', 'White')),
                      ],
-        'date_window_a_rect': [ (32, 94, 'w'),
-                                (32, 94, 'b'),
-                                (32, 94, 'w'),
-                                ],
-        'date_window_b_rect': [ (78, 94, 'w'),
-                                (78, 94, 'b'),
-                                (78, 94, 'w'),
-                                ],
-        'date_window_c_rect' : [ (32, 117, 'w'),
-                                 (32, 117, 'b'),
-                                 (32, 117, 'w'),
-                                 ],
-        'date_window_d_rect' : [ (78, 117, 'w'),
-                                 (78, 117, 'b'),
-                                 (78, 117, 'w'),
-                                 ],
-        'date_window_a_round': [ (38, 92, 'w'),
-                                 (38, 92, 'b'),
-                                 (38, 92, 'w'),
-                                 ],
-        'date_window_b_round': [ (100, 92, 'w'),
-                                 (100, 92, 'b'),
-                                 (100, 92, 'w'),
-                                 ],
-        'date_window_c_round' : [ (46, 115, 'w'),
-                                  (46, 115, 'b'),
-                                  (46, 115, 'w'),
-                                  ],
-        'date_window_d_round' : [ (92, 115, 'w'),
-                                  (92, 115, 'b'),
-                                  (92, 115, 'w'),
-                                  ],
+        'date_window_a_rect': [ (32, 94, 'w'), (32, 94, 'b'), (32, 94, 'w'),],
+        'date_window_b_rect': [ (78, 94, 'w'), (78, 94, 'b'), (78, 94, 'w'),],
+        'date_window_c_rect' : [ (32, 117, 'w'), (32, 117, 'b'), (32, 117, 'w'),],
+        'date_window_d_rect' : [ (78, 117, 'w'), (78, 117, 'b'), (78, 117, 'w'),],
+        'date_window_a_round': [ (38, 92, 'w'), (38, 92, 'b'), (38, 92, 'w'),],
+        'date_window_b_round': [ (100, 92, 'w'), (100, 92, 'b'), (100, 92, 'w'),],
+        'date_window_c_round' : [ (46, 115, 'w'), (46, 115, 'b'), (46, 115, 'w'),],
+        'date_window_d_round' : [ (92, 115, 'w'), (92, 115, 'b'), (92, 115, 'w'),],
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : [ (32, 34, 'w'), (32, 34, 'b'), (32, 34, 'w') ],
         'top_subdial_round' : [ (50, 34, 'w'), (50, 34, 'b'), (50, 34, 'w') ],
@@ -386,21 +362,11 @@ faces = {
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : (32, 32, 'b'),
         'top_subdial_round' : (50, 32, 'b'),
-        'bluetooth_rect' : [ (11, 12, 'b'), (11, 12, 'b'),
-                             (11, 12, 'w'), (11, 12, 'w'),
-                             (11, 12, 'b'), (11, 12, 'b'),                                                   ],
-        'battery_rect' : [ (115, 16, 'b'), (115, 16, 'b'),
-                           (115, 16, 'w'), (115, 16, 'w'),
-                           (115, 16, 'b'), (115, 16, 'b'),
-                           ],
-        'bluetooth_round' : [ (56, 3, 'b'), (56, 3, 'b'),
-                              (56, 3, 'w'), (56, 3, 'w'),
-                              (56, 3, 'b'), (56, 3, 'b'),                                                   ],
-        'battery_round' : [ (109, 6, 'b'), (109, 6, 'b'),
-                            (109, 6, 'w'), (109, 6, 'w'),
-                            (109, 6, 'b'), (109, 6, 'b'),
-                           ],
-        'defaults' : [ 'date:c', 'moon_dark', 'second', 'limit_cache_aplite' ],
+        'bluetooth_rect' : [ (11, 12, 'b'), (11, 12, 'w'), (11, 12, 'b'), ],
+        'battery_rect' : [ (115, 16, 'b'), (115, 16, 'w'), (115, 16, 'b'), ],
+        'bluetooth_round' : [ (26, 26, 'b'), (26, 26, 'w'), (26, 26, 'b'), ],
+        'battery_round' : [ (139, 30, 'b'), (139, 30, 'w'), (139, 30, 'b'), ],
+        'defaults' : [ 'date:c', 'moon_dark', 'limit_cache' ],
         },
     }
 
@@ -1271,6 +1237,13 @@ def makeIndicatorTable(generatedTable, generatedDefs, name, (indicator_rect, ind
     def writeTable(generatedTable, indicator, numFaces):
         if len(indicator) == 1 and numFaces != 1:
             indicator = [indicator[0]] * numFaces
+        if len(indicator) == numFaces / 2:
+          # Implicitly expand it by doubling each face.
+          i2 = indicator
+          indicator = []
+          for i in i2:
+            indicator.append(i)
+            indicator.append(i)
 
         assert len(indicator) == numFaces
 
@@ -1541,6 +1514,7 @@ def configWatch():
         'enableChronoTenthHand' : int(enableChronoTenthHand),
         'hourMinuteOverlap' : int('hour_minute_overlap' in defaults),
         'limitResourceCacheAplite' : int('limit_cache_aplite' in defaults),
+        'limitResourceCache' : int('limit_cache' in defaults),
         }
 
 
