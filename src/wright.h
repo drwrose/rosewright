@@ -112,6 +112,7 @@ void remap_colors_clock(BitmapWithData *bwd);
 void invalidate_clock_face();
 void destroy_objects();
 void create_objects();
+void recreate_all_objects();
 
 
 #endif

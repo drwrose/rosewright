@@ -12,7 +12,6 @@ int memory_panic_count = 0;
 Window *window;
 
 BitmapWithData clock_face;
-bool has_clock_face = false;
 int face_index = -1;
 Layer *clock_face_layer;
 
@@ -872,6 +871,8 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
 #endif  // TOP_SUBDIAL
 
 void draw_clock_face(Layer *me, GContext *ctx) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_clock_face");
+
   // Load the clock face from the resource file if we haven't already.
   BitmapWithData face_bitmap;
   
@@ -926,29 +927,24 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
     // nothing in this function.
     return;
   }
+  
+  if (clock_face.bitmap == NULL) {
+    // The clock face needs to be redrawn (or drawn for the first
+    // time).  This is every part of the display except for the hands,
+    // including the date windows and top subdial.
 
-  if (!has_clock_face) {
-    // We haven't drawn the face yet in its current form.  Draw the
-    // clock face into the frame buffer.
+    // Draw the clock face into the frame buffer.
     draw_clock_face(me, ctx);
 
     // Now save the render for next time.
     GBitmap *fb = graphics_capture_frame_buffer(ctx);
-
-    // The first time, we allocate the new clock_face bitmap to
-    // exactly match the framebuffer format.  Thenceforth, we re-use
-    // the same buffer.
-    if (clock_face.bitmap == NULL) {
-      clock_face = bwd_copy_bitmap(fb);
-    } else {
-      bwd_copy_into_from_bitmap(&clock_face, fb);
-    }
+    assert(clock_face.bitmap == NULL);
+    clock_face = bwd_copy_bitmap(fb);
     graphics_release_frame_buffer(ctx, fb);
-    has_clock_face = true;
 
   } else {
-    // The clock_face render is already saved from a previous update;
-    // draw it now.
+    // The rendered clock face is already saved from a previous
+    // update; redraw it now.
     GRect destination = layer_get_bounds(me);
     destination.origin.x = 0;
     destination.origin.y = 0;
@@ -1458,7 +1454,6 @@ void apply_config() {
   // Reload all bitmaps just for good measure.  Maybe the user changed
   // the draw mode or something else.
   recreate_all_objects();
-  invalidate_clock_face();
   reset_tick_timer();
 }
 
@@ -1466,7 +1461,7 @@ void apply_config() {
 // redrawn next frame (e.g. if something on the face needs to be
 // updated).
 void invalidate_clock_face() {
-  has_clock_face = false;
+  bwd_destroy(&clock_face);
   if (clock_face_layer != NULL) {
     layer_mark_dirty(clock_face_layer);
   }
@@ -1526,9 +1521,9 @@ void create_objects() {
   window_handlers.unload = window_unload_handler;
   window_set_window_handlers(window, window_handlers);
 
-#ifdef PBL_PLATFORM_APLITE
+#ifdef PBL_SDK_2
   window_set_fullscreen(window, true);
-#endif  //  PBL_PLATFORM_APLITE
+#endif  //  PBL_SDK_2
   window_stack_push(window, false);
 
   hand_cache_init(&hour_cache);
@@ -1601,6 +1596,7 @@ void recreate_all_objects() {
   destroy_objects();
   create_objects();
   load_date_fonts();
+  invalidate_clock_face();
 }
 
 // Called at program exit to cleanly shut everything down.
@@ -1679,7 +1675,6 @@ void reset_memory_panic() {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "reset_memory_panic begin, count = %d", memory_panic_count);
     
   recreate_all_objects();
-  invalidate_clock_face();
 
   // Start resetting some options if the memory panic count grows too high.
   if (memory_panic_count > 1) {

@@ -163,11 +163,12 @@ void compute_chrono_hands(unsigned int ms, struct HandPlacement *placement) {
 
 void draw_chrono_dial(GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_chrono_dial");
+  
   if (config.chrono_dial != CDM_off) {
     BitmapWithData chrono_dial_white;
-    BitmapWithData chrono_dial_black;
 
 #ifdef PBL_PLATFORM_APLITE
+    BitmapWithData chrono_dial_black;
     if (chrono_dial_shows_tenths) {
       chrono_dial_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_TENTHS_WHITE);
       chrono_dial_black = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_TENTHS_BLACK);
@@ -182,7 +183,6 @@ void draw_chrono_dial(GContext *ctx) {
     }
 #else  // PBL_PLATFORM_APLITE
     // In Basalt, we only load the "white" image.
-    bwd_destroy(&chrono_dial_white);
     if (chrono_dial_shows_tenths) {
       chrono_dial_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_TENTHS_WHITE);
     } else {
@@ -215,7 +215,9 @@ void draw_chrono_dial(GContext *ctx) {
 #endif  // PBL_PLATFORM_APLITE
 
     bwd_destroy(&chrono_dial_white);
+#ifdef PBL_PLATFORM_APLITE
     bwd_destroy(&chrono_dial_black);
+#endif  // PBL_PLATFORM_APLITE
   }
 }
 
@@ -494,12 +496,9 @@ void push_chrono_digital_handler(ClickRecognizerRef recognizer, void *context) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "push chrono digital");
   if (!chrono_digital_window_showing) {
 
-#ifdef PBL_PLATFORM_APLITE
-    // Aplite is really tight on memory.  Gain some back before we
+    // Release some caches and repack our memory allocations before we
     // push the window.
-    destroy_objects();
-    create_objects();
-#endif  // PBL_PLATFORM_APLITE
+    recreate_all_objects();
     
     // If we don't already have a chrono_digital_window object
     // created, create it now.
@@ -519,7 +518,13 @@ void push_chrono_digital_handler(ClickRecognizerRef recognizer, void *context) {
       window_set_window_handlers(chrono_digital_window, chrono_digital_window_handlers);
     }
 
-    window_stack_push(chrono_digital_window, true);
+    // We'll push without animation, mainly so the pop also comes
+    // without animation, which is important because the main window
+    // needs to be able to grab the framebuffer once it draws, and
+    // there's no way to ask the Pebble SDK when the window has
+    // finished animating into its proper place (to know when it's
+    // safe to grab the framebuffer).
+    window_stack_push(chrono_digital_window, false);
   }
 }
 
@@ -671,8 +676,6 @@ void create_chrono_objects() {
   hand_cache_init(&chrono_minute_cache);
   hand_cache_init(&chrono_second_cache);
   hand_cache_init(&chrono_tenth_cache);
-
-  Layer *window_layer = window_get_root_layer(window);
 
   update_chrono_laps_time();
 }
