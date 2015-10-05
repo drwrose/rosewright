@@ -19,9 +19,10 @@ BitmapWithData date_window;
 BitmapWithData date_window_mask;
 bool date_window_debug = false;
 
-GFont fallback_font;
+GFont fallback_font = NULL;
 GFont date_numeric_font = NULL;
 GFont date_lang_font = NULL;
+GFont date_debug_font = NULL;
 
 // For now, the size of the date window is hardcoded.
 #ifdef PBL_ROUND
@@ -40,6 +41,14 @@ typedef struct __attribute__((__packed__)) {
 struct FontPlacement {
   unsigned char resource_id;
   signed char vshift;  // Value determined empirically for each font.
+};
+
+struct FontPlacement debug_font_placement = {
+#ifdef PBL_ROUND
+  0, -2
+#else  // PBL_ROUND
+  0, -3
+#endif  // PBL_ROUND
 };
 
 #define NUM_DATE_LANG_FONTS 12
@@ -1205,11 +1214,6 @@ void draw_date_window_debug_text(GContext *ctx, int date_window_index) {
 #define DATE_WINDOW_BUFFER_SIZE 16
   char buffer[DATE_WINDOW_BUFFER_SIZE];
 
-  GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
-  static struct FontPlacement font_placement = {
-    0, -3
-  };
-
   char *text = buffer;
 
   switch (dwm) {
@@ -1239,7 +1243,7 @@ void draw_date_window_debug_text(GContext *ctx, int date_window_index) {
     buffer[0] = '\0';
   }
 
-  draw_date_window_text(ctx, date_window_index, text, &font_placement, font);
+  draw_date_window_text(ctx, date_window_index, text, &debug_font_placement, date_debug_font);
 }
 
 // Called once per epoch (e.g. once per second, or once per minute) to
@@ -1625,6 +1629,10 @@ void handle_init() {
   // Record the fallback font pointer so we can identify if this one
   // is accidentally returned from fonts_load_custom_font().
   fallback_font = fonts_get_system_font(FONT_KEY_FONT_FALLBACK);
+
+  // Also, this is a handy thing to keep a pointer to, in case we
+  // display any debug date windows.
+  date_debug_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
 
   load_config();
 
