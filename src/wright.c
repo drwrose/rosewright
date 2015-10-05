@@ -26,24 +26,9 @@ GFont date_lang_font = NULL;
 
 // For now, the size of the date window is hardcoded.
 #ifdef PBL_ROUND
-//const GRect date_window_layer_size = {{ 0, 0 }, { 44, 24 }};
-const GRect date_window_box = {
-  { 2, 0 }, { 42, 22 }
-};
-// This is the position to draw the lunar image if it's inverted.
-const GRect date_window_box_offset = {
-  { -1, 0 }, { 45, 22 }
-};
-
+const GSize date_window_size = { 42, 22 };
 #else  // PBL_ROUND
-//const GRect date_window_layer_size = {{ 0, 0 }, { 39, 19 }};
-const GRect date_window_box = {
-  { 2, 0 }, { 37, 19 }
-};
-// This is the position to draw the lunar image if it's inverted.
-const GRect date_window_box_offset = {
-  { -1, 0 }, { 40, 19 }
-};
+const GSize date_window_size = { 37, 19 };
 #endif  // PBL_ROUND
 
 // This structure is the data associated with a date window layer.
@@ -1050,7 +1035,7 @@ void clock_hands_layer_update_callback(Layer *me, GContext *ctx) {
 // Draws the frame and optionally fills the background of the current date window.
 void draw_date_window_background(GContext *ctx, int date_window_index, unsigned int fg_draw_mode, unsigned int bg_draw_mode) {
   const struct IndicatorTable *window = &date_windows[date_window_index][config.face_index];
-  GRect box = GRect(window->x, window->y, date_window_box.size.w, date_window_box.size.h);
+  GRect box = GRect(window->x, window->y, date_window_size.w, date_window_size.h);
 
 #ifdef PBL_PLATFORM_APLITE
   // We only need the mask on Aplite.
@@ -1088,7 +1073,7 @@ void draw_date_window_text(GContext *ctx, int date_window_index, const char *tex
     return;
   }
   const struct IndicatorTable *window = &date_windows[date_window_index][config.face_index];
-  GRect box = GRect(window->x, window->y, date_window_box.size.w, date_window_box.size.h);
+  GRect box = GRect(window->x, window->y, date_window_size.w, date_window_size.h);
 
 #ifdef PBL_PLATFORM_APLITE
   unsigned int draw_mode = window->invert ^ config.draw_mode ^ APLITE_INVERT;
@@ -1557,6 +1542,7 @@ void create_objects() {
   assert(clock_face_layer != NULL);
   layer_set_update_proc(clock_face_layer, &clock_face_layer_update_callback);
   layer_add_child(window_layer, clock_face_layer);
+  invalidate_clock_face();
   
   init_battery_gauge(window_layer);
   init_bluetooth_indicator(window_layer);
