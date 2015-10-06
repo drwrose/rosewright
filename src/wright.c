@@ -362,7 +362,7 @@ int get_pixels_per_byte(GBitmap *image) {
     break;
 
   case GBitmapFormat8Bit:
-  case GBitmapFormat8BitCircular:
+    //  case GBitmapFormat8BitCircular:
     pixels_per_byte = 1;
     break;
   }
@@ -393,7 +393,7 @@ void flip_bitmap_x(GBitmap *image, short *cx) {
   uint8_t *data = gbitmap_get_data(image);
 
   for (int y = 0; y < height; ++y) {
-#ifdef PBL_SDK_2
+#if 1  //def PBL_SDK_2
     uint8_t *row = data + y * stride;
 #else
     // Get the min and max x values for this row
@@ -463,7 +463,7 @@ void flip_bitmap_y(GBitmap *image, short *cy) {
   for (int y1 = (height - 1) / 2; y1 >= 0; --y1) {
     int y2 = height - 1 - y1;
 
-#ifdef PBL_SDK_2
+#if 1  // def PBL_SDK_2
     uint8_t *row1 = data + y1 * stride;
     uint8_t *row2 = data + y2 * stride;
 #else

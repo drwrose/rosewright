@@ -61,32 +61,32 @@ BitmapWithData bwd_copy_bitmap(GBitmap *source) {
 void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source) {
 #ifndef PBL_PLATFORM_APLITE
   GBitmapFormat format = gbitmap_get_format(source);
-  int pixels_per_byte = 0;
+  //  int pixels_per_byte = 0;
 
   size_t palette_count = 0;
   switch (format) {
   case GBitmapFormat1Bit:
-    pixels_per_byte = 8;
+    //pixels_per_byte = 8;
     break;
     
   case GBitmapFormat8Bit:
-  case GBitmapFormat8BitCircular:
-    pixels_per_byte = 1;
+    //case GBitmapFormat8BitCircular:
+    //pixels_per_byte = 1;
     break;
     
   case GBitmapFormat1BitPalette:
     palette_count = 2;
-    pixels_per_byte = 8;
+    //pixels_per_byte = 8;
     break;
     
   case GBitmapFormat2BitPalette:
     palette_count = 4;
-    pixels_per_byte = 4;
+    //pixels_per_byte = 4;
     break;
     
   case GBitmapFormat4BitPalette:
     palette_count = 16;
-    pixels_per_byte = 2;
+    //pixels_per_byte = 2;
     break;
   }
 
@@ -109,7 +109,7 @@ void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source) {
   assert(size.h == gbitmap_get_bounds(dest->bitmap).size.h &&
          size.w == gbitmap_get_bounds(dest->bitmap).size.w)
   
-#ifdef PBL_SDK_2
+#if 1 //def PBL_SDK_2
   int stride = gbitmap_get_bytes_per_row(source);
   assert(stride == gbitmap_get_bytes_per_row(dest->bitmap))
   uint8_t *source_data = gbitmap_get_data(source);
@@ -588,7 +588,7 @@ rle_bwd_create_rb(RBuffer *rb) {
     break;
 
   case GBitmapFormat8Bit:
-  case GBitmapFormat8BitCircular:
+    //  case GBitmapFormat8BitCircular:
     vn = 8;
     packer_func = pack_8bit;
     break;

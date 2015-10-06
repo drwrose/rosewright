@@ -606,7 +606,7 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceBasename,
 
     if 'basalt' in targetPlatforms:
         print >> generatedTable, "#ifdef PBL_PLATFORM_BASALT"
-        resourceStr = makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_rect, '~color~rect')
+        resourceStr = makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_rect, '~color')
         print >> generatedTable, "#endif  // PBL_PLATFORM_BASALT"
 
     if 'chalk' in targetPlatforms:
@@ -1610,7 +1610,7 @@ if not watchStyle:
     sys.exit(1)
 
 if not targetPlatforms:
-    targetPlatforms = [ "aplite", "basalt", "chalk" ]
+    targetPlatforms = [ "aplite", "basalt" ]
 
 targetModes = set()
 if "aplite" in targetPlatforms:
