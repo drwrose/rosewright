@@ -32,6 +32,8 @@ const GSize date_window_size = { 37, 19 };
 #endif  // PBL_ROUND
 
 const GSize top_subdial_size = { 80, 41 };
+const GSize pebble_label_size = { 36, 15 };
+const GPoint pebble_label_offset = { 22, 13 };
 
 // This structure is the data associated with a date window layer.
 typedef struct __attribute__((__packed__)) {
@@ -781,7 +783,7 @@ void draw_pebble_label(Layer *me, GContext *ctx, bool invert) {
   unsigned int draw_mode = invert ^ config.draw_mode ^ APLITE_INVERT;
 
   const struct IndicatorTable *window = &top_subdial[config.face_index];
-  GRect destination = GRect(window->x, window->y, top_subdial_size.w, top_subdial_size.h);
+  GRect destination = GRect(window->x + pebble_label_offset.x, window->y + pebble_label_offset.y, pebble_label_size.w, pebble_label_size.h);
   
 #ifdef PBL_PLATFORM_APLITE
   BitmapWithData pebble_label_mask;
@@ -1078,7 +1080,7 @@ void clock_hands_layer_update_callback(Layer *me, GContext *ctx) {
 
 int get_indicator_face_index() {
 #ifdef TOP_SUBDIAL
-  int indicator_face_index = config.face_index * 2 + (config.top_subdial != TSM_off);
+  int indicator_face_index = config.face_index * 2 + (config.top_subdial > TSM_pebble_label);
 #else  // TOP_SUBDIAL
   int indicator_face_index = config.face_index;
 #endif  // TOP_SUBDIAL
