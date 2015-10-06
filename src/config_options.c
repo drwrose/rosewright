@@ -156,19 +156,6 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
     save_config();
     apply_config();
   }
-
-  /*
-  if (memory_panic_count > 1000) {
-    // This seems to happen sometimes in the emulator (never on the
-    // physical watch)--something is somehow setting
-    // memory_panic_count to an absurdly high value!  It always
-    // happens when a message is received from Javascript.  I can't
-    // explain it. Followup: maybe I can.  It seems to be related to
-    // displaying a too-long string in the log message.
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Resetting memory_panic_count from %d", memory_panic_count);
-    memory_panic_count = 0;
-  }
-  */
 }
 
 // The following functions are all designed to support rolling through
@@ -198,62 +185,62 @@ static void int_to_config() {
       false, false, 1, TSM_moon_phase, false,
     },
 
-    { IM_off, IM_off, true, false,
+    { IM_always, IM_always, true, false,
       true, 0, CDM_tenths, false,
       11, 0,
       { DWM_weekday, DWM_month, DWM_ampm, DWM_date },
       false, false, 2, TSM_off, false,
     },
     
-    { IM_always, IM_always, false, false,
+    { IM_off, IM_off, false, false,
       true, 0, CDM_tenths, false,
-      0, 0,
+      0, 2,
       { DWM_off, DWM_off, DWM_off, DWM_off },
       true, false, 3, TSM_off, false,
     },
     
-    { IM_always, IM_always, false, false,
+    { IM_off, IM_off, false, false,
       true, 1, CDM_tenths, false,
       0, 0,
       { DWM_off, DWM_off, DWM_off, DWM_off },
-      true, false, 3, TSM_off, false,
+      true, false, 3, TSM_pebble_label, false,
     },
 
 #elif PERSIST_KEY == 0x5151 + 0xc6  // Rosewright B
     { IM_off, IM_off, true, false,
       true, 0, CDM_tenths, false,
       0, 0,
-      { DWM_weekday, DWM_date },
-      true, false, 1, TSM_moon_phase, false,
+      { DWM_off, DWM_off, DWM_date, DWM_weekday },
+      false, false, 1, TSM_moon_phase, false,
     },
 
     { IM_off, IM_off, true, false,
       true, 0, CDM_tenths, false,
       5, 0,
-      { DWM_date, DWM_weekday },
-      false, false, 2, TSM_off, false,
+      { DWM_weekday, DWM_date, DWM_off, DWM_off },
+      false, false, 2, TSM_pebble_label, false,
     },
     
-    { IM_always, IM_always, false, false,
+    { IM_off, IM_off, false, false,
       true, 0, CDM_tenths, false,
-      0, 0,
-      { DWM_off, DWM_off },
+      0, 1,
+      { DWM_off, DWM_off, DWM_off, DWM_off },
       true, false, 3, TSM_off, false,
     },
     
     { IM_always, IM_always, false, false,
       true, 1, CDM_tenths, false,
       0, 0,
-      { DWM_off, DWM_off },
-      true, false, 3, TSM_off, false,
+      { DWM_off, DWM_off, DWM_off, DWM_off },
+      true, false, 3, TSM_pebble_label, false,
     },
 
 #elif PERSIST_KEY == 0x5151 + 0xc7  // Rosewright Chronograph
     { IM_always, IM_always, true, false,
       true, 0, CDM_off, false,
-      0, 1,
+      0, 0,
       { DWM_weekday, DWM_date },
-      true, false, 1, TSM_off, false,
+      true, false, 1, TSM_moon_phase, false,
     },
 
     { IM_always, IM_always, true, false,
@@ -267,7 +254,7 @@ static void int_to_config() {
       true, 1, CDM_off, false,
       0, 0,
       { DWM_off, DWM_off },
-      true, false, 3, TSM_off, false,
+      true, false, 3, TSM_pebble_label, false,
     },
 
 #elif PERSIST_KEY == 0x5151 + 0xc8  // Rosewright D
@@ -282,19 +269,19 @@ static void int_to_config() {
       true, 0, CDM_tenths, false,
       11, 0,
       { DWM_off, DWM_off, DWM_weekday, DWM_month },
-      false, false, 2, TSM_off, false,
+      false, false, 2, TSM_pebble_label, false,
     },
     
     { IM_off, IM_off, false, false,
       true, 0, CDM_tenths, false,
-      0, 0,
+      0, 2,
       { DWM_off, DWM_off, DWM_off, DWM_off },
       true, false, 3, TSM_off, false,
     },
     
     { IM_always, IM_always, true, false,
       true, 1, CDM_tenths, false,
-      0, 0,
+      0, 1,
       { DWM_off, DWM_off, DWM_off, DWM_off },
       true, false, 3, TSM_off, false,
     },
@@ -311,7 +298,7 @@ static void int_to_config() {
       true, 0, CDM_tenths, false,
       11, 0,
       { DWM_weekday, DWM_month, DWM_ampm, DWM_date },
-      false, false, 2, TSM_off, false,
+      false, false, 2, TSM_pebble_label, false,
     },
     
     { IM_always, IM_always, false, false,
@@ -325,7 +312,7 @@ static void int_to_config() {
       true, 1, CDM_tenths, false,
       0, 0,
       { DWM_off, DWM_off, DWM_off, DWM_off },
-      true, false, 3, TSM_off, false,
+      true, false, 3, TSM_pebble_label, false,
     },
 
 #endif  // PERSIST_KEY
