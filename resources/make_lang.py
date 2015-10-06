@@ -23,9 +23,7 @@ fontChoices = [ 'latin', 'el', 'ru', 'hy', 'rtl_he', 'rtl_ar', 'zh', 'ja', 'ko',
 # Font (rect, round) filenames and (rect, round) pixel sizes.  Font
 # sizes are encoded into the resource names, which appear in wright.c.
 fontNames = {
-    #'latin' : ('ArchivoNarrow-Bold.ttf', (16, 18)),
-    #'latin' : (('9x18B.pcf.gz', '10x20.pcf.gz'), (18, 20)),
-    'latin' : (('ArchivoNarrow-Bold.ttf', '10x20.pcf.gz'), (16, 20)),
+    'latin' : (('ArchivoNarrow-Bold-16.bdf', 'ArchivoNarrow-Bold-18.bdf'), (16, 18)),
     'el' : ('DejaVuSansCondensed-Bold.ttf', (14, 16)),
     'ru' : ('DejaVuSansCondensed-Bold.ttf', (14, 16)),
     'hy' : ('DejaVuSansCondensed-Bold.ttf', (14, 16)),

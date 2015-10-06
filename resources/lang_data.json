@@ -142,7 +142,7 @@
       "type": "font",
       "characterRegex": "[\u0021\u0030-\u0039\u0041-\u0048\u004a-\u0051\u0053\u0054\u0056\u0057\u005a\u0061-\u0070\u0072-\u007a\u00c1\u00c7\u00da\u00de\u00e1\u00e4\u00e5\u00e9\u00ed\u00f0\u00f3\u00f6\u00f8\u00fa\u00fb\u010c\u011b\u011f\u0158-\u015a\u015e\u017a]",
       "name": "DAY_FONT_LATIN_16",
-      "file": "ArchivoNarrow-Bold.ttf",
+      "file": "ArchivoNarrow-Bold-16.bdf",
       "targetPlatforms" : [
         "aplite", "basalt"
       ]
@@ -150,8 +150,8 @@
     {
       "type": "font",
       "characterRegex": "[\u0021\u0030-\u0039\u0041-\u0048\u004a-\u0051\u0053\u0054\u0056\u0057\u005a\u0061-\u0070\u0072-\u007a\u00c1\u00c7\u00da\u00de\u00e1\u00e4\u00e5\u00e9\u00ed\u00f0\u00f3\u00f6\u00f8\u00fa\u00fb\u010c\u011b\u011f\u0158-\u015a\u015e\u017a]",
-      "name": "DAY_FONT_LATIN_20",
-      "file": "10x20.pcf.gz",
+      "name": "DAY_FONT_LATIN_18",
+      "file": "ArchivoNarrow-Bold-18.bdf",
       "targetPlatforms" : [
         "chalk"
       ]
@@ -194,7 +194,7 @@
     },
     {
       "type": "font",
-      "characterRegex": "[\u0531\u0534\u0535\u053f\u0540\u0544\u0546-\u0549\u054d\u0553\u0555\u0561-\u0563\u0565\u0569\u056b\u056c\u056f\u0570\u0575\u0576\u0578\u057a-\u0580\u0582\u0584]",
+      "characterRegex": "[\u0531\u0534\u0535\u053f\u0540\u0544\u0546-\u0549\u054d\u0553\u0555\u0561-\u0563\u0565\u0569\u056b\u056c\u056f\u0570\u0574-\u0576\u0578\u057a-\u0580\u0582\u0584]",
       "name": "DAY_FONT_HY_14",
       "file": "DejaVuSansCondensed-Bold.ttf",
       "targetPlatforms" : [
@@ -203,7 +203,7 @@
     },
     {
       "type": "font",
-      "characterRegex": "[\u0531\u0534\u0535\u053f\u0540\u0544\u0546-\u0549\u054d\u0553\u0555\u0561-\u0563\u0565\u0569\u056b\u056c\u056f\u0570\u0575\u0576\u0578\u057a-\u0580\u0582\u0584]",
+      "characterRegex": "[\u0531\u0534\u0535\u053f\u0540\u0544\u0546-\u0549\u054d\u0553\u0555\u0561-\u0563\u0565\u0569\u056b\u056c\u056f\u0570\u0574-\u0576\u0578\u057a-\u0580\u0582\u0584]",
       "name": "DAY_FONT_HY_16",
       "file": "DejaVuSansCondensed-Bold.ttf",
       "targetPlatforms" : [

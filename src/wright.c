@@ -54,7 +54,7 @@ struct FontPlacement debug_font_placement = {
 #define NUM_DATE_LANG_FONTS 12
 struct FontPlacement date_lang_font_placement[NUM_DATE_LANG_FONTS] = {
 #ifdef PBL_ROUND
-  { RESOURCE_ID_DAY_FONT_LATIN_20, -2 },
+  { RESOURCE_ID_DAY_FONT_LATIN_18, 0 },
   { RESOURCE_ID_DAY_FONT_EL_16, 1 },
   { RESOURCE_ID_DAY_FONT_RU_16, 1 },
   { RESOURCE_ID_DAY_FONT_HY_16, 1 },
