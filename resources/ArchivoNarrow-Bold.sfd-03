@@ -2072,7 +2072,7 @@ NameList: AGL For New Fonts
 DisplaySize: -48
 AntiAlias: 1
 FitToEm: 1
-WinInfo: 0 16 4
+WinInfo: 160 16 4
 BeginChars: 65538 416
 
 StartChar: .notdef
@@ -88962,7 +88962,7 @@ EndSplineSet
 Validated: 1
 EndChar
 EndChars
-BitmapFont: 16 416 13 3 1 
+BitmapFont: 16 417 13 3 1 
 BDFChar: 0 65536 4 0 7 0 11
 s22aNV4!a>V8L4N
 BDFChar: 1 65537 0 0 0 0 0
@@ -89796,7 +89796,7 @@ r;;(qJ,fQL
 BDFChar: 415 8725 2 -3 4 0 11
 !<N<*$j[CU+<Wqb
 EndBitmapFont
-BitmapFont: 18 416 14 4 1 
+BitmapFont: 18 417 14 4 1 
 BDFChar: 0 65536 4 0 8 0 12
 s+%q9_1881P^o!KLk(_?P^oKY_19@Ps*t(L
 BDFChar: 1 65537 0 0 0 0 0
@@ -89853,7 +89853,7 @@ BDFChar: 26 55 8 1 6 0 12
 r;6sC(cX3'E+!']?iU0,
 BDFChar: 27 56 8 1 6 0 12
 Gl5e0b]s'0bfn</GQ7^D
-BDFChar: 28 57 8 1 7 0 12
+BDFChar: 28 57 8 1 6 0 12
 Gl5e0bfp!4%*ZrnGQ7^D
 BDFChar: 29 58 5 1 2 0 9
 ^qd_c!!!#7^q]pM
@@ -90114,7 +90114,7 @@ BDFChar: 156 191 9 1 7 -3 9
 BDFChar: 157 192 11 0 10 0 15
 (]Y$G!!!K/%KIOM)ZUfW1B94]0n=b(J&#I-i5!.d
 BDFChar: 158 193 11 0 10 0 15
-#65/4!!!K/%KIOM)ZUfW1B94]0n=b(J&#I-i5!.d
+#6556!!!K/%KIRN)ZUfW0n;!/0n=bhJ&#I-i8DCY
 BDFChar: 159 194 11 0 10 0 16
 $igb;)ZTj<%KHt=*WR,Z)ZVYo1Oq31It3$a@)1^9^u,1m
 BDFChar: 160 195 11 0 10 0 16
@@ -90629,5 +90629,7 @@ BDFChar: 414 8976 9 1 7 3 8
 rr2nIJ:IV"
 BDFChar: 415 8725 2 -3 4 0 12
 !<WB+":,8E&0P@G^]4?7
+BDFChar: -1 128 18 0 0 0 0
+z
 EndBitmapFont
 EndSplineFont

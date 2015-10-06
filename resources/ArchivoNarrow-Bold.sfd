@@ -2072,7 +2072,7 @@ NameList: AGL For New Fonts
 DisplaySize: -48
 AntiAlias: 1
 FitToEm: 1
-WinInfo: 160 16 4
+WinInfo: 16 16 4
 BeginChars: 65538 416
 
 StartChar: .notdef
@@ -89001,8 +89001,8 @@ BDFChar: 17 46 4 1 2 0 1
 ^q]pM
 BDFChar: 18 47 4 0 3 -1 11
 0H_J\+CJSB5X<-#J,fQL
-BDFChar: 19 48 7 0 6 0 10
-3./`c`l?$<`dB`G
+BDFChar: 19 48 7 1 6 0 10
+Gl5e0bfn;Tbku\c
 BDFChar: 20 49 7 1 6 0 10
 0_"Qc0JG170`:hK
 BDFChar: 21 50 7 1 6 0 10
@@ -90629,7 +90629,5 @@ BDFChar: 414 8976 9 1 7 3 8
 rr2nIJ:IV"
 BDFChar: 415 8725 2 -3 4 0 12
 !<WB+":,8E&0P@G^]4?7
-BDFChar: -1 128 18 0 0 0 0
-z
 EndBitmapFont
 EndSplineFont
