@@ -160,6 +160,14 @@ function initialize() {
 	} else {
 	    top_subdial = default_top_subdial;
 	}
+	// If any date windows are lunar, turn them off, but turn the
+	// top lunar subdial on.
+	for (var i = 0; i < num_date_windows; ++i) {
+	    if (date_windows[i] == 7) {
+		date_windows[i] = 0;
+		top_subdial = 2;
+	    }
+	}
     }
 }
 
