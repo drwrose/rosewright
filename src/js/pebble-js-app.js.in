@@ -10,6 +10,7 @@ var num_face_colors = %(numFaceColors)s;
 var date_window_keys = "%(dateWindowKeys)s";
 var num_date_windows = date_window_keys.length;
 var show_top_subdial = %(enableTopSubdial)s;
+var pebble_label = %(pebbleLabel)s;
 
 // Define the initial config default values.  These defaults override
 // the similar default values built directly into the watchapp in
@@ -80,10 +81,14 @@ function getIntFromStorage(keyword, default_value) {
     var value = localStorage.getItem(watch_name + ":" + keyword);
     if (!value) {
 	value = default_value;
+        console.log("   " + keyword + ": default " + value);
+        return value;
     }
     value = parseInt(value);
     if (isNaN(value)) {
 	value = default_value;
+        console.log("   " + keyword + ": default " + value);
+        return value;
     }
 
     console.log("   " + keyword + ": " + value);
@@ -129,8 +134,19 @@ function initialize() {
 
     logLocalStorage();
 
-    config_version_major = getIntFromStorage('config_version_major', watch_version_major);
-    config_version_minor = getIntFromStorage('config_version_minor', watch_version_minor);
+    if (getIntFromStorage('draw_mode', -1) == -1) {
+        // No data already stored.  The config_version is therefore
+        // the current version.
+        config_version_major = getIntFromStorage('config_version_major', watch_version_major);
+        config_version_minor = getIntFromStorage('config_version_minor', watch_version_minor);
+    } else {
+        // There is data already stored; if the config_version is
+        // absent, assume it's 3.11 (the last version for which we
+        // didn't store the config_version).
+        config_version_major = getIntFromStorage('config_version_major', 3);
+        config_version_minor = getIntFromStorage('config_version_minor', 11);
+    }
+    console.log("config_version = " + config_version_major + "." + config_version_minor);
     battery_gauge = getIntFromStorage('battery_gauge', default_battery_gauge);
     bluetooth_indicator = getIntFromStorage('bluetooth_indicator', default_bluetooth_indicator);
     second_hand = getIntFromStorage('second_hand', default_second_hand);
@@ -155,10 +171,19 @@ function initialize() {
 
     if (!configAtLeastVersion(4, 0)) {
 	// Prior to version 4.0, top_subdial was either 0 or 1.
+        console.log("updating config version");
 	if (top_subdial == 1) {
+            // If the user had selected 1, meaning lunar dial, show it.
 	    top_subdial = 2;
 	} else {
-	    top_subdial = default_top_subdial;
+            // If the user had selected 0, meaning no lunar dial, set
+            // it to either "pebble label" or "off", according to
+            // the setting of pebble_label.
+            if (pebble_label) {
+	        top_subdial = 1;
+            } else {
+                top_subdial = 0;
+            }
 	}
 	// If any date windows are lunar, turn them off, but turn the
 	// top lunar subdial on.
@@ -168,6 +193,14 @@ function initialize() {
 		top_subdial = 2;
 	    }
 	}
+        if (watch_name == "Rosewright B") {
+            // Reorder the date_windows on Rosewright B.
+            date_windows[3] = date_windows[2];
+            date_windows[2] = date_windows[1];
+            date_windows[1] = 0;
+        }
+    } else {
+        console.log("config version is current");
     }
 }
 
