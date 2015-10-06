@@ -23,7 +23,7 @@
 
       <!-- now load the meat of the Rosewright configure page -->
       <script src="text_strings.js.%(lang)s"></script>
-      <script src="rosewright_%(version)s_configure.js"></script>
+      <script src="rosewright_%(versionUnder)s_configure.js"></script>
         
     </div>
   </div>

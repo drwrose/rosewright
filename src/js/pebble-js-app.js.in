@@ -1,5 +1,8 @@
 // This name is displayed on the configuration title window.
 var watch_name = "%(watchName)s";
+var watch_version_major = "%(versionMajor)s";
+var watch_version_minor = "%(versionMinor)s";
+var config_langs = %(formattedConfigLangs)s;
 var show_chrono_dial = %(enableChronoDial)s;
 var enable_sweep_seconds = %(enableSweepSeconds)s;
 var num_faces = %(numFaces)s;
@@ -28,6 +31,8 @@ var default_lunar_background = %(defaultLunarBackground)s;
 var default_lunar_direction = 0;
 var default_show_debug = 0;
 
+var config_version_major;
+var config_version_minor;
 var battery_gauge;
 var bluetooth_indicator;
 var second_hand;
@@ -44,9 +49,6 @@ var top_subdial;
 var lunar_background;
 var lunar_direction;
 var show_debug;
-
-// this list also appears in html/make_configure.py.
-var config_langs = [ 'en', 'es', 'de', 'fr', 'bg' ];
 
 %(displayLangLookup)s
 
@@ -98,6 +100,11 @@ function getStringFromStorage(keyword, default_value) {
     return value;
 }
 
+function configAtLeastVersion(major, minor) {
+    return ((config_version_major > major) ||
+	    (config_version_major == major && config_version_minor >= minor));
+}
+
 var initialized = false;
 function initialize() {
     console.log("initialize: " + initialized);
@@ -122,6 +129,8 @@ function initialize() {
 
     logLocalStorage();
 
+    config_version_major = getIntFromStorage('config_version_major', watch_version_major);
+    config_version_minor = getIntFromStorage('config_version_minor', watch_version_minor);
     battery_gauge = getIntFromStorage('battery_gauge', default_battery_gauge);
     bluetooth_indicator = getIntFromStorage('bluetooth_indicator', default_bluetooth_indicator);
     second_hand = getIntFromStorage('second_hand', default_second_hand);
@@ -143,6 +152,15 @@ function initialize() {
     lunar_direction = getIntFromStorage('lunar_direction', default_lunar_direction);
     top_subdial = getIntFromStorage('top_subdial', default_top_subdial);
     show_debug = getIntFromStorage('show_debug', default_show_debug);
+
+    if (!configAtLeastVersion(4, 0)) {
+	// Prior to version 4.0, top_subdial was either 0 or 1.
+	if (top_subdial == 1) {
+	    top_subdial = 2;
+	} else {
+	    top_subdial = default_top_subdial;
+	}
+    }
 }
 
 Pebble.addEventListener("ready", function(e) {
@@ -190,7 +208,7 @@ Pebble.addEventListener("showConfiguration", function(e) {
     if (config_langs.indexOf(prefix) >= 0) {
 	lang_extension = '.' + prefix;
     }
-    var url = "http://s3.amazonaws.com/us.ddrose/pebble/rosewright/html/rosewright_4_0_configure" + lang_extension + ".html?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&color_mode=" + color_mode + "&default_display_lang=" + default_display_lang + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_face_colors=" + num_face_colors + "&date_window_keys=" + date_window_keys + "&lunar_background=" + lunar_background + "&lunar_direction=" + lunar_direction;
+    var url = "http://s3.amazonaws.com/us.ddrose/pebble/rosewright/html/rosewright_%(versionUnder)s_configure" + lang_extension + ".html?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&color_mode=" + color_mode + "&default_display_lang=" + default_display_lang + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_face_colors=" + num_face_colors + "&date_window_keys=" + date_window_keys + "&lunar_background=" + lunar_background + "&lunar_direction=" + lunar_direction;
     if (show_top_subdial) {
         url += "&top_subdial=" + top_subdial;
     }
@@ -223,6 +241,9 @@ Pebble.addEventListener("webviewclosed", function(e) {
 	var configuration = JSON.parse(decodeURIComponent(e.response));
 
 	// And record the longterm storage in the phone app.
+	writeToStorage('config_version_major', watch_version_major);
+	writeToStorage('config_version_minor', watch_version_minor);
+
 	battery_gauge = configuration["battery_gauge"];
 	writeToStorage("battery_gauge", battery_gauge);
 	

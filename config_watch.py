@@ -282,7 +282,7 @@ faces = {
         'battery_round' : [ (110, 57, 'b'), (132, 33, 'b'),
                             (110, 57, 'b'), (132, 33, 'b'),
                             ],
-        'defaults' : [ 'day:b', 'date:c', 'second', 'hour_minute_overlap' ],
+        'defaults' : [ 'day:b', 'date:c', 'second', 'hour_minute_overlap', 'pebble_label' ],
         },
     'c' : {
         'filename' : ['c_face.png'],
@@ -1408,6 +1408,11 @@ def enquoteStrings(strings):
     return quoted
 
 def configWatch():
+    versionStr = open('%s/version.txt' % (resourcesDir), 'r').read().strip()
+    versionMajor, versionMinor = map(int, versionStr.split('.')[:2])
+    versionDot = '%s.%s' % (versionMajor, versionMinor)
+    versionUnder = '%s_%s' % (versionMajor, versionMinor)
+    
     generatedTable = open('%s/generated_table.c' % (resourcesDir), 'w')
     generatedDefs = open('%s/generated_defs.h' % (resourcesDir), 'w')
 
@@ -1442,6 +1447,7 @@ def configWatch():
     generatedMedia = resourceStr[:-1]
 
     print >> resource, resourceIn % {
+        'versionDot' : versionDot,
         'uuId' : formatUuId(uuId),
         'watchName' : watchName,
         'watchface' : watchface,
@@ -1466,6 +1472,10 @@ def configWatch():
 
     print >> js, jsIn % {
         'watchName' : watchName,
+        'versionMajor' : versionMajor,
+        'versionMinor' : versionMinor,
+        'versionUnder' : versionUnder,
+        'formattedConfigLangs' : repr(config_langs),
         'numFaces' : numFaces,
         'numFaceColors' : numFaceColors,
         'defaultFaceIndex' : defaultFaceIndex,
@@ -1529,13 +1539,30 @@ def configWatch():
         'limitResourceCacheAplite' : int('limit_cache_aplite' in defaults),
         'limitResourceCache' : int('limit_cache' in defaults),
         }
-
+    
+    # Also generate the html pages for this version, if needed.
+    
+    source = open('%s/html/rosewright_configure.html.in' % (rootDir), 'r').read()
+    for lang in config_langs:
+        dict = {
+            'rootDir' : rootDir,
+            'lang' : lang,
+            'versionUnder' : versionUnder,
+            }
+        
+        filename = '%(rootDir)s/html/rosewright_%(versionUnder)s_configure.%(lang)s.html' % dict
+        print filename
+        open(filename, 'w').write(source % dict)
+    
 
 # Main.
 try:
     opts, args = getopt.getopt(sys.argv[1:], 's:H:F:ciwm:xp:dDh')
 except getopt.error, msg:
     usage(1, msg)
+
+# The set of languages supported by our config pages.
+config_langs = [ 'en', 'es', 'de', 'fr', 'bg' ]
 
 watchStyle = None
 handStyle = None
@@ -1652,6 +1679,8 @@ for keyword in defaults:
 
 defaultTopSubdial = 0
 if 'moon_phase' in defaults:
+    defaultTopSubdial = 2
+elif 'pebble_label' in defaults:
     defaultTopSubdial = 1
 
 defaultLunarBackground = 0
