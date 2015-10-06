@@ -282,7 +282,7 @@ faces = {
         'battery_round' : [ (110, 57, 'b'), (132, 33, 'b'),
                             (110, 57, 'b'), (132, 33, 'b'),
                             ],
-        'defaults' : [ 'day:b', 'date:c', 'second', 'hour_minute_overlap', 'pebble_label' ],
+        'defaults' : [ 'day:b', 'date:c', 'second', 'hour_minute_overlap', 'pebble_label', 'limit_cache_aplite' ],
         },
     'c' : {
         'filename' : ['c_face.png'],
