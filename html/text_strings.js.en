@@ -20,6 +20,7 @@ __Eight = "Eight"
 __Nine = "Nine"
 __Ten = "Ten"
 
+__PebbleLabel = "Pebble label"
 __LunarPhase = "Lunar phase"
 
 __SecondHand = "Second hand"

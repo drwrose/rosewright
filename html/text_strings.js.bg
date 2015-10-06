@@ -20,6 +20,7 @@ __Eight = "Осем"
 __Nine = "Девето"
 __Ten = "Десет"
 
+__PebbleLabel = "Pebble label"
 __LunarPhase = "Фази на Луната"
 
 __SecondHand = "Стрелка за секунди"

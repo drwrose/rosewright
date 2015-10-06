@@ -1355,6 +1355,19 @@ def makeMoonWheel():
     # rather than dependent on the platform).
     resourceStr = ''
 
+    rleFilename, ptype = make_rle('clock_faces/pebble_label.png', useRle = supportRle, modes = targetModes)
+    resourceStr += topSubdialEntry % {
+        'name' : 'PEBBLE_LABEL',
+        'rleFilename' : rleFilename,
+        'ptype' : ptype,
+        }
+    rleFilename, ptype = make_rle('clock_faces/pebble_label_mask.png', useRle = supportRle, modes = targetModes)
+    resourceStr += topSubdialEntry % {
+        'name' : 'PEBBLE_LABEL_MASK',
+        'rleFilename' : rleFilename,
+        'ptype' : ptype,
+        }
+
     rleFilename, ptype = make_rle('clock_faces/top_subdial.png', useRle = supportRle, modes = targetModes)
     resourceStr += topSubdialEntry % {
         'name' : 'TOP_SUBDIAL',

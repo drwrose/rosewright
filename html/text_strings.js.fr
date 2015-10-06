@@ -20,6 +20,7 @@ __Eight = "Huit"
 __Nine = "Neuf"
 __Ten = "Dix"
 
+__PebbleLabel = "Pebble label"
 __LunarPhase = "Phase lunaire"
 
 __SecondHand = "Trotteuse"

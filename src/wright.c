@@ -31,6 +31,8 @@ const GSize date_window_size = { 42, 22 };
 const GSize date_window_size = { 37, 19 };
 #endif  // PBL_ROUND
 
+const GSize top_subdial_size = { 80, 41 };
+
 // This structure is the data associated with a date window layer.
 typedef struct __attribute__((__packed__)) {
   unsigned char date_window_index;
@@ -775,6 +777,39 @@ static void remap_colors_moon(BitmapWithData *bwd) {
 #endif  // PBL_PLATFORM_APLITE
 }
 
+void draw_pebble_label(Layer *me, GContext *ctx, bool invert) {
+  unsigned int draw_mode = invert ^ config.draw_mode ^ APLITE_INVERT;
+
+  const struct IndicatorTable *window = &top_subdial[config.face_index];
+  GRect destination = GRect(window->x, window->y, top_subdial_size.w, top_subdial_size.h);
+  
+#ifdef PBL_PLATFORM_APLITE
+  BitmapWithData pebble_label_mask;
+  pebble_label_mask = rle_bwd_create(RESOURCE_ID_PEBBLE_LABEL_MASK);
+  if (pebble_label_mask.bitmap == NULL) {
+    trigger_memory_panic(__LINE__);
+    return;
+  }
+  graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_bg);
+  graphics_draw_bitmap_in_rect(ctx, pebble_label_mask.bitmap, destination);
+  bwd_destroy(&pebble_label_mask);
+#endif  // PBL_PLATFORM_APLITE
+  
+  BitmapWithData pebble_label;
+  pebble_label = rle_bwd_create(RESOURCE_ID_PEBBLE_LABEL);
+  if (pebble_label.bitmap == NULL) {
+    trigger_memory_panic(__LINE__);
+    return;
+  }
+#ifndef PBL_PLATFORM_APLITE
+  remap_colors_clock(&pebble_label);
+#endif  // PBL_PLATFORM_APLITE
+  
+  graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_fg);
+  graphics_draw_bitmap_in_rect(ctx, pebble_label.bitmap, destination);
+  bwd_destroy(&pebble_label);
+}
+  
 #ifdef TOP_SUBDIAL
 // Draws a special moon subdial window that shows the lunar phase in more detail.
 void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
@@ -789,7 +824,7 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
   }
 
   const struct IndicatorTable *window = &top_subdial[config.face_index];
-  GRect destination = GRect(window->x, window->y, 80, 41);
+  GRect destination = GRect(window->x, window->y, top_subdial_size.w, top_subdial_size.h);
   
   // First draw the subdial details (including the background).
 #ifdef PBL_PLATFORM_APLITE
@@ -907,6 +942,10 @@ void draw_clock_face(Layer *me, GContext *ctx) {
     switch (config.top_subdial) {
     case TSM_off:
     break;
+
+    case TSM_pebble_label:
+      draw_pebble_label(me, ctx, window->invert);
+      break;
     
     case TSM_moon_phase:
       draw_moon_phase_subdial(me, ctx, window->invert);

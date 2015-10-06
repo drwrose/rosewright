@@ -68,7 +68,8 @@ typedef enum {
 
 typedef enum {
   TSM_off = 0,
-  TSM_moon_phase = 1,
+  TSM_pebble_label = 1,
+  TSM_moon_phase = 2,
 } TopSubdialMode;
 
 typedef struct {
