@@ -9,6 +9,13 @@
 // The screen width of the chrono_digital_layer.  Always 144, even on Chalk.
 #define DIGITAL_LAYER_WIDTH 144
 
+// The height of each row of the text.
+#ifdef PBL_ROUND
+#define LAP_HEIGHT 28
+#else
+#define LAP_HEIGHT 30
+#endif
+
 const GSize chrono_dial_size = { 56, 56 };
 
 struct HandCache chrono_minute_cache;
@@ -401,14 +408,14 @@ void chrono_digital_window_load_handler(struct Window *window) {
   
 #endif  // PBL_SDK_3
 
-  chrono_digital_current_layer = text_layer_create(GRect(25, 120, 94, 48));
+  chrono_digital_current_layer = text_layer_create(GRect(25, LAP_HEIGHT * CHRONO_MAX_LAPS, 94, LAP_HEIGHT));
   if (chrono_digital_current_layer == NULL) {
     trigger_memory_panic(__LINE__);
     return;
   }    
   int i;
   for (i = 0; i < CHRONO_MAX_LAPS; ++i) {
-    chrono_digital_laps_layer[i] = text_layer_create(GRect(25, 30 * i, 94, 30));
+    chrono_digital_laps_layer[i] = text_layer_create(GRect(25, LAP_HEIGHT * i, 94, LAP_HEIGHT));
     if (chrono_digital_laps_layer[i] == NULL) {
       trigger_memory_panic(__LINE__);
       return;
@@ -429,7 +436,7 @@ void chrono_digital_window_load_handler(struct Window *window) {
   text_layer_set_font(chrono_digital_current_layer, font);
   layer_add_child(chrono_digital_contents_layer, (Layer *)chrono_digital_current_layer);
 
-  chrono_digital_line_layer = layer_create(GRect(0, 121, SCREEN_WIDTH, 1));
+  chrono_digital_line_layer = layer_create(GRect(0, LAP_HEIGHT * CHRONO_MAX_LAPS + 1, SCREEN_WIDTH, 1));
   if (chrono_digital_line_layer == NULL) {
     trigger_memory_panic(__LINE__);
     return;
