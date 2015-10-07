@@ -20,7 +20,7 @@ __Eight = "Ocho"
 __Nine = "Nueve"
 __Ten = "Diez"
 
-__PebbleLabel = "Pebble label"
+__PebbleLabel = "Etiqueta de Pebble"
 __LunarPhase = "Fase de la luna"
 
 __SecondHand = "Segundero"
