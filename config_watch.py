@@ -332,13 +332,13 @@ faces = {
                            (83, 39, 'b'), (95, 33, 'b'),                      
                            (83, 39, 'b'), (95, 33, 'b'),
                            ],
-        'bluetooth_round' : [ (59, 59, 'b'), (46, 43, 'b'),
-                              (59, 59, 'b'), (46, 43, 'b'),
-                              (59, 59, 'b'), (46, 43, 'b'),
+        'bluetooth_round' : [ (60, 48, 'b'), (46, 43, 'b'),
+                              (60, 48, 'b'), (46, 43, 'b'),
+                              (60, 48, 'b'), (46, 43, 'b'),
                               ],
-        'battery_round' : [ (105, 63, 'b'), (121, 47, 'b'),
-                            (105, 63, 'b'), (121, 47, 'b'),                      
-                            (105, 63, 'b'), (121, 47, 'b'),
+        'battery_round' : [ (103, 52, 'b'), (121, 47, 'b'),
+                            (103, 52, 'b'), (121, 47, 'b'),                      
+                            (103, 52, 'b'), (121, 47, 'b'),
                             ],
         'defaults' : [ 'day:c', 'date:d', 'bluetooth', 'battery' ],
         },
@@ -1408,10 +1408,11 @@ def enquoteStrings(strings):
     return quoted
 
 def configWatch():
-    versionStr = open('%s/version.txt' % (resourcesDir), 'r').read().strip()
+    import version
+    versionStr = version.version
     versionMajor, versionMinor = map(int, versionStr.split('.')[:2])
-    versionDot = '%s.%s' % (versionMajor, versionMinor)
-    versionUnder = '%s_%s' % (versionMajor, versionMinor)
+    configVersionStr = version.configVersion
+    configVersionMajor, configVersionMinor = map(int, configVersionStr.split('.')[:2])
     
     generatedTable = open('%s/generated_table.c' % (resourcesDir), 'w')
     generatedDefs = open('%s/generated_defs.h' % (resourcesDir), 'w')
@@ -1447,7 +1448,8 @@ def configWatch():
     generatedMedia = resourceStr[:-1]
 
     print >> resource, resourceIn % {
-        'versionDot' : versionDot,
+        'versionMajor' : versionMajor,
+        'versionMinor' : versionMinor,
         'uuId' : formatUuId(uuId),
         'watchName' : watchName,
         'watchface' : watchface,
@@ -1472,9 +1474,8 @@ def configWatch():
 
     print >> js, jsIn % {
         'watchName' : watchName,
-        'versionMajor' : versionMajor,
-        'versionMinor' : versionMinor,
-        'versionUnder' : versionUnder,
+        'configVersionMajor' : configVersionMajor,
+        'configVersionMinor' : configVersionMinor,
         'formattedConfigLangs' : repr(config_langs),
         'numFaces' : numFaces,
         'numFaceColors' : numFaceColors,
@@ -1548,10 +1549,11 @@ def configWatch():
         dict = {
             'rootDir' : rootDir,
             'lang' : lang,
-            'versionUnder' : versionUnder,
+            'configVersionMajor' : configVersionMajor,
+            'configVersionMinor' : configVersionMinor,
             }
         
-        filename = '%(rootDir)s/html/rosewright_%(versionUnder)s_configure.%(lang)s.html' % dict
+        filename = '%(rootDir)s/html/rosewright_%(configVersionMajor)s_%(configVersionMinor)s_configure.%(lang)s.html' % dict
         print filename
         open(filename, 'w').write(source % dict)
     
