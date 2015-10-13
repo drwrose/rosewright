@@ -5,7 +5,7 @@
   "capabilities": [ "configurable" ],
   "companyName": "drwrose",
   "versionCode": 1,
-  "versionLabel": "%(versionDot)s",
+  "versionLabel": "%(versionMajor)s.%(versionMinor)s",
   "sdkVersion": "3",
   "targetPlatforms": [ %(targetPlatforms)s ],
   "watchapp": {
