@@ -103,9 +103,11 @@ char *date_names[NUM_DATE_NAMES];
 
 int display_lang = -1;
 
+#if ENABLE_SWEEP_SECONDS
 // Triggered at regular intervals to implement sweep seconds.
 AppTimer *sweep_timer = NULL;
 int sweep_timer_ms = 1000;
+#endif  // ENABLE_SWEEP_SECONDS
 
 int sweep_seconds_ms = 60 * 1000 / NUM_STEPS_SECOND;
 
@@ -154,6 +156,12 @@ GFont safe_load_custom_font(int resource_id) {
   ResHandle resource = resource_get_handle(resource_id);
   app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "loading font %d, heap_bytes_free = %d", resource_id, heap_bytes_free());
 
+  if (fallback_font == NULL) {
+    // Record the fallback font pointer so we can identify if this one
+    // is accidentally returned from fonts_load_custom_font().
+    fallback_font = fonts_get_system_font(FONT_KEY_FONT_FALLBACK);
+  }
+  
   GFont font = fonts_load_custom_font(resource);
   if (font == fallback_font) {
     app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "font %d failed to load", resource_id);
@@ -199,11 +207,25 @@ void hand_cache_destroy(struct HandCache *hand_cache) {
   
 // Determines the specific hand bitmaps that should be displayed based
 // on the current time.
-void compute_hands(struct tm *time, struct HandPlacement *placement) {
+void compute_hands(struct tm *stime, struct HandPlacement *placement) {
   // Get the Unix time (in UTC).
   time_t gmt;
-  uint16_t t_ms;
+  uint16_t t_ms = 0;
+#if defined(MAKE_CHRONOGRAPH)
+  // In the case that we need sub-second precision.
   time_ms(&gmt, &t_ms);
+#elif !ENABLE_SWEEP_SECONDS
+  // In the case that we don't care about sub-second precision.
+  gmt = time(NULL);
+#else
+  if (config.sweep_seconds) {
+    // In the case that we need sub-second precision.
+    time_ms(&gmt, &t_ms);
+  } else {
+    // In the case that we don't care about sub-second precision.
+    gmt = time(NULL);
+  }
+#endif 
 
   // Compute the number of milliseconds elapsed since midnight, local time.
   struct tm *tm = localtime(&gmt);
@@ -217,11 +239,11 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 #endif  // MAKE_CHRONOGRAPH
   
 #ifdef FAST_TIME
-  if (time != NULL) {
-    time->tm_wday = (s / 3) % 7;
-    time->tm_mon = (s / 4) % 12;
-    time->tm_mday = (s % 31) + 1;
-    time->tm_hour = s % 24;
+  if (stime != NULL) {
+    stime->tm_wday = (s / 3) % 7;
+    stime->tm_mon = (s / 4) % 12;
+    stime->tm_mday = (s % 31) + 1;
+    stime->tm_hour = s % 24;
   }
   ms *= 67;
 #ifdef MAKE_CHRONOGRAPH
@@ -233,11 +255,11 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
   // Freeze the time to 10:09 for screenshots.
   {
     ms = ((10*60 + 9)*60 + 36) * 1000;  // 10:09:36
-    if (time != NULL) {
-      time->tm_wday = 3;
-      time->tm_mday = 9;
-      time->tm_mon = 6;
-      time->tm_hour = 10;
+    if (stime != NULL) {
+      stime->tm_wday = 3;
+      stime->tm_mday = 9;
+      stime->tm_mon = 6;
+      stime->tm_hour = 10;
     }
 
     int moon_phase = 3;  // gibbous moon
@@ -272,12 +294,12 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
   }
 
   // Record data for date windows.
-  if (time != NULL) {
-    placement->day_index = time->tm_wday;
-    placement->month_index = time->tm_mon;
-    placement->date_value = time->tm_mday;
-    placement->year_value = time->tm_year;
-    placement->ampm_value = (time->tm_hour >= 12);
+  if (stime != NULL) {
+    placement->day_index = stime->tm_wday;
+    placement->month_index = stime->tm_mon;
+    placement->date_value = stime->tm_mday;
+    placement->year_value = stime->tm_year;
+    placement->ampm_value = (stime->tm_hour >= 12);
 
     {
       // Easy lunar phase calculation: the moon's synodic period,
@@ -1285,6 +1307,10 @@ void draw_date_window_debug_text(GContext *ctx, int date_window_index) {
     buffer[0] = '\0';
   }
 
+  if (date_debug_font == NULL) {
+    date_debug_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+  }
+  
   draw_date_window_text(ctx, date_window_index, text, &debug_font_placement, date_debug_font);
 }
 
@@ -1321,12 +1347,14 @@ void update_hands(struct tm *time) {
     }
   }
 
+#if ENABLE_SWEEP_SECONDS
   // Make sure the sweep timer is fast enough to capture the second
   // hand.
   sweep_timer_ms = 1000;
   if (config.sweep_seconds) {
     sweep_timer_ms = sweep_seconds_ms;
   }
+#endif  // ENABLE_SWEEP_SECONDS
 
 #ifdef MAKE_CHRONOGRAPH
   update_chrono_hands(&new_placement);
@@ -1356,6 +1384,7 @@ void update_hands(struct tm *time) {
 #endif  // TOP_SUBDIAL
 }
 
+#if ENABLE_SWEEP_SECONDS
 // Triggered at sweep_timer_ms intervals to run the sweep-second hand
 // (that is, when sweep_seconds is enabled, this timer runs faster
 // than 1 second to update the second hand smoothly).
@@ -1366,11 +1395,13 @@ void handle_sweep(void *data) {
     sweep_timer = app_timer_register(sweep_timer_ms, &handle_sweep, 0);
   }
 }
+#endif  // ENABLE_SWEEP_SECONDS
 
 // Reset the sweep_timer according to the configured settings.  If
 // sweep_seconds is enabled, this sets the sweep_timer to wake us up
 // at the next sub-second interval.  If sweep_seconds is not enabled,
 // the sweep_timer is not used.
+#if ENABLE_SWEEP_SECONDS
 void reset_sweep() {
   if (sweep_timer != NULL) {
     app_timer_cancel(sweep_timer);
@@ -1380,6 +1411,7 @@ void reset_sweep() {
     sweep_timer = app_timer_register(sweep_timer_ms, &handle_sweep, 0);
   }
 }
+#endif  // ENABLE_SWEEP_SECONDS
 
 // The callback on the per-second (or per-minute) system timer that
 // handles most mundane tasks.
@@ -1388,7 +1420,10 @@ void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
     reset_memory_panic();
   }
   update_hands(tick_time);
+
+#if ENABLE_SWEEP_SECONDS
   reset_sweep();
+#endif   //ENABLE_SWEEP_SECONDS
 }
 
 void window_load_handler(struct Window *window) {
@@ -1667,14 +1702,6 @@ void handle_deinit() {
 // Called at program start to bootstrap everything.
 void handle_init() {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "handle_init");
-  
-  // Record the fallback font pointer so we can identify if this one
-  // is accidentally returned from fonts_load_custom_font().
-  fallback_font = fonts_get_system_font(FONT_KEY_FONT_FALLBACK);
-
-  // Also, this is a handy thing to keep a pointer to, in case we
-  // display any debug date windows.
-  date_debug_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
 
   load_config();
 
@@ -1708,7 +1735,7 @@ void handle_init() {
 
   time_t now = time(NULL);
   struct tm *startup_time = localtime(&now);
-
+  
   create_objects();
   compute_hands(startup_time, &current_placement);
   apply_config();
