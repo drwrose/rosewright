@@ -1612,8 +1612,7 @@ if not watchStyle:
     sys.exit(1)
 
 if not targetPlatforms:
-    #targetPlatforms = [ "aplite", "basalt", "chalk" ]
-    targetPlatforms = [ "chalk" ]
+    targetPlatforms = [ "aplite", "basalt", "chalk" ]
 
 targetModes = set()
 if "aplite" in targetPlatforms:
