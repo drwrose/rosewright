@@ -87,6 +87,7 @@ typedef struct {
 
 extern bool memory_panic_flag;
 extern int memory_panic_count;
+extern bool keep_assets;
 
 extern DrawModeTable draw_mode_table[2];
 extern int sweep_timer_ms;
