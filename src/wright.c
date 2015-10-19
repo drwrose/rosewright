@@ -142,8 +142,8 @@ DrawModeTable draw_mode_table[2] = {
 
 #endif  // PBL_PLATFORM_APLITE
 
-void destroy_objects();
-void create_objects();
+void create_temporal_objects();
+void destroy_temporal_objects();
 void recreate_all_objects();
 void draw_full_date_window(GContext *ctx, int date_window_index);
 void draw_date_window_debug_text(GContext *ctx, int date_window_index);
@@ -1594,11 +1594,8 @@ void load_date_fonts() {
   }
 }
 
-// Creates all of the objects needed for the watch.  Normally called
-// only by handle_init(), but might be invoked midstream in a
-// memory-panic situation.
-void create_objects() {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "create_objects");
+// This is called only once, at startup.
+void create_permanent_objects() {
   window = window_create();
   assert(window != NULL);
 
@@ -1613,7 +1610,22 @@ void create_objects() {
 #ifdef PBL_SDK_2
   window_set_fullscreen(window, true);
 #endif  //  PBL_SDK_2
-  window_stack_push(window, false);
+  window_stack_push(window, true);
+}
+
+// This is, of course, called only once, at shutdown.
+void destroy_permanent_objects() {
+  window_stack_pop_all(false);
+  window_destroy(window);
+  window = NULL;
+}
+
+// Creates all of the objects, other than permanently residing
+// objects, needed during the normal watch functioning.  Normally
+// called by handle_init(), and might also be invoked midstream when
+// we need to reshuffle memory.
+void create_temporal_objects() {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "create_temporal_objects");
 
   hand_cache_init(&hour_cache);
   hand_cache_init(&minute_cache);
@@ -1624,7 +1636,7 @@ void create_objects() {
 
   clock_face_layer = layer_create(window_frame);
   assert(clock_face_layer != NULL);
-  layer_set_update_proc(clock_face_layer, &clock_face_layer_update_callback);
+  //  layer_set_update_proc(clock_face_layer, &clock_face_layer_update_callback);
   layer_add_child(window_layer, clock_face_layer);
   invalidate_clock_face();
   
@@ -1641,15 +1653,14 @@ void create_objects() {
 
   clock_hands_layer = layer_create(window_frame);
   assert(clock_hands_layer != NULL);
-  layer_set_update_proc(clock_hands_layer, &clock_hands_layer_update_callback);
+  //layer_set_update_proc(clock_hands_layer, &clock_hands_layer_update_callback);
   layer_add_child(window_layer, clock_hands_layer);
 }
 
-// Destroys the objects created by create_objects().
-void destroy_objects() {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "destroy_objects");
+// Destroys the objects created by create_temporal_objects().
+void destroy_temporal_objects() {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "destroy_temporal_objects");
 
-  window_stack_pop_all(false);
   layer_destroy(clock_face_layer);
   clock_face_layer = NULL;
   bwd_destroy(&clock_face);
@@ -1675,15 +1686,12 @@ void destroy_objects() {
   hand_cache_destroy(&second_cache);
 
   display_lang = -1;
-
-  window_destroy(window);
-  window = NULL;
 }
 
 void recreate_all_objects() {
   unload_date_fonts();
-  destroy_objects();
-  create_objects();
+  destroy_temporal_objects();
+  create_temporal_objects();
   load_date_fonts();
   invalidate_clock_face();
 }
@@ -1695,8 +1703,9 @@ void handle_deinit() {
 #endif  // MAKE_CHRONOGRAPH
   tick_timer_service_unsubscribe();
 
-  destroy_objects();
   unload_date_fonts();
+  destroy_temporal_objects();
+  destroy_permanent_objects();
 }
 
 // Called at program start to bootstrap everything.
@@ -1733,11 +1742,13 @@ void handle_init() {
   app_message_open(INBOX_MESSAGE_SIZE, OUTBOX_MESSAGE_SIZE);
 #endif  // NDEBUG
 
+  create_permanent_objects();
+  create_temporal_objects();
+
   time_t now = time(NULL);
   struct tm *startup_time = localtime(&now);
-  
-  create_objects();
   compute_hands(startup_time, &current_placement);
+
   apply_config();
 }
 
