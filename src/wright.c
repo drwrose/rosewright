@@ -19,10 +19,25 @@ BitmapWithData date_window;
 BitmapWithData date_window_mask;
 bool date_window_debug = false;
 
+BitmapWithData face_bitmap;
+BitmapWithData pebble_label;
+BitmapWithData top_subdial_bitmap;
+BitmapWithData moon_wheel_bitmap;
+
 GFont fallback_font = NULL;
 GFont date_numeric_font = NULL;
 GFont date_lang_font = NULL;
 GFont date_debug_font = NULL;
+
+#ifdef PBL_PLATFORM_APLITE
+// On Aplite, there's probably not enough RAM to justify attempting to
+// keep the assets around from one frame to the next.
+bool keep_assets = false;
+#else
+// On other platforms, we'll keep them until we prove we shouldn't.
+bool keep_assets = true;
+#endif
+bool hide_clock_face = false;
 
 // For now, the size of the date window is hardcoded.
 #ifdef PBL_ROUND
@@ -103,9 +118,11 @@ char *date_names[NUM_DATE_NAMES];
 
 int display_lang = -1;
 
+#if ENABLE_SWEEP_SECONDS
 // Triggered at regular intervals to implement sweep seconds.
 AppTimer *sweep_timer = NULL;
 int sweep_timer_ms = 1000;
+#endif  // ENABLE_SWEEP_SECONDS
 
 int sweep_seconds_ms = 60 * 1000 / NUM_STEPS_SECOND;
 
@@ -140,8 +157,8 @@ DrawModeTable draw_mode_table[2] = {
 
 #endif  // PBL_PLATFORM_APLITE
 
-void destroy_objects();
-void create_objects();
+void create_temporal_objects();
+void destroy_temporal_objects();
 void recreate_all_objects();
 void draw_full_date_window(GContext *ctx, int date_window_index);
 void draw_date_window_debug_text(GContext *ctx, int date_window_index);
@@ -154,6 +171,12 @@ GFont safe_load_custom_font(int resource_id) {
   ResHandle resource = resource_get_handle(resource_id);
   app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "loading font %d, heap_bytes_free = %d", resource_id, heap_bytes_free());
 
+  if (fallback_font == NULL) {
+    // Record the fallback font pointer so we can identify if this one
+    // is accidentally returned from fonts_load_custom_font().
+    fallback_font = fonts_get_system_font(FONT_KEY_FONT_FALLBACK);
+  }
+  
   GFont font = fonts_load_custom_font(resource);
   if (font == fallback_font) {
     app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "font %d failed to load", resource_id);
@@ -199,11 +222,25 @@ void hand_cache_destroy(struct HandCache *hand_cache) {
   
 // Determines the specific hand bitmaps that should be displayed based
 // on the current time.
-void compute_hands(struct tm *time, struct HandPlacement *placement) {
+void compute_hands(struct tm *stime, struct HandPlacement *placement) {
   // Get the Unix time (in UTC).
   time_t gmt;
-  uint16_t t_ms;
+  uint16_t t_ms = 0;
+#if defined(MAKE_CHRONOGRAPH)
+  // In the case that we need sub-second precision.
   time_ms(&gmt, &t_ms);
+#elif !ENABLE_SWEEP_SECONDS
+  // In the case that we don't care about sub-second precision.
+  gmt = time(NULL);
+#else
+  if (config.sweep_seconds) {
+    // In the case that we need sub-second precision.
+    time_ms(&gmt, &t_ms);
+  } else {
+    // In the case that we don't care about sub-second precision.
+    gmt = time(NULL);
+  }
+#endif 
 
   // Compute the number of milliseconds elapsed since midnight, local time.
   struct tm *tm = localtime(&gmt);
@@ -217,11 +254,11 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
 #endif  // MAKE_CHRONOGRAPH
   
 #ifdef FAST_TIME
-  if (time != NULL) {
-    time->tm_wday = (s / 3) % 7;
-    time->tm_mon = (s / 4) % 12;
-    time->tm_mday = (s % 31) + 1;
-    time->tm_hour = s % 24;
+  if (stime != NULL) {
+    stime->tm_wday = (s / 3) % 7;
+    stime->tm_mon = (s / 4) % 12;
+    stime->tm_mday = (s % 31) + 1;
+    stime->tm_hour = s % 24;
   }
   ms *= 67;
 #ifdef MAKE_CHRONOGRAPH
@@ -233,11 +270,11 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
   // Freeze the time to 10:09 for screenshots.
   {
     ms = ((10*60 + 9)*60 + 36) * 1000;  // 10:09:36
-    if (time != NULL) {
-      time->tm_wday = 3;
-      time->tm_mday = 9;
-      time->tm_mon = 6;
-      time->tm_hour = 10;
+    if (stime != NULL) {
+      stime->tm_wday = 3;
+      stime->tm_mday = 9;
+      stime->tm_mon = 6;
+      stime->tm_hour = 10;
     }
 
     int moon_phase = 3;  // gibbous moon
@@ -272,12 +309,12 @@ void compute_hands(struct tm *time, struct HandPlacement *placement) {
   }
 
   // Record data for date windows.
-  if (time != NULL) {
-    placement->day_index = time->tm_wday;
-    placement->month_index = time->tm_mon;
-    placement->date_value = time->tm_mday;
-    placement->year_value = time->tm_year;
-    placement->ampm_value = (time->tm_hour >= 12);
+  if (stime != NULL) {
+    placement->day_index = stime->tm_wday;
+    placement->month_index = stime->tm_mon;
+    placement->date_value = stime->tm_mday;
+    placement->year_value = stime->tm_year;
+    placement->ampm_value = (stime->tm_hour >= 12);
 
     {
       // Easy lunar phase calculation: the moon's synodic period,
@@ -798,19 +835,22 @@ void draw_pebble_label(Layer *me, GContext *ctx, bool invert) {
   bwd_destroy(&pebble_label_mask);
 #endif  // PBL_PLATFORM_APLITE
   
-  BitmapWithData pebble_label;
-  pebble_label = rle_bwd_create(RESOURCE_ID_PEBBLE_LABEL);
   if (pebble_label.bitmap == NULL) {
-    trigger_memory_panic(__LINE__);
-    return;
-  }
+    pebble_label = rle_bwd_create(RESOURCE_ID_PEBBLE_LABEL);
+    if (pebble_label.bitmap == NULL) {
+      trigger_memory_panic(__LINE__);
+      return;
+    }
 #ifndef PBL_PLATFORM_APLITE
-  remap_colors_clock(&pebble_label);
+    remap_colors_clock(&pebble_label);
 #endif  // PBL_PLATFORM_APLITE
+  }
   
   graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_fg);
   graphics_draw_bitmap_in_rect(ctx, pebble_label.bitmap, destination);
-  bwd_destroy(&pebble_label);
+  if (!keep_assets) {
+    bwd_destroy(&pebble_label);
+  }
 }
   
 #ifdef TOP_SUBDIAL
@@ -852,23 +892,25 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
   bwd_destroy(&top_subdial_mask);
 #endif  // PBL_PLATFORM_APLITE
   
-  BitmapWithData top_subdial_bitmap;
-  top_subdial_bitmap = rle_bwd_create(RESOURCE_ID_TOP_SUBDIAL);
   if (top_subdial_bitmap.bitmap == NULL) {
-    trigger_memory_panic(__LINE__);
-    return;
-  }
+    top_subdial_bitmap = rle_bwd_create(RESOURCE_ID_TOP_SUBDIAL);
+    if (top_subdial_bitmap.bitmap == NULL) {
+      trigger_memory_panic(__LINE__);
+      return;
+    }
 #ifndef PBL_PLATFORM_APLITE
-  remap_colors_clock(&top_subdial_bitmap);
+    remap_colors_clock(&top_subdial_bitmap);
 #endif  // PBL_PLATFORM_APLITE
+  }
   
   graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_fg);
   graphics_draw_bitmap_in_rect(ctx, top_subdial_bitmap.bitmap, destination);
-  bwd_destroy(&top_subdial_bitmap);
+  if (!keep_assets) {
+    bwd_destroy(&top_subdial_bitmap);
+  }
 
   // Now draw the moon wheel.
 
-  BitmapWithData moon_wheel_bitmap;
   int index = current_placement.lunar_index;
   assert(index < NUM_STEPS_MOON);
 
@@ -881,23 +923,25 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
     // we don't bother.
     index = NUM_STEPS_MOON - 1 - index;
   }
-    
-#ifdef PBL_PLATFORM_APLITE
-  // On Aplite, we load either "black" or "white" icons, according
-  // to what color we need the background to be.
-  if (moon_draw_mode == 0) {
-    moon_wheel_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHEEL_WHITE_0 + index);
-  } else {
-    moon_wheel_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHEEL_BLACK_0 + index);
-  }
-#else  // PBL_PLATFORM_APLITE
-  // On Basalt, we only use the "black" icons, and we remap the colors at load time.
-  moon_wheel_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHEEL_BLACK_0 + index);
-  remap_colors_moon(&moon_wheel_bitmap);
-#endif  // PBL_PLATFORM_APLITE
+
   if (moon_wheel_bitmap.bitmap == NULL) {
-    trigger_memory_panic(__LINE__);
-    return;
+#ifdef PBL_PLATFORM_APLITE
+    // On Aplite, we load either "black" or "white" icons, according
+    // to what color we need the background to be.
+    if (moon_draw_mode == 0) {
+      moon_wheel_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHEEL_WHITE_0 + index);
+    } else {
+      moon_wheel_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHEEL_BLACK_0 + index);
+    }
+#else  // PBL_PLATFORM_APLITE
+    // On Basalt, we only use the "black" icons, and we remap the colors at load time.
+    moon_wheel_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHEEL_BLACK_0 + index);
+    remap_colors_moon(&moon_wheel_bitmap);
+#endif  // PBL_PLATFORM_APLITE
+    if (moon_wheel_bitmap.bitmap == NULL) {
+      trigger_memory_panic(__LINE__);
+      return;
+    }
   }
   
   // In the Aplite case, we draw the moon in the fg color.  This will
@@ -913,7 +957,9 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
   graphics_context_set_compositing_mode(ctx, draw_mode_table[moon_draw_mode].paint_fg);
   //graphics_context_set_compositing_mode(ctx, GCompOpAssign);
   graphics_draw_bitmap_in_rect(ctx, moon_wheel_bitmap.bitmap, destination);
-  bwd_destroy(&moon_wheel_bitmap);
+  if (!keep_assets) {
+    bwd_destroy(&moon_wheel_bitmap);
+  }
 }
 #endif  // TOP_SUBDIAL
 
@@ -921,14 +967,14 @@ void draw_clock_face(Layer *me, GContext *ctx) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_clock_face");
 
   // Load the clock face from the resource file if we haven't already.
-  BitmapWithData face_bitmap;
-  
-  face_bitmap = rle_bwd_create(clock_face_table[config.face_index].resource_id);
   if (face_bitmap.bitmap == NULL) {
-    trigger_memory_panic(__LINE__);
-    return;
+    face_bitmap = rle_bwd_create(clock_face_table[config.face_index].resource_id);
+    if (face_bitmap.bitmap == NULL) {
+      trigger_memory_panic(__LINE__);
+      return;
+    }
+    remap_colors_clock(&face_bitmap);
   }
-  remap_colors_clock(&face_bitmap);
 
   // Draw the clock face into the layer.
   GRect destination = layer_get_bounds(me);
@@ -936,7 +982,9 @@ void draw_clock_face(Layer *me, GContext *ctx) {
   destination.origin.y = 0;
   graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_assign);
   graphics_draw_bitmap_in_rect(ctx, face_bitmap.bitmap, destination);
-  bwd_destroy(&face_bitmap);
+  if (!keep_assets) {
+    bwd_destroy(&face_bitmap);
+  }
 
   // Draw the top subdial if enabled.
   {
@@ -961,8 +1009,10 @@ void draw_clock_face(Layer *me, GContext *ctx) {
     for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
       draw_full_date_window(ctx, i);
     }
-    bwd_destroy(&date_window);
-    bwd_destroy(&date_window_mask);
+    if (!keep_assets) {
+      bwd_destroy(&date_window);
+      bwd_destroy(&date_window_mask);
+    }
   }
 
 #ifdef MAKE_CHRONOGRAPH
@@ -972,12 +1022,27 @@ void draw_clock_face(Layer *me, GContext *ctx) {
 
 void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_face_layer, memory_panic_count = %d, heap_bytes_free = %d", memory_panic_count, heap_bytes_free());
-  if (memory_panic_count > 7) {
+  if (hide_clock_face) {
     // In case we're in extreme memory panic mode--too little
     // available memory to even keep the clock face resident--we do
     // nothing in this function.
     return;
   }
+
+#ifdef PBL_ROUND
+  // temp hack, it appears something is wrong with the caching
+  // approach on PTR, it crashes (though not in the emulator).  Memory
+  // address issue?
+  draw_clock_face(me, ctx);
+  if (date_window_debug) {
+    // Now fill in the per-frame debug text, if needed.
+    for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
+      draw_date_window_debug_text(ctx, i);
+    }
+  }    
+
+#else  // PBL_ROUND
+  // On most platforms, perform the usual framebuffer caching.
   
   if (clock_face.bitmap == NULL) {
     // The clock face needs to be redrawn (or drawn for the first
@@ -1009,6 +1074,7 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
       draw_date_window_debug_text(ctx, i);
     }
   }    
+#endif  // PBL_ROUND
 }
   
 void clock_hands_layer_update_callback(Layer *me, GContext *ctx) {
@@ -1285,6 +1351,10 @@ void draw_date_window_debug_text(GContext *ctx, int date_window_index) {
     buffer[0] = '\0';
   }
 
+  if (date_debug_font == NULL) {
+    date_debug_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+  }
+  
   draw_date_window_text(ctx, date_window_index, text, &debug_font_placement, date_debug_font);
 }
 
@@ -1321,12 +1391,14 @@ void update_hands(struct tm *time) {
     }
   }
 
+#if ENABLE_SWEEP_SECONDS
   // Make sure the sweep timer is fast enough to capture the second
   // hand.
   sweep_timer_ms = 1000;
   if (config.sweep_seconds) {
     sweep_timer_ms = sweep_seconds_ms;
   }
+#endif  // ENABLE_SWEEP_SECONDS
 
 #ifdef MAKE_CHRONOGRAPH
   update_chrono_hands(&new_placement);
@@ -1351,11 +1423,13 @@ void update_hands(struct tm *time) {
   // And the lunar index in the moon subdial.
   if (new_placement.lunar_index != current_placement.lunar_index) {
     current_placement.lunar_index = new_placement.lunar_index;
+    bwd_destroy(&moon_wheel_bitmap);
     invalidate_clock_face();
   }
 #endif  // TOP_SUBDIAL
 }
 
+#if ENABLE_SWEEP_SECONDS
 // Triggered at sweep_timer_ms intervals to run the sweep-second hand
 // (that is, when sweep_seconds is enabled, this timer runs faster
 // than 1 second to update the second hand smoothly).
@@ -1366,11 +1440,13 @@ void handle_sweep(void *data) {
     sweep_timer = app_timer_register(sweep_timer_ms, &handle_sweep, 0);
   }
 }
+#endif  // ENABLE_SWEEP_SECONDS
 
 // Reset the sweep_timer according to the configured settings.  If
 // sweep_seconds is enabled, this sets the sweep_timer to wake us up
 // at the next sub-second interval.  If sweep_seconds is not enabled,
 // the sweep_timer is not used.
+#if ENABLE_SWEEP_SECONDS
 void reset_sweep() {
   if (sweep_timer != NULL) {
     app_timer_cancel(sweep_timer);
@@ -1380,6 +1456,7 @@ void reset_sweep() {
     sweep_timer = app_timer_register(sweep_timer_ms, &handle_sweep, 0);
   }
 }
+#endif  // ENABLE_SWEEP_SECONDS
 
 // The callback on the per-second (or per-minute) system timer that
 // handles most mundane tasks.
@@ -1388,7 +1465,10 @@ void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
     reset_memory_panic();
   }
   update_hands(tick_time);
+
+#if ENABLE_SWEEP_SECONDS
   reset_sweep();
+#endif   //ENABLE_SWEEP_SECONDS
 }
 
 void window_load_handler(struct Window *window) {
@@ -1559,11 +1639,8 @@ void load_date_fonts() {
   }
 }
 
-// Creates all of the objects needed for the watch.  Normally called
-// only by handle_init(), but might be invoked midstream in a
-// memory-panic situation.
-void create_objects() {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "create_objects");
+// This is called only once, at startup.
+void create_permanent_objects() {
   window = window_create();
   assert(window != NULL);
 
@@ -1578,7 +1655,22 @@ void create_objects() {
 #ifdef PBL_SDK_2
   window_set_fullscreen(window, true);
 #endif  //  PBL_SDK_2
-  window_stack_push(window, false);
+  window_stack_push(window, true);
+}
+
+// This is, of course, called only once, at shutdown.
+void destroy_permanent_objects() {
+  window_stack_pop_all(false);
+  window_destroy(window);
+  window = NULL;
+}
+
+// Creates all of the objects, other than permanently residing
+// objects, needed during the normal watch functioning.  Normally
+// called by handle_init(), and might also be invoked midstream when
+// we need to reshuffle memory.
+void create_temporal_objects() {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "create_temporal_objects");
 
   hand_cache_init(&hour_cache);
   hand_cache_init(&minute_cache);
@@ -1610,11 +1702,17 @@ void create_objects() {
   layer_add_child(window_layer, clock_hands_layer);
 }
 
-// Destroys the objects created by create_objects().
-void destroy_objects() {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "destroy_objects");
+// Destroys the objects created by create_temporal_objects().
+void destroy_temporal_objects() {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "destroy_temporal_objects");
 
-  window_stack_pop_all(false);
+  bwd_destroy(&date_window);
+  bwd_destroy(&date_window_mask);
+  bwd_destroy(&face_bitmap);
+  bwd_destroy(&pebble_label);
+  bwd_destroy(&top_subdial_bitmap);
+  bwd_destroy(&moon_wheel_bitmap);
+  
   layer_destroy(clock_face_layer);
   clock_face_layer = NULL;
   bwd_destroy(&clock_face);
@@ -1640,15 +1738,12 @@ void destroy_objects() {
   hand_cache_destroy(&second_cache);
 
   display_lang = -1;
-
-  window_destroy(window);
-  window = NULL;
 }
 
 void recreate_all_objects() {
   unload_date_fonts();
-  destroy_objects();
-  create_objects();
+  destroy_temporal_objects();
+  create_temporal_objects();
   load_date_fonts();
   invalidate_clock_face();
 }
@@ -1660,21 +1755,14 @@ void handle_deinit() {
 #endif  // MAKE_CHRONOGRAPH
   tick_timer_service_unsubscribe();
 
-  destroy_objects();
   unload_date_fonts();
+  destroy_temporal_objects();
+  destroy_permanent_objects();
 }
 
 // Called at program start to bootstrap everything.
 void handle_init() {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "handle_init");
-  
-  // Record the fallback font pointer so we can identify if this one
-  // is accidentally returned from fonts_load_custom_font().
-  fallback_font = fonts_get_system_font(FONT_KEY_FONT_FALLBACK);
-
-  // Also, this is a handy thing to keep a pointer to, in case we
-  // display any debug date windows.
-  date_debug_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
 
   load_config();
 
@@ -1706,11 +1794,13 @@ void handle_init() {
   app_message_open(INBOX_MESSAGE_SIZE, OUTBOX_MESSAGE_SIZE);
 #endif  // NDEBUG
 
+  create_permanent_objects();
+  create_temporal_objects();
+
   time_t now = time(NULL);
   struct tm *startup_time = localtime(&now);
-
-  create_objects();
   compute_hands(startup_time, &current_placement);
+
   apply_config();
 }
 
@@ -1736,33 +1826,37 @@ void reset_memory_panic() {
 
   // Start resetting some options if the memory panic count grows too high.
   if (memory_panic_count > 1) {
+    keep_assets = false;
+  }
+  if (memory_panic_count > 2) {
     second_resource_cache_size = 0;
 #ifdef MAKE_CHRONOGRAPH
     chrono_second_resource_cache_size = 0;
 #endif  // MAKE_CHRONOGRAPH
   }
-  if (memory_panic_count > 2) {
+  if (memory_panic_count > 3) {
     config.battery_gauge = IM_off;
     config.bluetooth_indicator = IM_off;
   }
-  if (memory_panic_count > 3) {
+  if (memory_panic_count > 4) {
     config.second_hand = false;
   } 
-  if (memory_panic_count > 4) {
+  if (memory_panic_count > 5) {
     for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
       if (config.date_windows[i] != DWM_debug_memory_panic_count) {
         config.date_windows[i] = DWM_off;
       }
     }
   } 
-  if (memory_panic_count > 5) {
+  if (memory_panic_count > 6) {
     config.chrono_dial = 0;
   }
-  if (memory_panic_count > 6) {
+  if (memory_panic_count > 7) {
     config.top_subdial = false;
   }
-  if (memory_panic_count > 7) {
+  if (memory_panic_count > 8) {
     // At this point we hide the clock face.  Drastic!
+    hide_clock_face = true;
   }
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "reset_memory_panic done, count = %d", memory_panic_count);
