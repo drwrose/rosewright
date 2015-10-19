@@ -43,8 +43,6 @@ void save_config() {
 void load_config() {
   config = default_options;
 
-  // temporary hack
-  /*
   ConfigOptions local_config;
   int read_size = persist_read_data(PERSIST_KEY, &local_config, sizeof(local_config));
   if (read_size == sizeof(local_config)) {
@@ -55,7 +53,6 @@ void load_config() {
   }
 
   sanitize_config();
-  */
 }
 
 

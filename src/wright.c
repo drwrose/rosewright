@@ -1000,6 +1000,14 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
     // nothing in this function.
     return;
   }
+
+#ifdef PBL_ROUND
+  // temp hack, it appears something is wrong with the caching
+  // approach on PTR, it crashes (though not in the emulator).  Memory
+  // address issue?
+  draw_clock_face(me, ctx);
+  return;
+#endif  // PBL_ROUND
   
   if (clock_face.bitmap == NULL) {
     // The clock face needs to be redrawn (or drawn for the first
@@ -1636,7 +1644,7 @@ void create_temporal_objects() {
 
   clock_face_layer = layer_create(window_frame);
   assert(clock_face_layer != NULL);
-  //  layer_set_update_proc(clock_face_layer, &clock_face_layer_update_callback);
+  layer_set_update_proc(clock_face_layer, &clock_face_layer_update_callback);
   layer_add_child(window_layer, clock_face_layer);
   invalidate_clock_face();
   
@@ -1653,7 +1661,7 @@ void create_temporal_objects() {
 
   clock_hands_layer = layer_create(window_frame);
   assert(clock_hands_layer != NULL);
-  //layer_set_update_proc(clock_hands_layer, &clock_hands_layer_update_callback);
+  layer_set_update_proc(clock_hands_layer, &clock_hands_layer_update_callback);
   layer_add_child(window_layer, clock_hands_layer);
 }
 
