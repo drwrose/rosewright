@@ -29,14 +29,8 @@ GFont date_numeric_font = NULL;
 GFont date_lang_font = NULL;
 GFont date_debug_font = NULL;
 
-#ifdef PBL_PLATFORM_APLITE
-// On Aplite, there's probably not enough RAM to justify attempting to
-// keep the assets around from one frame to the next.
 bool keep_assets = false;
-#else
-// On other platforms, we'll keep them until we prove we shouldn't.
-bool keep_assets = true;
-#endif
+bool hide_date_windows = false;
 bool hide_clock_face = false;
 
 // For now, the size of the date window is hardcoded.
@@ -1564,13 +1558,37 @@ void move_layers() {
   }
 }
 
+// Restores memory_panic_count to 0, as in a fresh start.
+void reset_memory_panic_count() {
+  memory_panic_count = 0;
+
+  second_resource_cache_size = SECOND_RESOURCE_CACHE_SIZE + SECOND_MASK_RESOURCE_CACHE_SIZE;
+#ifdef MAKE_CHRONOGRAPH
+  chrono_second_resource_cache_size = CHRONO_SECOND_RESOURCE_CACHE_SIZE +  + CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE;
+#endif  // MAKE_CHRONOGRAPH
+
+#ifdef PBL_ROUND
+  // On Chalk, we can't do framebuffer caching for some reason right
+  // now, so instead keep the individual assets around from one frame to
+  // the next.
+  keep_assets = true;
+#else
+  // On other platforms, we can do framebuffer caching, so there's no
+  // reason to keep the individual components of the framebuffer.
+  keep_assets = false;
+#endif
+
+  hide_date_windows = false;
+  hide_clock_face = false;
+}
+
 // Updates any runtime settings as needed when the config changes.
 void apply_config() {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "apply_config");
 
   // Reset the memory panic count when we get a new config setting.
   // Maybe the user knows what he's doing.
-  memory_panic_count = 0;
+  reset_memory_panic_count();
 
   if (face_index != config.face_index) {
     // Update the face bitmap if it's changed.
@@ -1616,7 +1634,7 @@ void unload_date_fonts() {
 
 void load_date_fonts() {
   unload_date_fonts();
-  if (memory_panic_count > 4) {
+  if (hide_date_windows) {
     // Don't load fonts if the memory panic count is over this
     // threshold.
 
@@ -1794,6 +1812,7 @@ void handle_init() {
   app_message_open(INBOX_MESSAGE_SIZE, OUTBOX_MESSAGE_SIZE);
 #endif  // NDEBUG
 
+  reset_memory_panic_count();
   create_permanent_objects();
   create_temporal_objects();
 
@@ -1847,6 +1866,7 @@ void reset_memory_panic() {
         config.date_windows[i] = DWM_off;
       }
     }
+    hide_date_windows = true;
   } 
   if (memory_panic_count > 6) {
     config.chrono_dial = 0;
