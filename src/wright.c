@@ -290,11 +290,12 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
   // Freeze the time to 10:09 for screenshots.
   {
     ms = ((10*60 + 9)*60 + 36) * 1000;  // 10:09:36
+    gmt = make_gmt_date(9, 6, 114);     // 9-Jul-2014
+    //gmt = make_gmt_date(31, 11, 115);   // 31-Dec-2015
+    //gmt = make_gmt_date(1, 0, 116);     // 1-Jan-2016
+    gmt += ms / 1000;
     if (stime != NULL) {
-      stime->tm_wday = 3;
-      stime->tm_mday = 9;
-      stime->tm_mon = 6;
-      stime->tm_hour = 10;
+      (*stime) = *gmtime(&gmt);
     }
 
     int moon_phase = 3;  // gibbous moon
