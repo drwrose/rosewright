@@ -68,6 +68,7 @@ langs = [
     [ 'ta_IN', 'Tamil', 'ta', 25 ],
     [ 'hi_IN', 'Hindi', 'hi', 26 ],
     [ 'bg_BG', 'Bulgarian', 'ru', 27 ],
+    [ 'nb_NO', 'Norwegian', 'latin', 28 ],
     ]
 
 # In the above list, the third parameter is the font code:

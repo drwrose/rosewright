@@ -124,6 +124,7 @@ var langs = [
     [ 'ta_IN', 'Tamil', 'ta', 25 ],
     [ 'hi_IN', 'Hindi', 'hi', 26 ],
     [ 'bg_BG', 'Bulgarian', 'extended', 27 ],
+    [ 'nb_NO', 'Norwegian', 'latin', 28 ],
 ];
 
 function sortComparer(a, b){

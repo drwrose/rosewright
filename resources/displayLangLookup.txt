@@ -81,6 +81,9 @@ var display_lang_lookup = {
   'bg_BG' : 27,
   'bg' : 27,
   'bg-BG' : 27,
+  'nb_NO' : 28,
+  'nb' : 28,
+  'nb-NO' : 28,
 };
 var display_lang_reverse = {
   0 : 'en_US',
@@ -111,4 +114,5 @@ var display_lang_reverse = {
   25 : 'ta_IN',
   26 : 'hi_IN',
   27 : 'bg_BG',
+  28 : 'nb_NO',
 };
