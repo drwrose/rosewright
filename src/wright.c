@@ -33,6 +33,8 @@ bool keep_assets = false;
 bool hide_date_windows = false;
 bool hide_clock_face = false;
 
+#define DATE_WINDOW_BUFFER_SIZE 16
+
 // For now, the size of the date window is hardcoded.
 #ifdef PBL_ROUND
 const GSize date_window_size = { 42, 22 };
@@ -213,33 +215,54 @@ void hand_cache_destroy(struct HandCache *hand_cache) {
     }
   }
 }
-  
+
+time_t
+make_gmt_date(int mday, int mon, int year) {
+  struct tm t;
+  memset(&t, 0, sizeof(t));
+  t.tm_mday = mday;
+  t.tm_mon = mon;
+  t.tm_year = year;
+  return mktime(&t);
+}
+
 // Determines the specific hand bitmaps that should be displayed based
 // on the current time.
 void compute_hands(struct tm *stime, struct HandPlacement *placement) {
-  // Get the Unix time (in UTC).
-  time_t gmt;
-  uint16_t t_ms = 0;
+  // Check whether we need to compute sub-second precision.
 #if defined(MAKE_CHRONOGRAPH)
-  // In the case that we need sub-second precision.
-  time_ms(&gmt, &t_ms);
+  #define needs_sub_second true
 #elif !ENABLE_SWEEP_SECONDS
-  // In the case that we don't care about sub-second precision.
-  gmt = time(NULL);
+  #define needs_sub_second false
 #else
-  if (config.sweep_seconds) {
-    // In the case that we need sub-second precision.
-    time_ms(&gmt, &t_ms);
-  } else {
-    // In the case that we don't care about sub-second precision.
-    gmt = time(NULL);
-  }
+  bool needs_sub_second = config.sweep_seconds;
 #endif 
 
-  // Compute the number of milliseconds elapsed since midnight, local time.
-  struct tm *tm = localtime(&gmt);
-  unsigned int s = (unsigned int)(tm->tm_hour * 60 + tm->tm_min) * 60 + tm->tm_sec;
-  unsigned int ms = (unsigned int)(s * 1000 + t_ms);
+  time_t gmt;
+  unsigned int ms;
+  
+  if (needs_sub_second) {
+    // If we do need sub-second precision, it replaces the stime
+    // structure we were passed in.
+    
+    // Get the Unix time (in UTC).
+    uint16_t t_ms = 0;
+    time_ms(&gmt, &t_ms);
+
+    // Compute the number of milliseconds elapsed since midnight, local time.
+    struct tm *tm = localtime(&gmt);
+    unsigned int s = (unsigned int)(tm->tm_hour * 60 + tm->tm_min) * 60 + tm->tm_sec;
+    ms = (unsigned int)(s * 1000 + t_ms);
+
+  } else {
+    // If we don't need sub-second precision, just use the existing
+    // stime structure.  We still need UTC time, though, for the lunar
+    // phase at least.
+    assert(stime != NULL);
+    gmt = time(NULL);
+    unsigned int s = (unsigned int)(stime->tm_hour * 60 + stime->tm_min) * 60 + stime->tm_sec;
+    ms = (unsigned int)(s * 1000);
+  }
 
 #ifdef MAKE_CHRONOGRAPH
   // For the chronograph, compute the number of milliseconds elapsed
@@ -248,16 +271,19 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
 #endif  // MAKE_CHRONOGRAPH
   
 #ifdef FAST_TIME
-  if (stime != NULL) {
-    stime->tm_wday = (s / 3) % 7;
-    stime->tm_mon = (s / 4) % 12;
-    stime->tm_mday = (s % 31) + 1;
-    stime->tm_hour = s % 24;
-  }
-  ms *= 67;
+  {
+    if (stime != NULL) {
+      int s = ms / 1000;
+      int yday = s % 365;
+      
+      gmt = make_gmt_date(yday, 0, stime->tm_year);
+      (*stime) = *gmtime(&gmt);
+    }
+    ms *= 67;
 #ifdef MAKE_CHRONOGRAPH
-  ms_utc *= 67;
+    ms_utc *= 67;
 #endif  // MAKE_CHRONOGRAPH
+  }
 #endif  // FAST_TIME
 
 #ifdef SCREENSHOT_BUILD
@@ -309,6 +335,7 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
     placement->date_value = stime->tm_mday;
     placement->year_value = stime->tm_year;
     placement->ampm_value = (stime->tm_hour >= 12);
+    placement->ordinal_date_index = stime->tm_yday;
 
     {
       // Easy lunar phase calculation: the moon's synodic period,
@@ -332,11 +359,6 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
       // decimal value--by 2114 it have drifted off by about 2 hours.
       // Close enough.)
       unsigned int lunar_age_s = lunar_offset_s % 2551443;
-
-#ifdef FAST_TIME
-      // One subdial shift every 10 seconds.
-      lunar_age_s = (s * 255144) / NUM_STEPS_MOON;
-#endif  // FAST_TIME
 
       // That gives the age of the moon in seconds.
 
@@ -1223,6 +1245,68 @@ void draw_date_window_text(GContext *ctx, int date_window_index, const char *tex
                      NULL);
 }
 
+void format_date_number(char buffer[DATE_WINDOW_BUFFER_SIZE], int value) {
+  snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", value);
+}
+
+// yday is the current ordinal date [0..365], wday is the current day
+// of the week [0..6], 0 = Sunday.  year is the current year less 1900.
+
+// day_of_week is the first day of the week, while first_week_contains
+// is the ordinal date that must be contained within week 1.
+int raw_compute_week_number(int yday, int wday, int day_of_week, int first_week_contains) {
+  // The ordinal date index (where Jan 1 is 0) of the next Sunday
+  // following today.
+  int sunday_index = yday - wday + 7;
+
+  // The ordinal date index of the first day of an early week.
+  int first_day_index = (sunday_index + day_of_week) % 7;
+
+  if (first_day_index > first_week_contains) {
+    first_day_index -= 7;
+  }
+
+  // Now first_day_index is the ordinal date index of the first day of
+  // week 1.  It will be in the range [-7, 6].  (It might be negative
+  // if week 1 began in the last few days of the previous year.)
+
+  int week_number = (yday - first_day_index + 7) / 7;
+  return week_number;
+}
+
+int compute_week_number(int yday, int wday, int year, int day_of_week, int first_week_contains) {
+  int week_number = raw_compute_week_number(yday, wday, day_of_week, first_week_contains);
+  
+  if (week_number < 1) {
+    // It's possible to come up with the answer 0, in which case we
+    // really meant the last week of the previous year.
+    time_t last_year = make_gmt_date(31, 11, year - 1);  // Dec 31
+    struct tm *lyt = gmtime(&last_year);
+    week_number = raw_compute_week_number(lyt->tm_yday, lyt->tm_wday, day_of_week, first_week_contains);
+
+  } else if (week_number > 52) {
+    // If we came up with the answer 53, the answer might really be
+    // the first week of the next year.
+    time_t next_year = make_gmt_date(1, 0, year + 1);  // Jan 1
+    struct tm *nyt = gmtime(&next_year);
+    int next_week_number = raw_compute_week_number(nyt->tm_yday, nyt->tm_wday, day_of_week, first_week_contains);
+    if (next_week_number != 0) {
+      week_number = next_week_number;
+    }
+  }
+
+  return week_number;
+}
+
+void compute_and_format_week_number(char buffer[DATE_WINDOW_BUFFER_SIZE], int day_of_week, int first_week_contains) {
+  int yday = current_placement.ordinal_date_index;
+  int wday = current_placement.day_index;
+  int year = current_placement.year_value;
+
+  int week_number = compute_week_number(yday, wday, year, day_of_week, first_week_contains);
+  format_date_number(buffer, week_number);
+}
+
 // Draws the background and contents of the specified date window.
 void draw_full_date_window(GContext *ctx, int date_window_index) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_full_date_window %c", date_window_index + 'a');
@@ -1240,7 +1324,6 @@ void draw_full_date_window(GContext *ctx, int date_window_index) {
   draw_date_window_background(ctx, date_window_index, draw_mode, draw_mode);
 
   // Format the date or weekday or whatever text for display.
-#define DATE_WINDOW_BUFFER_SIZE 16
   char buffer[DATE_WINDOW_BUFFER_SIZE];
   
   GFont font = date_numeric_font;
@@ -1261,11 +1344,31 @@ void draw_full_date_window(GContext *ctx, int date_window_index) {
     break;
 
   case DWM_date:
-    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", current_placement.date_value);
+    format_date_number(buffer, current_placement.date_value);
     break;
 
   case DWM_year:
-    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", current_placement.year_value + 1900);
+    format_date_number(buffer, current_placement.year_value + 1900);
+    break;
+
+  case DWM_week:
+    switch (config.week_numbering) {
+    case WNM_mon_4:
+      compute_and_format_week_number(buffer, 1, 3);
+      break;
+      
+    case WNM_sun_1:
+      compute_and_format_week_number(buffer, 0, 0);
+      break;
+      
+    case WNM_sat_1:
+      compute_and_format_week_number(buffer, 6, 0);
+      break;
+    }
+    break;
+      
+  case DWM_yday:
+    format_date_number(buffer, current_placement.ordinal_date_index + 1);
     break;
 
   case DWM_debug_heap_free:
@@ -1409,6 +1512,7 @@ void update_hands(struct tm *time) {
     current_placement.date_value = new_placement.date_value;
     current_placement.year_value = new_placement.year_value;
     current_placement.ampm_value = new_placement.ampm_value;
+    current_placement.ordinal_date_index = new_placement.ordinal_date_index;
 
     invalidate_clock_face();
   }

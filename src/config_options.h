@@ -26,6 +26,7 @@ typedef enum {
   CK_color_mode = 16,
   CK_top_subdial = 17,
   CK_show_debug = 18,
+  CK_week_numbering = 19,
 } ConfigKey;
 
 typedef enum {
@@ -49,21 +50,23 @@ typedef enum {
   DWM_identify = 1,
   DWM_date = 2,
   DWM_year = 3,
+  DWM_yday = 4,
+  DWM_week = 5,
 
   // Uses date_lang_font.
-  DWM_weekday = 4,
-  DWM_month = 5,
-  DWM_ampm = 6,
+  DWM_weekday = 6,
+  DWM_month = 7,
+  DWM_ampm = 8,
   
   // Special case.
-  DWM_moon_unused = 7,
+  DWM_moon_unused = 9,
 
   // Debug options.
-  DWM_debug_heap_free = 8,
-  DWM_debug_memory_panic_count = 9,
-  DWM_debug_resource_reads = 10,
-  DWM_debug_cache_hits = 11,
-  DWM_debug_cache_total_size = 12,
+  DWM_debug_heap_free = 10,
+  DWM_debug_memory_panic_count = 11,
+  DWM_debug_resource_reads = 12,
+  DWM_debug_cache_hits = 13,
+  DWM_debug_cache_total_size = 14,
 } DateWindowMode;
 
 typedef enum {
@@ -71,6 +74,12 @@ typedef enum {
   TSM_pebble_label = 1,
   TSM_moon_phase = 2,
 } TopSubdialMode;
+
+typedef enum {
+  WNM_mon_4 = 0,  // EU, Asia, Oceania
+  WNM_sun_1 = 1,  // Americas, China, Japan
+  WNM_sat_1 = 2,  // Middle East
+} WeekNumberingMode;  
 
 typedef struct {
   IndicatorMode battery_gauge;
@@ -92,6 +101,8 @@ typedef struct {
   bool lunar_direction;    // true for southern hemisphere (left-to-right).
   unsigned char color_mode;
   TopSubdialMode top_subdial;
+
+  WeekNumberingMode week_numbering;
   bool show_debug;
 } __attribute__((__packed__)) ConfigOptions;
 

@@ -48,6 +48,8 @@ struct __attribute__((__packed__)) HandPlacement {
   unsigned char month_index;
   unsigned char date_value;
   unsigned char year_value;  // less 1900.
+  unsigned char week_value;
+  unsigned short ordinal_date_index;
   bool ampm_value;
 
 #ifdef TOP_SUBDIAL
