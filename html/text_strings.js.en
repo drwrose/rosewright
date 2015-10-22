@@ -39,12 +39,19 @@ __DateNumericDate = "Numeric date"
 __DateWeekday = "Weekday"
 __DateMonth = "Month"
 __DateYear = "Year"
+__DateWeekNumber = "Week number"
 __DateAmPm = "am/pm"
+__DateOrdinal = "Day number of year"
 
 __DateWindowNamePrefix = "Date window "
 __DateWindowNameSuffix = ""
 
 __DisplayLang = "Language for date windows"
+
+__WeekNumbering = "Week numbering convention"
+__WeekMon4 = "Week begins Monday"
+__WeekSun1 = "Week begins Sunday"
+__WeekSat1 = "Week begins Saturday"
 
 __TopSubdial = "Top subdial"
 
@@ -80,6 +87,7 @@ __lang_it_IT = "Italian"
 __lang_ja_JP = "Japanese"
 __lang_ko_KR = "Korean"
 __lang_nl_NL = "Dutch"
+__lang_nb_NO = "Norwegian"
 __lang_pl_PL = "Polish"
 __lang_pt_PT = "Portuguese"
 __lang_ru_RU = "Russian"

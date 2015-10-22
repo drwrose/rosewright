@@ -30,7 +30,8 @@
     "lunar_direction": 15,
     "color_mode": 16,
     "top_subdial" : 17,
-    "show_debug" : 18
+    "show_debug" : 18,
+    "week_numbering" : 19
   },
   "resources": {
   "media": [
