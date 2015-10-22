@@ -239,6 +239,7 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
 #endif 
 
   time_t gmt;
+  uint16_t t_ms = 0;
   unsigned int ms;
   
   if (needs_sub_second) {
@@ -246,7 +247,6 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
     // structure we were passed in.
     
     // Get the Unix time (in UTC).
-    uint16_t t_ms = 0;
     time_ms(&gmt, &t_ms);
 
     // Compute the number of milliseconds elapsed since midnight, local time.
