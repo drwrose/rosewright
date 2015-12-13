@@ -235,21 +235,33 @@ void update_chrono_hands(struct HandPlacement *new_placement) {
 #ifdef ENABLE_CHRONO_MINUTE_HAND
   if (new_placement->chrono_minute_hand_index != current_placement.chrono_minute_hand_index) {
     current_placement.chrono_minute_hand_index = new_placement->chrono_minute_hand_index;
-    layer_mark_dirty(clock_hands_layer);
+    layer_mark_dirty(clock_face_layer);
+
+    if (config.second_hand) {
+      // If the second hand is enabled, the hour and minute hands are
+      // baked into the clock face cache, which must be redrawn now.
+      invalidate_clock_face();
+    }
   }
 #endif  // ENABLE_CHRONO_MINUTE_HAND
 
 #ifdef ENABLE_CHRONO_SECOND_HAND
   if (new_placement->chrono_second_hand_index != current_placement.chrono_second_hand_index) {
     current_placement.chrono_second_hand_index = new_placement->chrono_second_hand_index;
-    layer_mark_dirty(clock_hands_layer);
+    layer_mark_dirty(clock_face_layer);
   }
 #endif  // ENABLE_CHRONO_SECOND_HAND
 
 #ifdef ENABLE_CHRONO_TENTH_HAND
   if (new_placement->chrono_tenth_hand_index != current_placement.chrono_tenth_hand_index) {
     current_placement.chrono_tenth_hand_index = new_placement->chrono_tenth_hand_index;
-    layer_mark_dirty(clock_hands_layer);
+    layer_mark_dirty(clock_face_layer);
+
+    if (config.second_hand) {
+      // If the second hand is enabled, the hour and minute hands are
+      // baked into the clock face cache, which must be redrawn now.
+      invalidate_clock_face();
+    }
   }
 #endif  // ENABLE_CHRONO_TENTH_HAND
 

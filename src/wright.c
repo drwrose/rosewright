@@ -122,8 +122,6 @@ int sweep_timer_ms = 1000;
 
 int sweep_seconds_ms = 60 * 1000 / NUM_STEPS_SECOND;
 
-Layer *clock_hands_layer;
-
 struct HandCache hour_cache;
 struct HandCache minute_cache;
 struct HandCache second_cache;
@@ -1037,66 +1035,10 @@ void draw_clock_face(Layer *me, GContext *ctx) {
 #endif  // MAKE_CHRONOGRAPH
 }
 
-void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_face_layer, memory_panic_count = %d, heap_bytes_free = %d", memory_panic_count, heap_bytes_free());
-  if (hide_clock_face) {
-    // In case we're in extreme memory panic mode--too little
-    // available memory to even keep the clock face resident--we do
-    // nothing in this function.
-    return;
-  }
-
-#ifdef PBL_ROUND
-  // temp hack, it appears something is wrong with the caching
-  // approach on PTR, it crashes (though not in the emulator).  Memory
-  // address issue?
-  draw_clock_face(me, ctx);
-  if (date_window_debug) {
-    // Now fill in the per-frame debug text, if needed.
-    for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
-      draw_date_window_debug_text(ctx, i);
-    }
-  }    
-
-#else  // PBL_ROUND
-  // On most platforms, perform the usual framebuffer caching.
-  
-  if (clock_face.bitmap == NULL) {
-    // The clock face needs to be redrawn (or drawn for the first
-    // time).  This is every part of the display except for the hands,
-    // including the date windows and top subdial.
-
-    // Draw the clock face into the frame buffer.
-    draw_clock_face(me, ctx);
-
-    // Now save the render for next time.
-    GBitmap *fb = graphics_capture_frame_buffer(ctx);
-    assert(clock_face.bitmap == NULL);
-    clock_face = bwd_copy_bitmap(fb);
-    graphics_release_frame_buffer(ctx, fb);
-
-  } else {
-    // The rendered clock face is already saved from a previous
-    // update; redraw it now.
-    GRect destination = layer_get_bounds(me);
-    destination.origin.x = 0;
-    destination.origin.y = 0;
-    graphics_context_set_compositing_mode(ctx, GCompOpAssign);
-    graphics_draw_bitmap_in_rect(ctx, clock_face.bitmap, destination);
-  }
-
-  if (date_window_debug) {
-    // Now fill in the per-frame debug text, if needed.
-    for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
-      draw_date_window_debug_text(ctx, i);
-    }
-  }    
-#endif  // PBL_ROUND
-}
-  
-void clock_hands_layer_update_callback(Layer *me, GContext *ctx) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_hands_layer");
-
+// Draws the hands that aren't the second hand--the hands that update
+// once a minute or slower, and which may potentially be cached along
+// with the clock face background.
+void draw_phase_1_hands(Layer *me, GContext *ctx) {
 #ifdef MAKE_CHRONOGRAPH
 
   // A special case for Chronograph support.  All six hands are drawn
@@ -1113,17 +1055,9 @@ void clock_hands_layer_update_callback(Layer *me, GContext *ctx) {
     }
   }
 
-  if (config.second_hand) {
-    draw_hand(&second_cache, second_resource_cache, second_resource_cache_size, &second_hand_def, current_placement.second_hand_index, ctx);
-  }
-
-  draw_hand(&hour_cache, NULL, 0, &hour_hand_def, current_placement.hour_hand_index, ctx);
-
-  draw_hand(&minute_cache, NULL, 0, &minute_hand_def, current_placement.minute_hand_index, ctx);
-
-  if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
-    draw_hand(&chrono_second_cache, chrono_second_resource_cache, chrono_second_resource_cache_size, &chrono_second_hand_def, current_placement.chrono_second_hand_index, ctx);
-  }
+  // Since the second hand is a tiny subdial in the Chrono case, and
+  // is overlaid by the hour and minute hands, we have to draw the
+  // second hand and everything else in phase_2.
   
 #else  // MAKE_CHRONOGRAPH
   // The normal, non-chrono implementation, with only hour, minute,
@@ -1136,7 +1070,7 @@ void clock_hands_layer_update_callback(Layer *me, GContext *ctx) {
   // common mask.  Rosewright A and B share this property, because
   // their hands are relatively thin, and their hand masks define an
   // invisible halo that erases to the background color around the
-  // hands, and we don't want the hands to erase each other.
+  // hands, but we don't want the hands to erase each other.
   draw_hand_mask(&hour_cache, NULL, 0, &hour_hand_def, current_placement.hour_hand_index, false, ctx);
   draw_hand_mask(&minute_cache, NULL, 0, &minute_hand_def, current_placement.minute_hand_index, false, ctx);
 
@@ -1154,12 +1088,98 @@ void clock_hands_layer_update_callback(Layer *me, GContext *ctx) {
 
   draw_hand(&minute_cache, NULL, 0, &minute_hand_def, current_placement.minute_hand_index, ctx);
 #endif  //  HOUR_MINUTE_OVERLAP
+  
+#endif  // MAKE_CHRONOGRAPH
+}
+
+// Draws the second hand or any other hands which must be redrawn once
+// per second.  These are the hands that are never cached.
+void draw_phase_2_hands(Layer *me, GContext *ctx) {
+#ifdef MAKE_CHRONOGRAPH
+
+  // The Chrono case.  Lots of hands end up here because it's the
+  // second hand and everything that might overlay it.
+  if (config.second_hand) {
+    draw_hand(&second_cache, second_resource_cache, second_resource_cache_size, &second_hand_def, current_placement.second_hand_index, ctx);
+  }
+
+  draw_hand(&hour_cache, NULL, 0, &hour_hand_def, current_placement.hour_hand_index, ctx);
+
+  draw_hand(&minute_cache, NULL, 0, &minute_hand_def, current_placement.minute_hand_index, ctx);
+
+  if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
+    draw_hand(&chrono_second_cache, chrono_second_resource_cache, chrono_second_resource_cache_size, &chrono_second_hand_def, current_placement.chrono_second_hand_index, ctx);
+  }
+  
+#else  // MAKE_CHRONOGRAPH
+  // The normal, non-chrono implementation; and here in phase 2 we
+  // only need to draw the second hand.
 
   if (config.second_hand) {
     draw_hand(&second_cache, second_resource_cache, second_resource_cache_size, &second_hand_def, current_placement.second_hand_index, ctx);
   }
   
 #endif  // MAKE_CHRONOGRAPH
+} 
+
+void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_face_layer, memory_panic_count = %d, heap_bytes_free = %d", memory_panic_count, heap_bytes_free());
+
+  // In case we're in extreme memory panic mode--too little
+  // available memory to even keep the clock face resident--we don't
+  // draw any clock background.
+  if (!hide_clock_face) {
+    // Perform framebuffer caching to minimize redraws.
+    if (clock_face.bitmap == NULL) {
+      // The clock face needs to be redrawn (or drawn for the first
+      // time).  This is every part of the display except for the hands,
+      // including the date windows and top subdial.
+      
+      // Draw the clock face into the frame buffer.
+      draw_clock_face(me, ctx);
+
+      if (config.second_hand) {
+	// If the second hand is enabled, then we also draw the
+	// phase_1 hands at this time, so they get cached in the clock
+	// buffer.
+	draw_phase_1_hands(me, ctx);
+      }
+      
+      // Now save the render for next time.
+      GBitmap *fb = graphics_capture_frame_buffer(ctx);
+      assert(clock_face.bitmap == NULL);
+      clock_face = bwd_copy_bitmap(fb);
+      graphics_release_frame_buffer(ctx, fb);
+      
+    } else {
+      // The rendered clock face is already saved from a previous
+      // update; redraw it now.
+      GRect destination = layer_get_bounds(me);
+      destination.origin.x = 0;
+      destination.origin.y = 0;
+      graphics_context_set_compositing_mode(ctx, GCompOpAssign);
+      graphics_draw_bitmap_in_rect(ctx, clock_face.bitmap, destination);
+    }
+  }
+
+  if (date_window_debug) {
+    // Now fill in the per-frame debug text, if needed.
+    for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
+      draw_date_window_debug_text(ctx, i);
+    }
+  }
+
+  if (!config.second_hand) {
+    // If the second hand is *not* enabled, then we draw the phase_1
+    // hands at this time, so we don't have to invalidate the buffer
+    // each minute.
+    draw_phase_1_hands(me, ctx);
+  }
+
+  // And we always draw the phase_2 hands last, each update.  These
+  // are the most dynamic hands that are never part of the captured
+  // framebuffer.
+  draw_phase_2_hands(me, ctx);
 }
 
 int get_indicator_face_index() {
@@ -1468,17 +1488,29 @@ void update_hands(struct tm *time) {
   compute_hands(time, &new_placement);
   if (new_placement.hour_hand_index != current_placement.hour_hand_index) {
     current_placement.hour_hand_index = new_placement.hour_hand_index;
-    layer_mark_dirty(clock_hands_layer);
+    layer_mark_dirty(clock_face_layer);
+
+    if (config.second_hand) {
+      // If the second hand is enabled, the hour and minute hands are
+      // baked into the clock face cache, which must be redrawn now.
+      invalidate_clock_face();
+    }
   }
 
   if (new_placement.minute_hand_index != current_placement.minute_hand_index) {
     current_placement.minute_hand_index = new_placement.minute_hand_index;
-    layer_mark_dirty(clock_hands_layer);
+    layer_mark_dirty(clock_face_layer);
+
+    if (config.second_hand) {
+      // If the second hand is enabled, the hour and minute hands are
+      // baked into the clock face cache, which must be redrawn now.
+      invalidate_clock_face();
+    }
   }
 
   if (new_placement.second_hand_index != current_placement.second_hand_index) {
     current_placement.second_hand_index = new_placement.second_hand_index;
-    layer_mark_dirty(clock_hands_layer);
+    layer_mark_dirty(clock_face_layer);
   }
 
   if (new_placement.hour_buzzer != current_placement.hour_buzzer) {
@@ -1672,16 +1704,9 @@ void reset_memory_panic_count() {
   chrono_second_resource_cache_size = CHRONO_SECOND_RESOURCE_CACHE_SIZE +  + CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE;
 #endif  // MAKE_CHRONOGRAPH
 
-#ifdef PBL_ROUND
-  // On Chalk, we can't do framebuffer caching for some reason right
-  // now, so instead keep the individual assets around from one frame to
-  // the next.
-  keep_assets = true;
-#else
-  // On other platforms, we can do framebuffer caching, so there's no
-  // reason to keep the individual components of the framebuffer.
+  // Since we do framebuffer caching, there's no reason to keep the
+  // individual components of the framebuffer.
   keep_assets = false;
-#endif
 
   hide_date_windows = false;
   hide_clock_face = false;
@@ -1818,11 +1843,6 @@ void create_temporal_objects() {
 #ifdef MAKE_CHRONOGRAPH
   create_chrono_objects();
 #endif  // MAKE_CHRONOGRAPH
-
-  clock_hands_layer = layer_create(window_frame);
-  assert(clock_hands_layer != NULL);
-  layer_set_update_proc(clock_hands_layer, &clock_hands_layer_update_callback);
-  layer_add_child(window_layer, clock_hands_layer);
 }
 
 // Destroys the objects created by create_temporal_objects().
@@ -1854,8 +1874,6 @@ void destroy_temporal_objects() {
   bwd_clear_cache(chrono_second_resource_cache, CHRONO_SECOND_RESOURCE_CACHE_SIZE + CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE);
 #endif  // MAKE_CHRONOGRAPH
   
-  layer_destroy(clock_hands_layer);
-
   hand_cache_destroy(&hour_cache);
   hand_cache_destroy(&minute_cache);
   hand_cache_destroy(&second_cache);

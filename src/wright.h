@@ -97,7 +97,7 @@ extern int sweep_timer_ms;
 extern struct HandPlacement current_placement;
 extern Window *window;
 
-extern Layer *clock_hands_layer;
+extern Layer *clock_face_layer;
 
 void stopped_click_config_provider(void *context);
 void started_click_config_provider(void *context);
