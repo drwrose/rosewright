@@ -843,6 +843,13 @@ static void remap_colors_moon(BitmapWithData *bwd) {
 }
 
 void draw_pebble_label(Layer *me, GContext *ctx, bool invert) {
+#if defined(PBL_PLATFORM_APLITE) && defined(MAKE_CHRONOGRAPH)
+  // As a special memory-saving hack, on Rosewright C build for
+  // Aplite, we don't attempt to draw the Pebble label even if it's
+  // enabled.  Eliminating this extra code is enough to push us over a
+  // critical memory-savings threshold.
+
+#else  // defined(PBL_PLATFORM_APLITE) && defined(MAKE_CHRONOGRAPH)
   unsigned int draw_mode = invert ^ config.draw_mode ^ APLITE_INVERT;
 
   const struct IndicatorTable *window = &top_subdial[config.face_index];
@@ -876,6 +883,7 @@ void draw_pebble_label(Layer *me, GContext *ctx, bool invert) {
   if (!keep_assets) {
     bwd_destroy(&pebble_label);
   }
+#endif  // defined(PBL_PLATFORM_APLITE) && defined(MAKE_CHRONOGRAPH)
 }
   
 #ifdef TOP_SUBDIAL
