@@ -40,6 +40,8 @@ bool keep_assets = true;
 bool keep_face_asset = true;
 #endif  // PBL_PLATFORM_APLITE
 
+bool save_framebuffer = true;
+
 bool hide_date_windows = false;
 bool hide_clock_face = false;
 
@@ -1180,15 +1182,17 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
       if (config.second_hand) {
 	// If the second hand is enabled, then we also draw the
 	// phase_1 hands at this time, so they get cached in the clock
-	// buffer.
+	// face buffer.
 	draw_phase_1_hands(ctx);
       }
-      
-      // Now save the render for next time.
-      GBitmap *fb = graphics_capture_frame_buffer(ctx);
-      assert(clock_face.bitmap == NULL);
-      clock_face = bwd_copy_bitmap(fb);
-      graphics_release_frame_buffer(ctx, fb);
+
+      if (save_framebuffer) {
+	// Now save the render for next time.
+	GBitmap *fb = graphics_capture_frame_buffer(ctx);
+	assert(clock_face.bitmap == NULL);
+	clock_face = bwd_copy_bitmap(fb);
+	graphics_release_frame_buffer(ctx, fb);
+      }
       
     } else {
       // The rendered clock face is already saved from a previous
@@ -2000,6 +2004,12 @@ void reset_memory_panic() {
     config.second_hand = false;
   } 
   if (memory_panic_count > 5) {
+    save_framebuffer = false;
+  }
+  if (memory_panic_count > 6) {
+    config.top_subdial = false;
+  }
+  if (memory_panic_count > 7) {
     for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
       if (config.date_windows[i] != DWM_debug_memory_panic_count) {
         config.date_windows[i] = DWM_off;
@@ -2007,13 +2017,10 @@ void reset_memory_panic() {
     }
     hide_date_windows = true;
   } 
-  if (memory_panic_count > 6) {
+  if (memory_panic_count > 8) {
     config.chrono_dial = 0;
   }
-  if (memory_panic_count > 7) {
-    config.top_subdial = false;
-  }
-  if (memory_panic_count > 8) {
+  if (memory_panic_count > 9) {
     // At this point we hide the clock face.  Drastic!
     hide_clock_face = true;
   }
