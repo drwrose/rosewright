@@ -1,3 +1,4 @@
+#include "wright.h"
 #include "wright_chrono.h"
 
 // The code in this file is used only when enabling Chronograph

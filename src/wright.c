@@ -1173,8 +1173,10 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
     // Perform framebuffer caching to minimize redraws.
     if (clock_face.bitmap == NULL) {
       // The clock face needs to be redrawn (or drawn for the first
-      // time).  This is every part of the display except for the hands,
-      // including the date windows and top subdial.
+      // time).  This is every part of the display except for the
+      // hands, including the date windows and top subdial.  If the
+      // second hand is enabled, it also includes the hour and minute
+      // hands.
       
       // Draw the clock face into the frame buffer.
       draw_clock_face(me, ctx);
@@ -1212,7 +1214,7 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
     }
   }
 
-  if (!config.second_hand) {
+  if (!config.second_hand || hide_clock_face) {
     // If the second hand is *not* enabled, then we draw the phase_1
     // hands at this time, so we don't have to invalidate the buffer
     // each minute.

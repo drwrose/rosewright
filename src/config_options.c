@@ -1,5 +1,5 @@
-#include "config_options.h"
 #include "wright.h"
+#include "config_options.h"
 
 ConfigOptions config;
 

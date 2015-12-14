@@ -1,8 +1,8 @@
+#include "wright.h"
 #include <pebble.h>
 #include "bluetooth_indicator.h"
 #include "config_options.h"
 #include "bwd.h"
-#include "wright.h"
 
 BitmapWithData bluetooth_disconnected;
 BitmapWithData bluetooth_connected;
