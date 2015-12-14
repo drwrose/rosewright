@@ -1185,7 +1185,7 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
 	// If the second hand is enabled, then we also draw the
 	// phase_1 hands at this time, so they get cached in the clock
 	// face buffer.
-	draw_phase_1_hands(ctx);
+	//draw_phase_1_hands(ctx);
       }
 
       if (save_framebuffer) {
@@ -1218,8 +1218,10 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
     // If the second hand is *not* enabled, then we draw the phase_1
     // hands at this time, so we don't have to invalidate the buffer
     // each minute.
-    draw_phase_1_hands(ctx);
+    //draw_phase_1_hands(ctx);
   }
+
+  draw_phase_1_hands(ctx);
 
   // And we always draw the phase_2 hands last, each update.  These
   // are the most dynamic hands that are never part of the captured
