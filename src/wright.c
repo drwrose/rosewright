@@ -1041,6 +1041,7 @@ void draw_clock_face(Layer *me, GContext *ctx) {
 
   // Draw the date windows.
   {
+    date_window_debug = false;
     for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
       draw_full_date_window(ctx, i);
     }
@@ -1250,6 +1251,7 @@ void draw_date_window_background(GContext *ctx, int date_window_index, unsigned 
 // Draws a date window with the specified text contents.  Usually this is
 // something like a numeric date or the weekday name.
 void draw_date_window_text(GContext *ctx, int date_window_index, const char *text, struct FontPlacement *font_placement, GFont font) {
+  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_date_window_text %c, %s, %p", date_window_index + 'a', text, font);
   if (font == NULL) {
     return;
   }
@@ -1377,7 +1379,6 @@ void draw_full_date_window(GContext *ctx, int date_window_index) {
   }
 
   char *text = buffer;
-  date_window_debug = false;
   
   switch (dwm) {
   case DWM_identify:
