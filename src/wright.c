@@ -29,7 +29,17 @@ GFont date_numeric_font = NULL;
 GFont date_lang_font = NULL;
 GFont date_debug_font = NULL;
 
+#ifdef PBL_PLATFORM_APLITE
+// Aplite lacks sufficient RAM to keep the bitmap assets as well as
+// the framebuffer simultaneously.
 bool keep_assets = false;
+bool keep_face_asset = false;
+#else // PBL_PLATFORM_APLITE
+// But perhaps we can do this on the other platforms.
+bool keep_assets = true;
+bool keep_face_asset = true;
+#endif  // PBL_PLATFORM_APLITE
+
 bool hide_date_windows = false;
 bool hide_clock_face = false;
 
@@ -997,7 +1007,7 @@ void draw_clock_face(Layer *me, GContext *ctx) {
   destination.origin.y = 0;
   graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_assign);
   graphics_draw_bitmap_in_rect(ctx, face_bitmap.bitmap, destination);
-  if (!keep_assets) {
+  if (!keep_face_asset) {
     bwd_destroy(&face_bitmap);
   }
 
@@ -1704,9 +1714,16 @@ void reset_memory_panic_count() {
   chrono_second_resource_cache_size = CHRONO_SECOND_RESOURCE_CACHE_SIZE +  + CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE;
 #endif  // MAKE_CHRONOGRAPH
 
-  // Since we do framebuffer caching, there's no reason to keep the
-  // individual components of the framebuffer.
+#ifdef PBL_PLATFORM_APLITE
+  // Aplite lacks sufficient RAM to keep the bitmap assets as well as
+  // the framebuffer simultaneously.
   keep_assets = false;
+  keep_face_asset = false;
+#else // PBL_PLATFORM_APLITE
+  // But perhaps we can do this on the other platforms.
+  keep_assets = true;
+  keep_face_asset = true;
+#endif  // PBL_PLATFORM_APLITE
 
   hide_date_windows = false;
   hide_clock_face = false;
@@ -1967,6 +1984,9 @@ void reset_memory_panic() {
   recreate_all_objects();
 
   // Start resetting some options if the memory panic count grows too high.
+  if (memory_panic_count > 0) {
+    keep_face_asset = false;
+  }
   if (memory_panic_count > 1) {
     keep_assets = false;
   }

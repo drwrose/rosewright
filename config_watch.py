@@ -1612,8 +1612,7 @@ if not watchStyle:
     sys.exit(1)
 
 if not targetPlatforms:
-    #targetPlatforms = [ "aplite", "basalt", "chalk" ]
-    targetPlatforms = [ "chalk" ]
+    targetPlatforms = [ "aplite", "basalt", "chalk" ]
 
 targetModes = set()
 if "aplite" in targetPlatforms:
@@ -1674,7 +1673,7 @@ centers_round = fd.get('centers_round', ())
 # Look for 'day' and 'date' prefixes in the defaults.
 defaultDateWindows = [0] * len(date_window_keys)
 for keyword in defaults:
-    for token, value in [('day', 4), ('date', 2), ('moon', 7)]:
+    for token, value in [('day', 6), ('date', 2)]:
         if keyword.startswith(token + ':'):
             ch = keyword.split(':', 1)[1]
             i = ord(ch) - 97

@@ -157,11 +157,11 @@ var date_window_options = [
 ];
 
 if ($.url().param("show_debug")) {
-    date_window_options.push([8, "(dev) heap free"]);
-    date_window_options.push([9, "(dev) memory panic count"]);
-    date_window_options.push([10, "(dev) resource reads"]);
-    date_window_options.push([11, "(dev) cache hits"]);
-    date_window_options.push([12, "(dev) cache total size"]);
+    date_window_options.push([10, "(dev) heap free"]);
+    date_window_options.push([11, "(dev) memory panic count"]);
+    date_window_options.push([12, "(dev) resource reads"]);
+    date_window_options.push([13, "(dev) cache hits"]);
+    date_window_options.push([14, "(dev) cache total size"]);
 }
 
 var top_subdial_options = [
@@ -233,7 +233,7 @@ function saveOptions() {
         var dw0 = 'date_window_' + date_window_keys.charAt(0);
         var dw1 = 'date_window_' + date_window_keys.charAt(1);
         if (options[dw0] == 1 &&
-            options[dw1] == 6 &&
+            options[dw1] == 8 &&
             options['display_lang'] == 'ta_IN' &&
             options['draw_mode'] == 1) {
             options['show_debug'] = 1;
