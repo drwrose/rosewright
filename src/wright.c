@@ -988,6 +988,16 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
 }
 #endif  // TOP_SUBDIAL
 
+int get_indicator_face_index() {
+#ifdef TOP_SUBDIAL
+  int indicator_face_index = config.face_index * 2 + (config.top_subdial > TSM_pebble_label);
+#else  // TOP_SUBDIAL
+  int indicator_face_index = config.face_index;
+#endif  // TOP_SUBDIAL
+  assert(indicator_face_index < NUM_INDICATOR_FACES);
+  return indicator_face_index;
+}
+
 void draw_clock_face(Layer *me, GContext *ctx) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_clock_face");
 
@@ -1043,12 +1053,22 @@ void draw_clock_face(Layer *me, GContext *ctx) {
 #ifdef MAKE_CHRONOGRAPH
   draw_chrono_dial(ctx);
 #endif  // MAKE_CHRONOGRAPH
+
+  int indicator_face_index = get_indicator_face_index();
+  {
+    const struct IndicatorTable *window = &battery_table[indicator_face_index];
+    draw_battery_gauge(ctx, window->x, window->y, window->invert);
+  }
+  {
+    const struct IndicatorTable *window = &bluetooth_table[indicator_face_index];
+    draw_bluetooth_indicator(ctx, window->x, window->y, window->invert);
+  }
 }
 
 // Draws the hands that aren't the second hand--the hands that update
 // once a minute or slower, and which may potentially be cached along
 // with the clock face background.
-void draw_phase_1_hands(Layer *me, GContext *ctx) {
+void draw_phase_1_hands(GContext *ctx) {
 #ifdef MAKE_CHRONOGRAPH
 
   // A special case for Chronograph support.  All six hands are drawn
@@ -1104,7 +1124,7 @@ void draw_phase_1_hands(Layer *me, GContext *ctx) {
 
 // Draws the second hand or any other hands which must be redrawn once
 // per second.  These are the hands that are never cached.
-void draw_phase_2_hands(Layer *me, GContext *ctx) {
+void draw_phase_2_hands(GContext *ctx) {
 #ifdef MAKE_CHRONOGRAPH
 
   // The Chrono case.  Lots of hands end up here because it's the
@@ -1152,7 +1172,7 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
 	// If the second hand is enabled, then we also draw the
 	// phase_1 hands at this time, so they get cached in the clock
 	// buffer.
-	draw_phase_1_hands(me, ctx);
+	draw_phase_1_hands(ctx);
       }
       
       // Now save the render for next time.
@@ -1183,23 +1203,13 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
     // If the second hand is *not* enabled, then we draw the phase_1
     // hands at this time, so we don't have to invalidate the buffer
     // each minute.
-    draw_phase_1_hands(me, ctx);
+    draw_phase_1_hands(ctx);
   }
 
   // And we always draw the phase_2 hands last, each update.  These
   // are the most dynamic hands that are never part of the captured
   // framebuffer.
-  draw_phase_2_hands(me, ctx);
-}
-
-int get_indicator_face_index() {
-#ifdef TOP_SUBDIAL
-  int indicator_face_index = config.face_index * 2 + (config.top_subdial > TSM_pebble_label);
-#else  // TOP_SUBDIAL
-  int indicator_face_index = config.face_index;
-#endif  // TOP_SUBDIAL
-  assert(indicator_face_index < NUM_INDICATOR_FACES);
-  return indicator_face_index;
+  draw_phase_2_hands(ctx);
 }
 
 // Draws the frame and optionally fills the background of the current date window.
@@ -1687,24 +1697,6 @@ void fill_date_names(char *date_names[], int num_date_names, char date_names_buf
   }
 }
 
-void move_layers() {
-  // Move any subordinate layers to their correct position on the face.
-
-  // The indicator_face_index is like config.face_index, but also
-  // includes the top_subdial setting--having top_subdial enabled is
-  // like a separate face for this purpose, which allows us to
-  // reposition the indicators around the subdial when necessary.
-  int indicator_face_index = get_indicator_face_index();
-  {
-    const struct IndicatorTable *window = &battery_table[indicator_face_index];
-    move_battery_gauge(window->x, window->y, window->invert);
-  }
-  {
-    const struct IndicatorTable *window = &bluetooth_table[indicator_face_index];
-    move_bluetooth_indicator(window->x, window->y, window->invert);
-  }
-}
-
 // Restores memory_panic_count to 0, as in a fresh start.
 void reset_memory_panic_count() {
   memory_panic_count = 0;
@@ -1740,7 +1732,6 @@ void apply_config() {
   if (face_index != config.face_index) {
     // Update the face bitmap if it's changed.
     face_index = config.face_index;
-    move_layers();
   }
 
   if (display_lang != config.display_lang) {
@@ -1850,12 +1841,8 @@ void create_temporal_objects() {
   layer_add_child(window_layer, clock_face_layer);
   invalidate_clock_face();
   
-  init_battery_gauge(window_layer);
-  init_bluetooth_indicator(window_layer);
-
-  // Now put all of the layers we just created into their correct
-  // positions.
-  move_layers();
+  init_battery_gauge();
+  init_bluetooth_indicator();
 
 #ifdef MAKE_CHRONOGRAPH
   create_chrono_objects();
