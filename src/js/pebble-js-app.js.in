@@ -28,6 +28,7 @@ var default_date_windows = %(defaultDateWindows)s;
 var default_top_subdial = %(defaultTopSubdial)s;
 var default_lunar_background = %(defaultLunarBackground)s;
 var default_lunar_direction = 0;
+var default_week_numbering = 0;
 var default_show_debug = 0;
 
 var config_version_major;
@@ -164,6 +165,7 @@ function initialize() {
     }
     lunar_background = getIntFromStorage('lunar_background', default_lunar_background);
     lunar_direction = getIntFromStorage('lunar_direction', default_lunar_direction);
+    week_numbering = getIntFromStorage('week_numbering', default_week_numbering);
     top_subdial = getIntFromStorage('top_subdial', default_top_subdial);
     show_debug = getIntFromStorage('show_debug', default_show_debug);
 
@@ -197,8 +199,19 @@ function initialize() {
             date_windows[2] = date_windows[1];
             date_windows[1] = 0;
         }
-    } else {
-        console.log("config version is current");
+        config_version_major = 4;
+        config_version_minor = 0;
+    }        
+
+    if (!configAtLeastVersion(4, 3)) {
+        // Insert DWM_yday, DWM_week at positions 4 and 5.
+	for (var i = 0; i < num_date_windows; ++i) {
+	    if (date_windows[i] >= 4) {
+		date_windows[i] += 2;
+	    }
+	}
+        config_version_major = 4;
+        config_version_minor = 3;
     }
 }
 
@@ -225,6 +238,7 @@ Pebble.addEventListener("ready", function(e) {
 	    'face_index' : face_index,
 	    'lunar_background' : lunar_background,
 	    'lunar_direction' : lunar_direction,
+	    'week_numbering' : week_numbering,
 	    'top_subdial' : top_subdial,
 	    'show_debug' : show_debug,
 	};
@@ -247,7 +261,7 @@ Pebble.addEventListener("showConfiguration", function(e) {
     if (config_langs.indexOf(prefix) >= 0) {
 	lang_extension = '.' + prefix;
     }
-    var url = "http://s3.amazonaws.com/us.ddrose/pebble/rosewright/html/rosewright_%(configVersionMajor)s_%(configVersionMinor)s_configure" + lang_extension + ".html?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&color_mode=" + color_mode + "&default_display_lang=" + default_display_lang + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_face_colors=" + num_face_colors + "&date_window_keys=" + date_window_keys + "&lunar_background=" + lunar_background + "&lunar_direction=" + lunar_direction;
+    var url = "http://s3.amazonaws.com/us.ddrose/pebble/rosewright/html/rosewright_%(configVersionMajor)s_%(configVersionMinor)s_configure" + lang_extension + ".html?watch_name=" + encodeURIComponent(watch_name) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&color_mode=" + color_mode + "&default_display_lang=" + default_display_lang + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_face_colors=" + num_face_colors + "&date_window_keys=" + date_window_keys + "&lunar_background=" + lunar_background + "&lunar_direction=" + lunar_direction + "&week_numbering=" + week_numbering;
     if (show_top_subdial) {
         url += "&top_subdial=" + top_subdial;
     }
@@ -327,6 +341,9 @@ Pebble.addEventListener("webviewclosed", function(e) {
 	    date_windows.push(configuration[sym]);
 	    writeToStorage("" + sym, date_windows[i]);
 	}
+
+	week_numbering = configuration["week_numbering"];
+	writeToStorage("week_numbering", week_numbering);
 
 	if (show_top_subdial) {
 	    top_subdial = configuration["top_subdial"];

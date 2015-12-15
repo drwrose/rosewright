@@ -1,5 +1,5 @@
-#include "assert.h"
 #include "wright.h"
+#include "assert.h"
 
 #ifndef NDEBUG
 void assert_failure(const char *condition, const char *filename, int line_number) {

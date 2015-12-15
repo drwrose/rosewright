@@ -1,3 +1,4 @@
+#include "wright.h"
 #include <pebble.h>
 #include "battery_gauge.h"
 #include "config_options.h"
@@ -8,11 +9,16 @@ BitmapWithData battery_gauge_charged;
 BitmapWithData battery_gauge_mask;
 BitmapWithData charging;
 BitmapWithData charging_mask;
-Layer *battery_gauge_layer;
 
-bool battery_gauge_invert = false;
+void destroy_battery_gauge_bitmaps() {
+  bwd_destroy(&battery_gauge_empty);
+  bwd_destroy(&battery_gauge_charged);
+  bwd_destroy(&battery_gauge_mask);
+  bwd_destroy(&charging);
+  bwd_destroy(&charging_mask);
+}
 
-void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
+void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
   if (config.battery_gauge == IM_off) {
     return;
   }
@@ -29,15 +35,17 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
     return;
   }
 
-  GRect box = layer_get_frame(me);
-  box.origin.x = 0;
-  box.origin.y = 0;
+  GRect box;
+  box.origin.x = x - 6;
+  box.origin.y = y;
+  box.size.w = 24;
+  box.size.h = 10;
 
   GCompOp fg_mode;
   GColor fg_color, bg_color;
   GCompOp mask_mode;
 
-  if (battery_gauge_invert ^ config.draw_mode ^ APLITE_INVERT) {
+  if (invert ^ config.draw_mode ^ APLITE_INVERT) {
     fg_mode = GCompOpSet;
     bg_color = GColorBlack;
     fg_color = GColorWhite;
@@ -69,7 +77,7 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
   } else {
     // Erase a rectangle for text.
     graphics_context_set_fill_color(ctx, bg_color);
-    graphics_fill_rect(ctx, GRect(6, 0, 18, 10), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(x, y, 18, 10), 0, GCornerNone);
   }
 
   if (charge_state.is_charging) {
@@ -98,7 +106,7 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
     graphics_context_set_fill_color(ctx, fg_color);
     graphics_draw_bitmap_in_rect(ctx, battery_gauge_empty.bitmap, box);
     int bar_width = charge_state.charge_percent / 10;
-    graphics_fill_rect(ctx, GRect(10, 3, bar_width, 4), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(x + 4, y + 3, bar_width, 4), 0, GCornerNone);
 
   } else {
     // Draw the digital text percentage.
@@ -106,41 +114,28 @@ void battery_gauge_layer_update_callback(Layer *me, GContext *ctx) {
     snprintf(text_buffer, 4, "%d", charge_state.charge_percent);
     GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
     graphics_context_set_text_color(ctx, fg_color);
-    graphics_draw_text(ctx, text_buffer, font, GRect(6, -4, 18, 10),
+    graphics_draw_text(ctx, text_buffer, font, GRect(x, y - 4, 18, 10),
 		       GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
 		       NULL);
- }
+  }
+
+  if (!keep_assets) {
+    destroy_battery_gauge_bitmaps();
+  }
 }
 
 // Update the battery guage.
 void handle_battery(BatteryChargeState charge_state) {
-  layer_mark_dirty(battery_gauge_layer);
+  if (config.battery_gauge != IM_off) {
+    invalidate_clock_face();
+  }
 }
 
-void init_battery_gauge(Layer *window_layer) {
-  battery_gauge_invert = false;
-  battery_gauge_layer = layer_create(GRect(0, 0, 24, 10));
-  layer_set_update_proc(battery_gauge_layer, &battery_gauge_layer_update_callback);
-  layer_add_child(window_layer, battery_gauge_layer);
+void init_battery_gauge() {
   battery_state_service_subscribe(&handle_battery);
-}
-
-void move_battery_gauge(int x, int y, bool invert) {
-  battery_gauge_invert = invert;
-  layer_set_frame((Layer *)battery_gauge_layer, GRect(x - 6, y, 24, 10));
 }
 
 void deinit_battery_gauge() {
   battery_state_service_unsubscribe();
-  layer_destroy(battery_gauge_layer);
-  battery_gauge_layer = NULL;
-  bwd_destroy(&battery_gauge_empty);
-  bwd_destroy(&battery_gauge_charged);
-  bwd_destroy(&battery_gauge_mask);
-  bwd_destroy(&charging);
-  bwd_destroy(&charging_mask);
-}
-
-void refresh_battery_gauge() {
-  layer_mark_dirty(battery_gauge_layer);
+  destroy_battery_gauge_bitmaps();
 }

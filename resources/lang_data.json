@@ -139,6 +139,11 @@
       "file": "bg_BG.raw"
     },
     {
+      "type": "raw",
+      "name": "NB_NO_NAMES",
+      "file": "nb_NO.raw"
+    },
+    {
       "type": "font",
       "characterRegex": "[\u0021\u0030-\u0039\u0041-\u0048\u004a-\u0051\u0053\u0054\u0056\u0057\u005a\u0061-\u0070\u0072-\u007a\u00c1\u00c7\u00da\u00de\u00e1\u00e4\u00e5\u00e9\u00ed\u00f0\u00f3\u00f6\u00f8\u00fa\u00fb\u010c\u011b\u011f\u0158-\u015a\u015e\u017a]",
       "name": "DAY_FONT_LATIN_16",

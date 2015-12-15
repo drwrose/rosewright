@@ -1,8 +1,8 @@
+#include "wright.h"  // for app_log() macro
 #include "bwd.h"
 #include "assert.h"
 #include "pebble_compat.h"
 #include "../resources/generated_config.h"
-#include "wright.h"  // for app_log() macro
 //#define SUPPORT_RLE 1
 
 int bwd_resource_reads = 0;

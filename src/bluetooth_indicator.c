@@ -1,3 +1,4 @@
+#include "wright.h"
 #include <pebble.h>
 #include "bluetooth_indicator.h"
 #include "config_options.h"
@@ -6,36 +7,30 @@
 BitmapWithData bluetooth_disconnected;
 BitmapWithData bluetooth_connected;
 BitmapWithData bluetooth_mask;
-Layer *bluetooth_layer;
 bool bluetooth_state = false;
 
-#ifdef PBL_PLATFORM_APLITE
+void destroy_bluetooth_bitmaps() {
+  bwd_destroy(&bluetooth_disconnected);
+  bwd_destroy(&bluetooth_connected);
+  bwd_destroy(&bluetooth_mask);
+}
 
-// On Aplite, these parameters are passed in.
-bool bluetooth_invert = false;
-
-#else  // PBL_PLATFORM_APLITE
-
-// On Basalt, the icon is never inverted.
-#define bluetooth_invert false
-
-#endif  // PBL_PLATFORM_APLITE
-
-
-void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
+void draw_bluetooth_indicator(GContext *ctx, int x, int y, bool invert) {
   if (config.bluetooth_indicator == IM_off) {
     return;
   }
 
-  GRect box = layer_get_frame(me);
-  box.origin.x = 0;
-  box.origin.y = 0;
+  GRect box;
+  box.origin.x = x;
+  box.origin.y = y;
+  box.size.w = 18;
+  box.size.h = 18;
 
   GCompOp fg_mode;
 
 #ifdef PBL_PLATFORM_APLITE
   GCompOp mask_mode;
-  if (bluetooth_invert ^ config.draw_mode ^ APLITE_INVERT) {
+  if (invert ^ config.draw_mode ^ APLITE_INVERT) {
     fg_mode = GCompOpSet;
     mask_mode = GCompOpAnd;
   } else {
@@ -90,39 +85,24 @@ void bluetooth_layer_update_callback(Layer *me, GContext *ctx) {
     graphics_context_set_compositing_mode(ctx, fg_mode);
     graphics_draw_bitmap_in_rect(ctx, bluetooth_disconnected.bitmap, box);
   }
+
+  if (!keep_assets) {
+    destroy_bluetooth_bitmaps();
+  }
 }
 
 // Update the bluetooth guage.
 void handle_bluetooth(bool connected) {
-  layer_mark_dirty(bluetooth_layer);
+  if (config.bluetooth_indicator != IM_off) {
+    invalidate_clock_face();
+  }
 }
 
-void init_bluetooth_indicator(Layer *window_layer) {
-#ifdef PBL_PLATFORM_APLITE
-  bluetooth_invert = false;
-#endif  // PBL_PLATFORM_APLITE
-  bluetooth_layer = layer_create(GRect(0, 0, 18, 18));
-  layer_set_update_proc(bluetooth_layer, &bluetooth_layer_update_callback);
-  layer_add_child(window_layer, bluetooth_layer);
+void init_bluetooth_indicator() {
   bluetooth_connection_service_subscribe(&handle_bluetooth);
-}
-
-void move_bluetooth_indicator(int x, int y, bool invert) {
-#ifdef PBL_PLATFORM_APLITE
-  bluetooth_invert = invert;
-#endif  // PBL_PLATFORM_APLITE
-  layer_set_frame((Layer *)bluetooth_layer, GRect(x, y, 18, 18));
 }
 
 void deinit_bluetooth_indicator() {
   bluetooth_connection_service_unsubscribe();
-  layer_destroy(bluetooth_layer);
-  bluetooth_layer = NULL;
-  bwd_destroy(&bluetooth_disconnected);
-  bwd_destroy(&bluetooth_connected);
-  bwd_destroy(&bluetooth_mask);
-}
-
-void refresh_bluetooth_indicator() {
-  layer_mark_dirty(bluetooth_layer);
+  destroy_bluetooth_bitmaps();
 }

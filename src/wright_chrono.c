@@ -1,3 +1,4 @@
+#include "wright.h"
 #include "wright_chrono.h"
 
 // The code in this file is used only when enabling Chronograph
@@ -235,24 +236,37 @@ void update_chrono_hands(struct HandPlacement *new_placement) {
 #ifdef ENABLE_CHRONO_MINUTE_HAND
   if (new_placement->chrono_minute_hand_index != current_placement.chrono_minute_hand_index) {
     current_placement.chrono_minute_hand_index = new_placement->chrono_minute_hand_index;
-    layer_mark_dirty(clock_hands_layer);
+    layer_mark_dirty(clock_face_layer);
+
+    if (config.second_hand) {
+      // If the second hand is enabled, the hour and minute hands are
+      // baked into the clock face cache, which must be redrawn now.
+      invalidate_clock_face();
+    }
   }
 #endif  // ENABLE_CHRONO_MINUTE_HAND
 
 #ifdef ENABLE_CHRONO_SECOND_HAND
   if (new_placement->chrono_second_hand_index != current_placement.chrono_second_hand_index) {
     current_placement.chrono_second_hand_index = new_placement->chrono_second_hand_index;
-    layer_mark_dirty(clock_hands_layer);
+    layer_mark_dirty(clock_face_layer);
   }
 #endif  // ENABLE_CHRONO_SECOND_HAND
 
 #ifdef ENABLE_CHRONO_TENTH_HAND
   if (new_placement->chrono_tenth_hand_index != current_placement.chrono_tenth_hand_index) {
     current_placement.chrono_tenth_hand_index = new_placement->chrono_tenth_hand_index;
-    layer_mark_dirty(clock_hands_layer);
+    layer_mark_dirty(clock_face_layer);
+
+    if (config.second_hand) {
+      // If the second hand is enabled, the hour and minute hands are
+      // baked into the clock face cache, which must be redrawn now.
+      invalidate_clock_face();
+    }
   }
 #endif  // ENABLE_CHRONO_TENTH_HAND
 
+#if ENABLE_SWEEP_SECONDS
   if (config.sweep_seconds) {
     if (chrono_data.running && !chrono_data.lap_paused && !chrono_digital_window_showing) {
       // With the chronograph running, the sweep timer must be fast
@@ -262,6 +276,7 @@ void update_chrono_hands(struct HandPlacement *new_placement) {
       }
     }
   }
+#endif  // ENABLE_SWEEP_SECONDS
 }
 
 void chrono_start_stop_handler(ClickRecognizerRef recognizer, void *context) {
@@ -291,11 +306,13 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, void *context) {
     // start, from the currently showing Chronograph time.
     chrono_data.start_ms = ms - chrono_data.hold_ms;
     chrono_data.running = true;
+#if ENABLE_SWEEP_SECONDS
     if (config.sweep_seconds) {
       if (sweep_chrono_seconds_ms < sweep_timer_ms) {
         sweep_timer_ms = sweep_chrono_seconds_ms;
       }
     }
+#endif  // ENABLE_SWEEP_SECONDS
     vibes_enqueue_custom_pattern(tap);
     update_hands(NULL);
     reset_tick_timer();

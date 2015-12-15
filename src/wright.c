@@ -29,9 +29,15 @@ GFont date_numeric_font = NULL;
 GFont date_lang_font = NULL;
 GFont date_debug_font = NULL;
 
-bool keep_assets = false;
+bool keep_assets = true;
+bool keep_face_asset = true;
+bool save_framebuffer = true;
+
 bool hide_date_windows = false;
 bool hide_clock_face = false;
+bool redraw_clock_face = false;
+
+#define DATE_WINDOW_BUFFER_SIZE 16
 
 // For now, the size of the date window is hardcoded.
 #ifdef PBL_ROUND
@@ -119,8 +125,6 @@ int sweep_timer_ms = 1000;
 #endif  // ENABLE_SWEEP_SECONDS
 
 int sweep_seconds_ms = 60 * 1000 / NUM_STEPS_SECOND;
-
-Layer *clock_hands_layer;
 
 struct HandCache hour_cache;
 struct HandCache minute_cache;
@@ -213,33 +217,54 @@ void hand_cache_destroy(struct HandCache *hand_cache) {
     }
   }
 }
-  
+
+time_t
+make_gmt_date(int mday, int mon, int year) {
+  struct tm t;
+  memset(&t, 0, sizeof(t));
+  t.tm_mday = mday;
+  t.tm_mon = mon;
+  t.tm_year = year;
+  return mktime(&t);
+}
+
 // Determines the specific hand bitmaps that should be displayed based
 // on the current time.
 void compute_hands(struct tm *stime, struct HandPlacement *placement) {
-  // Get the Unix time (in UTC).
-  time_t gmt;
-  uint16_t t_ms = 0;
+  // Check whether we need to compute sub-second precision.
 #if defined(MAKE_CHRONOGRAPH)
-  // In the case that we need sub-second precision.
-  time_ms(&gmt, &t_ms);
+  #define needs_sub_second true
 #elif !ENABLE_SWEEP_SECONDS
-  // In the case that we don't care about sub-second precision.
-  gmt = time(NULL);
+  #define needs_sub_second false
 #else
-  if (config.sweep_seconds) {
-    // In the case that we need sub-second precision.
-    time_ms(&gmt, &t_ms);
-  } else {
-    // In the case that we don't care about sub-second precision.
-    gmt = time(NULL);
-  }
+  bool needs_sub_second = config.sweep_seconds;
 #endif 
 
-  // Compute the number of milliseconds elapsed since midnight, local time.
-  struct tm *tm = localtime(&gmt);
-  unsigned int s = (unsigned int)(tm->tm_hour * 60 + tm->tm_min) * 60 + tm->tm_sec;
-  unsigned int ms = (unsigned int)(s * 1000 + t_ms);
+  time_t gmt;
+  uint16_t t_ms = 0;
+  unsigned int ms;
+  
+  if (needs_sub_second) {
+    // If we do need sub-second precision, it replaces the stime
+    // structure we were passed in.
+    
+    // Get the Unix time (in UTC).
+    time_ms(&gmt, &t_ms);
+
+    // Compute the number of milliseconds elapsed since midnight, local time.
+    struct tm *tm = localtime(&gmt);
+    unsigned int s = (unsigned int)(tm->tm_hour * 60 + tm->tm_min) * 60 + tm->tm_sec;
+    ms = (unsigned int)(s * 1000 + t_ms);
+
+  } else {
+    // If we don't need sub-second precision, just use the existing
+    // stime structure.  We still need UTC time, though, for the lunar
+    // phase at least.
+    assert(stime != NULL);
+    gmt = time(NULL);
+    unsigned int s = (unsigned int)(stime->tm_hour * 60 + stime->tm_min) * 60 + stime->tm_sec;
+    ms = (unsigned int)(s * 1000);
+  }
 
 #ifdef MAKE_CHRONOGRAPH
   // For the chronograph, compute the number of milliseconds elapsed
@@ -248,27 +273,31 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
 #endif  // MAKE_CHRONOGRAPH
   
 #ifdef FAST_TIME
-  if (stime != NULL) {
-    stime->tm_wday = (s / 3) % 7;
-    stime->tm_mon = (s / 4) % 12;
-    stime->tm_mday = (s % 31) + 1;
-    stime->tm_hour = s % 24;
-  }
-  ms *= 67;
+  {
+    if (stime != NULL) {
+      int s = ms / 1000;
+      int yday = s % 365;
+      
+      gmt = make_gmt_date(yday, 0, stime->tm_year);
+      (*stime) = *gmtime(&gmt);
+    }
+    ms *= 67;
 #ifdef MAKE_CHRONOGRAPH
-  ms_utc *= 67;
+    ms_utc *= 67;
 #endif  // MAKE_CHRONOGRAPH
+  }
 #endif  // FAST_TIME
 
 #ifdef SCREENSHOT_BUILD
   // Freeze the time to 10:09 for screenshots.
   {
     ms = ((10*60 + 9)*60 + 36) * 1000;  // 10:09:36
+    gmt = make_gmt_date(9, 6, 114);     // 9-Jul-2014
+    //gmt = make_gmt_date(31, 11, 115);   // 31-Dec-2015
+    //gmt = make_gmt_date(1, 0, 116);     // 1-Jan-2016
+    gmt += ms / 1000;
     if (stime != NULL) {
-      stime->tm_wday = 3;
-      stime->tm_mday = 9;
-      stime->tm_mon = 6;
-      stime->tm_hour = 10;
+      (*stime) = *gmtime(&gmt);
     }
 
     int moon_phase = 3;  // gibbous moon
@@ -309,6 +338,7 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
     placement->date_value = stime->tm_mday;
     placement->year_value = stime->tm_year;
     placement->ampm_value = (stime->tm_hour >= 12);
+    placement->ordinal_date_index = stime->tm_yday;
 
     {
       // Easy lunar phase calculation: the moon's synodic period,
@@ -332,11 +362,6 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
       // decimal value--by 2114 it have drifted off by about 2 hours.
       // Close enough.)
       unsigned int lunar_age_s = lunar_offset_s % 2551443;
-
-#ifdef FAST_TIME
-      // One subdial shift every 10 seconds.
-      lunar_age_s = (s * 255144) / NUM_STEPS_MOON;
-#endif  // FAST_TIME
 
       // That gives the age of the moon in seconds.
 
@@ -957,10 +982,21 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
 }
 #endif  // TOP_SUBDIAL
 
+int get_indicator_face_index() {
+#ifdef TOP_SUBDIAL
+  int indicator_face_index = config.face_index * 2 + (config.top_subdial > TSM_pebble_label);
+#else  // TOP_SUBDIAL
+  int indicator_face_index = config.face_index;
+#endif  // TOP_SUBDIAL
+  assert(indicator_face_index < NUM_INDICATOR_FACES);
+  return indicator_face_index;
+}
+
 void draw_clock_face(Layer *me, GContext *ctx) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_clock_face");
 
-  // Load the clock face from the resource file if we haven't already.
+  // Reload the face bitmap from the resource file, if we don't
+  // already have it.
   if (face_bitmap.bitmap == NULL) {
     face_bitmap = rle_bwd_create(clock_face_table[config.face_index].resource_id);
     if (face_bitmap.bitmap == NULL) {
@@ -976,9 +1012,6 @@ void draw_clock_face(Layer *me, GContext *ctx) {
   destination.origin.y = 0;
   graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_assign);
   graphics_draw_bitmap_in_rect(ctx, face_bitmap.bitmap, destination);
-  if (!keep_assets) {
-    bwd_destroy(&face_bitmap);
-  }
 
   // Draw the top subdial if enabled.
   {
@@ -1000,6 +1033,7 @@ void draw_clock_face(Layer *me, GContext *ctx) {
 
   // Draw the date windows.
   {
+    date_window_debug = false;
     for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
       draw_full_date_window(ctx, i);
     }
@@ -1012,68 +1046,22 @@ void draw_clock_face(Layer *me, GContext *ctx) {
 #ifdef MAKE_CHRONOGRAPH
   draw_chrono_dial(ctx);
 #endif  // MAKE_CHRONOGRAPH
+
+  int indicator_face_index = get_indicator_face_index();
+  {
+    const struct IndicatorTable *window = &battery_table[indicator_face_index];
+    draw_battery_gauge(ctx, window->x, window->y, window->invert);
+  }
+  {
+    const struct IndicatorTable *window = &bluetooth_table[indicator_face_index];
+    draw_bluetooth_indicator(ctx, window->x, window->y, window->invert);
+  }
 }
 
-void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_face_layer, memory_panic_count = %d, heap_bytes_free = %d", memory_panic_count, heap_bytes_free());
-  if (hide_clock_face) {
-    // In case we're in extreme memory panic mode--too little
-    // available memory to even keep the clock face resident--we do
-    // nothing in this function.
-    return;
-  }
-
-#ifdef PBL_ROUND
-  // temp hack, it appears something is wrong with the caching
-  // approach on PTR, it crashes (though not in the emulator).  Memory
-  // address issue?
-  draw_clock_face(me, ctx);
-  if (date_window_debug) {
-    // Now fill in the per-frame debug text, if needed.
-    for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
-      draw_date_window_debug_text(ctx, i);
-    }
-  }    
-
-#else  // PBL_ROUND
-  // On most platforms, perform the usual framebuffer caching.
-  
-  if (clock_face.bitmap == NULL) {
-    // The clock face needs to be redrawn (or drawn for the first
-    // time).  This is every part of the display except for the hands,
-    // including the date windows and top subdial.
-
-    // Draw the clock face into the frame buffer.
-    draw_clock_face(me, ctx);
-
-    // Now save the render for next time.
-    GBitmap *fb = graphics_capture_frame_buffer(ctx);
-    assert(clock_face.bitmap == NULL);
-    clock_face = bwd_copy_bitmap(fb);
-    graphics_release_frame_buffer(ctx, fb);
-
-  } else {
-    // The rendered clock face is already saved from a previous
-    // update; redraw it now.
-    GRect destination = layer_get_bounds(me);
-    destination.origin.x = 0;
-    destination.origin.y = 0;
-    graphics_context_set_compositing_mode(ctx, GCompOpAssign);
-    graphics_draw_bitmap_in_rect(ctx, clock_face.bitmap, destination);
-  }
-
-  if (date_window_debug) {
-    // Now fill in the per-frame debug text, if needed.
-    for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
-      draw_date_window_debug_text(ctx, i);
-    }
-  }    
-#endif  // PBL_ROUND
-}
-  
-void clock_hands_layer_update_callback(Layer *me, GContext *ctx) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_hands_layer");
-
+// Draws the hands that aren't the second hand--the hands that update
+// once a minute or slower, and which may potentially be cached along
+// with the clock face background.
+void draw_phase_1_hands(GContext *ctx) {
 #ifdef MAKE_CHRONOGRAPH
 
   // A special case for Chronograph support.  All six hands are drawn
@@ -1090,17 +1078,9 @@ void clock_hands_layer_update_callback(Layer *me, GContext *ctx) {
     }
   }
 
-  if (config.second_hand) {
-    draw_hand(&second_cache, second_resource_cache, second_resource_cache_size, &second_hand_def, current_placement.second_hand_index, ctx);
-  }
-
-  draw_hand(&hour_cache, NULL, 0, &hour_hand_def, current_placement.hour_hand_index, ctx);
-
-  draw_hand(&minute_cache, NULL, 0, &minute_hand_def, current_placement.minute_hand_index, ctx);
-
-  if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
-    draw_hand(&chrono_second_cache, chrono_second_resource_cache, chrono_second_resource_cache_size, &chrono_second_hand_def, current_placement.chrono_second_hand_index, ctx);
-  }
+  // Since the second hand is a tiny subdial in the Chrono case, and
+  // is overlaid by the hour and minute hands, we have to draw the
+  // second hand and everything else in phase_2.
   
 #else  // MAKE_CHRONOGRAPH
   // The normal, non-chrono implementation, with only hour, minute,
@@ -1113,7 +1093,7 @@ void clock_hands_layer_update_callback(Layer *me, GContext *ctx) {
   // common mask.  Rosewright A and B share this property, because
   // their hands are relatively thin, and their hand masks define an
   // invisible halo that erases to the background color around the
-  // hands, and we don't want the hands to erase each other.
+  // hands, but we don't want the hands to erase each other.
   draw_hand_mask(&hour_cache, NULL, 0, &hour_hand_def, current_placement.hour_hand_index, false, ctx);
   draw_hand_mask(&minute_cache, NULL, 0, &minute_hand_def, current_placement.minute_hand_index, false, ctx);
 
@@ -1131,22 +1111,145 @@ void clock_hands_layer_update_callback(Layer *me, GContext *ctx) {
 
   draw_hand(&minute_cache, NULL, 0, &minute_hand_def, current_placement.minute_hand_index, ctx);
 #endif  //  HOUR_MINUTE_OVERLAP
+  
+#endif  // MAKE_CHRONOGRAPH
+}
+
+// Draws the second hand or any other hands which must be redrawn once
+// per second.  These are the hands that are never cached.
+void draw_phase_2_hands(GContext *ctx) {
+#ifdef MAKE_CHRONOGRAPH
+
+  // The Chrono case.  Lots of hands end up here because it's the
+  // second hand and everything that might overlay it.
+  if (config.second_hand) {
+    draw_hand(&second_cache, second_resource_cache, second_resource_cache_size, &second_hand_def, current_placement.second_hand_index, ctx);
+  }
+
+  draw_hand(&hour_cache, NULL, 0, &hour_hand_def, current_placement.hour_hand_index, ctx);
+
+  draw_hand(&minute_cache, NULL, 0, &minute_hand_def, current_placement.minute_hand_index, ctx);
+
+  if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
+    draw_hand(&chrono_second_cache, chrono_second_resource_cache, chrono_second_resource_cache_size, &chrono_second_hand_def, current_placement.chrono_second_hand_index, ctx);
+  }
+  
+#else  // MAKE_CHRONOGRAPH
+  // The normal, non-chrono implementation; and here in phase 2 we
+  // only need to draw the second hand.
 
   if (config.second_hand) {
     draw_hand(&second_cache, second_resource_cache, second_resource_cache_size, &second_hand_def, current_placement.second_hand_index, ctx);
   }
   
 #endif  // MAKE_CHRONOGRAPH
-}
+} 
 
-int get_indicator_face_index() {
-#ifdef TOP_SUBDIAL
-  int indicator_face_index = config.face_index * 2 + (config.top_subdial > TSM_pebble_label);
-#else  // TOP_SUBDIAL
-  int indicator_face_index = config.face_index;
-#endif  // TOP_SUBDIAL
-  assert(indicator_face_index < NUM_INDICATOR_FACES);
-  return indicator_face_index;
+void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_face_layer, memory_panic_count = %d, heap_bytes_free = %d", memory_panic_count, heap_bytes_free());
+
+  // In case we're in extreme memory panic mode--too little
+  // available memory to even keep the clock face resident--we don't
+  // draw any clock background.
+  if (!hide_clock_face) {
+    // Perform framebuffer caching to minimize redraws.
+    if (clock_face.bitmap == NULL || redraw_clock_face) {
+      // The clock face needs to be redrawn (or drawn for the first
+      // time).  This is every part of the display except for the
+      // hands, including the date windows and top subdial.  If the
+      // second hand is enabled, it also includes the hour and minute
+      // hands.
+      bwd_destroy(&clock_face);
+
+      // Draw the clock face into the frame buffer.
+      draw_clock_face(me, ctx);
+
+      if (config.second_hand) {
+	// If the second hand is enabled, then we also draw the
+	// phase_1 hands at this time, so they get cached in the clock
+	// face buffer.
+	draw_phase_1_hands(ctx);
+      }
+
+      if (save_framebuffer) {
+	// Now save the render for next time.
+	GBitmap *fb = graphics_capture_frame_buffer(ctx);
+	assert(clock_face.bitmap == NULL);
+
+	if (!keep_face_asset) {
+	  // Destroy face_bitmap only after we have already drawn
+	  // everything else that goes onto it, and just before we
+	  // dupe the framebuffer.  This helps minimize fragmentation.
+#ifdef PBL_PLATFORM_APLITE
+	  // On Aplite we can go one step further (and we probably
+	  // have to because memory is so tight here): we can use the
+	  // *same* memory for framebuffer that we had already
+	  // allocated for face_bitmap, because they will be the same
+	  // bitmap format and size.
+	  clock_face = face_bitmap;
+	  face_bitmap.bitmap = NULL;
+	  bwd_copy_into_from_bitmap(&clock_face, fb);
+
+#else  //  PBL_PLATFORM_APLITE
+	  // On other platforms, they are likely to have a different
+	  // format (the clock face will be 4-bit palette), so we have
+	  // to deallocate and reallocate.
+	  bwd_destroy(&face_bitmap);
+	  clock_face = bwd_copy_bitmap(fb);
+#endif  //  PBL_PLATFORM_APLITE
+	} else {
+	  // If we're confident we can keep both the face_bitmap and
+	  // clock_face around together, do so.
+	  clock_face = bwd_copy_bitmap(fb);
+	}
+
+	graphics_release_frame_buffer(ctx, fb);
+      }
+      
+    } else {
+      // The rendered clock face is already saved from a previous
+      // update; redraw it now.
+      GRect destination = layer_get_bounds(me);
+      destination.origin.x = 0;
+      destination.origin.y = 0;
+      graphics_context_set_compositing_mode(ctx, GCompOpAssign);
+      graphics_draw_bitmap_in_rect(ctx, clock_face.bitmap, destination);
+    }
+  }
+
+  if (date_window_debug) {
+    // Now fill in the per-frame debug text, if needed.
+    for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
+      draw_date_window_debug_text(ctx, i);
+    }
+  }
+
+  if (!config.second_hand || hide_clock_face) {
+    // If the second hand is *not* enabled, then we draw the phase_1
+    // hands at this time, so we don't have to invalidate the buffer
+    // each minute.
+    draw_phase_1_hands(ctx);
+  }
+
+  /*
+  { // hacky testy stuff
+    int indicator_face_index = get_indicator_face_index();
+    {
+      const struct IndicatorTable *window = &battery_table[indicator_face_index];
+      draw_battery_gauge(ctx, window->x, window->y, window->invert);
+    }
+    {
+      const struct IndicatorTable *window = &bluetooth_table[indicator_face_index];
+      draw_bluetooth_indicator(ctx, window->x, window->y, window->invert);
+    }
+    draw_phase_1_hands(ctx);
+  }
+  */
+
+  // And we always draw the phase_2 hands last, each update.  These
+  // are the most dynamic hands that are never part of the captured
+  // framebuffer.
+  draw_phase_2_hands(ctx);
 }
 
 // Draws the frame and optionally fills the background of the current date window.
@@ -1187,6 +1290,7 @@ void draw_date_window_background(GContext *ctx, int date_window_index, unsigned 
 // Draws a date window with the specified text contents.  Usually this is
 // something like a numeric date or the weekday name.
 void draw_date_window_text(GContext *ctx, int date_window_index, const char *text, struct FontPlacement *font_placement, GFont font) {
+  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_date_window_text %c, %s, %p", date_window_index + 'a', text, font);
   if (font == NULL) {
     return;
   }
@@ -1223,6 +1327,68 @@ void draw_date_window_text(GContext *ctx, int date_window_index, const char *tex
                      NULL);
 }
 
+void format_date_number(char buffer[DATE_WINDOW_BUFFER_SIZE], int value) {
+  snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", value);
+}
+
+// yday is the current ordinal date [0..365], wday is the current day
+// of the week [0..6], 0 = Sunday.  year is the current year less 1900.
+
+// day_of_week is the first day of the week, while first_week_contains
+// is the ordinal date that must be contained within week 1.
+int raw_compute_week_number(int yday, int wday, int day_of_week, int first_week_contains) {
+  // The ordinal date index (where Jan 1 is 0) of the next Sunday
+  // following today.
+  int sunday_index = yday - wday + 7;
+
+  // The ordinal date index of the first day of an early week.
+  int first_day_index = (sunday_index + day_of_week) % 7;
+
+  if (first_day_index > first_week_contains) {
+    first_day_index -= 7;
+  }
+
+  // Now first_day_index is the ordinal date index of the first day of
+  // week 1.  It will be in the range [-7, 6].  (It might be negative
+  // if week 1 began in the last few days of the previous year.)
+
+  int week_number = (yday - first_day_index + 7) / 7;
+  return week_number;
+}
+
+int compute_week_number(int yday, int wday, int year, int day_of_week, int first_week_contains) {
+  int week_number = raw_compute_week_number(yday, wday, day_of_week, first_week_contains);
+  
+  if (week_number < 1) {
+    // It's possible to come up with the answer 0, in which case we
+    // really meant the last week of the previous year.
+    time_t last_year = make_gmt_date(31, 11, year - 1);  // Dec 31
+    struct tm *lyt = gmtime(&last_year);
+    week_number = raw_compute_week_number(lyt->tm_yday, lyt->tm_wday, day_of_week, first_week_contains);
+
+  } else if (week_number > 52) {
+    // If we came up with the answer 53, the answer might really be
+    // the first week of the next year.
+    time_t next_year = make_gmt_date(1, 0, year + 1);  // Jan 1
+    struct tm *nyt = gmtime(&next_year);
+    int next_week_number = raw_compute_week_number(nyt->tm_yday, nyt->tm_wday, day_of_week, first_week_contains);
+    if (next_week_number != 0) {
+      week_number = next_week_number;
+    }
+  }
+
+  return week_number;
+}
+
+void compute_and_format_week_number(char buffer[DATE_WINDOW_BUFFER_SIZE], int day_of_week, int first_week_contains) {
+  int yday = current_placement.ordinal_date_index;
+  int wday = current_placement.day_index;
+  int year = current_placement.year_value;
+
+  int week_number = compute_week_number(yday, wday, year, day_of_week, first_week_contains);
+  format_date_number(buffer, week_number);
+}
+
 // Draws the background and contents of the specified date window.
 void draw_full_date_window(GContext *ctx, int date_window_index) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_full_date_window %c", date_window_index + 'a');
@@ -1240,7 +1406,6 @@ void draw_full_date_window(GContext *ctx, int date_window_index) {
   draw_date_window_background(ctx, date_window_index, draw_mode, draw_mode);
 
   // Format the date or weekday or whatever text for display.
-#define DATE_WINDOW_BUFFER_SIZE 16
   char buffer[DATE_WINDOW_BUFFER_SIZE];
   
   GFont font = date_numeric_font;
@@ -1253,7 +1418,6 @@ void draw_full_date_window(GContext *ctx, int date_window_index) {
   }
 
   char *text = buffer;
-  date_window_debug = false;
   
   switch (dwm) {
   case DWM_identify:
@@ -1261,11 +1425,31 @@ void draw_full_date_window(GContext *ctx, int date_window_index) {
     break;
 
   case DWM_date:
-    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", current_placement.date_value);
+    format_date_number(buffer, current_placement.date_value);
     break;
 
   case DWM_year:
-    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", current_placement.year_value + 1900);
+    format_date_number(buffer, current_placement.year_value + 1900);
+    break;
+
+  case DWM_week:
+    switch (config.week_numbering) {
+    case WNM_mon_4:
+      compute_and_format_week_number(buffer, 1, 3);
+      break;
+      
+    case WNM_sun_1:
+      compute_and_format_week_number(buffer, 0, 0);
+      break;
+      
+    case WNM_sat_1:
+      compute_and_format_week_number(buffer, 6, 0);
+      break;
+    }
+    break;
+      
+  case DWM_yday:
+    format_date_number(buffer, current_placement.ordinal_date_index + 1);
     break;
 
   case DWM_debug_heap_free:
@@ -1364,17 +1548,29 @@ void update_hands(struct tm *time) {
   compute_hands(time, &new_placement);
   if (new_placement.hour_hand_index != current_placement.hour_hand_index) {
     current_placement.hour_hand_index = new_placement.hour_hand_index;
-    layer_mark_dirty(clock_hands_layer);
+    layer_mark_dirty(clock_face_layer);
+
+    if (config.second_hand) {
+      // If the second hand is enabled, the hour and minute hands are
+      // baked into the clock face cache, which must be redrawn now.
+      invalidate_clock_face();
+    }
   }
 
   if (new_placement.minute_hand_index != current_placement.minute_hand_index) {
     current_placement.minute_hand_index = new_placement.minute_hand_index;
-    layer_mark_dirty(clock_hands_layer);
+    layer_mark_dirty(clock_face_layer);
+
+    if (config.second_hand) {
+      // If the second hand is enabled, the hour and minute hands are
+      // baked into the clock face cache, which must be redrawn now.
+      invalidate_clock_face();
+    }
   }
 
   if (new_placement.second_hand_index != current_placement.second_hand_index) {
     current_placement.second_hand_index = new_placement.second_hand_index;
-    layer_mark_dirty(clock_hands_layer);
+    layer_mark_dirty(clock_face_layer);
   }
 
   if (new_placement.hour_buzzer != current_placement.hour_buzzer) {
@@ -1409,6 +1605,7 @@ void update_hands(struct tm *time) {
     current_placement.date_value = new_placement.date_value;
     current_placement.year_value = new_placement.year_value;
     current_placement.ampm_value = new_placement.ampm_value;
+    current_placement.ordinal_date_index = new_placement.ordinal_date_index;
 
     invalidate_clock_face();
   }
@@ -1540,24 +1737,6 @@ void fill_date_names(char *date_names[], int num_date_names, char date_names_buf
   }
 }
 
-void move_layers() {
-  // Move any subordinate layers to their correct position on the face.
-
-  // The indicator_face_index is like config.face_index, but also
-  // includes the top_subdial setting--having top_subdial enabled is
-  // like a separate face for this purpose, which allows us to
-  // reposition the indicators around the subdial when necessary.
-  int indicator_face_index = get_indicator_face_index();
-  {
-    const struct IndicatorTable *window = &battery_table[indicator_face_index];
-    move_battery_gauge(window->x, window->y, window->invert);
-  }
-  {
-    const struct IndicatorTable *window = &bluetooth_table[indicator_face_index];
-    move_bluetooth_indicator(window->x, window->y, window->invert);
-  }
-}
-
 // Restores memory_panic_count to 0, as in a fresh start.
 void reset_memory_panic_count() {
   memory_panic_count = 0;
@@ -1567,16 +1746,16 @@ void reset_memory_panic_count() {
   chrono_second_resource_cache_size = CHRONO_SECOND_RESOURCE_CACHE_SIZE +  + CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE;
 #endif  // MAKE_CHRONOGRAPH
 
-#ifdef PBL_ROUND
-  // On Chalk, we can't do framebuffer caching for some reason right
-  // now, so instead keep the individual assets around from one frame to
-  // the next.
-  keep_assets = true;
-#else
-  // On other platforms, we can do framebuffer caching, so there's no
-  // reason to keep the individual components of the framebuffer.
+#if 0 //def PBL_PLATFORM_APLITE
+  // Aplite lacks sufficient RAM to keep the bitmap assets as well as
+  // the framebuffer simultaneously.
   keep_assets = false;
-#endif
+  keep_face_asset = false;
+#else // PBL_PLATFORM_APLITE
+  // But perhaps we can do this on the other platforms.
+  keep_assets = true;
+  keep_face_asset = true;
+#endif  // PBL_PLATFORM_APLITE
 
   hide_date_windows = false;
   hide_clock_face = false;
@@ -1593,7 +1772,6 @@ void apply_config() {
   if (face_index != config.face_index) {
     // Update the face bitmap if it's changed.
     face_index = config.face_index;
-    move_layers();
   }
 
   if (display_lang != config.display_lang) {
@@ -1613,6 +1791,7 @@ void apply_config() {
 // redrawn next frame (e.g. if something on the face needs to be
 // updated).
 void invalidate_clock_face() {
+  redraw_clock_face = true;
   bwd_destroy(&clock_face);
   if (clock_face_layer != NULL) {
     layer_mark_dirty(clock_face_layer);
@@ -1703,21 +1882,12 @@ void create_temporal_objects() {
   layer_add_child(window_layer, clock_face_layer);
   invalidate_clock_face();
   
-  init_battery_gauge(window_layer);
-  init_bluetooth_indicator(window_layer);
-
-  // Now put all of the layers we just created into their correct
-  // positions.
-  move_layers();
+  init_battery_gauge();
+  init_bluetooth_indicator();
 
 #ifdef MAKE_CHRONOGRAPH
   create_chrono_objects();
 #endif  // MAKE_CHRONOGRAPH
-
-  clock_hands_layer = layer_create(window_frame);
-  assert(clock_hands_layer != NULL);
-  layer_set_update_proc(clock_hands_layer, &clock_hands_layer_update_callback);
-  layer_add_child(window_layer, clock_hands_layer);
 }
 
 // Destroys the objects created by create_temporal_objects().
@@ -1749,8 +1919,6 @@ void destroy_temporal_objects() {
   bwd_clear_cache(chrono_second_resource_cache, CHRONO_SECOND_RESOURCE_CACHE_SIZE + CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE);
 #endif  // MAKE_CHRONOGRAPH
   
-  layer_destroy(clock_hands_layer);
-
   hand_cache_destroy(&hour_cache);
   hand_cache_destroy(&minute_cache);
   hand_cache_destroy(&second_cache);
@@ -1844,6 +2012,9 @@ void reset_memory_panic() {
   recreate_all_objects();
 
   // Start resetting some options if the memory panic count grows too high.
+  if (memory_panic_count > 0) {
+    keep_face_asset = false;
+  }
   if (memory_panic_count > 1) {
     keep_assets = false;
   }
@@ -1861,6 +2032,12 @@ void reset_memory_panic() {
     config.second_hand = false;
   } 
   if (memory_panic_count > 5) {
+    save_framebuffer = false;
+  }
+  if (memory_panic_count > 6) {
+    config.top_subdial = false;
+  }
+  if (memory_panic_count > 7) {
     for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
       if (config.date_windows[i] != DWM_debug_memory_panic_count) {
         config.date_windows[i] = DWM_off;
@@ -1868,13 +2045,10 @@ void reset_memory_panic() {
     }
     hide_date_windows = true;
   } 
-  if (memory_panic_count > 6) {
+  if (memory_panic_count > 8) {
     config.chrono_dial = 0;
   }
-  if (memory_panic_count > 7) {
-    config.top_subdial = false;
-  }
-  if (memory_panic_count > 8) {
+  if (memory_panic_count > 9) {
     // At this point we hide the clock face.  Drastic!
     hide_clock_face = true;
   }
