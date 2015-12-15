@@ -10,6 +10,14 @@ BitmapWithData battery_gauge_mask;
 BitmapWithData charging;
 BitmapWithData charging_mask;
 
+void destroy_battery_gauge_bitmaps() {
+  bwd_destroy(&battery_gauge_empty);
+  bwd_destroy(&battery_gauge_charged);
+  bwd_destroy(&battery_gauge_mask);
+  bwd_destroy(&charging);
+  bwd_destroy(&charging_mask);
+}
+
 void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
   if (config.battery_gauge == IM_off) {
     return;
@@ -110,6 +118,10 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
 		       GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
 		       NULL);
   }
+
+  if (!keep_assets) {
+    destroy_battery_gauge_bitmaps();
+  }
 }
 
 // Update the battery guage.
@@ -125,9 +137,5 @@ void init_battery_gauge() {
 
 void deinit_battery_gauge() {
   battery_state_service_unsubscribe();
-  bwd_destroy(&battery_gauge_empty);
-  bwd_destroy(&battery_gauge_charged);
-  bwd_destroy(&battery_gauge_mask);
-  bwd_destroy(&charging);
-  bwd_destroy(&charging_mask);
+  destroy_battery_gauge_bitmaps();
 }

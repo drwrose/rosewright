@@ -29,21 +29,13 @@ GFont date_numeric_font = NULL;
 GFont date_lang_font = NULL;
 GFont date_debug_font = NULL;
 
-#ifdef PBL_PLATFORM_APLITE
-// Aplite lacks sufficient RAM to keep the bitmap assets as well as
-// the framebuffer simultaneously.
-bool keep_assets = false;
-bool keep_face_asset = false;
-#else // PBL_PLATFORM_APLITE
-// But perhaps we can do this on the other platforms.
 bool keep_assets = true;
 bool keep_face_asset = true;
-#endif  // PBL_PLATFORM_APLITE
-
 bool save_framebuffer = true;
 
 bool hide_date_windows = false;
 bool hide_clock_face = false;
+bool redraw_clock_face = false;
 
 #define DATE_WINDOW_BUFFER_SIZE 16
 
@@ -845,13 +837,6 @@ static void remap_colors_moon(BitmapWithData *bwd) {
 }
 
 void draw_pebble_label(Layer *me, GContext *ctx, bool invert) {
-#if defined(PBL_PLATFORM_APLITE) && defined(MAKE_CHRONOGRAPH)
-  // As a special memory-saving hack, on Rosewright C build for
-  // Aplite, we don't attempt to draw the Pebble label even if it's
-  // enabled.  Eliminating this extra code is enough to push us over a
-  // critical memory-savings threshold.
-
-#else  // defined(PBL_PLATFORM_APLITE) && defined(MAKE_CHRONOGRAPH)
   unsigned int draw_mode = invert ^ config.draw_mode ^ APLITE_INVERT;
 
   const struct IndicatorTable *window = &top_subdial[config.face_index];
@@ -885,7 +870,6 @@ void draw_pebble_label(Layer *me, GContext *ctx, bool invert) {
   if (!keep_assets) {
     bwd_destroy(&pebble_label);
   }
-#endif  // defined(PBL_PLATFORM_APLITE) && defined(MAKE_CHRONOGRAPH)
 }
   
 #ifdef TOP_SUBDIAL
@@ -1011,7 +995,8 @@ int get_indicator_face_index() {
 void draw_clock_face(Layer *me, GContext *ctx) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_clock_face");
 
-  // Load the clock face from the resource file if we haven't already.
+  // Reload the face bitmap from the resource file, if we don't
+  // already have it.
   if (face_bitmap.bitmap == NULL) {
     face_bitmap = rle_bwd_create(clock_face_table[config.face_index].resource_id);
     if (face_bitmap.bitmap == NULL) {
@@ -1027,9 +1012,6 @@ void draw_clock_face(Layer *me, GContext *ctx) {
   destination.origin.y = 0;
   graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_assign);
   graphics_draw_bitmap_in_rect(ctx, face_bitmap.bitmap, destination);
-  if (!keep_face_asset) {
-    bwd_destroy(&face_bitmap);
-  }
 
   // Draw the top subdial if enabled.
   {
@@ -1171,13 +1153,14 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
   // draw any clock background.
   if (!hide_clock_face) {
     // Perform framebuffer caching to minimize redraws.
-    if (clock_face.bitmap == NULL) {
+    if (clock_face.bitmap == NULL || redraw_clock_face) {
       // The clock face needs to be redrawn (or drawn for the first
       // time).  This is every part of the display except for the
       // hands, including the date windows and top subdial.  If the
       // second hand is enabled, it also includes the hour and minute
       // hands.
-      
+      bwd_destroy(&clock_face);
+
       // Draw the clock face into the frame buffer.
       draw_clock_face(me, ctx);
 
@@ -1185,14 +1168,41 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
 	// If the second hand is enabled, then we also draw the
 	// phase_1 hands at this time, so they get cached in the clock
 	// face buffer.
-	//draw_phase_1_hands(ctx);
+	draw_phase_1_hands(ctx);
       }
 
       if (save_framebuffer) {
 	// Now save the render for next time.
 	GBitmap *fb = graphics_capture_frame_buffer(ctx);
 	assert(clock_face.bitmap == NULL);
-	clock_face = bwd_copy_bitmap(fb);
+
+	if (!keep_face_asset) {
+	  // Destroy face_bitmap only after we have already drawn
+	  // everything else that goes onto it, and just before we
+	  // dupe the framebuffer.  This helps minimize fragmentation.
+#ifdef PBL_PLATFORM_APLITE
+	  // On Aplite we can go one step further (and we probably
+	  // have to because memory is so tight here): we can use the
+	  // *same* memory for framebuffer that we had already
+	  // allocated for face_bitmap, because they will be the same
+	  // bitmap format and size.
+	  clock_face = face_bitmap;
+	  face_bitmap.bitmap = NULL;
+	  bwd_copy_into_from_bitmap(&clock_face, fb);
+
+#else  //  PBL_PLATFORM_APLITE
+	  // On other platforms, they are likely to have a different
+	  // format (the clock face will be 4-bit palette), so we have
+	  // to deallocate and reallocate.
+	  bwd_destroy(&face_bitmap);
+	  clock_face = bwd_copy_bitmap(fb);
+#endif  //  PBL_PLATFORM_APLITE
+	} else {
+	  // If we're confident we can keep both the face_bitmap and
+	  // clock_face around together, do so.
+	  clock_face = bwd_copy_bitmap(fb);
+	}
+
 	graphics_release_frame_buffer(ctx, fb);
       }
       
@@ -1218,10 +1228,23 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
     // If the second hand is *not* enabled, then we draw the phase_1
     // hands at this time, so we don't have to invalidate the buffer
     // each minute.
-    //draw_phase_1_hands(ctx);
+    draw_phase_1_hands(ctx);
   }
 
-  draw_phase_1_hands(ctx);
+  /*
+  { // hacky testy stuff
+    int indicator_face_index = get_indicator_face_index();
+    {
+      const struct IndicatorTable *window = &battery_table[indicator_face_index];
+      draw_battery_gauge(ctx, window->x, window->y, window->invert);
+    }
+    {
+      const struct IndicatorTable *window = &bluetooth_table[indicator_face_index];
+      draw_bluetooth_indicator(ctx, window->x, window->y, window->invert);
+    }
+    draw_phase_1_hands(ctx);
+  }
+  */
 
   // And we always draw the phase_2 hands last, each update.  These
   // are the most dynamic hands that are never part of the captured
@@ -1723,7 +1746,7 @@ void reset_memory_panic_count() {
   chrono_second_resource_cache_size = CHRONO_SECOND_RESOURCE_CACHE_SIZE +  + CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE;
 #endif  // MAKE_CHRONOGRAPH
 
-#ifdef PBL_PLATFORM_APLITE
+#if 0 //def PBL_PLATFORM_APLITE
   // Aplite lacks sufficient RAM to keep the bitmap assets as well as
   // the framebuffer simultaneously.
   keep_assets = false;
@@ -1768,6 +1791,7 @@ void apply_config() {
 // redrawn next frame (e.g. if something on the face needs to be
 // updated).
 void invalidate_clock_face() {
+  redraw_clock_face = true;
   bwd_destroy(&clock_face);
   if (clock_face_layer != NULL) {
     layer_mark_dirty(clock_face_layer);

@@ -9,6 +9,12 @@ BitmapWithData bluetooth_connected;
 BitmapWithData bluetooth_mask;
 bool bluetooth_state = false;
 
+void destroy_bluetooth_bitmaps() {
+  bwd_destroy(&bluetooth_disconnected);
+  bwd_destroy(&bluetooth_connected);
+  bwd_destroy(&bluetooth_mask);
+}
+
 void draw_bluetooth_indicator(GContext *ctx, int x, int y, bool invert) {
   if (config.bluetooth_indicator == IM_off) {
     return;
@@ -79,6 +85,10 @@ void draw_bluetooth_indicator(GContext *ctx, int x, int y, bool invert) {
     graphics_context_set_compositing_mode(ctx, fg_mode);
     graphics_draw_bitmap_in_rect(ctx, bluetooth_disconnected.bitmap, box);
   }
+
+  if (!keep_assets) {
+    destroy_bluetooth_bitmaps();
+  }
 }
 
 // Update the bluetooth guage.
@@ -94,7 +104,5 @@ void init_bluetooth_indicator() {
 
 void deinit_bluetooth_indicator() {
   bluetooth_connection_service_unsubscribe();
-  bwd_destroy(&bluetooth_disconnected);
-  bwd_destroy(&bluetooth_connected);
-  bwd_destroy(&bluetooth_mask);
+  destroy_bluetooth_bitmaps();
 }
