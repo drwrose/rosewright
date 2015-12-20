@@ -1474,6 +1474,7 @@ def configWatch():
 
     print >> js, jsIn % {
         'watchName' : watchName,
+        'versionStr' : versionStr,
         'configVersionMajor' : configVersionMajor,
         'configVersionMinor' : configVersionMinor,
         'formattedConfigLangs' : repr(config_langs),
