@@ -1146,110 +1146,107 @@ void draw_phase_2_hands(GContext *ctx) {
 } 
 
 void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_face_layer, memory_panic_count = %d, heap_bytes_free = %d", memory_panic_count, heap_bytes_free());
+  do {
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_face_layer, memory_panic_count = %d, heap_bytes_free = %d", memory_panic_count, heap_bytes_free());
 
-  // In case we're in extreme memory panic mode--too little
-  // available memory to even keep the clock face resident--we don't
-  // draw any clock background.
-  if (!hide_clock_face) {
-    // Perform framebuffer caching to minimize redraws.
-    if (clock_face.bitmap == NULL || redraw_clock_face) {
-      // The clock face needs to be redrawn (or drawn for the first
-      // time).  This is every part of the display except for the
-      // hands, including the date windows and top subdial.  If the
-      // second hand is enabled, it also includes the hour and minute
-      // hands.
-      bwd_destroy(&clock_face);
-
-      // Draw the clock face into the frame buffer.
-      draw_clock_face(me, ctx);
-
-      if (config.second_hand) {
-	// If the second hand is enabled, then we also draw the
-	// phase_1 hands at this time, so they get cached in the clock
-	// face buffer.
-	draw_phase_1_hands(ctx);
-      }
-
-      if (save_framebuffer) {
-	// Now save the render for next time.
-	GBitmap *fb = graphics_capture_frame_buffer(ctx);
-	assert(clock_face.bitmap == NULL);
-
-	if (!keep_face_asset) {
-	  // Destroy face_bitmap only after we have already drawn
-	  // everything else that goes onto it, and just before we
-	  // dupe the framebuffer.  This helps minimize fragmentation.
-#ifdef PBL_PLATFORM_APLITE
-	  // On Aplite we can go one step further (and we probably
-	  // have to because memory is so tight here): we can use the
-	  // *same* memory for framebuffer that we had already
-	  // allocated for face_bitmap, because they will be the same
-	  // bitmap format and size.
-	  clock_face = face_bitmap;
-	  face_bitmap.bitmap = NULL;
-	  bwd_copy_into_from_bitmap(&clock_face, fb);
-
-#else  //  PBL_PLATFORM_APLITE
-	  // On other platforms, they are likely to have a different
-	  // format (the clock face will be 4-bit palette), so we have
-	  // to deallocate and reallocate.
-	  bwd_destroy(&face_bitmap);
-	  clock_face = bwd_copy_bitmap(fb);
-#endif  //  PBL_PLATFORM_APLITE
-	} else {
-	  // If we're confident we can keep both the face_bitmap and
-	  // clock_face around together, do so.
-	  clock_face = bwd_copy_bitmap(fb);
+    // In case we're in extreme memory panic mode--too little
+    // available memory to even keep the clock face resident--we don't
+    // draw any clock background.
+    if (!hide_clock_face) {
+      // Perform framebuffer caching to minimize redraws.
+      if (clock_face.bitmap == NULL || redraw_clock_face) {
+	// The clock face needs to be redrawn (or drawn for the first
+	// time).  This is every part of the display except for the
+	// hands, including the date windows and top subdial.  If the
+	// second hand is enabled, it also includes the hour and minute
+	// hands.
+	bwd_destroy(&clock_face);
+	
+	// Draw the clock face into the frame buffer.
+	draw_clock_face(me, ctx);
+	
+	if (config.second_hand) {
+	  // If the second hand is enabled, then we also draw the
+	  // phase_1 hands at this time, so they get cached in the clock
+	  // face buffer.
+	  draw_phase_1_hands(ctx);
 	}
-
-	graphics_release_frame_buffer(ctx, fb);
+	
+	if (save_framebuffer) {
+	  // Now save the render for next time.
+	  GBitmap *fb = graphics_capture_frame_buffer(ctx);
+	  assert(clock_face.bitmap == NULL);
+	  
+	  if (!keep_face_asset) {
+	    // Destroy face_bitmap only after we have already drawn
+	    // everything else that goes onto it, and just before we
+	    // dupe the framebuffer.  This helps minimize fragmentation.
+#ifdef PBL_PLATFORM_APLITE
+	    // On Aplite we can go one step further (and we probably
+	    // have to because memory is so tight here): we can use the
+	    // *same* memory for framebuffer that we had already
+	    // allocated for face_bitmap, because they will be the same
+	    // bitmap format and size.
+	    clock_face = face_bitmap;
+	    face_bitmap.bitmap = NULL;
+	    bwd_copy_into_from_bitmap(&clock_face, fb);
+	    
+#else  //  PBL_PLATFORM_APLITE
+	    // On other platforms, they are likely to have a different
+	    // format (the clock face will be 4-bit palette), so we have
+	    // to deallocate and reallocate.
+	    bwd_destroy(&face_bitmap);
+	    clock_face = bwd_copy_bitmap(fb);
+#endif  //  PBL_PLATFORM_APLITE
+	  } else {
+	    // If we're confident we can keep both the face_bitmap and
+	    // clock_face around together, do so.
+	    clock_face = bwd_copy_bitmap(fb);
+	  }
+	  
+	  graphics_release_frame_buffer(ctx, fb);
+	}
+	
+      } else {
+	// The rendered clock face is already saved from a previous
+	// update; redraw it now.
+	GRect destination = layer_get_bounds(me);
+	destination.origin.x = 0;
+	destination.origin.y = 0;
+	graphics_context_set_compositing_mode(ctx, GCompOpAssign);
+	graphics_draw_bitmap_in_rect(ctx, clock_face.bitmap, destination);
       }
-      
-    } else {
-      // The rendered clock face is already saved from a previous
-      // update; redraw it now.
-      GRect destination = layer_get_bounds(me);
-      destination.origin.x = 0;
-      destination.origin.y = 0;
-      graphics_context_set_compositing_mode(ctx, GCompOpAssign);
-      graphics_draw_bitmap_in_rect(ctx, clock_face.bitmap, destination);
     }
-  }
-
-  if (date_window_debug) {
-    // Now fill in the per-frame debug text, if needed.
-    for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
-      draw_date_window_debug_text(ctx, i);
+    
+    if (date_window_debug) {
+      // Now fill in the per-frame debug text, if needed.
+      for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
+	draw_date_window_debug_text(ctx, i);
+      }
     }
-  }
-
-  if (!config.second_hand || hide_clock_face) {
-    // If the second hand is *not* enabled, then we draw the phase_1
-    // hands at this time, so we don't have to invalidate the buffer
-    // each minute.
-    draw_phase_1_hands(ctx);
-  }
-
-  /*
-  { // hacky testy stuff
-    int indicator_face_index = get_indicator_face_index();
-    {
-      const struct IndicatorTable *window = &battery_table[indicator_face_index];
-      draw_battery_gauge(ctx, window->x, window->y, window->invert);
+    
+    if (!config.second_hand || hide_clock_face) {
+      // If the second hand is *not* enabled, then we draw the phase_1
+      // hands at this time, so we don't have to invalidate the buffer
+      // each minute.
+      draw_phase_1_hands(ctx);
     }
-    {
-      const struct IndicatorTable *window = &bluetooth_table[indicator_face_index];
-      draw_bluetooth_indicator(ctx, window->x, window->y, window->invert);
-    }
-    draw_phase_1_hands(ctx);
-  }
-  */
+    
+    // And we always draw the phase_2 hands last, each update.  These
+    // are the most dynamic hands that are never part of the captured
+    // framebuffer.
+    draw_phase_2_hands(ctx);
 
-  // And we always draw the phase_2 hands last, each update.  These
-  // are the most dynamic hands that are never part of the captured
-  // framebuffer.
-  draw_phase_2_hands(ctx);
+    if (!memory_panic_flag) {
+      // If we successfully drew the clock face without memory
+      // panicking, return.
+      return;
+    }
+
+    // In this case we hit a memory_panic_flag while drawing.  Reset
+    // and try again.
+    reset_memory_panic();
+  } while (true);
 }
 
 // Draws the frame and optionally fills the background of the current date window.
@@ -1996,6 +1993,10 @@ void trigger_memory_panic(int line_number) {
   // can try to clean up unneeded memory.
   app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "memory_panic at line %d, heap_bytes_free = %d!", line_number, heap_bytes_free());
   memory_panic_flag = true;
+
+  if (clock_face_layer != NULL) {
+    layer_mark_dirty(clock_face_layer);
+  }
 }
 
 void reset_memory_panic() {
