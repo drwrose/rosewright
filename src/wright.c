@@ -37,6 +37,8 @@ bool hide_date_windows = false;
 bool hide_clock_face = false;
 bool redraw_clock_face = false;
 
+#define MIN_BYTES_FREE 3072
+
 #define DATE_WINDOW_BUFFER_SIZE 16
 
 // For now, the size of the date window is hardcoded.
@@ -1658,9 +1660,17 @@ void reset_sweep() {
 // The callback on the per-second (or per-minute) system timer that
 // handles most mundane tasks.
 void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
+  // Insist we always have a minimum buffer available for system activity.
+  if (heap_bytes_free() < MIN_BYTES_FREE) {
+    trigger_memory_panic(__LINE__);
+  }
+
+  // Now respond appropriately if memory is tight by reducing our
+  // memory requirements.
   if (memory_panic_flag) {
     reset_memory_panic();
   }
+
   update_hands(tick_time);
 
 #if ENABLE_SWEEP_SECONDS
@@ -2030,14 +2040,14 @@ void reset_memory_panic() {
 #endif  // MAKE_CHRONOGRAPH
   }
   if (memory_panic_count > 3) {
-    config.battery_gauge = IM_off;
-    config.bluetooth_indicator = IM_off;
-  }
-  if (memory_panic_count > 4) {
     config.second_hand = false;
   } 
-  if (memory_panic_count > 5) {
+  if (memory_panic_count > 4) {
     save_framebuffer = false;
+  }
+  if (memory_panic_count > 5) {
+    config.battery_gauge = IM_off;
+    config.bluetooth_indicator = IM_off;
   }
   if (memory_panic_count > 6) {
     config.top_subdial = false;
