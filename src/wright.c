@@ -37,7 +37,8 @@ bool hide_date_windows = false;
 bool hide_clock_face = false;
 bool redraw_clock_face = false;
 
-#define MIN_BYTES_FREE 3072
+//#define MIN_BYTES_FREE 3072
+#define MIN_BYTES_FREE 1024
 
 #define DATE_WINDOW_BUFFER_SIZE 16
 
@@ -132,8 +133,10 @@ struct HandCache hour_cache;
 struct HandCache minute_cache;
 struct HandCache second_cache;
 
+#ifdef SUPPORT_RESOURCE_CACHE
 struct ResourceCache second_resource_cache[SECOND_RESOURCE_CACHE_SIZE + SECOND_MASK_RESOURCE_CACHE_SIZE];
 size_t second_resource_cache_size = SECOND_RESOURCE_CACHE_SIZE + SECOND_MASK_RESOURCE_CACHE_SIZE;
+#endif  // SUPPORT_RESOURCE_CACHE
 
 struct HandPlacement current_placement;
 
@@ -615,7 +618,7 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
 // Clears the mask given hand on the face, using the bitmap
 // structures, if the mask is in use.  This must be called before
 // draw_bitmap_hand_fg().
-void draw_bitmap_hand_mask(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, bool no_basalt_mask, GContext *ctx) {
+void draw_bitmap_hand_mask(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PARAMS, struct HandDef *hand_def, int hand_index, bool no_basalt_mask, GContext *ctx) {
   struct BitmapHandTableRow *hand = &hand_def->bitmap_table[hand_index];
   int bitmap_index = hand->bitmap_index;
   struct BitmapHandCenterRow *lookup = &hand_def->bitmap_centers[bitmap_index];
@@ -634,11 +637,11 @@ void draw_bitmap_hand_mask(struct HandCache *hand_cache, struct ResourceCache *r
     // The hand has a mask, so use it to draw the hand opaquely.
     if (hand_cache->image.bitmap == NULL) {
       if (hand_def->use_rle) {
-        hand_cache->image = rle_bwd_create_with_cache(hand_def->resource_id, hand_resource_id, resource_cache, resource_cache_size);
-        hand_cache->mask = rle_bwd_create_with_cache(hand_def->resource_id, hand_resource_mask_id, resource_cache, resource_cache_size);
+        hand_cache->image = rle_bwd_create_with_cache(hand_def->resource_id, hand_resource_id RESOURCE_CACHE_PARAMS(resource_cache, resource_cache_size));
+        hand_cache->mask = rle_bwd_create_with_cache(hand_def->resource_id, hand_resource_mask_id RESOURCE_CACHE_PARAMS(resource_cache, resource_cache_size));
       } else {
-        hand_cache->image = png_bwd_create_with_cache(hand_def->resource_id, hand_resource_id, resource_cache, resource_cache_size);
-        hand_cache->mask = png_bwd_create_with_cache(hand_def->resource_id, hand_resource_mask_id, resource_cache, resource_cache_size);
+        hand_cache->image = png_bwd_create_with_cache(hand_def->resource_id, hand_resource_id RESOURCE_CACHE_PARAMS(resource_cache, resource_cache_size));
+        hand_cache->mask = png_bwd_create_with_cache(hand_def->resource_id, hand_resource_mask_id RESOURCE_CACHE_PARAMS(resource_cache, resource_cache_size));
       }
       if (hand_cache->image.bitmap == NULL || hand_cache->mask.bitmap == NULL) {
         hand_cache_destroy(hand_cache);
@@ -677,7 +680,7 @@ void draw_bitmap_hand_mask(struct HandCache *hand_cache, struct ResourceCache *r
 
 // Draws a given hand on the face, using the bitmap structures.  You
 // must have already called draw_bitmap_hand_mask().
-void draw_bitmap_hand_fg(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, bool no_basalt_mask, GContext *ctx) {
+void draw_bitmap_hand_fg(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PARAMS, struct HandDef *hand_def, int hand_index, bool no_basalt_mask, GContext *ctx) {
   struct BitmapHandTableRow *hand = &hand_def->bitmap_table[hand_index];
   int bitmap_index = hand->bitmap_index;
   struct BitmapHandCenterRow *lookup = &hand_def->bitmap_centers[bitmap_index];
@@ -694,9 +697,9 @@ void draw_bitmap_hand_fg(struct HandCache *hand_cache, struct ResourceCache *res
     if (hand_cache->image.bitmap == NULL) {
       // All right, load it from the resource file.
       if (hand_def->use_rle) {
-        hand_cache->image = rle_bwd_create_with_cache(hand_def->resource_id, hand_resource_id, resource_cache, resource_cache_size);
+        hand_cache->image = rle_bwd_create_with_cache(hand_def->resource_id, hand_resource_id RESOURCE_CACHE_PARAMS(resource_cache, resource_cache_size));
       } else {
-        hand_cache->image = png_bwd_create_with_cache(hand_def->resource_id, hand_resource_id, resource_cache, resource_cache_size);
+        hand_cache->image = png_bwd_create_with_cache(hand_def->resource_id, hand_resource_id RESOURCE_CACHE_PARAMS(resource_cache, resource_cache_size));
       }
       if (hand_cache->image.bitmap == NULL) {
         hand_cache_destroy(hand_cache);
@@ -758,7 +761,7 @@ void draw_bitmap_hand_fg(struct HandCache *hand_cache, struct ResourceCache *res
 
 // In general, prepares a hand for being drawn.  Specifically, this
 // clears the background behind a hand, if necessary.
-void draw_hand_mask(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, bool no_basalt_mask, GContext *ctx) {
+void draw_hand_mask(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PARAMS, struct HandDef *hand_def, int hand_index, bool no_basalt_mask, GContext *ctx) {
   if (hand_def->bitmap_table != NULL) {
     if (hand_cache->bitmap_hand_index != hand_index) {
       // Force a new bitmap.
@@ -771,26 +774,26 @@ void draw_hand_mask(struct HandCache *hand_cache, struct ResourceCache *resource
       hand_cache->bitmap_hand_index = hand_index;
     }
 
-    draw_bitmap_hand_mask(hand_cache, resource_cache, resource_cache_size, hand_def, hand_index, no_basalt_mask, ctx);
+    draw_bitmap_hand_mask(hand_cache RESOURCE_CACHE_PARAMS(resource_cache, resource_cache_size), hand_def, hand_index, no_basalt_mask, ctx);
   }
 }
 
 // Draws a given hand on the face, after draw_hand_mask(), using the
 // vector and/or bitmap structures.  A given hand may be represented
 // by a bitmap or a vector, or a combination of both.
-void draw_hand_fg(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, bool no_basalt_mask, GContext *ctx) {
+void draw_hand_fg(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PARAMS, struct HandDef *hand_def, int hand_index, bool no_basalt_mask, GContext *ctx) {
   if (hand_def->vector_hand != NULL) {
     draw_vector_hand(hand_cache, hand_def, hand_index, ctx);
   }
 
   if (hand_def->bitmap_table != NULL) {
-    draw_bitmap_hand_fg(hand_cache, resource_cache, resource_cache_size, hand_def, hand_index, no_basalt_mask, ctx);
+    draw_bitmap_hand_fg(hand_cache RESOURCE_CACHE_PARAMS(resource_cache, resource_cache_size), hand_def, hand_index, no_basalt_mask, ctx);
   }
 }
 
-void draw_hand(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx) {
-  draw_hand_mask(hand_cache, resource_cache, resource_cache_size, hand_def, hand_index, true, ctx);
-  draw_hand_fg(hand_cache, resource_cache, resource_cache_size, hand_def, hand_index, true, ctx);
+void draw_hand(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PARAMS, struct HandDef *hand_def, int hand_index, GContext *ctx) {
+  draw_hand_mask(hand_cache RESOURCE_CACHE_PARAMS(resource_cache, resource_cache_size), hand_def, hand_index, true, ctx);
+  draw_hand_fg(hand_cache RESOURCE_CACHE_PARAMS(resource_cache, resource_cache_size), hand_def, hand_index, true, ctx);
 }
 
 // Applies the appropriate Basalt color-remapping according to the
@@ -1071,12 +1074,12 @@ void draw_phase_1_hands(GContext *ctx) {
   // the non-chrono order--we draw the three subdials first, and this
   // includes the normal second hand).
   if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
-    draw_hand(&chrono_minute_cache, NULL, 0, &chrono_minute_hand_def, current_placement.chrono_minute_hand_index, ctx);
+    draw_hand(&chrono_minute_cache RESOURCE_CACHE_PARAMS(NULL, 0), &chrono_minute_hand_def, current_placement.chrono_minute_hand_index, ctx);
   }
 
   if (config.chrono_dial != CDM_off) {
     if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
-      draw_hand(&chrono_tenth_cache, NULL, 0, &chrono_tenth_hand_def, current_placement.chrono_tenth_hand_index, ctx);
+      draw_hand(&chrono_tenth_cache RESOURCE_CACHE_PARAMS(NULL, 0), &chrono_tenth_hand_def, current_placement.chrono_tenth_hand_index, ctx);
     }
   }
 
@@ -1125,15 +1128,15 @@ void draw_phase_2_hands(GContext *ctx) {
   // The Chrono case.  Lots of hands end up here because it's the
   // second hand and everything that might overlay it.
   if (config.second_hand) {
-    draw_hand(&second_cache, second_resource_cache, second_resource_cache_size, &second_hand_def, current_placement.second_hand_index, ctx);
+    draw_hand(&second_cache RESOURCE_CACHE_PARAMS(second_resource_cache, second_resource_cache_size), &second_hand_def, current_placement.second_hand_index, ctx);
   }
 
-  draw_hand(&hour_cache, NULL, 0, &hour_hand_def, current_placement.hour_hand_index, ctx);
+  draw_hand(&hour_cache RESOURCE_CACHE_PARAMS(NULL, 0), &hour_hand_def, current_placement.hour_hand_index, ctx);
 
-  draw_hand(&minute_cache, NULL, 0, &minute_hand_def, current_placement.minute_hand_index, ctx);
+  draw_hand(&minute_cache RESOURCE_CACHE_PARAMS(NULL, 0), &minute_hand_def, current_placement.minute_hand_index, ctx);
 
   if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
-    draw_hand(&chrono_second_cache, chrono_second_resource_cache, chrono_second_resource_cache_size, &chrono_second_hand_def, current_placement.chrono_second_hand_index, ctx);
+    draw_hand(&chrono_second_cache RESOURCE_CACHE_PARAMS(chrono_second_resource_cache, chrono_second_resource_cache_size), &chrono_second_hand_def, current_placement.chrono_second_hand_index, ctx);
   }
   
 #else  // MAKE_CHRONOGRAPH
@@ -1141,7 +1144,7 @@ void draw_phase_2_hands(GContext *ctx) {
   // only need to draw the second hand.
 
   if (config.second_hand) {
-    draw_hand(&second_cache, second_resource_cache, second_resource_cache_size, &second_hand_def, current_placement.second_hand_index, ctx);
+    draw_hand(&second_cache RESOURCE_CACHE_PARAMS(second_resource_cache, second_resource_cache_size), &second_hand_def, current_placement.second_hand_index, ctx);
   }
   
 #endif  // MAKE_CHRONOGRAPH
@@ -1757,10 +1760,12 @@ void fill_date_names(char *date_names[], int num_date_names, char date_names_buf
 void reset_memory_panic_count() {
   memory_panic_count = 0;
 
+#ifdef SUPPORT_RESOURCE_CACHE
   second_resource_cache_size = SECOND_RESOURCE_CACHE_SIZE + SECOND_MASK_RESOURCE_CACHE_SIZE;
 #ifdef MAKE_CHRONOGRAPH
   chrono_second_resource_cache_size = CHRONO_SECOND_RESOURCE_CACHE_SIZE +  + CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE;
 #endif  // MAKE_CHRONOGRAPH
+#endif  // SUPPORT_RESOURCE_CACHE
 
   // Confidently start out with the expectation that we keep keep all
   // of this cached in RAM, until proven otherwise.
@@ -2033,12 +2038,14 @@ void reset_memory_panic() {
   if (memory_panic_count > 1) {
     keep_assets = false;
   }
+#ifdef SUPPORT_RESOURCE_CACHE
   if (memory_panic_count > 2) {
     second_resource_cache_size = 0;
 #ifdef MAKE_CHRONOGRAPH
     chrono_second_resource_cache_size = 0;
 #endif  // MAKE_CHRONOGRAPH
   }
+#endif  // SUPPORT_RESOURCE_CACHE
   if (memory_panic_count > 3) {
     config.second_hand = false;
   } 

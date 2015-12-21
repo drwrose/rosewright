@@ -99,6 +99,17 @@ extern Window *window;
 
 extern Layer *clock_face_layer;
 
+#ifdef SUPPORT_RESOURCE_CACHE
+#define RESOURCE_CACHE_PARAMS(a, b) , a, b
+#define RESOURCE_CACHE_FORMAL_PARAMS , struct ResourceCache *resource_cache, size_t resource_cache_size
+
+#else
+#define RESOURCE_CACHE_PARAMS(a, b)
+#define RESOURCE_CACHE_FORMAL_PARAMS
+
+#endif
+
+
 void stopped_click_config_provider(void *context);
 void started_click_config_provider(void *context);
 
@@ -108,9 +119,9 @@ void update_hands(struct tm *time);
 void hand_cache_init(struct HandCache *hand_cache);
 void hand_cache_destroy(struct HandCache *hand_cache);
 void reset_tick_timer();
-void draw_hand_mask(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, bool no_basalt_mask, GContext *ctx);
-void draw_hand_fg(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, bool no_basalt_mask, GContext *ctx);
-void draw_hand(struct HandCache *hand_cache, struct ResourceCache *resource_cache, size_t resource_cache_size, struct HandDef *hand_def, int hand_index, GContext *ctx);
+void draw_hand_mask(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PARAMS, struct HandDef *hand_def, int hand_index, bool no_basalt_mask, GContext *ctx);
+void draw_hand_fg(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PARAMS, struct HandDef *hand_def, int hand_index, bool no_basalt_mask, GContext *ctx);
+void draw_hand(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PARAMS, struct HandDef *hand_def, int hand_index, GContext *ctx);
 void remap_colors_clock(BitmapWithData *bwd);
 void invalidate_clock_face();
 void destroy_objects();

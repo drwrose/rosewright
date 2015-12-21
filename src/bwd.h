@@ -42,8 +42,8 @@ BitmapWithData rle_bwd_create_with_cache(int resource_id_offset, int resource_id
 #else  // SUPPORT_RESOURCE_CACHE
 
 #define bwd_clear_cache(resource_cache, resource_cache_size) { }
-#define png_bwd_create_with_cache(resource_id_offset, resource_id, resource_cache, resource_cache_size) png_bwd_create(resource_id)
-#define rle_bwd_create_with_cache(resource_id_offset, resource_id, resource_cache, resource_cache_size) rle_bwd_create(resource_id)
+#define png_bwd_create_with_cache(resource_id_offset, resource_id) png_bwd_create(resource_id)
+#define rle_bwd_create_with_cache(resource_id_offset, resource_id) rle_bwd_create(resource_id)
 
 #endif  // SUPPORT_RESOURCE_CACHE
 
