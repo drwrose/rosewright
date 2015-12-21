@@ -1,10 +1,10 @@
 #ifndef PEBBLE_COMPAT_H
 #define PEBBLE_COMPAT_H
 
-// Some definitions to aid in cross-compatibility between Aplite and Basalt.
+// Some definitions to aid in cross-compatibility between SDK 2 and 3.
 
-// GColor static initializers, slightly different syntax needed on Basalt.
-#ifdef PBL_PLATFORM_APLITE
+// GColor static initializers, slightly different syntax needed in SDK 2.
+#ifdef PBL_SDK_2
 
 #define GColorBlackInit GColorBlack
 #define GColorWhiteInit GColorWhite

@@ -47,11 +47,11 @@ BitmapWithData bwd_copy_bitmap(GBitmap *source) {
 
   GSize size = gbitmap_get_bounds(source).size;
 
-#ifndef PBL_PLATFORM_APLITE
+#ifdef PBL_SDK_2
+  dest.bitmap = __gbitmap_create_blank(size);
+#else
   GBitmapFormat format = gbitmap_get_format(source);
   dest.bitmap = gbitmap_create_blank(size, format);
-#else
-  dest.bitmap = __gbitmap_create_blank(size);
 #endif
 
   bwd_copy_into_from_bitmap(&dest, source);
@@ -59,9 +59,9 @@ BitmapWithData bwd_copy_bitmap(GBitmap *source) {
 }
 
 void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source) {
-#ifndef PBL_PLATFORM_APLITE
+#ifndef PBL_SDK_2
+  int pixels_per_byte = 8;
   GBitmapFormat format = gbitmap_get_format(source);
-  int pixels_per_byte = 0;
 
   size_t palette_count = 0;
   switch (format) {
@@ -99,7 +99,7 @@ void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source) {
     }
     memcpy(dest_palette, source_palette, palette_count);
   }
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_SDK_2
 
   if (dest->bitmap == NULL) {
     return;
