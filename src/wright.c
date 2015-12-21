@@ -1161,6 +1161,7 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
 	// second hand is enabled, it also includes the hour and minute
 	// hands.
 	bwd_destroy(&clock_face);
+	redraw_clock_face = false;
 	
 	// Draw the clock face into the frame buffer.
 	draw_clock_face(me, ctx);
@@ -1197,11 +1198,19 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
 	    // to deallocate and reallocate.
 	    bwd_destroy(&face_bitmap);
 	    clock_face = bwd_copy_bitmap(fb);
+	    if (clock_face.bitmap == NULL) {
+	      trigger_memory_panic(__LINE__);
+	    }
 #endif  //  PBL_PLATFORM_APLITE
 	  } else {
 	    // If we're confident we can keep both the face_bitmap and
 	    // clock_face around together, do so.
 	    clock_face = bwd_copy_bitmap(fb);
+	    if (clock_face.bitmap == NULL) {
+	      // Oops, we were wrong about this.  No problem, but next
+	      // time we'll let it go.
+	      keep_face_asset = false;
+	    }
 	  }
 	  
 	  graphics_release_frame_buffer(ctx, fb);
@@ -1788,6 +1797,7 @@ void apply_config() {
 // redrawn next frame (e.g. if something on the face needs to be
 // updated).
 void invalidate_clock_face() {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "invalidate_clock_face");
   redraw_clock_face = true;
   bwd_destroy(&clock_face);
   if (clock_face_layer != NULL) {

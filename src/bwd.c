@@ -142,6 +142,7 @@ void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source) {
 // BitmapWithData interface to be consistent with rle_bwd_create().
 // The returned bitmap must be released with bwd_destroy().
 BitmapWithData png_bwd_create(int resource_id) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "png_bwd_create(%d)", resource_id);
   ++bwd_resource_reads;
   GBitmap *image = gbitmap_create_with_resource(resource_id);
   return bwd_create(image, NULL);
