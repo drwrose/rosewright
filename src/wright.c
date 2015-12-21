@@ -1099,11 +1099,11 @@ void draw_phase_1_hands(GContext *ctx) {
   // their hands are relatively thin, and their hand masks define an
   // invisible halo that erases to the background color around the
   // hands, but we don't want the hands to erase each other.
-  draw_hand_mask(&hour_cache, NULL, 0, &hour_hand_def, current_placement.hour_hand_index, false, ctx);
-  draw_hand_mask(&minute_cache, NULL, 0, &minute_hand_def, current_placement.minute_hand_index, false, ctx);
+  draw_hand_mask(&hour_cache RESOURCE_CACHE_PARAMS(NULL, 0), &hour_hand_def, current_placement.hour_hand_index, false, ctx);
+  draw_hand_mask(&minute_cache RESOURCE_CACHE_PARAMS(NULL, 0), &minute_hand_def, current_placement.minute_hand_index, false, ctx);
 
-  draw_hand_fg(&hour_cache, NULL, 0, &hour_hand_def, current_placement.hour_hand_index, false, ctx);
-  draw_hand_fg(&minute_cache, NULL, 0, &minute_hand_def, current_placement.minute_hand_index, false, ctx);
+  draw_hand_fg(&hour_cache RESOURCE_CACHE_PARAMS(NULL, 0), &hour_hand_def, current_placement.hour_hand_index, false, ctx);
+  draw_hand_fg(&minute_cache RESOURCE_CACHE_PARAMS(NULL, 0), &minute_hand_def, current_placement.minute_hand_index, false, ctx);
 
 #else  //  HOUR_MINUTE_OVERLAP
 
@@ -1112,9 +1112,9 @@ void draw_phase_1_hands(GContext *ctx) {
   // with complex interiors that must be erased; and their haloes (if
   // present) are comparatively thinner and don't threaten to erase
   // overlapping hands.
-  draw_hand(&hour_cache, NULL, 0, &hour_hand_def, current_placement.hour_hand_index, ctx);
+  draw_hand(&hour_cache RESOURCE_CACHE_PARAMS(NULL, 0), &hour_hand_def, current_placement.hour_hand_index, ctx);
 
-  draw_hand(&minute_cache, NULL, 0, &minute_hand_def, current_placement.minute_hand_index, ctx);
+  draw_hand(&minute_cache RESOURCE_CACHE_PARAMS(NULL, 0), &minute_hand_def, current_placement.minute_hand_index, ctx);
 #endif  //  HOUR_MINUTE_OVERLAP
   
 #endif  // MAKE_CHRONOGRAPH
