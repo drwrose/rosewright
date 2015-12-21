@@ -1752,16 +1752,10 @@ void reset_memory_panic_count() {
   chrono_second_resource_cache_size = CHRONO_SECOND_RESOURCE_CACHE_SIZE +  + CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE;
 #endif  // MAKE_CHRONOGRAPH
 
-#if 0 //def PBL_PLATFORM_APLITE
-  // Aplite lacks sufficient RAM to keep the bitmap assets as well as
-  // the framebuffer simultaneously.
-  keep_assets = false;
-  keep_face_asset = false;
-#else // PBL_PLATFORM_APLITE
-  // But perhaps we can do this on the other platforms.
+  // Confidently start out with the expectation that we keep keep all
+  // of this cached in RAM, until proven otherwise.
   keep_assets = true;
   keep_face_asset = true;
-#endif  // PBL_PLATFORM_APLITE
 
   hide_date_windows = false;
   hide_clock_face = false;
