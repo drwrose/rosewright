@@ -440,13 +440,6 @@ def makeFaces(generatedTable, generatedDefs):
 
     resourceStr = ''
 
-    faceResourceEntry = """
-    {
-      "name": "CLOCK_FACE_%(index)s",
-      "file": "%(rleFilename)s",
-      "type": "%(ptype)s"
-    },"""
-
     dateWindowEntry = """
     {
       "name": "DATE_WINDOW",
@@ -501,12 +494,7 @@ def makeFaces(generatedTable, generatedDefs):
     for i in range(len(faceFilenames)):
         print >> generatedTable, "  { RESOURCE_ID_CLOCK_FACE_%s }," % (i)
 
-        rleFilename, ptype = make_rle('clock_faces/' + faceFilenames[i], useRle = supportRle, modes = targetModes)
-        resourceStr += faceResourceEntry % {
-            'index' : i,
-            'rleFilename' : rleFilename,
-            'ptype' : ptype,
-            }
+        resourceStr += make_rle('clock_faces/' + faceFilenames[i], useRle = supportRle, modes = targetModes, platforms = targetPlatforms, name = 'CLOCK_FACE_%s' % (i))
     print >> generatedTable, "};\n"
 
     faceColors = fd.get('colors')
@@ -521,22 +509,22 @@ def makeFaces(generatedTable, generatedDefs):
     if date_windows_rect and date_window_filename:
         window, mask = date_window_filename
 
-        rleFilename, ptype = make_rle('clock_faces/' + window, useRle = supportRle, modes = targetModes)
+        rleFilename, ptype = make_rle('clock_faces/' + window, useRle = supportRle, modes = targetModes, platforms = targetPlatforms)
         resourceStr += dateWindowEntry % {
             'rleFilename' : rleFilename,
             'ptype' : ptype,
             }
 
         if mask:
-            rleFilename, ptype = make_rle('clock_faces/' + mask, useRle = supportRle, modes = targetModes)
+            rleFilename, ptype = make_rle('clock_faces/' + mask, useRle = supportRle, modes = targetModes, platforms = targetPlatforms)
             resourceStr += dateWindowMaskEntry % {
                 'rleFilename' : rleFilename,
                 'ptype' : ptype,
                 }
 
     if targetChronoTenths:
-        tenthsWhite, tenthsBlack, ptype = make_rle_trans('clock_faces/' + targetChronoTenths, useRle = supportRle, modes = targetModes)
-        hoursWhite, hoursBlack, ptype = make_rle_trans('clock_faces/' + targetChronoHours, useRle = supportRle, modes = targetModes)
+        tenthsWhite, tenthsBlack, ptype = make_rle_trans('clock_faces/' + targetChronoTenths, useRle = supportRle, modes = targetModes, platforms = targetPlatforms)
+        hoursWhite, hoursBlack, ptype = make_rle_trans('clock_faces/' + targetChronoHours, useRle = supportRle, modes = targetModes, platforms = targetPlatforms)
         resourceStr += chronoResourceEntry % {
             'targetChronoTenthsWhite' : tenthsWhite,
             'targetChronoTenthsBlack' : tenthsBlack,
@@ -606,12 +594,12 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceBasename,
 
     if 'basalt' in targetPlatforms:
         print >> generatedTable, "#ifdef PBL_PLATFORM_BASALT"
-        resourceStr = makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_rect, '~color~rect')
+        resourceStr = makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_rect, '~color~rect', ['basalt'])
         print >> generatedTable, "#endif  // PBL_PLATFORM_BASALT"
 
     if 'chalk' in targetPlatforms:
         print >> generatedTable, "#ifdef PBL_PLATFORM_CHALK"
-        resourceStr = makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_round, '~color~round')
+        resourceStr = makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_round, '~color~round', ['chalk'])
         print >> generatedTable, "#endif  // PBL_PLATFORM_CHALK"
 
     if 'aplite' in targetPlatforms:
@@ -806,7 +794,7 @@ def makeBitmapHandsAplite(generatedTable, useRle, hand, sourceBasename, colorMod
                 # Save the aplite mask.
                 pm1.save('%s/%s~bw.png' % (resourcesDir, targetMaskBasename))
 
-                rleFilename, ptype = make_rle(targetMaskBasename + '.png', useRle = useRle, modes = ['~bw'])
+                rleFilename, ptype = make_rle(targetMaskBasename + '.png', useRle = useRle, modes = ['~bw'], platforms = ['aplite'])
                 maskResourceStr += resourceEntry % {
                     'defName' : symbolMaskName,
                     'targetFilename' : rleFilename,
@@ -815,7 +803,7 @@ def makeBitmapHandsAplite(generatedTable, useRle, hand, sourceBasename, colorMod
 
             targetBasename = 'build/flat_%s_%s_%s' % (handStyle, hand, i)
             p1.save('%s/%s~bw.png' % (resourcesDir, targetBasename))
-            rleFilename, ptype = make_rle(targetBasename + '.png', useRle = useRle, modes = ['~bw'])
+            rleFilename, ptype = make_rle(targetBasename + '.png', useRle = useRle, modes = ['~bw'], platforms = ['aplite'])
 
             resourceStr += resourceEntry % {
                 'defName' : symbolName,
@@ -858,7 +846,7 @@ def makeBitmapHandsAplite(generatedTable, useRle, hand, sourceBasename, colorMod
 
     return resourceStr + maskResourceStr
 
-def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale, mode):
+def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale, mode, platforms):
     resourceStr = ''
     maskResourceStr = ''
 
@@ -1071,7 +1059,7 @@ def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode
                     # trivial image.
                     trivialImage.save('%s/%s%s.png' % (resourcesDir, targetMaskBasename, mode))
 
-                rleFilename, ptype = make_rle(targetMaskBasename + '.png', useRle = useRle, modes = [mode])
+                rleFilename, ptype = make_rle(targetMaskBasename + '.png', useRle = useRle, modes = [mode], platforms = platforms)
                 maskResourceStr += resourceEntry % {
                     'defName' : symbolMaskName,
                     'targetFilename' : rleFilename,
@@ -1080,7 +1068,7 @@ def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode
 
             targetBasename = 'build/flat_%s_%s_%s' % (handStyle, hand, i)
             p2.save('%s/%s%s.png' % (resourcesDir, targetBasename, mode))
-            rleFilename, ptype = make_rle(targetBasename + '.png', useRle = useRle, modes = [mode])
+            rleFilename, ptype = make_rle(targetBasename + '.png', useRle = useRle, modes = [mode], platforms = platforms)
 
             resourceStr += resourceEntry % {
                 'defName' : symbolName,
@@ -1355,32 +1343,32 @@ def makeMoonWheel():
     # rather than dependent on the platform).
     resourceStr = ''
 
-    rleFilename, ptype = make_rle('clock_faces/pebble_label.png', useRle = supportRle, modes = targetModes)
+    rleFilename, ptype = make_rle('clock_faces/pebble_label.png', useRle = supportRle, modes = targetModes, platforms = targetPlatforms)
     resourceStr += topSubdialEntry % {
         'name' : 'PEBBLE_LABEL',
         'rleFilename' : rleFilename,
         'ptype' : ptype,
         }
-    rleFilename, ptype = make_rle('clock_faces/pebble_label_mask.png', useRle = supportRle, modes = targetModes)
+    rleFilename, ptype = make_rle('clock_faces/pebble_label_mask.png', useRle = supportRle, modes = targetModes, platforms = targetPlatforms)
     resourceStr += topSubdialEntry % {
         'name' : 'PEBBLE_LABEL_MASK',
         'rleFilename' : rleFilename,
         'ptype' : ptype,
         }
 
-    rleFilename, ptype = make_rle('clock_faces/top_subdial.png', useRle = supportRle, modes = targetModes)
+    rleFilename, ptype = make_rle('clock_faces/top_subdial.png', useRle = supportRle, modes = targetModes, platforms = targetPlatforms)
     resourceStr += topSubdialEntry % {
         'name' : 'TOP_SUBDIAL',
         'rleFilename' : rleFilename,
         'ptype' : ptype,
         }
-    rleFilename, ptype = make_rle('clock_faces/top_subdial_mask.png', useRle = supportRle, modes = targetModes)
+    rleFilename, ptype = make_rle('clock_faces/top_subdial_mask.png', useRle = supportRle, modes = targetModes, platforms = targetPlatforms)
     resourceStr += topSubdialEntry % {
         'name' : 'TOP_SUBDIAL_MASK',
         'rleFilename' : rleFilename,
         'ptype' : ptype,
         }
-    rleFilename, ptype = make_rle('clock_faces/top_subdial_frame_mask.png', useRle = supportRle, modes = targetModes)
+    rleFilename, ptype = make_rle('clock_faces/top_subdial_frame_mask.png', useRle = supportRle, modes = targetModes, platforms = targetPlatforms)
     resourceStr += topSubdialEntry % {
         'name' : 'TOP_SUBDIAL_FRAME_MASK',
         'rleFilename' : rleFilename,
@@ -1389,7 +1377,7 @@ def makeMoonWheel():
     for cat in ['white', 'black']:
         for i in range(numStepsMoon):
             targetBasename = 'build/rot_moon_wheel_%s_%s.png' % (cat, i)
-            rleFilename, ptype = make_rle(targetBasename, useRle = supportRle, modes = targetModes)
+            rleFilename, ptype = make_rle(targetBasename, useRle = supportRle, modes = targetModes, platforms = targetPlatforms)
             resourceStr += moonWheelEntry % {
                 'cat' : cat.upper(),
                 'index' : i,

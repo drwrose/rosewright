@@ -509,16 +509,25 @@ def make_rle_image_basalt(rleFilename, image):
     
     print '%s: %s, %s vs. %s' % (rleFilename, format, 8 + len(result) + len(values), fullSize)
             
-def make_rle_image(rleFilename, image, platformType = 'auto'):
-    if platformType == 'auto' and rleFilename.find('~bw') != -1:
-        platformType = 'aplite'
-
-    if platformType == 'aplite':
-        return make_rle_image_1bit(rleFilename, image)
+def make_rle_image(rleFilename, image, platforms = []):
+    isAplite = False
+    if 'aplite' in platforms and rleFilename.find('~bw') != -1:
+        isAplite = True
+    elif platforms == ['aplite']:
+        isAplite = True
+        
+    if isAplite:
+        make_rle_image_1bit(rleFilename, image)
     else:
-        return make_rle_image_basalt(rleFilename, image)
+        make_rle_image_basalt(rleFilename, image)
 
-def make_rle(filename, prefix = 'resources/', useRle = True, platformType = 'auto', modes = []):
+def makeTargetPlatformStr(self, targetPlatforms):
+    def enquote(str):
+        return '"%s"' % (str)
+
+    return ', '.join(map(enquote, targetPlatforms))
+
+def make_rle(filename, prefix = 'resources/', useRle = True, modes = [], platforms = [], name = 'unnamed'):
     if useRle:
         basename, ext = os.path.splitext(filename)
         for mode in modes:
@@ -526,29 +535,71 @@ def make_rle(filename, prefix = 'resources/', useRle = True, platformType = 'aut
             if os.path.exists(prefix + basename + mode + ext):
                 image = PIL.Image.open(prefix + basename + mode + ext)
                 rleFilename = basename + mode + '.rle'
-                make_rle_image(prefix + rleFilename, image, platformType = platformType)
+                make_rle_image(prefix + rleFilename, image, platforms = platforms)
 
         # Primary file.
         rleFilename = basename + '.rle'
         if os.path.exists(prefix + basename + ext):
             image = PIL.Image.open(prefix + filename)
-            make_rle_image(prefix + rleFilename, image, platformType = platformType)
-        return rleFilename, 'raw'
-    else:
-        ptype = 'png'
-        print filename
-        return filename, ptype
+            make_rle_image(prefix + rleFilename, image, platforms = platforms)
+        print rleFilename
 
-def make_rle_trans(filename, prefix = 'resources/', useRle = True, platformType = 'auto', modes = []):
+        resourceEntry = """
+{
+    "name": "%(name)s",
+    "file": "%(rleFilename)s",
+    "type": "raw",
+    "targetPlatforms" : [ %(targetPlatformStr)s ]
+},""" % { 'name' : name,
+          'rleFilename' : rleFilename,
+          'targetPlatforms' : makeTargetPlatformStr(platforms),
+          }
+        
+        return resourceEntry
+    
+    else:
+        print filename
+
+        resourceEntry = ''
+        if 'aplite' in platforms:
+            resourceEntry += """
+{
+    "name": "%(name)s",
+    "file": "%(filename)s",
+    "type": "bitmap",
+    "memoryFormat" : "1Bit",
+    "targetPlatforms" : [ "aplite" ]
+},""" % { 'name' : name,
+          'filename' : filename,
+          }
+
+        platforms = platforms[:]
+        platforms.remove('aplite')
+        if platforms:
+            resourceEntry += """
+    {
+        "name": "%(name)s",
+        "file": "%(filename)s",
+        "type": "bitmap",
+        "targetPlatforms" : [ %(targetPlatformStr)s ]
+    },""" % { 'name' : name,
+              'filename' : filename,
+              'memoryFormat' : memoryFormat,
+              'targetPlatforms' : makeTargetPlatformStr(platforms),
+              }
+
+        return resourceEntry
+
+def make_rle_trans(filename, prefix = 'resources/', useRle = True, modes = [], platforms = []):
     basename, ext = os.path.splitext(filename)
     for mode in modes:
         # Handle the specialized mode files.
         if os.path.exists(prefix + basename + mode + ext):
-            make_rle_trans_file(basename + mode + ext, prefix = prefix, useRle = useRle, platformType = platformType)
+            make_rle_trans_file(basename + mode + ext, prefix = prefix, useRle = useRle, platforms = platforms)
 
     # Primary file.
     if os.path.exists(prefix + basename + ext):
-        rleWhiteFilename, rleBlackFilename, ptype = make_rle_trans_file(filename, prefix = prefix, useRle = useRle, platformType = platformType)
+        rleWhiteFilename, rleBlackFilename, ptype = make_rle_trans_file(filename, prefix = prefix, useRle = useRle, platforms = platforms)
 
     if useRle:
         rleWhiteFilename = basename + '_white.rle'
@@ -560,24 +611,27 @@ def make_rle_trans(filename, prefix = 'resources/', useRle = True, platformType 
     return rleWhiteFilename, rleBlackFilename, ptype
         
 
-def make_rle_trans_file(filename, prefix = 'resources/', useRle = True, platformType = 'auto'):
-    if platformType == 'auto' and filename.find('~bw') != -1:
-        platformType = 'aplite'
-
+def make_rle_trans_file(filename, prefix = 'resources/', useRle = True, platforms = []):
+    isAplite = False
+    if 'aplite' in platforms and rleFilename.find('~bw') != -1:
+        isAplite = True
+    elif platforms == ['aplite']:
+        isAplite = True
+        
     basename = os.path.splitext(filename)[0]
     mode = ''
     if '~' in basename:
         basename, mode = basename.split('~', 1)
         mode = '~' + mode
 
-    if platformType != 'aplite':
+    if not isAplite:
         # In the basalt case, this is almost the same as make_rle(),
         # but we have also a meaningless "black" image.
         if useRle:
             image = PIL.Image.open(prefix + filename)
             rleWhiteFilename = basename + '_white' + mode + '.rle'
             rleBlackFilename = basename + '_black' + mode + '.rle'
-            make_rle_image(prefix + rleWhiteFilename, image, platformType = platformType)
+            make_rle_image(prefix + rleWhiteFilename, image, platforms = platforms)
             open(prefix + rleBlackFilename, 'wb')
             return rleWhiteFilename, rleBlackFilename, 'raw'
         else:
@@ -604,16 +658,16 @@ def make_rle_trans_file(filename, prefix = 'resources/', useRle = True, platform
     
     if useRle:
         rleWhiteFilename = basename + '_white' + mode + '.rle'
-        make_rle_image(prefix + rleWhiteFilename, white)
+        make_rle_image(prefix + rleWhiteFilename, white, platforms = platforms)
         rleBlackFilename = basename + '_black' + mode + '.rle'
-        make_rle_image(prefix + rleBlackFilename, black)
+        make_rle_image(prefix + rleBlackFilename, black, platforms = platforms)
         
         return rleWhiteFilename, rleBlackFilename, 'raw'
     else:
         rleWhiteFilename = basename + '_white' + mode + '.png'
-        white.save(prefix + rleWhiteFilename)
+        white.save(prefix + rleWhiteFilename, platforms = platforms)
         rleBlackFilename = basename + '_black' + mode + '.png'
-        black.save(prefix + rleBlackFilename)
+        black.save(prefix + rleBlackFilename, platforms = platforms)
         print filename
         return rleWhiteFilename, rleBlackFilename, 'pbi'
 
@@ -755,24 +809,27 @@ if __name__ == '__main__':
         usage(1, msg)
 
     makeTrans = False
-    platformType = 'auto'
+    platforms = []
     doUnpack = False
     for opt, arg in opts:
         if opt == '-t':
             makeTrans = True
         elif opt == '-p':
-            platformType = arg
+            platforms.append(arg)
         elif opt == '-u':
             doUnpack = True
         elif opt == '-h':
             usage(0)
+
+    if not platforms:
+        platforms = ['aplite', 'basalt', 'chalk']
 
     print args
     for filename in args:
         if doUnpack:
             unpack_rle(filename, prefix = '')
         elif makeTrans:
-            make_rle_trans(filename, prefix = '')
+            make_rle_trans(filename, prefix = '', platforms = platforms)
         else:
-            make_rle(filename, prefix = '', platformType = platformType)
+            make_rle(filename, prefix = '', platforms = platforms)
             
