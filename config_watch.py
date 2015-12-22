@@ -531,7 +531,7 @@ def getResourceCacheSize(hand):
 def getMaskResourceCacheSize(hand):
     return resourceCacheSize.get(hand, [0, 0])[1]
 
-def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale):
+def makeBitmapHands(generatedTable, generatedDefs, useRle, storageOptimization, hand, sourceBasename, colorMode, asymmetric, pivot, scale):
     if isinstance(scale, type(())):
         scale_rect, scale_round = scale
     else:
@@ -542,22 +542,22 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceBasename,
 
     if 'aplite' in targetPlatforms:
         print >> generatedTable, "#ifdef PBL_PLATFORM_APLITE"
-        resourceStr += makeBitmapHandsAplite(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_rect)
+        resourceStr += makeBitmapHandsAplite(generatedTable, useRle, storageOptimization, hand, sourceBasename, colorMode, asymmetric, pivot, scale_rect)
         print >> generatedTable, "#endif  // PBL_PLATFORM_APLITE"
     
     if 'basalt' in targetPlatforms:
         print >> generatedTable, "#ifdef PBL_PLATFORM_BASALT"
-        resourceStr += makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_rect, '~color~rect', ['basalt'])
+        resourceStr += makeBitmapHandsColor(generatedTable, useRle, storageOptimization, hand, sourceBasename, colorMode, asymmetric, pivot, scale_rect, '~color~rect', ['basalt'])
         print >> generatedTable, "#endif  // PBL_PLATFORM_BASALT"
 
     if 'chalk' in targetPlatforms:
         print >> generatedTable, "#ifdef PBL_PLATFORM_CHALK"
-        resourceStr += makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_round, '~color~round', ['chalk'])
+        resourceStr += makeBitmapHandsColor(generatedTable, useRle, storageOptimization, hand, sourceBasename, colorMode, asymmetric, pivot, scale_round, '~color~round', ['chalk'])
         print >> generatedTable, "#endif  // PBL_PLATFORM_CHALK"
 
     return resourceStr
 
-def makeBitmapHandsAplite(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale):
+def makeBitmapHandsAplite(generatedTable, useRle, storageOptimization, hand, sourceBasename, colorMode, asymmetric, pivot, scale):
     resourceStr = ''
     maskResourceStr = ''
 
@@ -734,11 +734,11 @@ def makeBitmapHandsAplite(generatedTable, useRle, hand, sourceBasename, colorMod
                 # Save the aplite mask.
                 pm1.save('%s/%s~bw.png' % (resourcesDir, targetMaskBasename))
 
-                maskResourceStr += make_rle(targetMaskBasename + '.png', useRle = useRle, modes = ['~bw'], platforms = ['aplite'], name = symbolMaskName)
+                maskResourceStr += make_rle(targetMaskBasename + '.png', useRle = useRle, storageOptimization = storageOptimization, modes = ['~bw'], platforms = ['aplite'], name = symbolMaskName)
 
             targetBasename = 'build/flat_%s_%s_%s' % (handStyle, hand, i)
             p1.save('%s/%s~bw.png' % (resourcesDir, targetBasename))
-            resourceStr += make_rle(targetBasename + '.png', useRle = useRle, modes = ['~bw'], platforms = ['aplite'], name = symbolName)
+            resourceStr += make_rle(targetBasename + '.png', useRle = useRle, storageOptimization = storageOptimization, modes = ['~bw'], platforms = ['aplite'], name = symbolName)
 
             line = handLookupEntry % {
                 'symbolName' : symbolName,
@@ -775,7 +775,7 @@ def makeBitmapHandsAplite(generatedTable, useRle, hand, sourceBasename, colorMod
 
     return resourceStr + maskResourceStr
 
-def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale, mode, platforms):
+def makeBitmapHandsColor(generatedTable, useRle, storageOptimization, hand, sourceBasename, colorMode, asymmetric, pivot, scale, mode, platforms):
     resourceStr = ''
     maskResourceStr = ''
 
@@ -981,11 +981,11 @@ def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode
                     # trivial image.
                     trivialImage.save('%s/%s%s.png' % (resourcesDir, targetMaskBasename, mode))
 
-                maskResourceStr += make_rle(targetMaskBasename + '.png', useRle = useRle, modes = [mode], platforms = platforms, name = symbolMaskName)
+                maskResourceStr += make_rle(targetMaskBasename + '.png', useRle = useRle, storageOptimization = storageOptimization, modes = [mode], platforms = platforms, name = symbolMaskName)
 
             targetBasename = 'build/flat_%s_%s_%s' % (handStyle, hand, i)
             p2.save('%s/%s%s.png' % (resourcesDir, targetBasename, mode))
-            resourceStr += make_rle(targetBasename + '.png', useRle = useRle, modes = [mode], platforms = platforms, name = symbolName)
+            resourceStr += make_rle(targetBasename + '.png', useRle = useRle, storageOptimization = storageOptimization, modes = [mode], platforms = platforms, name = symbolName)
 
             line = handLookupEntry % {
                 'symbolName' : symbolName,
@@ -1045,9 +1045,11 @@ def makeHands(generatedTable, generatedDefs):
 
     for hand, bitmapParams, vectorParams in hands[handStyle]:
         useRle = supportRle
+        storageOptimization = None
         if hand == 'second':
             global enableSecondHand
             enableSecondHand = True
+            storageOptimization = 'memory'  # really 'speed'
             #useRle = False
         elif hand == 'chrono_minute':
             global enableChronoMinuteHand
@@ -1055,6 +1057,7 @@ def makeHands(generatedTable, generatedDefs):
         elif hand == 'chrono_second':
             global enableChronoSecondHand
             enableChronoSecondHand = True
+            storageOptimization = 'memory'  # really 'speed'
             #useRle = False
         elif hand == 'chrono_tenth':
             global enableChronoTenthHand
@@ -1068,7 +1071,7 @@ def makeHands(generatedTable, generatedDefs):
         vectorTable = 'NULL'
 
         if bitmapParams:
-            resourceStr += makeBitmapHands(generatedTable, generatedDefs, useRle, hand, *bitmapParams)
+            resourceStr += makeBitmapHands(generatedTable, generatedDefs, useRle, storageOptimization, hand, *bitmapParams)
             colorMode = bitmapParams[1]
             paintChannel, useTransparency, dither = parseColorMode(colorMode)
             resourceId = 'RESOURCE_ID_%s_0' % (hand.upper())

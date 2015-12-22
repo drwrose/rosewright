@@ -533,6 +533,7 @@ bitmapResourceEntry = """
         "file": "%(filename)s",
         "type": "bitmap",
         "memoryFormat" : "%(memoryFormat)s",
+        "storageOptimization" : "%(storageOptimization)s",
         "targetPlatforms" : [ %(targetPlatforms)s ]
     },"""
 
@@ -544,7 +545,7 @@ rawResourceEntry = """
     "targetPlatforms" : [ %(targetPlatforms)s ]
 },"""
 
-def make_rle(filename, prefix = 'resources/', useRle = True, modes = [], platforms = [], name = 'unnamed'):
+def make_rle(filename, prefix = 'resources/', useRle = True, storageOptimization = None, modes = [], platforms = [], name = 'unnamed'):
     if useRle:
         basename, ext = os.path.splitext(filename)
         for mode in modes:
@@ -580,6 +581,7 @@ def make_rle(filename, prefix = 'resources/', useRle = True, modes = [], platfor
                 'name' : name,
                 'filename' : filename,
                 'memoryFormat' : '1Bit',
+                'storageOptimization' : 'memory',
                 'targetPlatforms' : makeTargetPlatformStr(['aplite']),
                 }
 
@@ -591,12 +593,13 @@ def make_rle(filename, prefix = 'resources/', useRle = True, modes = [], platfor
                 'name' : name,
                 'filename' : filename,
                 'memoryFormat' : 'SmallestPalette',
+                'storageOptimization' : storageOptimization or 'storage',
                 'targetPlatforms' : makeTargetPlatformStr(platforms),
                 }
             
         return resourceEntry
 
-def make_rle_trans(filename, prefix = 'resources/', useRle = True, modes = [], platforms = [], name = 'unnamed'):
+def make_rle_trans(filename, prefix = 'resources/', useRle = True, storageOptimization = None, modes = [], platforms = [], name = 'unnamed'):
     basename, ext = os.path.splitext(filename)
     for mode in modes:
         # Handle the specialized mode files.
@@ -631,12 +634,14 @@ def make_rle_trans(filename, prefix = 'resources/', useRle = True, modes = [], p
                 'name' : name + '_WHITE',
                 'filename' : basename + '_white.png',
                 'memoryFormat' : '1Bit',
+                'storageOptimization' : 'memory',
                 'targetPlatforms' : makeTargetPlatformStr(['aplite']),
                 }
             resourceEntry += bitmapResourceEntry % {
                 'name' : name + '_BLACK',
                 'filename' : basename + '_black.png',
                 'memoryFormat' : '1Bit',
+                'storageOptimization' : 'memory',
                 'targetPlatforms' : makeTargetPlatformStr(['aplite']),
                 }
 
@@ -648,6 +653,7 @@ def make_rle_trans(filename, prefix = 'resources/', useRle = True, modes = [], p
                 'name' : name + '_WHITE',
                 'filename' : basename + '_white.png',
                 'memoryFormat' : 'SmallestPalette',
+                'storageOptimization' : storageOptimization or 'storage',
                 'targetPlatforms' : makeTargetPlatformStr(platforms),
                 }
             
