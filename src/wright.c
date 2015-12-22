@@ -21,6 +21,8 @@ bool date_window_debug = false;
 
 BitmapWithData face_bitmap;
 BitmapWithData pebble_label;
+BitmapWithData top_subdial_frame_mask;
+BitmapWithData top_subdial_mask;
 BitmapWithData top_subdial_bitmap;
 BitmapWithData moon_wheel_bitmap;
 
@@ -38,7 +40,8 @@ bool hide_clock_face = false;
 bool redraw_clock_face = false;
 
 //#define MIN_BYTES_FREE 3072
-#define MIN_BYTES_FREE 1024
+//#define MIN_BYTES_FREE 1024
+#define MIN_BYTES_FREE 512
 
 #define DATE_WINDOW_BUFFER_SIZE 16
 
@@ -895,25 +898,31 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
   
   // First draw the subdial details (including the background).
 #ifdef PBL_PLATFORM_APLITE
-  BitmapWithData top_subdial_frame_mask;
-  top_subdial_frame_mask = rle_bwd_create(RESOURCE_ID_TOP_SUBDIAL_FRAME_MASK);
   if (top_subdial_frame_mask.bitmap == NULL) {
-    trigger_memory_panic(__LINE__);
-    return;
+    top_subdial_frame_mask = rle_bwd_create(RESOURCE_ID_TOP_SUBDIAL_FRAME_MASK);
+    if (top_subdial_frame_mask.bitmap == NULL) {
+      trigger_memory_panic(__LINE__);
+      return;
+    }
   }
   graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_bg);
   graphics_draw_bitmap_in_rect(ctx, top_subdial_frame_mask.bitmap, destination);
-  bwd_destroy(&top_subdial_frame_mask);
+  if (!keep_assets) {
+    bwd_destroy(&top_subdial_frame_mask);
+  }
 
-  BitmapWithData top_subdial_mask;
-  top_subdial_mask = rle_bwd_create(RESOURCE_ID_TOP_SUBDIAL_MASK);
   if (top_subdial_mask.bitmap == NULL) {
-    trigger_memory_panic(__LINE__);
-    return;
+    top_subdial_mask = rle_bwd_create(RESOURCE_ID_TOP_SUBDIAL_MASK);
+    if (top_subdial_mask.bitmap == NULL) {
+      trigger_memory_panic(__LINE__);
+      return;
+    }
   }
   graphics_context_set_compositing_mode(ctx, draw_mode_table[moon_draw_mode].paint_bg);
   graphics_draw_bitmap_in_rect(ctx, top_subdial_mask.bitmap, destination);
-  bwd_destroy(&top_subdial_mask);
+  if (!keep_assets) {
+    bwd_destroy(&top_subdial_mask);
+  }
 #endif  // PBL_PLATFORM_APLITE
   
   if (top_subdial_bitmap.bitmap == NULL) {
