@@ -14,6 +14,6 @@ python config_watch.py -sd -x || exit
 pebble build || exit
 mv build/rosewright.pbw build/rosewright_d.pbw
 
-python config_watch.py -se || exit
+python config_watch.py -se -x || exit
 pebble build || exit
 mv build/rosewright.pbw build/rosewright_e.pbw

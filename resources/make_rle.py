@@ -662,7 +662,7 @@ def make_rle_trans(filename, prefix = 'resources/', useRle = True, storageOptimi
 
 def make_rle_trans_file(filename, prefix = 'resources/', useRle = True, platforms = []):
     isAplite = False
-    if 'aplite' in platforms and rleFilename.find('~bw') != -1:
+    if 'aplite' in platforms and filename.find('~bw') != -1:
         isAplite = True
     elif platforms == ['aplite']:
         isAplite = True
