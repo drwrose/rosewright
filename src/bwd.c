@@ -717,7 +717,11 @@ rle_bwd_create_rb(RBuffer *rb) {
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "reading bitmap %d x %d, n = %d, format = %d", width, height, n, format);
   
+#ifdef PBL_SDK_2
   GBitmap *image = __gbitmap_create_blank(GSize(width, height));
+#else
+  GBitmap *image = gbitmap_create_blank(GSize(width, height), GBitmapFormat1Bit);
+#endif
   if (image == NULL) {
     return bwd_create(NULL, NULL);
   }
