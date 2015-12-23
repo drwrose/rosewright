@@ -165,7 +165,7 @@
       "type": "font",
       "characterRegex": "[\u0390\u0391\u0394\u0399\u039a\u039c\u039d\u039f\u03a0\u03a3\u03a4\u03a6\u03ac\u03ad\u03af\u03b1-\u03b3\u03b5\u03ba-\u03bd\u03bf-\u03c1\u03c4\u03c5]",
       "name": "DAY_FONT_EL_14",
-      "file": "DejaVuSansCondensed-Bold.ttf",
+      "file": "DejaVuSansCondensed-Bold_filtered.ttf",
       "targetPlatforms" : [
         "aplite", "basalt"
       ]
@@ -174,7 +174,7 @@
       "type": "font",
       "characterRegex": "[\u0390\u0391\u0394\u0399\u039a\u039c\u039d\u039f\u03a0\u03a3\u03a4\u03a6\u03ac\u03ad\u03af\u03b1-\u03b3\u03b5\u03ba-\u03bd\u03bf-\u03c1\u03c4\u03c5]",
       "name": "DAY_FONT_EL_16",
-      "file": "DejaVuSansCondensed-Bold.ttf",
+      "file": "DejaVuSansCondensed-Bold_filtered.ttf",
       "targetPlatforms" : [
         "chalk"
       ]
@@ -183,7 +183,7 @@
       "type": "font",
       "characterRegex": "[\u0410\u0412\u0414\u0418\u041c-\u041f\u0421\u0424\u0427\u042e-\u0435\u0438-\u0442\u044e\u044f]",
       "name": "DAY_FONT_RU_14",
-      "file": "DejaVuSansCondensed-Bold.ttf",
+      "file": "DejaVuSansCondensed-Bold_filtered.ttf",
       "targetPlatforms" : [
         "aplite", "basalt"
       ]
@@ -192,7 +192,7 @@
       "type": "font",
       "characterRegex": "[\u0410\u0412\u0414\u0418\u041c-\u041f\u0421\u0424\u0427\u042e-\u0435\u0438-\u0442\u044e\u044f]",
       "name": "DAY_FONT_RU_16",
-      "file": "DejaVuSansCondensed-Bold.ttf",
+      "file": "DejaVuSansCondensed-Bold_filtered.ttf",
       "targetPlatforms" : [
         "chalk"
       ]
@@ -201,7 +201,7 @@
       "type": "font",
       "characterRegex": "[\u0531\u0534\u0535\u053f\u0540\u0544\u0546-\u0549\u054d\u0553\u0555\u0561-\u0563\u0565\u0569\u056b\u056c\u056f\u0570\u0574-\u0576\u0578\u057a-\u0580\u0582\u0584]",
       "name": "DAY_FONT_HY_14",
-      "file": "DejaVuSansCondensed-Bold.ttf",
+      "file": "DejaVuSansCondensed-Bold_filtered.ttf",
       "targetPlatforms" : [
         "aplite", "basalt"
       ]
@@ -210,7 +210,7 @@
       "type": "font",
       "characterRegex": "[\u0531\u0534\u0535\u053f\u0540\u0544\u0546-\u0549\u054d\u0553\u0555\u0561-\u0563\u0565\u0569\u056b\u056c\u056f\u0570\u0574-\u0576\u0578\u057a-\u0580\u0582\u0584]",
       "name": "DAY_FONT_HY_16",
-      "file": "DejaVuSansCondensed-Bold.ttf",
+      "file": "DejaVuSansCondensed-Bold_filtered.ttf",
       "targetPlatforms" : [
         "chalk"
       ]
@@ -219,7 +219,7 @@
       "type": "font",
       "characterRegex": "[\u0061\u006d\u0070\u05d0-\u05d5\u05d8\u05d9\u05dc\u05de\u05e0\u05e1\u05e4-\u05e9\u05f3]",
       "name": "DAY_FONT_RTL_HE_14",
-      "file": "DejaVuSansCondensed-Bold.ttf",
+      "file": "DejaVuSansCondensed-Bold_filtered.ttf",
       "targetPlatforms" : [
         "aplite", "basalt"
       ]
@@ -228,7 +228,7 @@
       "type": "font",
       "characterRegex": "[\u0061\u006d\u0070\u05d0-\u05d5\u05d8\u05d9\u05dc\u05de\u05e0\u05e1\u05e4-\u05e9\u05f3]",
       "name": "DAY_FONT_RTL_HE_16",
-      "file": "DejaVuSansCondensed-Bold.ttf",
+      "file": "DejaVuSansCondensed-Bold_filtered.ttf",
       "targetPlatforms" : [
         "chalk"
       ]
@@ -237,7 +237,7 @@
       "type": "font",
       "characterRegex": "[\u0622\u0623\u0627\u0628\u062b-\u062f\u0631\u0633-\u0635\u063a\u0641\u0643-\u0646\u0648\u064a\u067e\u0686\u0698\u06cc]",
       "name": "DAY_FONT_RTL_AR_14",
-      "file": "DejaVuSansCondensed-Bold.ttf",
+      "file": "DejaVuSansCondensed-Bold_filtered.ttf",
       "targetPlatforms" : [
         "aplite", "basalt"
       ]
@@ -246,7 +246,7 @@
       "type": "font",
       "characterRegex": "[\u0622\u0623\u0627\u0628\u062b-\u062f\u0631\u0633-\u0635\u063a\u0641\u0643-\u0646\u0648\u064a\u067e\u0686\u0698\u06cc]",
       "name": "DAY_FONT_RTL_AR_16",
-      "file": "DejaVuSansCondensed-Bold.ttf",
+      "file": "DejaVuSansCondensed-Bold_filtered.ttf",
       "targetPlatforms" : [
         "chalk"
       ]
@@ -255,7 +255,7 @@
       "type": "font",
       "characterRegex": "[\u0030-\u0039\u4e00\u4e09-\u4e0b\u4e8c\u4e94\u516d\u5348\u5468\u56db\u65e5\u6708]",
       "name": "DAY_FONT_ZH_16",
-      "file": "wqy-microhei.ttc",
+      "file": "wqy-microhei_filtered.ttf",
       "targetPlatforms" : [
         "aplite", "basalt"
       ]
@@ -264,7 +264,7 @@
       "type": "font",
       "characterRegex": "[\u0030-\u0039\u4e00\u4e09-\u4e0b\u4e8c\u4e94\u516d\u5348\u5468\u56db\u65e5\u6708]",
       "name": "DAY_FONT_ZH_18",
-      "file": "wqy-microhei.ttc",
+      "file": "wqy-microhei_filtered.ttf",
       "targetPlatforms" : [
         "chalk"
       ]
@@ -273,7 +273,7 @@
       "type": "font",
       "characterRegex": "[\u0030-\u0039\u524d\u5348\u571f\u5f8c\u65e5\u6708\u6728\u6c34\u706b\u91d1]",
       "name": "DAY_FONT_JA_16",
-      "file": "TakaoPGothic.ttf",
+      "file": "TakaoPGothic_filtered.ttf",
       "targetPlatforms" : [
         "aplite", "basalt"
       ]
@@ -282,7 +282,7 @@
       "type": "font",
       "characterRegex": "[\u0030-\u0039\u524d\u5348\u571f\u5f8c\u65e5\u6708\u6728\u6c34\u706b\u91d1]",
       "name": "DAY_FONT_JA_18",
-      "file": "TakaoPGothic.ttf",
+      "file": "TakaoPGothic_filtered.ttf",
       "targetPlatforms" : [
         "chalk"
       ]
