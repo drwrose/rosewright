@@ -1068,7 +1068,7 @@ void draw_clock_face(Layer *me, GContext *ctx) {
   }
   {
     const struct IndicatorTable *window = &bluetooth_table[indicator_face_index];
-    draw_bluetooth_indicator(ctx, window->x, window->y, window->invert);
+    draw_bluetooth_indicator(ctx, window->x, window->y);
   }
 }
 

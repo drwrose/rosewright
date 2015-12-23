@@ -39,50 +39,47 @@
       "menuIcon": true,
       "name": "ROSE_ICON",
       "file": "rose_icon.png",
-      "type": "png"
+      "type": "bitmap"
     },
     {
       "name": "BATTERY_GAUGE_EMPTY",
       "file": "battery_gauge_empty.png",
-      "type": "pbi"
+      "type": "bitmap",
+      "memoryFormat": "1Bit"
     },
     {
       "name": "BATTERY_GAUGE_CHARGED",
       "file": "battery_gauge_charged.png",
-      "type": "pbi"
+      "type": "bitmap",
+      "memoryFormat": "1Bit"
     },
     {
       "name": "BATTERY_GAUGE_MASK",
       "file": "battery_gauge_mask.png",
-      "type": "pbi"
+      "type": "bitmap",
+      "memoryFormat": "1Bit"
     },
     {
       "name": "CHARGING",
       "file": "charging.png",
-      "type": "pbi"
+      "type": "bitmap",
+      "memoryFormat": "1Bit"
     },
     {
       "name": "CHARGING_MASK",
       "file": "charging_mask.png",
-      "type": "pbi"
+      "type": "bitmap",
+      "memoryFormat": "1Bit"
     },
     {
       "name": "BLUETOOTH_DISCONNECTED",
       "file": "bluetooth_disconnected.png",
-      "type": "png"
+      "type": "bitmap"
     },
     {
       "name": "BLUETOOTH_CONNECTED",
       "file": "bluetooth_connected.png",
-      "type": "png"
-    },
-    {
-      "name": "BLUETOOTH_MASK",
-      "file": "bluetooth_mask.png",
-      "type": "png",
-      "targetPlatforms": [
-        "aplite"
-      ]
+      "type": "bitmap"
     },
 %(langData)s
 %(generatedMedia)s
