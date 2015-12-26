@@ -1159,6 +1159,15 @@ void draw_phase_2_hands(GContext *ctx) {
 #endif  // MAKE_CHRONOGRAPH
 } 
 
+// This function should be called at the end of every callback
+// function (before returning back to the system) to ensure we leave a
+// minimum buffer available for system activity.
+void check_memory_usage() {
+  if (heap_bytes_free() < MIN_BYTES_FREE) {
+    trigger_memory_panic(__LINE__);
+  }
+}
+
 void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
   do {
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_face_layer, memory_panic_count = %d, heap_bytes_free = %d", memory_panic_count, heap_bytes_free());
@@ -1263,6 +1272,7 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
     if (!memory_panic_flag) {
       // If we successfully drew the clock face without memory
       // panicking, return.
+      check_memory_usage();
       return;
     }
 
@@ -1672,11 +1682,6 @@ void reset_sweep() {
 // The callback on the per-second (or per-minute) system timer that
 // handles most mundane tasks.
 void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
-  // Insist we always have a minimum buffer available for system activity.
-  if (heap_bytes_free() < MIN_BYTES_FREE) {
-    trigger_memory_panic(__LINE__);
-  }
-
   // Now respond appropriately if memory is tight by reducing our
   // memory requirements.
   if (memory_panic_flag) {
@@ -1688,10 +1693,13 @@ void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 #if ENABLE_SWEEP_SECONDS
   reset_sweep();
 #endif   //ENABLE_SWEEP_SECONDS
+
+  check_memory_usage();
 }
 
 void window_load_handler(struct Window *window) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "main window loads");
+  check_memory_usage();
 }
 
 void window_appear_handler(struct Window *window) {
@@ -1702,14 +1710,17 @@ void window_appear_handler(struct Window *window) {
 #elif defined(MAKE_CHRONOGRAPH)
   chrono_set_click_config(window);
 #endif  // MAKE_CHRONOGRAPH
+  check_memory_usage();
 }
 
 void window_disappear_handler(struct Window *window) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "main window disappears");
+  check_memory_usage();
 }
 
 void window_unload_handler(struct Window *window) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "main window unloads");
+  check_memory_usage();
 }
 
 
@@ -2014,6 +2025,7 @@ void handle_init() {
   compute_hands(startup_time, &current_placement);
 
   apply_config();
+  check_memory_usage();
 }
 
 void trigger_memory_panic(int line_number) {
