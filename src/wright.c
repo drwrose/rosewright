@@ -1166,9 +1166,16 @@ void check_memory_usage() {
   if (heap_bytes_free() < MIN_BYTES_FREE) {
     trigger_memory_panic(__LINE__);
   }
+
+  if (memory_panic_flag) {
+    reset_memory_panic();
+  }
 }
 
 void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
+  // Make sure we have reset our memory usage before we start to draw.
+  check_memory_usage();
+
   do {
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_face_layer, memory_panic_count = %d, heap_bytes_free = %d", memory_panic_count, heap_bytes_free());
 
@@ -1682,12 +1689,6 @@ void reset_sweep() {
 // The callback on the per-second (or per-minute) system timer that
 // handles most mundane tasks.
 void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
-  // Now respond appropriately if memory is tight by reducing our
-  // memory requirements.
-  if (memory_panic_flag) {
-    reset_memory_panic();
-  }
-
   update_hands(tick_time);
 
 #if ENABLE_SWEEP_SECONDS
