@@ -1237,9 +1237,7 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
 	    // clock_face around together, do so.
 	    clock_face = bwd_copy_bitmap(fb);
 	    if (clock_face.bitmap == NULL) {
-	      // Oops, we were wrong about this.  No problem, but next
-	      // time we'll let it go.
-	      keep_face_asset = false;
+	      trigger_memory_panic(__LINE__);
 	    }
 	  }
 	  
