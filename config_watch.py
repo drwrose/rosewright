@@ -455,7 +455,7 @@ def makeFaces(generatedTable, generatedDefs):
     for i in range(len(faceFilenames)):
         print >> generatedTable, "  { RESOURCE_ID_CLOCK_FACE_%s }," % (i)
 
-        resourceStr += make_rle('clock_faces/' + faceFilenames[i], useRle = supportRle, modes = targetModes, platforms = targetPlatforms, name = 'CLOCK_FACE_%s' % (i))
+        resourceStr += make_rle('clock_faces/' + faceFilenames[i], useRle = supportRle, modes = targetModes, platforms = targetPlatforms, name = 'CLOCK_FACE_%s' % (i), storageOptimization = 'memory')
     print >> generatedTable, "};\n"
 
     faceColors = fd.get('colors')
