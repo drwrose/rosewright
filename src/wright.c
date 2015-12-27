@@ -32,7 +32,8 @@ GFont date_lang_font = NULL;
 GFont date_debug_font = NULL;
 
 bool keep_assets = true;
-bool keep_face_asset = true;
+//bool keep_face_asset = true;
+#define keep_face_asset 0  // hack
 bool save_framebuffer = true;
 
 bool hide_date_windows = false;
@@ -1793,7 +1794,8 @@ void reset_memory_panic_count() {
   // Confidently start out with the expectation that we keep keep all
   // of this cached in RAM, until proven otherwise.
   keep_assets = true;
-  keep_face_asset = true;
+  // hack
+  //keep_face_asset = true;  
 
   hide_date_windows = false;
   hide_clock_face = false;
@@ -2057,7 +2059,8 @@ void reset_memory_panic() {
 
   // Start resetting some options if the memory panic count grows too high.
   if (memory_panic_count > 0) {
-    keep_face_asset = false;
+    //hack
+    //keep_face_asset = false;
   }
   if (memory_panic_count > 1) {
     keep_assets = false;
