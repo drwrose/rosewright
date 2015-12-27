@@ -44,8 +44,8 @@ bool redraw_clock_face = false;
 //#define SEPARATE_PHASE_HANDS (config.second_hand)
 
 //#define MIN_BYTES_FREE 3072
-//#define MIN_BYTES_FREE 1024
-#define MIN_BYTES_FREE 512
+#define MIN_BYTES_FREE 1024
+//#define MIN_BYTES_FREE 512
 
 #define DATE_WINDOW_BUFFER_SIZE 16
 

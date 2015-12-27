@@ -1,5 +1,5 @@
 # The current version of the app itself
-version = '4.8'
+version = '4.9'
 
 # The version number of the config pages loaded.  Usually tracks
 # version, above, but may lag by a few versions until it needs to be
