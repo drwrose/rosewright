@@ -39,6 +39,10 @@ bool hide_date_windows = false;
 bool hide_clock_face = false;
 bool redraw_clock_face = false;
 
+// hack
+#define SEPARATE_PHASE_HANDS 0
+//#define SEPARATE_PHASE_HANDS (config.second_hand)
+
 //#define MIN_BYTES_FREE 3072
 //#define MIN_BYTES_FREE 1024
 #define MIN_BYTES_FREE 512
@@ -1195,8 +1199,8 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
 	
 	// Draw the clock face into the frame buffer.
 	draw_clock_face(me, ctx);
-	
-	if (config.second_hand) {
+
+	if (SEPARATE_PHASE_HANDS) {
 	  // If the second hand is enabled, then we also draw the
 	  // phase_1 hands at this time, so they get cached in the clock
 	  // face buffer.
@@ -1262,7 +1266,7 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
       }
     }
     
-    if (!config.second_hand || hide_clock_face) {
+    if (!SEPARATE_PHASE_HANDS || hide_clock_face) {
       // If the second hand is *not* enabled, then we draw the phase_1
       // hands at this time, so we don't have to invalidate the buffer
       // each minute.
@@ -1585,9 +1589,9 @@ void update_hands(struct tm *time) {
     current_placement.hour_hand_index = new_placement.hour_hand_index;
     layer_mark_dirty(clock_face_layer);
 
-    if (config.second_hand) {
-      // If the second hand is enabled, the hour and minute hands are
-      // baked into the clock face cache, which must be redrawn now.
+    if (SEPARATE_PHASE_HANDS) {
+      // If the hour and minute hands are baked into the clock face
+      // cache, it must be redrawn now.
       invalidate_clock_face();
     }
   }
@@ -1596,9 +1600,9 @@ void update_hands(struct tm *time) {
     current_placement.minute_hand_index = new_placement.minute_hand_index;
     layer_mark_dirty(clock_face_layer);
 
-    if (config.second_hand) {
-      // If the second hand is enabled, the hour and minute hands are
-      // baked into the clock face cache, which must be redrawn now.
+    if (SEPARATE_PHASE_HANDS) {
+      // If the hour and minute hands are baked into the clock face
+      // cache, it must be redrawn now.
       invalidate_clock_face();
     }
   }
