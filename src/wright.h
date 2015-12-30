@@ -56,9 +56,9 @@ struct __attribute__((__packed__)) HandPlacement {
   unsigned char lunar_index;
 #endif  // TOP_SUBDIAL
 
-  // Not really a hand placement, but this is used to keep track of
-  // whether we have buzzed for the top of the hour or not.
-  bool hour_buzzer;
+  // Not really a hand placement, but this is the hour at which we
+  // last rang (or should next ring) the buzzer.
+  unsigned char buzzed_hour;
 };
 
 // Keeps track of the current bitmap and/or path for a particular

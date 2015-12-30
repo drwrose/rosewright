@@ -388,7 +388,7 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
     }
   }
 
-  placement->hour_buzzer = (ms / (SECONDS_PER_HOUR * 1000)) % 24;
+  placement->buzzed_hour = (ms / (SECONDS_PER_HOUR * 1000)) % 24;
 
 #ifdef MAKE_CHRONOGRAPH
   compute_chrono_hands(ms_utc, placement);
@@ -1613,8 +1613,8 @@ void update_hands(struct tm *time) {
     layer_mark_dirty(clock_face_layer);
   }
 
-  if (new_placement.hour_buzzer != current_placement.hour_buzzer) {
-    current_placement.hour_buzzer = new_placement.hour_buzzer;
+  if (new_placement.buzzed_hour != current_placement.buzzed_hour) {
+    current_placement.buzzed_hour = new_placement.buzzed_hour;
     if (config.hour_buzzer) {
       // The hour has changed; ring the buzzer if it's enabled.
       vibes_short_pulse();
