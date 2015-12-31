@@ -169,7 +169,7 @@ DrawModeTable draw_mode_table[2] = {
 
 #endif  // PBL_PLATFORM_APLITE
 
-static const uint32_t tap_segments[] = { 50, 150, 75 };
+static const uint32_t tap_segments[] = { 50, 200, 75 };
 VibePattern tap = {
   tap_segments,
   3,
