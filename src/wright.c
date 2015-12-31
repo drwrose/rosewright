@@ -168,6 +168,12 @@ DrawModeTable draw_mode_table[2] = {
 
 #endif  // PBL_PLATFORM_APLITE
 
+static const uint32_t tap_segments[] = { 75, 100, 75 };
+VibePattern tap = {
+  tap_segments,
+  3,
+};
+
 void create_temporal_objects();
 void destroy_temporal_objects();
 void recreate_all_objects();
@@ -1617,7 +1623,7 @@ void update_hands(struct tm *time) {
     current_placement.buzzed_hour = new_placement.buzzed_hour;
     if (config.hour_buzzer) {
       // The hour has changed; ring the buzzer if it's enabled.
-      vibes_short_pulse();
+      vibes_enqueue_custom_pattern(tap);
     }
   }
 
