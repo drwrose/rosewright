@@ -56,9 +56,9 @@ int sweep_chrono_seconds_ms = 60 * 1000 / NUM_STEPS_CHRONO_SECOND;
 ChronoData chrono_data = { false, false, 0, 0, { 0, 0, 0, 0 } };
 ChronoData saved_chrono_data;
 
-static const uint32_t tap_segments[] = { 50 };
-VibePattern tap = {
-  tap_segments,
+static const uint32_t chrono_tap_segments[] = { 50 };
+static VibePattern chrono_tap = {
+  chrono_tap_segments,
   1,
 };
 
@@ -290,7 +290,7 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, void *context) {
     chrono_data.hold_ms = ms - chrono_data.start_ms;
     chrono_data.running = false;
     chrono_data.lap_paused = false;
-    vibes_enqueue_custom_pattern(tap);
+    vibes_enqueue_custom_pattern(chrono_tap);
     update_hands(NULL);
     reset_tick_timer();
 
@@ -313,7 +313,7 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, void *context) {
       }
     }
 #endif  // ENABLE_SWEEP_SECONDS
-    vibes_enqueue_custom_pattern(tap);
+    vibes_enqueue_custom_pattern(chrono_tap);
     update_hands(NULL);
     reset_tick_timer();
 
@@ -333,7 +333,7 @@ void chrono_lap_button() {
     // If we were already paused, this resumes the motion, jumping
     // ahead to the currently elapsed time.
     chrono_data.lap_paused = false;
-    vibes_enqueue_custom_pattern(tap);
+    vibes_enqueue_custom_pattern(chrono_tap);
     update_hands(NULL);
   } else {
     // If we were not already paused, this pauses the hands here (but
@@ -346,7 +346,7 @@ void chrono_lap_button() {
       chrono_data.hold_ms = lap_ms;
       chrono_data.lap_paused = true;
     }
-    vibes_enqueue_custom_pattern(tap);
+    vibes_enqueue_custom_pattern(chrono_tap);
     update_hands(NULL);
   }
 }
