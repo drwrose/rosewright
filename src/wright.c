@@ -44,9 +44,10 @@ bool redraw_clock_face = false;
 #define SEPARATE_PHASE_HANDS 0
 //#define SEPARATE_PHASE_HANDS (config.second_hand)
 
-//#define MIN_BYTES_FREE 3072
-#define MIN_BYTES_FREE 1024
-//#define MIN_BYTES_FREE 512
+//#define MIN_BYTES_FREE 3072 // seems enough
+//#define MIN_BYTES_FREE 512  // not enough
+//#define MIN_BYTES_FREE 1024 // almost enough
+#define MIN_BYTES_FREE 1536
 
 #define DATE_WINDOW_BUFFER_SIZE 16
 
@@ -168,7 +169,7 @@ DrawModeTable draw_mode_table[2] = {
 
 #endif  // PBL_PLATFORM_APLITE
 
-static const uint32_t tap_segments[] = { 75, 100, 75 };
+static const uint32_t tap_segments[] = { 50, 150, 75 };
 VibePattern tap = {
   tap_segments,
   3,
@@ -1178,8 +1179,13 @@ void check_memory_usage() {
     trigger_memory_panic(__LINE__);
   }
 
-  if (memory_panic_flag) {
+  // Keep trying until sufficient memory is clear.
+  while (memory_panic_flag) {
     reset_memory_panic();
+
+    if (heap_bytes_free() < MIN_BYTES_FREE) {
+      trigger_memory_panic(__LINE__);
+    }
   }
 }
 
