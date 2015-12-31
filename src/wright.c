@@ -46,8 +46,8 @@ bool redraw_clock_face = false;
 
 //#define MIN_BYTES_FREE 3072 // seems enough
 //#define MIN_BYTES_FREE 512  // not enough
-//#define MIN_BYTES_FREE 1024 // almost enough
-#define MIN_BYTES_FREE 1536
+#define MIN_BYTES_FREE 1024 // maybe enough
+//#define MIN_BYTES_FREE 1536
 
 #define DATE_WINDOW_BUFFER_SIZE 16
 
@@ -1906,10 +1906,23 @@ void create_permanent_objects() {
   window_set_fullscreen(window, true);
 #endif  //  PBL_SDK_2
   window_stack_push(window, true);
+
+  // clock_face_layer must be a permanent object, since we might call
+  // destroy_temporal_objects() from within clock_face_layer_update_callback()!
+  Layer *window_layer = window_get_root_layer(window);
+  GRect window_frame = layer_get_frame(window_layer);
+
+  clock_face_layer = layer_create(window_frame);
+  assert(clock_face_layer != NULL);
+  layer_set_update_proc(clock_face_layer, &clock_face_layer_update_callback);
+  layer_add_child(window_layer, clock_face_layer);
 }
 
 // This is, of course, called only once, at shutdown.
 void destroy_permanent_objects() {
+  layer_destroy(clock_face_layer);
+  clock_face_layer = NULL;
+
   window_stack_pop_all(false);
   window_destroy(window);
   window = NULL;
@@ -1926,13 +1939,6 @@ void create_temporal_objects() {
   hand_cache_init(&minute_cache);
   hand_cache_init(&second_cache);
 
-  Layer *window_layer = window_get_root_layer(window);
-  GRect window_frame = layer_get_frame(window_layer);
-
-  clock_face_layer = layer_create(window_frame);
-  assert(clock_face_layer != NULL);
-  layer_set_update_proc(clock_face_layer, &clock_face_layer_update_callback);
-  layer_add_child(window_layer, clock_face_layer);
   invalidate_clock_face();
   
   init_battery_gauge();
@@ -1954,8 +1960,6 @@ void destroy_temporal_objects() {
   bwd_destroy(&top_subdial_bitmap);
   bwd_destroy(&moon_wheel_bitmap);
   
-  layer_destroy(clock_face_layer);
-  clock_face_layer = NULL;
   bwd_destroy(&clock_face);
   face_index = -1;
 
