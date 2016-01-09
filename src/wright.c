@@ -46,8 +46,8 @@ bool redraw_clock_face = false;
 
 //#define MIN_BYTES_FREE 3072 // seems enough
 //#define MIN_BYTES_FREE 512  // not enough
-//#define MIN_BYTES_FREE 1024 // almost enough
-#define MIN_BYTES_FREE 1536
+#define MIN_BYTES_FREE 1024 // maybe enough
+//#define MIN_BYTES_FREE 1536
 
 #define DATE_WINDOW_BUFFER_SIZE 16
 
@@ -1171,21 +1171,31 @@ void draw_phase_2_hands(GContext *ctx) {
 #endif  // MAKE_CHRONOGRAPH
 } 
 
+// Triggers a memory panic if at least MIN_BYTES_FREE are not available.
+void check_min_bytes_free() {
+  // We insist on checking for contiguous bytes free, which we do by
+  // attempting to allocate a buffer of MIN_BYTES_FREE.
+  char *buffer = malloc(MIN_BYTES_FREE);
+  if (buffer != NULL) {
+    // It's available, great!
+    free(buffer);
+    return;
+  }
+
+  // Not available.  Too bad.
+  trigger_memory_panic(__LINE__);
+}
+
 // This function should be called at the end of every callback
 // function (before returning back to the system) to ensure we leave a
 // minimum buffer available for system activity.
 void check_memory_usage() {
-  if (heap_bytes_free() < MIN_BYTES_FREE) {
-    trigger_memory_panic(__LINE__);
-  }
+  check_min_bytes_free();
 
   // Keep trying until sufficient memory is clear.
   while (memory_panic_flag) {
     reset_memory_panic();
-
-    if (heap_bytes_free() < MIN_BYTES_FREE) {
-      trigger_memory_panic(__LINE__);
-    }
+    check_min_bytes_free();
   }
 }
 
