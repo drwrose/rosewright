@@ -46,8 +46,8 @@ bool redraw_clock_face = false;
 
 //#define MIN_BYTES_FREE 3072 // seems enough
 //#define MIN_BYTES_FREE 512  // not enough
-#define MIN_BYTES_FREE 1024 // maybe enough
-//#define MIN_BYTES_FREE 1536
+//#define MIN_BYTES_FREE 1024 // not quite enough
+#define MIN_BYTES_FREE 1536
 
 #define DATE_WINDOW_BUFFER_SIZE 16
 
