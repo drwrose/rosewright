@@ -609,6 +609,7 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
   if (config.draw_mode) {
     color.argb ^= 0x3f;
   }
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "stroke_color %d %d %d %x", config.color_mode, vector_hand->paint_channel, config.draw_mode, color.argb);
 #endif  // PBL_PLATFORM_APLITE
   graphics_context_set_stroke_color(ctx, color);
 

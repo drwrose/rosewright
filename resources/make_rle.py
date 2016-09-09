@@ -653,8 +653,11 @@ def make_rle_trans_file(basename, variant, ext, name = None, prefix = 'resources
     white = PIL.Image.composite(one, zero, bits)
     white = PIL.Image.composite(white, zero, alpha)
 
-    whiteFilename = '%s_white_%s' % (basename, platform)
-    blackFilename = '%s_black_%s' % (basename, platform)
+    dirname, basename = os.path.split(basename)
+    if not useRle:
+        dirname = 'build' # We're rewriting this anyway.
+    whiteFilename = '%s/%s_white_%s' % (dirname, basename, platform)
+    blackFilename = '%s/%s_black_%s' % (dirname, basename, platform)
 
     if useRle:
         make_rle_image(prefix + whiteFilename + '.rle', white)
