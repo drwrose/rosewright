@@ -20,6 +20,7 @@ BitmapWithData date_window_mask;
 bool date_window_dynamic = false;
 bool date_window_health_metric = false;
 bool health_service_subscribed = false;
+bool tick_seconds_subscribed = false;
 
 BitmapWithData face_bitmap;
 BitmapWithData pebble_label;
@@ -1063,16 +1064,17 @@ void draw_clock_face(Layer *me, GContext *ctx) {
     }
 
 #ifndef PBL_PLATFORM_APLITE
-    if (health_service_subscribed != date_window_health_metric) {
+    bool needs_health_service = (date_window_health_metric && !tick_seconds_subscribed);
+    if (health_service_subscribed != needs_health_service) {
       // Subscribe to health service updates as needed.
-      if (date_window_health_metric) {
+      if (needs_health_service) {
         app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "subscribing to health service");
         health_service_events_subscribe(health_event_handler, NULL);
       } else {
         app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "unsubscribing to health service");
         health_service_events_unsubscribe();
       }
-      health_service_subscribed = date_window_health_metric;
+      health_service_subscribed = needs_health_service;
     }
 #endif  // PBL_PLATFORM_APLITE
   }
@@ -1888,12 +1890,15 @@ void reset_tick_timer() {
 
 #if defined(FAST_TIME) || defined(BATTERY_HACK)
   tick_timer_service_subscribe(SECOND_UNIT, handle_tick);
+  tick_seconds_subscribed = true;
 
 #elif defined(MAKE_CHRONOGRAPH)
   if (config.second_hand || chrono_data.running) {
     tick_timer_service_subscribe(SECOND_UNIT, handle_tick);
+    tick_seconds_subscribed = true;
   } else {
     tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
+    tick_seconds_subscribed = false;
   }
 
   reset_chrono_digital_timer();
@@ -1901,8 +1906,10 @@ void reset_tick_timer() {
 #else
   if (config.second_hand) {
     tick_timer_service_subscribe(SECOND_UNIT, handle_tick);
+    tick_seconds_subscribed = true;
   } else {
     tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
+    tick_seconds_subscribed = false;
   }
 #endif
 }
