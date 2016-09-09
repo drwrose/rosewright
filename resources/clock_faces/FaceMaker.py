@@ -283,6 +283,7 @@ class FaceMaker:
         try:
             font = PIL.ImageFont.truetype(filename, h)
         except ImportError:
+            raise
             font = None
         return font
 
@@ -450,4 +451,3 @@ class FaceMaker:
         """ Saves the resulting face. """
         self.flush()
         self.target.save(filename)
-
