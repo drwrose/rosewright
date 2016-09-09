@@ -35,7 +35,7 @@ LangDef lang_table[29] = {
 
  // sv_SE
   { 0, RESOURCE_ID_SV_SE_NAMES }, // 8 = Swedish
- // [u'S\xf6n', u'M\xe5n', 'Tis', 'Ons', 'Tor', 'Fre', u'L\xf6r', 'Jan', 'Feb', 'Mar', 'Apr', 'Maj', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec', 'fm', 'em']
+ // [u'S\xf6n', u'M\xe5n', 'Tis', 'Ons', 'Tor', 'Fre', u'L\xf6r', 'Jan', 'Feb', 'Mars', 'Apr', 'Maj', 'Juni', 'Juli', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec', 'fm', 'em']
 
  // is_IS
   { 0, RESOURCE_ID_IS_IS_NAMES }, // 9 = Icelandic
@@ -67,7 +67,7 @@ LangDef lang_table[29] = {
 
  // hy_AM
   { 3, RESOURCE_ID_HY_AM_NAMES }, // 16 = Armenian
- // [u'\u053f\u056b\u0580', u'\u0535\u0580\u056f', u'\u0535\u0580\u0584', u'\u0549\u0580\u0584', u'\u0540\u0576\u0563', u'\u0548\u0582\u0580', u'\u0547\u0562\u0569', u'\u0540\u0576\u057e', u'\u0553\u057f\u057e', u'\u0544\u0580\u057f', u'\u0531\u057a\u0580', u'\u0544\u0575\u057d', u'\u0540\u0576\u057d', u'\u0540\u056c\u057d', u'\u0555\u0563\u057d', u'\u054d\u057a\u057f', u'\u0540\u056f\u057f', u'\u0546\u0575\u0574', u'\u0534\u056f\u057f', u'\u0561\u057c\u0561\u057b', u'\u0570\u0565\u057f\u0578']
+ // [u'\u053f\u056b\u0580', u'\u0535\u0580\u056f', u'\u0535\u0580\u0584', u'\u0549\u0580\u0584', u'\u0540\u0576\u0563', u'\u0548\u0582\u0580', u'\u0547\u0562\u0569', u'\u0540\u0576\u057e', u'\u0553\u057f\u057e', u'\u0544\u0580\u057f', u'\u0531\u057a\u0580', u'\u0544\u0575\u057d', u'\u0540\u0576\u057d', u'\u0540\u056c\u057d', u'\u0555\u0563\u057d', u'\u054d\u0565\u057a', u'\u0540\u0578\u056f', u'\u0546\u0578\u0575', u'\u0534\u0565\u056f', u'\u0561\u057c\u0561\u057b', u'\u0570\u0565\u057f\u0578']
 
  // tr_TR
   { 0, RESOURCE_ID_TR_TR_NAMES }, // 17 = Turkish
@@ -75,7 +75,7 @@ LangDef lang_table[29] = {
 
  // he_IL
   { 4, RESOURCE_ID_HE_IL_NAMES }, // 18 = Hebrew
- // [u'\u05f3\u05d0', u'\u05f3\u05d1', u'\u05f3\u05d2', u'\u05f3\u05d3', u'\u05f3\u05d4', u'\u05f3\u05d5', u'\u05f3\u05e9', u'\u05d5\u05e0\u05d9', u'\u05e8\u05d1\u05e4', u'\u05e5\u05e8\u05de', u'\u05e8\u05e4\u05d0', u'\u05d9\u05d0\u05de', u'\u05e0\u05d5\u05d9', u'\u05dc\u05d5\u05d9', u'\u05d2\u05d5\u05d0', u'\u05d8\u05e4\u05e1', u'\u05e7\u05d5\u05d0', u'\u05d1\u05d5\u05e0', u'\u05de\u05e6\u05d3', 'am', 'pm']
+ // [u'\u05f3\u05d0', u'\u05f3\u05d1', u'\u05f3\u05d2', u'\u05f3\u05d3', u'\u05f3\u05d4', u'\u05f3\u05d5', u'\u05f3\u05e9', u'\u05f3\u05d5\u05e0\u05d9', u'\u05f3\u05e8\u05d1\u05e4', u'\u05e5\u05e8\u05de', u'\u05f3\u05e8\u05e4\u05d0', u'\u05d9\u05d0\u05de', u'\u05d9\u05e0\u05d5\u05d9', u'\u05d9\u05dc\u05d5\u05d9', u'\u05f3\u05d2\u05d5\u05d0', u'\u05f3\u05d8\u05e4\u05e1', u'\u05f3\u05e7\u05d5\u05d0', u'\u05f3\u05d1\u05d5\u05e0', u'\u05f3\u05de\u05e6\u05d3', 'am', 'pm']
 
  // fa_IR
   { 5, RESOURCE_ID_FA_IR_NAMES }, // 19 = Farsi

@@ -40,7 +40,7 @@ Options:
         Perform no RLE compression of images.
 
     -p platform[,platform...]
-        Specifies the build platform (aplite, basalt, and/or chalk).
+        Specifies the build platform (aplite, basalt, chalk, diorite).
 
     -d
         Compile for debugging.  Specifically this enables "fast time",
@@ -119,8 +119,8 @@ watches = {
 #       2    - foreground pixels are forced to color 2 (green channel)
 #       3    - foreground pixels are forced to color 3 (blue channel)
 #       't'  - foreground pixels are drawn in their own color.
-#              This doubles the resource cost on Aplite.
-#       't%' - As above, but dither the grayscale levels on Aplite.
+#              This doubles the resource cost on B&W platforms.
+#       't%' - As above, but dither the grayscale levels on B&W.
 #   asymmetric - false if the hand is left/right symmetric and can be
 #       drawn mirrored, or false if it must be drawn without
 #       mirroring, which doubles the resource cost again.
@@ -175,7 +175,7 @@ hands = {
 # Table of face styles.  For each style, specify the following:
 #
 #   filename  - the background image for the face, or a list of optional faces.
-#   bw_invert - True to invert the color scheme by default on Aplite.
+#   bw_invert - True to invert the color scheme by default on B&W.
 #               Needed to render dark hands on a white background;
 #               otherwise, hands will be drawn white (unless they have
 #               't' as their color).
@@ -187,8 +187,8 @@ hands = {
 #   chrono    - the (tenths, hours) images for the two chrono dials, if used.
 #   date_window_a_rect/round - the (x, y, c) position, background of the first date window.
 #               The background is either 'b' or 'w', and is relevant
-#               only on Aplite; see the colors field, above, for
-#               Basalt.  This may be a list of tuples to define a
+#               only on B&W platforms; see the colors field, above, for
+#               color platforms.  This may be a list of tuples to define a
 #               different value for each optional face.
 #   date_window_b_rect/round - the (x, y, c) position, background of the second date window.
 #   date_window_c_rect/round - etc.
@@ -459,13 +459,13 @@ def makeFaces(generatedTable, generatedDefs):
     print >> generatedTable, "};\n"
 
     faceColors = fd.get('colors')
-    print >> generatedTable, "#ifndef PBL_PLATFORM_APLITE"
+    print >> generatedTable, "#ifndef PBL_BW"
     print >> generatedTable, "struct FaceColorDef clock_face_color_table[NUM_FACE_COLORS] = {"
     for i in range(len(faceColors)):
         cb, db = faceColors[i]
         print >> generatedTable, "  { GColor%sARGB8, GColor%sARGB8, GColor%sARGB8, GColor%sARGB8, GColor%sARGB8, GColor%sARGB8 }," % (cb[0], cb[1], cb[2], cb[3], db[0], db[1])
     print >> generatedTable, "};"
-    print >> generatedTable, "#endif  // PBL_PLATFORM_APLITE\n"
+    print >> generatedTable, "#endif  // PBL_BW\n"
 
     if date_windows_rect and date_window_filename:
         window, mask = date_window_filename
@@ -598,8 +598,8 @@ def makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, a
     b = PIL.Image.composite(b, black, mask)
     source1 = PIL.Image.merge('RGB', [r, g, b])
 
-    # In the aplite case, we don't need to make a distinction between
-    # the explicit and implicit masks.  An explicit mask completely
+    # In the B&W case, we don't need to make a distinction between the
+    # explicit and implicit masks.  An explicit mask completely
     # replaces the implicit mask.
     source1MaskPathname = '%s/clock_hands/%s_mask~bw.png' % (resourcesDir, sourceBasename)
     if os.path.exists(source1MaskPathname):
@@ -681,7 +681,7 @@ def makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, a
             scaledSize = (int(p1.size[0] * scale + 0.5), int(p1.size[1] * scale + 0.5))
             p1 = p1.resize(scaledSize, PIL.Image.ANTIALIAS)
 
-            # Now make the 1-bit version for Aplite.
+            # Now make the 1-bit version for B&W platforms.
             r, g, b = p1.split()
             if not dither:
                 p1 = b.point(threshold1Bit).convert('1')
@@ -715,7 +715,7 @@ def makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, a
             # We require our images to be an even multiple of 8 pixels
             # wide, to make it easier to reverse the bits
             # horizontally.  (Actually we only need it to be an even
-            # multiple of bytes, but the Aplite build is the lowest
+            # multiple of bytes, but the B&W build is the lowest
             # common denominator with 8 pixels per byte.)
             w = 8 * ((p1.size[0] + 7) / 8)
             if w != p1.size[0]:
@@ -728,15 +728,15 @@ def makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, a
                 pm1 = pt
 
             if not useTransparency:
-                # In the non-transparency case, the aplite mask is the
-                # aplite image we actually write out.
+                # In the non-transparency case, the B&W mask is the
+                # B&W image we actually write out.
                 p1 = pm1
             else:
                 # In the transparency case, we need to write the mask
                 # image separately.
                 targetMaskBasename = 'build/flat_%s_%s_%s_mask_%s' % (handStyle, hand, i, platform)
 
-                # Save the aplite mask.
+                # Save the B&W mask.
                 pm1.save('%s/%s.png' % (resourcesDir, targetMaskBasename))
 
                 maskResourceStr += make_rle(targetMaskBasename + '.png', name = symbolMaskName, useRle = useRle, platforms = [platform])
@@ -948,7 +948,7 @@ def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode
             # We require our images to be an even multiple of 8 pixels
             # wide, to make it easier to reverse the bits
             # horizontally.  (Actually we only need it to be an even
-            # multiple of bytes, but the Aplite build is the lowest
+            # multiple of bytes, but the B&W build is the lowest
             # common denominator with 8 pixels per byte.)
             w = 8 * ((p2.size[0] + 7) / 8)
             if w != p2.size[0]:
@@ -1223,8 +1223,8 @@ def makeMoonWheel():
                     cropbox = (px, py, px + subdialSize[0], py + subdialSize[1])
                     p = p.crop(cropbox)
 
-                    # Now make the 1-bit version for Aplite and the 2-bit
-                    # version for Basalt.
+                    # Now make the 1-bit version for B&W platforms and
+                    # the 2-bit version for color platforms.
                     if mode == '~bw':
                         p = p.convert('1')
                         if cat == 'white':
@@ -1485,10 +1485,10 @@ if not watchStyle:
     sys.exit(1)
 
 if not targetPlatforms:
-    targetPlatforms = [ "aplite", "basalt", "chalk" ]
+    targetPlatforms = [ "aplite", "basalt", "chalk", "diorite" ]
 
 targetModes = set()
-if "aplite" in targetPlatforms:
+if "aplite" in targetPlatforms or "diorite" in targetPlatforms:
     targetModes.add("~bw")
 if "basalt" in targetPlatforms:
     targetModes.add("~color")

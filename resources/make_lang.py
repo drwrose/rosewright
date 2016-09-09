@@ -122,12 +122,12 @@ def writeResourceFile(generatedJson, localeName, nameList):
     maxTotalLen = max(maxTotalLen, len(data))
 
     open('%s/%s' % (resourcesDir, filename), 'w').write(data)
-    
+
     nameEntry = """    {
       "type": "raw",
       "name": "%(id)s",
       "file": "%(filename)s"
-    },"""    
+    },"""
     print >> generatedJson, nameEntry % {
         'id' : resourceId,
         'filename' : filename,
@@ -183,7 +183,7 @@ def makeDates(generatedTable, generatedJson, langRow, li):
         'month' : getDfsNames(dfs, localeName, 'month', dfs.getShortMonths, dfs.getMonths),
         'ampm' : getDfsNames(dfs, localeName, 'ampm', dfs.getAmPmStrings, getDefaultAmPm),
         }
-    
+
     neededChars.setdefault(fontKey, set())
     showNames = []
     showNamesUnicode = []
@@ -269,7 +269,7 @@ def makeLang():
             print >> displayLangLookup, "  '%s' : %s," % (prefix, index)
             hyphened = localeName.replace('_', '-')
             print >> displayLangLookup, "  '%s' : %s," % (hyphened, index)
-            
+
     print >> displayLangLookup, "};"
     print >> displayLangLookup, "var display_lang_reverse = {"
     for localeName, langName, fontKey, index in langs:
@@ -309,7 +309,7 @@ def makeLang():
       "name": "DAY_FONT_%(upperKey)s_%(size_rect)s",
       "file": "%(filename_rect)s",
       "targetPlatforms" : [
-        "aplite", "basalt"
+        "aplite", "basalt", "diorite"
       ]
     },
     {
@@ -320,7 +320,7 @@ def makeLang():
       "targetPlatforms" : [
         "chalk"
       ]
-    },"""    
+    },"""
 
     for fontKey in fontChoices:
         filenames, (size_rect, size_round) = fontNames[fontKey]

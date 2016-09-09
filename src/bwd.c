@@ -439,9 +439,9 @@ void pack_1bit(int value, int count, int *b, uint8_t **dp, uint8_t *dp_stop) {
   }
 }
 
-#ifndef PBL_PLATFORM_APLITE
+#ifndef PBL_BW
 // The following functions are needed for unpacking advanced color
-// modes not supported on Aplite.
+// modes not needed on B&W watches.
 
 // Packs a series of identical 2-bit values into (*dp) beginning at bit (*b).
 void pack_2bit(int value, int count, int *b, uint8_t **dp, uint8_t *dp_stop) {
@@ -680,9 +680,9 @@ rle_bwd_create_rb(RBuffer *rb) {
   return bwd_create(image, NULL);
 }
 
-#else  // PBL_PLATFORM_APLITE
+#else  // PBL_BW
 
-// Here's the simpler Aplite implementation, which only supports GColorFormat1Bit.
+// Here's the simpler mono implementation, which only supports GColorFormat1Bit.
 
 // Initialize a bitmap from an rle-encoded resource.  The returned
 // bitmap must be released with bwd_destroy().  See make_rle.py for
@@ -764,7 +764,7 @@ rle_bwd_create_rb(RBuffer *rb) {
   return bwd_create(image, NULL);
 }
 
-#endif // PBL_PLATFORM_APLITE
+#endif // PBL_BW
 
 BitmapWithData
 rle_bwd_create(int resource_id) {
@@ -799,7 +799,7 @@ BitmapWithData rle_bwd_create_with_cache(int resource_id_offset, int resource_id
 // Replace each of the R, G, B channels with a different color, and
 // blend the result together.  Only supported for palette bitmaps.
 void bwd_remap_colors(BitmapWithData *bwd, GColor cb, GColor c1, GColor c2, GColor c3, bool invert_colors) {
-#ifndef PBL_PLATFORM_APLITE
+#ifndef PBL_BW
   if (bwd->bitmap == NULL) {
     return;
   }
@@ -862,5 +862,5 @@ void bwd_remap_colors(BitmapWithData *bwd, GColor cb, GColor c1, GColor c2, GCol
     }
   }
 
-#endif // PBL_PLATFORM_APLITE
+#endif // PBL_BW
 }

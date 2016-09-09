@@ -149,25 +149,25 @@ size_t second_resource_cache_size = SECOND_RESOURCE_CACHE_SIZE + SECOND_MASK_RES
 
 struct HandPlacement current_placement;
 
-#ifdef PBL_PLATFORM_APLITE
-// In Aplite, we have to decide carefully what compositing mode to
-// draw the hands.
+#ifdef PBL_BW
+// On B&W watches, we have to decide carefully what compositing mode
+// to draw the hands.
 DrawModeTable draw_mode_table[2] = {
   { GCompOpClear, GCompOpOr, GCompOpAssign, { GColorClearInit, GColorBlackInit, GColorWhiteInit } },
   { GCompOpOr, GCompOpClear, GCompOpAssignInverted, { GColorClearInit, GColorWhiteInit, GColorBlackInit } },
 };
 
-#else  // PBL_PLATFORM_APLITE
+#else  // PBL_BW
 
-// In Basalt, we always use GCompOpSet to draw the hands, because we
-// always use the alpha channel.  The exception is paint_assign,
-// because assign means assign.
+// On color watches, we always use GCompOpSet to draw the hands,
+// because we always use the alpha channel.  The exception is
+// paint_assign, because assign means assign.
 DrawModeTable draw_mode_table[2] = {
   { GCompOpSet, GCompOpSet, GCompOpAssign, { GColorClearInit, GColorBlackInit, GColorWhiteInit } },
   { GCompOpSet, GCompOpSet, GCompOpAssign, { GColorClearInit, GColorWhiteInit, GColorBlackInit } },
 };
 
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
 
 static const uint32_t tap_segments[] = { 50, 200, 75 };
 VibePattern tap = {
@@ -422,7 +422,7 @@ uint8_t reverse_nibbles(uint8_t b) {
 int get_pixels_per_byte(GBitmap *image) {
   int pixels_per_byte = 8;
 
-#ifndef PBL_PLATFORM_APLITE
+#ifndef PBL_BW
   switch (gbitmap_get_format(image)) {
   case GBitmapFormat1Bit:
   case GBitmapFormat1BitPalette:
@@ -442,7 +442,7 @@ int get_pixels_per_byte(GBitmap *image) {
     pixels_per_byte = 1;
     break;
   }
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
 
   return pixels_per_byte;
 }
@@ -490,7 +490,7 @@ void flip_bitmap_x(GBitmap *image, short *cx) {
       }
       break;
 
-#ifndef PBL_PLATFORM_APLITE
+#ifndef PBL_BW
     case 4:
       for (int x1 = (width_bytes - 1) / 2; x1 >= 0; --x1) {
         int x2 = width_bytes - 1 - x1;
@@ -517,7 +517,7 @@ void flip_bitmap_x(GBitmap *image, short *cx) {
         row[x2] = b;
       }
       break;
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
     }
   }
 
@@ -584,11 +584,11 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
   GPoint center = { hand_def->place_x, hand_def->place_y };
   int32_t angle = TRIG_MAX_ANGLE * hand_index / hand_def->num_steps;
 
-#ifdef PBL_PLATFORM_APLITE
+#ifdef PBL_BW
   GColor color = draw_mode_table[config.draw_mode ^ BW_INVERT].colors[2];
 
-#else  // PBL_PLATFORM_APLITE
-  // On Basalt, draw lines using the indicated color channel.
+#else  // PBL_BW
+  // On color watches, draw lines using the indicated color channel.
   struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
   GColor color;
   switch (vector_hand->paint_channel) {
@@ -609,7 +609,7 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
   if (config.draw_mode) {
     color.argb ^= 0x3f;
   }
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
   graphics_context_set_stroke_color(ctx, color);
 
   assert(vector_hand->num_groups <= HAND_CACHE_MAX_GROUPS);
@@ -641,11 +641,11 @@ void draw_bitmap_hand_mask(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PA
   int hand_resource_id = hand_def->resource_id + bitmap_index;
   int hand_resource_mask_id = hand_def->resource_mask_id + bitmap_index;
 
-#ifdef PBL_PLATFORM_APLITE
+#ifdef PBL_BW
   if (hand_def->resource_id == hand_def->resource_mask_id)
 #else
   if (no_basalt_mask || hand_def->resource_id == hand_def->resource_mask_id)
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
   {
     // The draw-without-a-mask case.  Do nothing here.
   } else {
@@ -702,11 +702,11 @@ void draw_bitmap_hand_fg(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PARA
 
   int hand_resource_id = hand_def->resource_id + bitmap_index;
 
-#ifdef PBL_PLATFORM_APLITE
+#ifdef PBL_BW
   if (hand_def->resource_id == hand_def->resource_mask_id)
 #else
   if (no_basalt_mask || hand_def->resource_id == hand_def->resource_mask_id)
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
   {
     // The hand does not have a mask.  Draw the hand on top of the scene.
     if (hand_cache->image.bitmap == NULL) {
@@ -811,33 +811,32 @@ void draw_hand(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PARAMS, struct
   draw_hand_fg(hand_cache RESOURCE_CACHE_PARAMS(resource_cache, resource_cache_size), hand_def, hand_index, true, ctx);
 }
 
-// Applies the appropriate Basalt color-remapping according to the
-// selected color mode, for the indicated clock-face or clock-hands
-// bitmap.
+// Applies the appropriate color-remapping according to the selected
+// color mode, for the indicated clock-face or clock-hands bitmap.
 void remap_colors_clock(BitmapWithData *bwd) {
-#ifndef PBL_PLATFORM_APLITE
+#ifndef PBL_BW
   struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
   bwd_remap_colors(bwd, (GColor8){.argb=cd->cb_argb8}, (GColor8){.argb=cd->c1_argb8}, (GColor8){.argb=cd->c2_argb8}, (GColor8){.argb=cd->c3_argb8}, config.draw_mode);
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
 }
 
-// Applies the appropriate Basalt color-remapping according to the
-// selected color mode, for the indicated date-window bitmap.
+// Applies the appropriate color-remapping according to the selected
+// color mode, for the indicated date-window bitmap.
 static void remap_colors_date(BitmapWithData *bwd) {
-#ifndef PBL_PLATFORM_APLITE
+#ifndef PBL_BW
   struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
   GColor bg, fg;
   bg.argb = cd->db_argb8;
   fg.argb = cd->d1_argb8;
 
   bwd_remap_colors(bwd, bg, fg, GColorBlack, GColorWhite, config.draw_mode);
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
 }
 
-// Applies the appropriate Basalt color-remapping according to the
-// selected color mode, for the indicated lunar bitmap.
+// Applies the appropriate color-remapping according to the selected
+// color mode, for the indicated lunar bitmap.
 static void remap_colors_moon(BitmapWithData *bwd) {
-#ifndef PBL_PLATFORM_APLITE
+#ifndef PBL_BW
   struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
   GColor bg, fg;
   bg.argb = cd->db_argb8;
@@ -853,7 +852,7 @@ static void remap_colors_moon(BitmapWithData *bwd) {
   }
 
   bwd_remap_colors(bwd, bg, fg, GColorBlack, GColorPastelYellow, false);
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
 }
 
 void draw_pebble_label(Layer *me, GContext *ctx, bool invert) {
@@ -862,7 +861,7 @@ void draw_pebble_label(Layer *me, GContext *ctx, bool invert) {
   const struct IndicatorTable *window = &top_subdial[config.face_index];
   GRect destination = GRect(window->x + pebble_label_offset.x, window->y + pebble_label_offset.y, pebble_label_size.w, pebble_label_size.h);
 
-#ifdef PBL_PLATFORM_APLITE
+#ifdef PBL_BW
   BitmapWithData pebble_label_mask;
   pebble_label_mask = rle_bwd_create(RESOURCE_ID_PEBBLE_LABEL_MASK);
   if (pebble_label_mask.bitmap == NULL) {
@@ -872,7 +871,7 @@ void draw_pebble_label(Layer *me, GContext *ctx, bool invert) {
   graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_bg);
   graphics_draw_bitmap_in_rect(ctx, pebble_label_mask.bitmap, destination);
   bwd_destroy(&pebble_label_mask);
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
 
   if (pebble_label.bitmap == NULL) {
     pebble_label = rle_bwd_create(RESOURCE_ID_PEBBLE_LABEL);
@@ -880,9 +879,9 @@ void draw_pebble_label(Layer *me, GContext *ctx, bool invert) {
       trigger_memory_panic(__LINE__);
       return;
     }
-#ifndef PBL_PLATFORM_APLITE
+#ifndef PBL_BW
     remap_colors_clock(&pebble_label);
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
   }
 
   graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_fg);
@@ -909,7 +908,7 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
   GRect destination = GRect(window->x, window->y, top_subdial_size.w, top_subdial_size.h);
 
   // First draw the subdial details (including the background).
-#ifdef PBL_PLATFORM_APLITE
+#ifdef PBL_BW
   if (top_subdial_frame_mask.bitmap == NULL) {
     top_subdial_frame_mask = rle_bwd_create(RESOURCE_ID_TOP_SUBDIAL_FRAME_MASK);
     if (top_subdial_frame_mask.bitmap == NULL) {
@@ -935,7 +934,7 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
   if (!keep_assets) {
     bwd_destroy(&top_subdial_mask);
   }
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
 
   if (top_subdial_bitmap.bitmap == NULL) {
     top_subdial_bitmap = rle_bwd_create(RESOURCE_ID_TOP_SUBDIAL);
@@ -943,9 +942,9 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
       trigger_memory_panic(__LINE__);
       return;
     }
-#ifndef PBL_PLATFORM_APLITE
+#ifndef PBL_BW
     remap_colors_clock(&top_subdial_bitmap);
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
   }
 
   graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_fg);
@@ -970,37 +969,37 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
   }
 
   if (moon_wheel_bitmap.bitmap == NULL) {
-#ifdef PBL_PLATFORM_APLITE
-    // On Aplite, we load either "black" or "white" icons, according
-    // to what color we need the background to be.
+#ifdef PBL_BW
+    // On B&W watches, we load either "black" or "white" icons,
+    // according to what color we need the background to be.
     if (moon_draw_mode == 0) {
       moon_wheel_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHEEL_WHITE_0 + index);
     } else {
       moon_wheel_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHEEL_BLACK_0 + index);
     }
-#else  // PBL_PLATFORM_APLITE
-    // On Basalt, we only use the "black" icons, and we remap the colors at load time.
+#else  // PBL_BW
+    // On color watches, we only use the "black" icons, and we remap
+    // the colors at load time.
     moon_wheel_bitmap = rle_bwd_create(RESOURCE_ID_MOON_WHEEL_BLACK_0 + index);
     remap_colors_moon(&moon_wheel_bitmap);
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
     if (moon_wheel_bitmap.bitmap == NULL) {
       trigger_memory_panic(__LINE__);
       return;
     }
   }
 
-  // In the Aplite case, we draw the moon in the fg color.  This will
+  // In the B&W case, we draw the moon in the fg color.  This will
   // be black-on-white if moon_draw_mode = 0, or white-on-black if
   // moon_draw_mode = 1.  Since we have selected the particular moon
   // resource above based on draw_mode, we will always draw the moon
   // in the correct color, so that it looks like the moon.  (Drawing
   // the moon in the inverted color would look weird.)
 
-  // In the Basalt case, the only difference between moon_black and
+  // In the color case, the only difference between moon_black and
   // moon_white is the background color; in either case we draw them
   // both in GCompOpSet.
   graphics_context_set_compositing_mode(ctx, draw_mode_table[moon_draw_mode].paint_fg);
-  //graphics_context_set_compositing_mode(ctx, GCompOpAssign);
   graphics_draw_bitmap_in_rect(ctx, moon_wheel_bitmap.bitmap, destination);
   if (!keep_assets) {
     bwd_destroy(&moon_wheel_bitmap);
@@ -1239,17 +1238,17 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
             // Destroy face_bitmap only after we have already drawn
             // everything else that goes onto it, and just before we
             // dupe the framebuffer.  This helps minimize fragmentation.
-#ifdef PBL_PLATFORM_APLITE
-            // On Aplite we can go one step further (and we probably
-            // have to because memory is so tight here): we can use the
-            // *same* memory for framebuffer that we had already
-            // allocated for face_bitmap, because they will be the same
-            // bitmap format and size.
+#ifdef PBL_BW
+            // On B&W we can go one step further (and we probably have
+            // to because memory is so tight on Aplite): we can use
+            // the *same* memory for framebuffer that we had already
+            // allocated for face_bitmap, because they will be the
+            // same bitmap format and size.
             clock_face = face_bitmap;
             face_bitmap.bitmap = NULL;
             bwd_copy_into_from_bitmap(&clock_face, fb);
 
-#else  //  PBL_PLATFORM_APLITE
+#else  //  PBL_BW
             // On other platforms, they are likely to have a different
             // format (the clock face will be 4-bit palette), so we have
             // to deallocate and reallocate.
@@ -1258,7 +1257,7 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
             if (clock_face.bitmap == NULL) {
               trigger_memory_panic(__LINE__);
             }
-#endif  //  PBL_PLATFORM_APLITE
+#endif  //  PBL_BW
           } else {
             // If we're confident we can keep both the face_bitmap and
             // clock_face around together, do so.
@@ -1320,8 +1319,8 @@ void draw_date_window_background(GContext *ctx, int date_window_index, unsigned 
   const struct IndicatorTable *window = &date_windows[date_window_index][indicator_face_index];
   GRect box = GRect(window->x, window->y, date_window_size.w, date_window_size.h);
 
-#ifdef PBL_PLATFORM_APLITE
-  // We only need the mask on Aplite.
+#ifdef PBL_BW
+  // We only need the mask on B&W watches.
   if (date_window_mask.bitmap == NULL) {
     date_window_mask = rle_bwd_create(RESOURCE_ID_DATE_WINDOW_MASK);
     if (date_window_mask.bitmap == NULL) {
@@ -1331,7 +1330,7 @@ void draw_date_window_background(GContext *ctx, int date_window_index, unsigned 
   }
   graphics_context_set_compositing_mode(ctx, draw_mode_table[bg_draw_mode].paint_bg);
   graphics_draw_bitmap_in_rect(ctx, date_window_mask.bitmap, box);
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
 
   if (date_window.bitmap == NULL) {
     date_window = rle_bwd_create(RESOURCE_ID_DATE_WINDOW);
@@ -1340,9 +1339,9 @@ void draw_date_window_background(GContext *ctx, int date_window_index, unsigned 
       trigger_memory_panic(__LINE__);
       return;
     }
-#ifndef PBL_PLATFORM_APLITE
+#ifndef PBL_BW
     remap_colors_date(&date_window);
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
   }
 
   graphics_context_set_compositing_mode(ctx, draw_mode_table[fg_draw_mode].paint_fg);
@@ -1360,7 +1359,7 @@ void draw_date_window_text(GContext *ctx, int date_window_index, const char *tex
   const struct IndicatorTable *window = &date_windows[date_window_index][indicator_face_index];
   GRect box = GRect(window->x, window->y, date_window_size.w, date_window_size.h);
 
-#ifdef PBL_PLATFORM_APLITE
+#ifdef PBL_BW
   unsigned int draw_mode = window->invert ^ config.draw_mode ^ BW_INVERT;
   graphics_context_set_text_color(ctx, draw_mode_table[draw_mode].colors[1]);
 #else
@@ -1371,7 +1370,7 @@ void draw_date_window_text(GContext *ctx, int date_window_index, const char *tex
     fg.argb ^= 0x3f;
   }
   graphics_context_set_text_color(ctx, fg);
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
 
   box.origin.y += font_placement->vshift;
 

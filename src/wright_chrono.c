@@ -178,7 +178,7 @@ void draw_chrono_dial(GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_chrono_dial");
 
   if (config.chrono_dial != CDM_off) {
-#ifdef PBL_PLATFORM_APLITE
+#ifdef PBL_BW
     BitmapWithData chrono_dial_black;
     if (chrono_dial_shows_tenths) {
       chrono_dial_black = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_TENTHS_BLACK);
@@ -189,9 +189,9 @@ void draw_chrono_dial(GContext *ctx) {
       bwd_destroy(&chrono_dial_black);
       trigger_memory_panic(__LINE__);
     }
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
 
-    // In Basalt, we only load the "white" image.
+    // On color watches, we only load the "white" image.
     if (chrono_dial_white.bitmap == NULL) {
       if (chrono_dial_shows_tenths) {
         chrono_dial_white = rle_bwd_create(RESOURCE_ID_CHRONO_DIAL_TENTHS_WHITE);
@@ -212,22 +212,22 @@ void draw_chrono_dial(GContext *ctx) {
 
     GRect destination = GRect(x, y, chrono_dial_size.w, chrono_dial_size.h);
 
-#ifdef PBL_PLATFORM_APLITE
+#ifdef PBL_BW
     graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ BW_INVERT].paint_fg);
     graphics_draw_bitmap_in_rect(ctx, chrono_dial_black.bitmap, destination);
     graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ BW_INVERT].paint_bg);
     graphics_draw_bitmap_in_rect(ctx, chrono_dial_white.bitmap, destination);
-#else  // PBL_PLATFORM_APLITE
+#else  // PBL_BW
     graphics_context_set_compositing_mode(ctx, GCompOpSet);
     graphics_draw_bitmap_in_rect(ctx, chrono_dial_white.bitmap, destination);
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
 
     if (!keep_assets) {
       bwd_destroy(&chrono_dial_white);
     }
-#ifdef PBL_PLATFORM_APLITE
+#ifdef PBL_BW
     bwd_destroy(&chrono_dial_black);
-#endif  // PBL_PLATFORM_APLITE
+#endif  // PBL_BW
   }
 }
 
