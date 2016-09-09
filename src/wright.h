@@ -19,8 +19,8 @@
   #define app_log(...)
 #endif  // NDBEUG
 
-#define SECONDS_PER_DAY 86400
-#define SECONDS_PER_HOUR 3600
+//#define SECONDS_PER_DAY 86400
+//#define SECONDS_PER_HOUR 3600
 #define MS_PER_DAY (SECONDS_PER_DAY * 1000)
 
 #ifdef PBL_ROUND

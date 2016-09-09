@@ -1,0 +1,123 @@
+{
+  "version": "%(versionMajor)s.%(versionMinor)s.0",
+  "author": "drwrose",
+  "private": true,
+  "dependencies": {},
+  "keywords": [
+    "pebble-app"
+  ],
+  "pebble": {
+    "sdkVersion": "3",
+    "resources": {
+      "media": [
+        {
+          "menuIcon": true,
+          "type": "bitmap",
+          "name": "ROSE_ICON",
+          "file": "rose_icon.png"
+        },
+        {
+          "type": "bitmap",
+          "memoryFormat" : "1Bit",
+          "name": "BATTERY_GAUGE_EMPTY",
+          "file": "battery_gauge_empty.png"
+        },
+        {
+          "type": "bitmap",
+          "memoryFormat" : "1Bit",
+          "name": "BATTERY_GAUGE_CHARGED",
+          "file": "battery_gauge_charged.png"
+        },
+        {
+          "type": "bitmap",
+          "memoryFormat" : "1Bit",
+          "name": "BATTERY_GAUGE_MASK",
+          "file": "battery_gauge_mask.png"
+        },
+        {
+          "type": "bitmap",
+          "memoryFormat" : "1Bit",
+          "name": "CHARGING",
+          "file": "charging.png"
+        },
+        {
+          "type": "bitmap",
+          "memoryFormat" : "1Bit",
+          "name": "CHARGING_MASK",
+          "file": "charging_mask.png"
+        },
+        {
+          "targetPlatforms": [ "aplite", "diorite" ],
+          "type": "bitmap",
+          "memoryFormat" : "1Bit",
+          "name": "BLUETOOTH_DISCONNECTED",
+          "file": "bluetooth_disconnected_bw.png"
+        },
+        {
+          "targetPlatforms": [ "basalt", "chalk" ],
+          "type": "bitmap",
+          "name": "BLUETOOTH_DISCONNECTED",
+          "file": "bluetooth_disconnected_color.png"
+        },
+        {
+          "targetPlatforms": [ "aplite", "diorite" ],
+          "type": "bitmap",
+          "memoryFormat" : "1Bit",
+          "name": "BLUETOOTH_CONNECTED",
+          "file": "bluetooth_connected_bw.png"
+        },
+        {
+          "targetPlatforms": [ "basalt", "chalk" ],
+          "type": "bitmap",
+          "name": "BLUETOOTH_CONNECTED",
+          "file": "bluetooth_connected_color.png"
+        },
+        {
+          "targetPlatforms": [ "aplite", "diorite" ],
+          "type": "bitmap",
+          "memoryFormat" : "1Bit",
+          "name": "BLUETOOTH_MASK",
+          "file": "bluetooth_mask.png"
+        },
+%(langData)s
+%(generatedMedia)s
+      ]
+    },
+    "projectType": "native",
+    "uuid": "%(uuId)s",
+    "messageKeys": {
+      "face_index": 8,
+      "color_mode": 16,
+      "battery_gauge": 0,
+      "lunar_direction": 15,
+      "display_lang": 7,
+      "bluetooth_buzzer": 13,
+      "hour_buzzer": 3,
+      "draw_mode": 4,
+      "lunar_background": 14,
+      "date_window_d": 12,
+      "show_debug": 18,
+      "bluetooth_indicator": 1,
+      "top_subdial": 17,
+      "sweep_seconds": 6,
+      "date_window_c": 11,
+      "date_window_b": 10,
+      "date_window_a": 9,
+      "second_hand": 2,
+      "chrono_dial": 5,
+      "week_numbering": 19
+    },
+    "enableMultiJS": false,
+    "displayName": "%(watchName)s",
+    "watchapp": {
+      "onlyShownOnCommunication": false,
+      "hiddenApp": false,
+      "watchface": %(watchface)s
+    },
+    "targetPlatforms": [ %(targetPlatforms)s ],
+    "capabilities": [
+      "configurable"
+    ]
+  },
+  "name": "%(watchName)s"
+}

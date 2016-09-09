@@ -123,7 +123,7 @@ void compute_chrono_hands(unsigned int ms, struct HandPlacement *placement) {
     bwd_destroy(&chrono_dial_white);
     invalidate_clock_face();
   }
-    
+
 #ifdef ENABLE_CHRONO_MINUTE_HAND
   // The chronograph minute hand rolls completely around in 30
   // minutes (not 60).
@@ -176,7 +176,7 @@ void compute_chrono_hands(unsigned int ms, struct HandPlacement *placement) {
 
 void draw_chrono_dial(GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_chrono_dial");
-  
+
   if (config.chrono_dial != CDM_off) {
 #ifdef PBL_PLATFORM_APLITE
     BitmapWithData chrono_dial_black;
@@ -202,20 +202,20 @@ void draw_chrono_dial(GContext *ctx) {
         trigger_memory_panic(__LINE__);
         return;
       }
-    
+
       // We apply the color scheme as needed.
       remap_colors_clock(&chrono_dial_white);
     }
-  
+
     int x = chrono_tenth_hand_def.place_x - chrono_dial_size.w / 2;
     int y = chrono_tenth_hand_def.place_y - chrono_dial_size.h / 2;
-    
+
     GRect destination = GRect(x, y, chrono_dial_size.w, chrono_dial_size.h);
 
 #ifdef PBL_PLATFORM_APLITE
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_fg);
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ BW_INVERT].paint_fg);
     graphics_draw_bitmap_in_rect(ctx, chrono_dial_black.bitmap, destination);
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_bg);
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ BW_INVERT].paint_bg);
     graphics_draw_bitmap_in_rect(ctx, chrono_dial_white.bitmap, destination);
 #else  // PBL_PLATFORM_APLITE
     graphics_context_set_compositing_mode(ctx, GCompOpSet);
@@ -326,7 +326,7 @@ void chrono_start_stop_handler(ClickRecognizerRef recognizer, void *context) {
 
 void chrono_lap_button() {
   unsigned int ms;
- 
+
   ms = get_time_ms();
 
   if (chrono_data.lap_paused) {
@@ -389,7 +389,7 @@ void chrono_lap_or_reset_handler(ClickRecognizerRef recognizer, void *context) {
     chrono_reset_button();
   }
 }
-  
+
 void chrono_digital_line_layer_update_callback(Layer *me, GContext *ctx) {
   GRect destination = layer_get_bounds(me);
 
@@ -410,35 +410,35 @@ void chrono_digital_window_load_handler(struct Window *window) {
   if (chrono_status_bar_layer == NULL) {
     trigger_memory_panic(__LINE__);
     return;
-  }    
+  }
   layer_add_child(chrono_digital_window_layer, status_bar_layer_get_layer(chrono_status_bar_layer));
-  
+
   chrono_digital_contents_layer = layer_create(GRect((SCREEN_WIDTH - DIGITAL_LAYER_WIDTH) / 2, STATUS_BAR_LAYER_HEIGHT, DIGITAL_LAYER_WIDTH, SCREEN_HEIGHT - STATUS_BAR_LAYER_HEIGHT));
   if (chrono_digital_contents_layer == NULL) {
     trigger_memory_panic(__LINE__);
     return;
-  }    
+  }
   layer_add_child(chrono_digital_window_layer, chrono_digital_contents_layer);
 
 #else  // PBL_SDK_3
   // On SDK 2.0 and before, we don't create a separate contents layer;
   // we just use the root layer.
   Layer *chrono_digital_contents_layer = window_get_root_layer(chrono_digital_window);
-  
+
 #endif  // PBL_SDK_3
 
   chrono_digital_current_layer = text_layer_create(GRect(25, LAP_HEIGHT * CHRONO_MAX_LAPS, 94, LAP_HEIGHT));
   if (chrono_digital_current_layer == NULL) {
     trigger_memory_panic(__LINE__);
     return;
-  }    
+  }
   int i;
   for (i = 0; i < CHRONO_MAX_LAPS; ++i) {
     chrono_digital_laps_layer[i] = text_layer_create(GRect(25, LAP_HEIGHT * i, 94, LAP_HEIGHT));
     if (chrono_digital_laps_layer[i] == NULL) {
       trigger_memory_panic(__LINE__);
       return;
-    }    
+    }
 
     text_layer_set_text(chrono_digital_laps_layer[i], chrono_laps_buffer[i]);
     text_layer_set_text_color(chrono_digital_laps_layer[i], GColorBlack);
@@ -459,7 +459,7 @@ void chrono_digital_window_load_handler(struct Window *window) {
   if (chrono_digital_line_layer == NULL) {
     trigger_memory_panic(__LINE__);
     return;
-  }    
+  }
   layer_set_update_proc(chrono_digital_line_layer, &chrono_digital_line_layer_update_callback);
   layer_add_child(chrono_digital_contents_layer, (Layer *)chrono_digital_line_layer);
 }
@@ -493,7 +493,7 @@ void chrono_digital_window_unload_handler(struct Window *window) {
     layer_destroy(chrono_digital_line_layer);
     chrono_digital_line_layer = NULL;
   }
-  
+
   if (chrono_digital_current_layer != NULL) {
     text_layer_destroy(chrono_digital_current_layer);
     chrono_digital_current_layer = NULL;
@@ -525,7 +525,7 @@ void push_chrono_digital_handler(ClickRecognizerRef recognizer, void *context) {
     // Release some caches and repack our memory allocations before we
     // push the window.
     recreate_all_objects();
-    
+
     // If we don't already have a chrono_digital_window object
     // created, create it now.
     if (chrono_digital_window == NULL) {
@@ -609,7 +609,7 @@ void update_chrono_laps_time() {
       chrono_laps_buffer[i][0] = '\0';
     } else {
       // Real data: formatted string.
-      snprintf(chrono_laps_buffer[i], CHRONO_DIGITAL_BUFFER_SIZE, "%u:%02u:%02u.%u", 
+      snprintf(chrono_laps_buffer[i], CHRONO_DIGITAL_BUFFER_SIZE, "%u:%02u:%02u.%u",
 	       chrono_h, chrono_m, chrono_s, chrono_t);
     }
     if (chrono_digital_laps_layer[i] != NULL) {
@@ -632,8 +632,8 @@ void update_chrono_current_time() {
   unsigned int chrono_m = (chrono_ms / (1000 * 60)) % 60;
   unsigned int chrono_s = (chrono_ms / (1000)) % 60;
   unsigned int chrono_t = (chrono_ms / (100)) % 10;
-  
-  snprintf(chrono_current_buffer, CHRONO_DIGITAL_BUFFER_SIZE, "%u:%02u:%02u.%u", 
+
+  snprintf(chrono_current_buffer, CHRONO_DIGITAL_BUFFER_SIZE, "%u:%02u:%02u.%u",
 	   chrono_h, chrono_m, chrono_s, chrono_t);
   if (chrono_digital_current_layer != NULL) {
     layer_mark_dirty((Layer *)chrono_digital_current_layer);
@@ -676,7 +676,7 @@ load_chrono_data() {
       app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Modulated start_ms from %u to %u", chrono_data.start_ms, ms - chrono_ms);
       chrono_data.start_ms = ms - chrono_ms;
     }
-    
+
     update_chrono_laps_time();
   } else {
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Wrong previous chrono_data size or no previous data.");

@@ -175,7 +175,7 @@ hands = {
 # Table of face styles.  For each style, specify the following:
 #
 #   filename  - the background image for the face, or a list of optional faces.
-#   aplite_invert - True to invert the color scheme by default on Aplite.
+#   bw_invert - True to invert the color scheme by default on Aplite.
 #               Needed to render dark hands on a white background;
 #               otherwise, hands will be drawn white (unless they have
 #               't' as their color).
@@ -216,7 +216,7 @@ hands = {
 faces = {
     'a' : {
         'filename': ['a_face.png', 'a_face_unrotated.png', 'a_face_clean.png'],
-        'aplite_invert' : True,
+        'bw_invert' : True,
         'colors' : [ (('Yellow', 'Black', 'DarkCandyAppleRed', 'Black'), ('PastelYellow', 'Black')),
                      (('White', 'Black', 'DarkCandyAppleRed', 'Black'), ('White', 'Black')),
                      (('ElectricBlue', 'DukeBlue', 'DarkCandyAppleRed', 'ElectricUltramarine'), ('BabyBlueEyes', 'Black')),
@@ -253,7 +253,7 @@ faces = {
         },
     'b' : {
         'filename' : ['b_face.png', 'b_face_clean.png'],
-        'aplite_invert' : True,
+        'bw_invert' : True,
         'colors' : [ (('PictonBlue', 'Black', 'DarkCandyAppleRed', 'Black'), ('BabyBlueEyes', 'Black')),
                      (('White', 'Black', 'DarkCandyAppleRed', 'DukeBlue'), ('White', 'DukeBlue')),
                      (('Yellow', 'BulgarianRose', 'DukeBlue', 'OxfordBlue'), ('PastelYellow', 'Black')),
@@ -308,7 +308,7 @@ faces = {
         },
     'd' : {
         'filename' : ['d_face.png', 'd_face_white.png', 'd_face_clean.png'],
-        'aplite_invert' : True,
+        'bw_invert' : True,
         'colors' : [ (('White', 'BulgarianRose', 'White', 'ElectricBlue'), ('OxfordBlue', 'White')),
                      (('Black', 'DarkGreen', 'BrightGreen', 'PastelYellow'), ('White', 'Black')),
                      (('White', 'DukeBlue', 'Yellow', 'FashionMagenta'), ('DukeBlue', 'White')),
@@ -329,7 +329,7 @@ faces = {
                              (43, 34, 'b'), (36, 29, 'b'),
                              ],
         'battery_rect' : [ (83, 39, 'b'), (95, 33, 'b'),
-                           (83, 39, 'b'), (95, 33, 'b'),                      
+                           (83, 39, 'b'), (95, 33, 'b'),
                            (83, 39, 'b'), (95, 33, 'b'),
                            ],
         'bluetooth_round' : [ (60, 48, 'b'), (46, 43, 'b'),
@@ -337,7 +337,7 @@ faces = {
                               (60, 48, 'b'), (46, 43, 'b'),
                               ],
         'battery_round' : [ (103, 52, 'b'), (121, 47, 'b'),
-                            (103, 52, 'b'), (121, 47, 'b'),                      
+                            (103, 52, 'b'), (121, 47, 'b'),
                             (103, 52, 'b'), (121, 47, 'b'),
                             ],
         'defaults' : [ 'day:c', 'date:d', 'bluetooth', 'battery' ],
@@ -345,11 +345,11 @@ faces = {
     'e' : {
         'filename' : ['e_face.png', 'e_face_white.png', 'e_face_clean.png'],
         'colors' : [ (('Black', 'White', 'Yellow', 'PastelYellow'), ('PastelYellow', 'Black')),
-                     (('Black', 'Yellow', 'PastelYellow', 'Yellow'), ('White', 'Black')),                     
+                     (('Black', 'Yellow', 'PastelYellow', 'Yellow'), ('White', 'Black')),
                      (('Black', 'BlueMoon', 'ShockingPink', 'White'), ('RichBrilliantLavender', 'Black')),
                      (('Black', 'PastelYellow', 'BabyBlueEyes', 'White'), ('Celeste', 'Black')),
                      (('Black', 'Red', 'Melon', 'White'), ('White', 'Black')),
-                     (('Black', 'Magenta', 'Rajah', 'Orange'), ('ImperialPurple', 'White')),                     
+                     (('Black', 'Magenta', 'Rajah', 'Orange'), ('ImperialPurple', 'White')),
                      ],
         'date_window_a_rect' : (55, 13, 'w'),
         'date_window_b_rect' : (4, 74, 'w'),
@@ -440,52 +440,6 @@ def makeFaces(generatedTable, generatedDefs):
 
     resourceStr = ''
 
-    faceResourceEntry = """
-    {
-      "name": "CLOCK_FACE_%(index)s",
-      "file": "%(rleFilename)s",
-      "type": "%(ptype)s"
-    },"""
-
-    dateWindowEntry = """
-    {
-      "name": "DATE_WINDOW",
-      "file": "%(rleFilename)s",
-      "type": "%(ptype)s"
-    },"""
-
-    dateWindowMaskEntry = """
-    {
-      "name": "DATE_WINDOW_MASK",
-      "file": "%(rleFilename)s",
-      "type": "%(ptype)s",
-      "targetPlatforms": [
-        "aplite"
-      ]
-    },"""
-
-    chronoResourceEntry = """
-    {
-      "name": "CHRONO_DIAL_TENTHS_WHITE",
-      "file": "%(targetChronoTenthsWhite)s",
-      "type": "%(ptype)s"
-    },
-    {
-      "name": "CHRONO_DIAL_TENTHS_BLACK",
-      "file": "%(targetChronoTenthsBlack)s",
-      "type": "%(ptype)s"
-    },
-    {
-      "name": "CHRONO_DIAL_HOURS_WHITE",
-      "file": "%(targetChronoHoursWhite)s",
-      "type": "%(ptype)s"
-    },
-    {
-      "name": "CHRONO_DIAL_HOURS_BLACK",
-      "file": "%(targetChronoHoursBlack)s",
-      "type": "%(ptype)s"
-    },"""
-
     fd = faces[faceStyle]
     faceFilenames = fd.get('filename')
     if isinstance(faceFilenames, type('')):
@@ -496,17 +450,12 @@ def makeFaces(generatedTable, generatedDefs):
     chronoFilenames = fd.get('chrono')
     if chronoFilenames:
         targetChronoTenths, targetChronoHours = chronoFilenames
-        
+
     print >> generatedTable, "struct FaceDef clock_face_table[NUM_FACES] = {"
     for i in range(len(faceFilenames)):
         print >> generatedTable, "  { RESOURCE_ID_CLOCK_FACE_%s }," % (i)
 
-        rleFilename, ptype = make_rle('clock_faces/' + faceFilenames[i], useRle = supportRle, modes = targetModes)
-        resourceStr += faceResourceEntry % {
-            'index' : i,
-            'rleFilename' : rleFilename,
-            'ptype' : ptype,
-            }
+        resourceStr += make_rle('clock_faces/' + faceFilenames[i], name = 'CLOCK_FACE_%s' % (i), useRle = supportRle, platforms = targetPlatforms)
     print >> generatedTable, "};\n"
 
     faceColors = fd.get('colors')
@@ -521,29 +470,14 @@ def makeFaces(generatedTable, generatedDefs):
     if date_windows_rect and date_window_filename:
         window, mask = date_window_filename
 
-        rleFilename, ptype = make_rle('clock_faces/' + window, useRle = supportRle, modes = targetModes)
-        resourceStr += dateWindowEntry % {
-            'rleFilename' : rleFilename,
-            'ptype' : ptype,
-            }
+        resourceStr += make_rle('clock_faces/' + window, name = 'DATE_WINDOW', useRle = supportRle, platforms = targetPlatforms)
 
         if mask:
-            rleFilename, ptype = make_rle('clock_faces/' + mask, useRle = supportRle, modes = targetModes)
-            resourceStr += dateWindowMaskEntry % {
-                'rleFilename' : rleFilename,
-                'ptype' : ptype,
-                }
+            resourceStr += make_rle('clock_faces/' + mask, name = 'DATE_WINDOW_MASK', useRle = supportRle, platforms = targetPlatforms)
 
     if targetChronoTenths:
-        tenthsWhite, tenthsBlack, ptype = make_rle_trans('clock_faces/' + targetChronoTenths, useRle = supportRle, modes = targetModes)
-        hoursWhite, hoursBlack, ptype = make_rle_trans('clock_faces/' + targetChronoHours, useRle = supportRle, modes = targetModes)
-        resourceStr += chronoResourceEntry % {
-            'targetChronoTenthsWhite' : tenthsWhite,
-            'targetChronoTenthsBlack' : tenthsBlack,
-            'targetChronoHoursWhite' : hoursWhite,
-            'targetChronoHoursBlack' : hoursBlack,
-            'ptype' : ptype,
-            }
+        resourceStr += make_rle_trans('clock_faces/' + targetChronoTenths, name = 'CHRONO_DIAL_TENTHS', useRle = supportRle, platforms = targetPlatforms)
+        resourceStr += make_rle_trans('clock_faces/' + targetChronoHours, name = 'CHRONO_DIAL_HOURS', useRle = supportRle, platforms = targetPlatforms)
 
     return resourceStr
 
@@ -604,34 +538,33 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceBasename,
         scale_rect = scale
         scale_round = scale
 
+    resourceStr = ''
+
+    if 'aplite' in targetPlatforms:
+        print >> generatedTable, "#ifdef PBL_PLATFORM_APLITE"
+        resourceStr += makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_rect, 'aplite')
+        print >> generatedTable, "#endif  // PBL_PLATFORM_APLITE"
+
     if 'basalt' in targetPlatforms:
         print >> generatedTable, "#ifdef PBL_PLATFORM_BASALT"
-        resourceStr = makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_rect, '~color~rect')
+        resourceStr += makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_rect, 'basalt')
         print >> generatedTable, "#endif  // PBL_PLATFORM_BASALT"
 
     if 'chalk' in targetPlatforms:
         print >> generatedTable, "#ifdef PBL_PLATFORM_CHALK"
-        resourceStr = makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_round, '~color~round')
+        resourceStr += makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_round, 'chalk')
         print >> generatedTable, "#endif  // PBL_PLATFORM_CHALK"
 
-    if 'aplite' in targetPlatforms:
-        # Aplite comes last, because its resourceStr might include masks.
-        print >> generatedTable, "#ifdef PBL_PLATFORM_APLITE"
-        resourceStr = makeBitmapHandsAplite(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_rect)
-        print >> generatedTable, "#endif  // PBL_PLATFORM_APLITE"
+    if 'diorite' in targetPlatforms:
+        print >> generatedTable, "#ifdef PBL_PLATFORM_DIORITE"
+        resourceStr += makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_rect, 'diorite')
+        print >> generatedTable, "#endif  // PBL_PLATFORM_DIORITE"
 
     return resourceStr
 
-def makeBitmapHandsAplite(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale):
+def makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale, platform):
     resourceStr = ''
     maskResourceStr = ''
-
-    resourceEntry = """
-    {
-      "name": "%(defName)s",
-      "file": "%(targetFilename)s",
-      "type": "%(ptype)s"
-    },"""
 
     handLookupEntry = """  { %(cx)s, %(cy)s },  // %(symbolName)s"""
     handTableEntry = """  { %(lookup_index)s, %(flip_x)s, %(flip_y)s },"""
@@ -801,27 +734,16 @@ def makeBitmapHandsAplite(generatedTable, useRle, hand, sourceBasename, colorMod
             else:
                 # In the transparency case, we need to write the mask
                 # image separately.
-                targetMaskBasename = 'build/flat_%s_%s_%s_mask' % (handStyle, hand, i)
+                targetMaskBasename = 'build/flat_%s_%s_%s_mask_%s' % (handStyle, hand, i, platform)
 
                 # Save the aplite mask.
-                pm1.save('%s/%s~bw.png' % (resourcesDir, targetMaskBasename))
+                pm1.save('%s/%s.png' % (resourcesDir, targetMaskBasename))
 
-                rleFilename, ptype = make_rle(targetMaskBasename + '.png', useRle = useRle, modes = ['~bw'])
-                maskResourceStr += resourceEntry % {
-                    'defName' : symbolMaskName,
-                    'targetFilename' : rleFilename,
-                    'ptype' : ptype,
-                    }
+                maskResourceStr += make_rle(targetMaskBasename + '.png', name = symbolMaskName, useRle = useRle, platforms = [platform])
 
-            targetBasename = 'build/flat_%s_%s_%s' % (handStyle, hand, i)
-            p1.save('%s/%s~bw.png' % (resourcesDir, targetBasename))
-            rleFilename, ptype = make_rle(targetBasename + '.png', useRle = useRle, modes = ['~bw'])
-
-            resourceStr += resourceEntry % {
-                'defName' : symbolName,
-                'targetFilename' : rleFilename,
-                'ptype' : ptype,
-                }
+            targetBasename = 'build/flat_%s_%s_%s_%s' % (handStyle, hand, i, platform)
+            p1.save('%s/%s.png' % (resourcesDir, targetBasename))
+            resourceStr += make_rle(targetBasename + '.png', name = symbolName, useRle = useRle, platforms = [platform])
 
             line = handLookupEntry % {
                 'symbolName' : symbolName,
@@ -844,7 +766,7 @@ def makeBitmapHandsAplite(generatedTable, useRle, hand, sourceBasename, colorMod
     else:
         numMaskBitmaps = 0
     resourceCacheSize[hand] = numBitmaps, numMaskBitmaps
-    
+
     print >> generatedTable, "struct BitmapHandCenterRow %s_hand_bitmap_lookup[] = {" % (hand)
     for i in range(numBitmaps):
         line = handLookupLines.get(i, "  {},");
@@ -858,16 +780,9 @@ def makeBitmapHandsAplite(generatedTable, useRle, hand, sourceBasename, colorMod
 
     return resourceStr + maskResourceStr
 
-def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale, mode):
+def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale, platform):
     resourceStr = ''
     maskResourceStr = ''
-
-    resourceEntry = """
-    {
-      "name": "%(defName)s",
-      "file": "%(targetFilename)s",
-      "type": "%(ptype)s"
-    },"""
 
     handLookupEntry = """  { %(cx)s, %(cy)s },  // %(symbolName)s"""
     handTableEntry = """  { %(lookup_index)s, %(flip_x)s, %(flip_y)s },"""
@@ -1060,33 +975,22 @@ def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode
             if useTransparency:
                 # In the transparency case, we need to write the mask
                 # image separately.
-                targetMaskBasename = 'build/flat_%s_%s_%s_mask' % (handStyle, hand, i)
+                targetMaskBasename = 'build/flat_%s_%s_%s_mask_%s' % (handStyle, hand, i, platform)
                 if sourceMaskExplicit:
                     # An explicit color mask.
                     pme2 = pme2.convert("P", palette = PIL.Image.ADAPTIVE, colors = 16)
-                    pme2.save('%s/%s%s.png' % (resourcesDir, targetMaskBasename, mode))
+                    pme2.save('%s/%s.png' % (resourcesDir, targetMaskBasename))
+
+                    maskResourceStr += make_rle(targetMaskBasename + '.png', name = symbolMaskName, useRle = useRle, platforms = [platform])
+
                 else:
                     # With only an implicit color mask, we won't be
-                    # using the mask image in color, so save a
-                    # trivial image.
-                    trivialImage.save('%s/%s%s.png' % (resourcesDir, targetMaskBasename, mode))
+                    # using the mask image in color.
+                    pass
 
-                rleFilename, ptype = make_rle(targetMaskBasename + '.png', useRle = useRle, modes = [mode])
-                maskResourceStr += resourceEntry % {
-                    'defName' : symbolMaskName,
-                    'targetFilename' : rleFilename,
-                    'ptype' : ptype,
-                    }
-
-            targetBasename = 'build/flat_%s_%s_%s' % (handStyle, hand, i)
-            p2.save('%s/%s%s.png' % (resourcesDir, targetBasename, mode))
-            rleFilename, ptype = make_rle(targetBasename + '.png', useRle = useRle, modes = [mode])
-
-            resourceStr += resourceEntry % {
-                'defName' : symbolName,
-                'targetFilename' : rleFilename,
-                'ptype' : ptype,
-                }
+            targetBasename = 'build/flat_%s_%s_%s_%s' % (handStyle, hand, i, platform)
+            p2.save('%s/%s.png' % (resourcesDir, targetBasename))
+            resourceStr += make_rle(targetBasename + '.png', name = symbolName, useRle = useRle, platforms = [platform])
 
             line = handLookupEntry % {
                 'symbolName' : symbolName,
@@ -1109,7 +1013,7 @@ def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode
     else:
         numMaskBitmaps = 0
     resourceCacheSize[hand] = numBitmaps, numMaskBitmaps
-    
+
     print >> generatedTable, "struct BitmapHandCenterRow %s_hand_bitmap_lookup[] = {" % (hand)
     for i in range(numBitmaps):
         line = handLookupLines.get(i, "  {},");
@@ -1129,19 +1033,18 @@ def makeHands(generatedTable, generatedDefs):
 
     resourceStr = ''
 
-    handDefEntry = """struct HandDef %(hand)s_hand_def = {
+    handDefEntry = """
+#ifdef PBL_PLATFORM_%(platformUpper)s
+struct HandDef %(hand)s_hand_def = {
     NUM_STEPS_%(handUpper)s,
     %(resourceId)s, %(resourceMaskId)s,
-    #ifdef PBL_ROUND
-    %(roundPlaceX)s, %(roundPlaceY)s,
-    #else
-    %(rectPlaceX)s, %(rectPlaceY)s,
-    #endif  // PBL_ROUND
+    %(placeX)s, %(placeY)s,
     %(useRle)s,
     %(bitmapCenters)s,
     %(bitmapTable)s,
     %(vectorTable)s,
 };
+#endif  // PBL_PLATFORM_%(platformUpper)s
 """
 
     for hand, bitmapParams, vectorParams in hands[handStyle]:
@@ -1161,43 +1064,57 @@ def makeHands(generatedTable, generatedDefs):
             global enableChronoTenthHand
             enableChronoTenthHand = True
 
-        resourceId = '0'
-        resourceMaskId = resourceId
-        paintChannel = 0
-        bitmapCenters = 'NULL'
-        bitmapTable = 'NULL'
-        vectorTable = 'NULL'
-
         if bitmapParams:
             resourceStr += makeBitmapHands(generatedTable, generatedDefs, useRle, hand, *bitmapParams)
-            colorMode = bitmapParams[1]
-            paintChannel, useTransparency, dither = parseColorMode(colorMode)
-            resourceId = 'RESOURCE_ID_%s_0' % (hand.upper())
-            resourceMaskId = resourceId
-            if useTransparency:
-                resourceMaskId = 'RESOURCE_ID_%s_0_MASK' % (hand.upper())
-            bitmapCenters = '%s_hand_bitmap_lookup' % (hand)
-            bitmapTable = '%s_hand_bitmap_table' % (hand)
-
         if vectorParams:
             resourceStr += makeVectorHands(generatedTable, paintChannel, generatedDefs, hand, vectorParams)
-            vectorTable = '&%s_hand_vector_table' % (hand)
 
-        handDef = handDefEntry % {
-            'hand' : hand,
-            'handUpper' : hand.upper(),
-            'resourceId' : resourceId,
-            'resourceMaskId' : resourceMaskId,
-            'rectPlaceX' : cxdRect.get(hand, rectCenterX),
-            'rectPlaceY' : cydRect.get(hand, rectCenterY),
-            'roundPlaceX' : cxdRound.get(hand, roundCenterX),
-            'roundPlaceY' : cydRound.get(hand, roundCenterY),
-            'useRle' : int(bool(useRle)),
-            'bitmapCenters' : bitmapCenters,
-            'bitmapTable' : bitmapTable,
-            'vectorTable' : vectorTable,
-        }
-        print >> generatedTable, handDef
+        for platform in targetPlatforms:
+            resourceId = '0'
+            resourceMaskId = resourceId
+            paintChannel = 0
+            bitmapCenters = 'NULL'
+            bitmapTable = 'NULL'
+            vectorTable = 'NULL'
+
+            bwPlatform = (platform in ['aplite', 'diorite'])
+            roundPlatform = (platform in ['chalk'])
+
+            if bitmapParams:
+                colorMode = bitmapParams[1]
+                paintChannel, useTransparency, dither = parseColorMode(colorMode)
+                resourceId = 'RESOURCE_ID_%s_0' % (hand.upper())
+                resourceMaskId = resourceId
+                if useTransparency and bwPlatform:
+                    resourceMaskId = 'RESOURCE_ID_%s_0_MASK' % (hand.upper())
+                bitmapCenters = '%s_hand_bitmap_lookup' % (hand)
+                bitmapTable = '%s_hand_bitmap_table' % (hand)
+
+            if vectorParams:
+                vectorTable = '&%s_hand_vector_table' % (hand)
+
+            if roundPlatform:
+                placeX = cxdRound.get(hand, roundCenterX)
+                placeY = cydRound.get(hand, roundCenterY)
+            else:
+                placeX = cxdRect.get(hand, rectCenterX)
+                placeY = cydRect.get(hand, rectCenterY)
+
+            handDef = handDefEntry % {
+                'hand' : hand,
+                'handUpper' : hand.upper(),
+                'resourceId' : resourceId,
+                'resourceMaskId' : resourceMaskId,
+                'placeX' : placeX,
+                'placeY' : placeY,
+                'useRle' : int(bool(useRle)),
+                'bitmapCenters' : bitmapCenters,
+                'bitmapTable' : bitmapTable,
+                'vectorTable' : vectorTable,
+                'platformUpper' : platform.upper(),
+            }
+            print >> generatedTable, handDef
+
         print >> generatedDefs, 'extern struct HandDef %s_hand_def;' % (hand)
 
     return resourceStr
@@ -1267,20 +1184,6 @@ def makeMoonWheel():
     """ Returns the resource strings needed to include the moon wheel
     icons, for the optional moon wheel window. """
 
-    topSubdialEntry = """
-    {
-      "name": "%(name)s",
-      "file": "%(rleFilename)s",
-      "type": "%(ptype)s"
-    },"""
-
-    moonWheelEntry = """
-    {
-      "name": "MOON_WHEEL_%(cat)s_%(index)s",
-      "file": "%(rleFilename)s",
-      "type": "%(ptype)s"
-    },"""
-
     # moon_wheel_white_*.png is for when the moon is to be drawn as white pixels on black (not used on Basalt).
     # moon_wheel_black_*.png is for when the moon is to be drawn as black pixels on white.
 
@@ -1291,7 +1194,7 @@ def makeMoonWheel():
     for mode in [ '~color', '~bw' ]:
         if mode not in targetModes:
             continue
-        
+
         subdialMaskPathname = '%s/clock_faces/top_subdial_internal_mask%s.png' % (resourcesDir, mode)
         subdialMask = PIL.Image.open(subdialMaskPathname)
         assert subdialMask.size == subdialSize
@@ -1355,47 +1258,16 @@ def makeMoonWheel():
     # rather than dependent on the platform).
     resourceStr = ''
 
-    rleFilename, ptype = make_rle('clock_faces/pebble_label.png', useRle = supportRle, modes = targetModes)
-    resourceStr += topSubdialEntry % {
-        'name' : 'PEBBLE_LABEL',
-        'rleFilename' : rleFilename,
-        'ptype' : ptype,
-        }
-    rleFilename, ptype = make_rle('clock_faces/pebble_label_mask.png', useRle = supportRle, modes = targetModes)
-    resourceStr += topSubdialEntry % {
-        'name' : 'PEBBLE_LABEL_MASK',
-        'rleFilename' : rleFilename,
-        'ptype' : ptype,
-        }
+    resourceStr += make_rle('clock_faces/pebble_label.png', name = 'PEBBLE_LABEL', useRle = supportRle, platforms = targetPlatforms)
+    resourceStr += make_rle('clock_faces/pebble_label_mask.png', name = 'PEBBLE_LABEL_MASK', useRle = supportRle, platforms = targetPlatforms)
 
-    rleFilename, ptype = make_rle('clock_faces/top_subdial.png', useRle = supportRle, modes = targetModes)
-    resourceStr += topSubdialEntry % {
-        'name' : 'TOP_SUBDIAL',
-        'rleFilename' : rleFilename,
-        'ptype' : ptype,
-        }
-    rleFilename, ptype = make_rle('clock_faces/top_subdial_mask.png', useRle = supportRle, modes = targetModes)
-    resourceStr += topSubdialEntry % {
-        'name' : 'TOP_SUBDIAL_MASK',
-        'rleFilename' : rleFilename,
-        'ptype' : ptype,
-        }
-    rleFilename, ptype = make_rle('clock_faces/top_subdial_frame_mask.png', useRle = supportRle, modes = targetModes)
-    resourceStr += topSubdialEntry % {
-        'name' : 'TOP_SUBDIAL_FRAME_MASK',
-        'rleFilename' : rleFilename,
-        'ptype' : ptype,
-        }
+    resourceStr += make_rle('clock_faces/top_subdial.png', name = 'TOP_SUBDIAL', useRle = supportRle, platforms = targetPlatforms)
+    resourceStr += make_rle('clock_faces/top_subdial_mask.png', name = 'TOP_SUBDIAL_MASK', useRle = supportRle, platforms = targetPlatforms)
+    resourceStr += make_rle('clock_faces/top_subdial_frame_mask.png', name = 'TOP_SUBDIAL_FRAME_MASK', useRle = supportRle, platforms = targetPlatforms)
     for cat in ['white', 'black']:
         for i in range(numStepsMoon):
             targetBasename = 'build/rot_moon_wheel_%s_%s.png' % (cat, i)
-            rleFilename, ptype = make_rle(targetBasename, useRle = supportRle, modes = targetModes)
-            resourceStr += moonWheelEntry % {
-                'cat' : cat.upper(),
-                'index' : i,
-                'rleFilename' : rleFilename,
-                'ptype' : ptype,
-                }
+            resourceStr += make_rle(targetBasename, name = 'MOON_WHEEL_%s_%s' % (cat.upper(), i), useRle = supportRle, platforms = targetPlatforms)
 
     return resourceStr
 
@@ -1413,7 +1285,7 @@ def configWatch():
     versionMajor, versionMinor = map(int, versionStr.split('.')[:2])
     configVersionStr = version.configVersion
     configVersionMajor, configVersionMinor = map(int, configVersionStr.split('.')[:2])
-    
+
     generatedTable = open('%s/generated_table.c' % (resourcesDir), 'w')
     generatedDefs = open('%s/generated_defs.h' % (resourcesDir), 'w')
 
@@ -1435,8 +1307,8 @@ def configWatch():
     makeIndicatorTable(generatedTable, generatedDefs, 'bluetooth_table', (bluetooth_rect, bluetooth_round), numIndicatorFaces)
     makeIndicatorTable(generatedTable, generatedDefs, 'top_subdial', (top_subdial_rect, top_subdial_round), numFaces)
 
-    resourceIn = open('%s/appinfo.json.in' % (rootDir), 'r').read()
-    resource = open('%s/appinfo.json' % (rootDir), 'w')
+    resourceIn = open('%s/package.json.in' % (rootDir), 'r').read()
+    resource = open('%s/package.json' % (rootDir), 'w')
 
     watchface = 'true'
     if screenshotBuild:
@@ -1503,7 +1375,7 @@ def configWatch():
     print >> config, configIn % {
         'persistKey' : 0x5151 + uuId[-1],
         'supportRle' : int(bool(supportRle)),
-        'apliteInvert' : int(bool(apliteInvert)),
+        'bwInvert' : int(bool(bwInvert)),
         'numFaces' : numFaces,
         'numIndicatorFaces' : numIndicatorFaces,
         'numFaceColors' : numFaceColors,
@@ -1542,9 +1414,9 @@ def configWatch():
         'limitResourceCacheAplite' : int('limit_cache_aplite' in defaults),
         'limitResourceCache' : int('limit_cache' in defaults),
         }
-    
+
     # Also generate the html pages for this version, if needed.
-    
+
     source = open('%s/html/rosewright_configure.html.in' % (rootDir), 'r').read()
     for lang in config_langs:
         dict = {
@@ -1553,11 +1425,11 @@ def configWatch():
             'configVersionMajor' : configVersionMajor,
             'configVersionMinor' : configVersionMinor,
             }
-        
+
         filename = '%(rootDir)s/html/rosewright_%(configVersionMajor)s_%(configVersionMinor)s_configure.%(lang)s.html' % dict
         print filename
         open(filename, 'w').write(source % dict)
-    
+
 
 # Main.
 try:
@@ -1640,7 +1512,7 @@ if isinstance(faceFilenames, type('')):
     faceFilenames = [faceFilenames]
 numFaces = len(faceFilenames)
 
-apliteInvert = fd.get('aplite_invert', False)
+bwInvert = fd.get('bw_invert', False)
 
 faceColors = fd.get('colors')
 numFaceColors = len(faceColors)

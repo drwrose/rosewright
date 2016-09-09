@@ -7,9 +7,9 @@
   #define SUPPORT_RLE 1
 #endif
 
-// Set to 1 if Aplite-style drawing is to be inverted globally, 0
-// otherwise.  Basalt-style drawing commands are not affected.
-#define APLITE_INVERT %(apliteInvert)s
+// Set to 1 if mono drawing is to be inverted globally, 0 otherwise.
+// Color drawing commands are not affected.
+#define BW_INVERT %(bwInvert)s
 
 // The number of different clock faces available.
 #define NUM_FACES %(numFaces)s
@@ -114,7 +114,7 @@
 #define DEFAULT_DATE_WINDOWS %(defaultDateWindows)s
 #define DEFAULT_TOP_SUBDIAL %(defaultTopSubdial)s
 #define DEFAULT_LUNAR_BACKGROUND %(defaultLunarBackground)s
- 
+
 #define ENABLE_BLUETOOTH %(enableBluetooth)s
 #define DEFAULT_BLUETOOTH %(defaultBluetooth)s
 

@@ -194,7 +194,7 @@ GFont safe_load_custom_font(int resource_id) {
     // is accidentally returned from fonts_load_custom_font().
     fallback_font = fonts_get_system_font(FONT_KEY_FONT_FALLBACK);
   }
-  
+
   GFont font = fonts_load_custom_font(resource);
   if (font == fallback_font) {
     app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "font %d failed to load", resource_id);
@@ -258,16 +258,16 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
   #define needs_sub_second false
 #else
   bool needs_sub_second = config.sweep_seconds;
-#endif 
+#endif
 
   time_t gmt;
   uint16_t t_ms = 0;
   unsigned int ms;
-  
+
   if (needs_sub_second) {
     // If we do need sub-second precision, it replaces the stime
     // structure we were passed in.
-    
+
     // Get the Unix time (in UTC).
     time_ms(&gmt, &t_ms);
 
@@ -291,13 +291,13 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
   // since midnight, UTC.
   unsigned int ms_utc = (unsigned int)((gmt % SECONDS_PER_DAY) * 1000 + t_ms);
 #endif  // MAKE_CHRONOGRAPH
-  
+
 #ifdef FAST_TIME
   {
     if (stime != NULL) {
       int s = ms / 1000;
       int yday = s % 365;
-      
+
       gmt = make_gmt_date(yday, 0, stime->tm_year);
       (*stime) = *gmtime(&gmt);
     }
@@ -330,7 +330,7 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
 #endif  // MAKE_CHRONOGRAPH
   }
 #endif  // SCREENSHOT_BUILD
-  
+
   {
     // Avoid overflowing the integer arithmetic by pre-constraining
     // the ms value to the appropriate range.
@@ -366,7 +366,7 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
       // cycle, is 29.5305882 days.  Thus, we only have to take the
       // number of days elapsed since a known new moon, modulo
       // 29.5305882, to know the phase of the moon.
-      
+
       // There was a new moon on 18:40 May 28 2014 UTC; we pick this
       // date arbitrarily as the new moon reference date since it was
       // the most recent new moon at the time I wrote this code (if a
@@ -374,7 +374,7 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
       // phase will be wrong--no big worries).  This date expressed in
       // Unix time is the value 1401302400.
       unsigned int lunar_offset_s = (unsigned int)(gmt - 1401302400);
-      
+
       // Now we have the number of seconds elapsed since a known new
       // moon.  To compute modulo 29.5305882 days using integer
       // arithmetic, we actually compute modulo 2551443 seconds.
@@ -406,7 +406,7 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
 // Reverse the bits of a byte.
 // http://www-graphics.stanford.edu/~seander/bithacks.html#BitReverseTable
 uint8_t reverse_bits(uint8_t b) {
-  return ((b * 0x0802LU & 0x22110LU) | (b * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16; 
+  return ((b * 0x0802LU & 0x22110LU) | (b * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16;
 }
 
 // Reverse the four two-bit components of a byte.
@@ -428,7 +428,7 @@ int get_pixels_per_byte(GBitmap *image) {
   case GBitmapFormat1BitPalette:
     pixels_per_byte = 8;
     break;
-    
+
   case GBitmapFormat2BitPalette:
     pixels_per_byte = 4;
     break;
@@ -454,11 +454,11 @@ void flip_bitmap_x(GBitmap *image, short *cx) {
     // Trivial no-op.
     return;
   }
-  
+
   int height = gbitmap_get_bounds(image).size.h;
   int width = gbitmap_get_bounds(image).size.w;
   int pixels_per_byte = get_pixels_per_byte(image);
-  
+
   assert(width % pixels_per_byte == 0);  // This must be an even divisor, by our convention.
   int width_bytes = width / pixels_per_byte;
   int stride = gbitmap_get_bytes_per_row(image);
@@ -499,7 +499,7 @@ void flip_bitmap_x(GBitmap *image, short *cx) {
         row[x2] = b;
       }
       break;
-      
+
     case 2:
       for (int x1 = (width_bytes - 1) / 2; x1 >= 0; --x1) {
         int x2 = width_bytes - 1 - x1;
@@ -508,7 +508,7 @@ void flip_bitmap_x(GBitmap *image, short *cx) {
         row[x2] = b;
       }
       break;
-      
+
     case 1:
       for (int x1 = (width_bytes - 1) / 2; x1 >= 0; --x1) {
         int x2 = width_bytes - 1 - x1;
@@ -553,7 +553,7 @@ void flip_bitmap_y(GBitmap *image, short *cy) {
     uint8_t *row2 = &info2.data[info2.min_x];
     width_bytes = width1 / pixels_per_byte;
 #endif  // PBL_SDK_2
-    
+
     // Swap rows y1 and y2.
     memcpy(buffer, row1, width_bytes);
     memcpy(row1, row2, width_bytes);
@@ -585,8 +585,8 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
   int32_t angle = TRIG_MAX_ANGLE * hand_index / hand_def->num_steps;
 
 #ifdef PBL_PLATFORM_APLITE
-  GColor color = draw_mode_table[config.draw_mode ^ APLITE_INVERT].colors[2];
-    
+  GColor color = draw_mode_table[config.draw_mode ^ BW_INVERT].colors[2];
+
 #else  // PBL_PLATFORM_APLITE
   // On Basalt, draw lines using the indicated color channel.
   struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
@@ -619,8 +619,8 @@ void draw_vector_hand(struct HandCache *hand_cache, struct HandDef *hand_def, in
     if (hand_cache->path[gi] == NULL) {
       hand_cache->path[gi] = gpath_create(&group->path_info);
       if (hand_cache->path[gi] == NULL) {
-	trigger_memory_panic(__LINE__);
-	return;
+        trigger_memory_panic(__LINE__);
+        return;
       }
 
       gpath_rotate_to(hand_cache->path[gi], angle);
@@ -660,7 +660,7 @@ void draw_bitmap_hand_mask(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PA
       }
       if (hand_cache->image.bitmap == NULL || hand_cache->mask.bitmap == NULL) {
         hand_cache_destroy(hand_cache);
-	trigger_memory_panic(__LINE__);
+        trigger_memory_panic(__LINE__);
         return;
       }
       remap_colors_clock(&hand_cache->image);
@@ -668,7 +668,7 @@ void draw_bitmap_hand_mask(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PA
 
       hand_cache->cx = lookup->cx;
       hand_cache->cy = lookup->cy;
-    
+
       if (hand->flip_x) {
         // To minimize wasteful resource usage, if the hand is symmetric
         // we can store only the bitmaps for the right half of the clock
@@ -676,19 +676,19 @@ void draw_bitmap_hand_mask(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PA
         flip_bitmap_x(hand_cache->image.bitmap, &hand_cache->cx);
         flip_bitmap_x(hand_cache->mask.bitmap, NULL);
       }
-    
+
       if (hand->flip_y) {
         // We can also do this vertically.
         flip_bitmap_y(hand_cache->image.bitmap, &hand_cache->cy);
         flip_bitmap_y(hand_cache->mask.bitmap, NULL);
       }
     }
-    
+
     GRect destination = gbitmap_get_bounds(hand_cache->image.bitmap);
     destination.origin.x = hand_def->place_x - hand_cache->cx;
     destination.origin.y = hand_def->place_y - hand_cache->cy;
 
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_fg);
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ BW_INVERT].paint_fg);
     graphics_draw_bitmap_in_rect(ctx, hand_cache->mask.bitmap, destination);
   }
 }
@@ -732,30 +732,30 @@ void draw_bitmap_hand_fg(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PARA
         // face, and flip them for the left half.
         flip_bitmap_x(hand_cache->image.bitmap, &hand_cache->cx);
       }
-    
+
       if (hand->flip_y) {
         // We can also do this vertically.
         flip_bitmap_y(hand_cache->image.bitmap, &hand_cache->cy);
       }
     }
-      
+
     // We make sure the dimensions of the GRect to draw into
     // are equal to the size of the bitmap--otherwise the image
     // will automatically tile.
     GRect destination = gbitmap_get_bounds(hand_cache->image.bitmap);
-    
+
     // Place the hand's center point at place_x, place_y.
     destination.origin.x = hand_def->place_x - hand_cache->cx;
     destination.origin.y = hand_def->place_y - hand_cache->cy;
-    
+
     // Specify a compositing mode to make the hands overlay on top of
     // each other, instead of the background parts of the bitmaps
     // blocking each other.
 
     // Painting foreground ("white") pixels as white.
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_bg);
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ BW_INVERT].paint_bg);
     graphics_draw_bitmap_in_rect(ctx, hand_cache->image.bitmap, destination);
-    
+
   } else {
     // The hand has a mask, so use it to draw the hand opaquely.
     if (hand_cache->image.bitmap == NULL) {
@@ -768,8 +768,8 @@ void draw_bitmap_hand_fg(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PARA
     GRect destination = gbitmap_get_bounds(hand_cache->image.bitmap);
     destination.origin.x = hand_def->place_x - hand_cache->cx;
     destination.origin.y = hand_def->place_y - hand_cache->cy;
-    
-    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_bg);
+
+    graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ BW_INVERT].paint_bg);
     graphics_draw_bitmap_in_rect(ctx, hand_cache->image.bitmap, destination);
   }
 }
@@ -857,11 +857,11 @@ static void remap_colors_moon(BitmapWithData *bwd) {
 }
 
 void draw_pebble_label(Layer *me, GContext *ctx, bool invert) {
-  unsigned int draw_mode = invert ^ config.draw_mode ^ APLITE_INVERT;
+  unsigned int draw_mode = invert ^ config.draw_mode ^ BW_INVERT;
 
   const struct IndicatorTable *window = &top_subdial[config.face_index];
   GRect destination = GRect(window->x + pebble_label_offset.x, window->y + pebble_label_offset.y, pebble_label_size.w, pebble_label_size.h);
-  
+
 #ifdef PBL_PLATFORM_APLITE
   BitmapWithData pebble_label_mask;
   pebble_label_mask = rle_bwd_create(RESOURCE_ID_PEBBLE_LABEL_MASK);
@@ -873,7 +873,7 @@ void draw_pebble_label(Layer *me, GContext *ctx, bool invert) {
   graphics_draw_bitmap_in_rect(ctx, pebble_label_mask.bitmap, destination);
   bwd_destroy(&pebble_label_mask);
 #endif  // PBL_PLATFORM_APLITE
-  
+
   if (pebble_label.bitmap == NULL) {
     pebble_label = rle_bwd_create(RESOURCE_ID_PEBBLE_LABEL);
     if (pebble_label.bitmap == NULL) {
@@ -884,19 +884,19 @@ void draw_pebble_label(Layer *me, GContext *ctx, bool invert) {
     remap_colors_clock(&pebble_label);
 #endif  // PBL_PLATFORM_APLITE
   }
-  
+
   graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_fg);
   graphics_draw_bitmap_in_rect(ctx, pebble_label.bitmap, destination);
   if (!keep_assets) {
     bwd_destroy(&pebble_label);
   }
 }
-  
+
 #ifdef TOP_SUBDIAL
 // Draws a special moon subdial window that shows the lunar phase in more detail.
 void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
   // The draw_mode is the color to draw the frame of the subdial.
-  unsigned int draw_mode = invert ^ config.draw_mode ^ APLITE_INVERT;
+  unsigned int draw_mode = invert ^ config.draw_mode ^ BW_INVERT;
 
   // The moon_draw_mode is the color to draw the moon within the subdial.
   unsigned int moon_draw_mode = draw_mode;
@@ -907,7 +907,7 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
 
   const struct IndicatorTable *window = &top_subdial[config.face_index];
   GRect destination = GRect(window->x, window->y, top_subdial_size.w, top_subdial_size.h);
-  
+
   // First draw the subdial details (including the background).
 #ifdef PBL_PLATFORM_APLITE
   if (top_subdial_frame_mask.bitmap == NULL) {
@@ -936,7 +936,7 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
     bwd_destroy(&top_subdial_mask);
   }
 #endif  // PBL_PLATFORM_APLITE
-  
+
   if (top_subdial_bitmap.bitmap == NULL) {
     top_subdial_bitmap = rle_bwd_create(RESOURCE_ID_TOP_SUBDIAL);
     if (top_subdial_bitmap.bitmap == NULL) {
@@ -947,7 +947,7 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
     remap_colors_clock(&top_subdial_bitmap);
 #endif  // PBL_PLATFORM_APLITE
   }
-  
+
   graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_fg);
   graphics_draw_bitmap_in_rect(ctx, top_subdial_bitmap.bitmap, destination);
   if (!keep_assets) {
@@ -988,7 +988,7 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
       return;
     }
   }
-  
+
   // In the Aplite case, we draw the moon in the fg color.  This will
   // be black-on-white if moon_draw_mode = 0, or white-on-black if
   // moon_draw_mode = 1.  Since we have selected the particular moon
@@ -1036,13 +1036,13 @@ void draw_clock_face(Layer *me, GContext *ctx) {
   GRect destination = layer_get_bounds(me);
   destination.origin.x = 0;
   destination.origin.y = 0;
-  graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ APLITE_INVERT].paint_assign);
+  graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ BW_INVERT].paint_assign);
   graphics_draw_bitmap_in_rect(ctx, face_bitmap.bitmap, destination);
 
   // Draw the top subdial if enabled.
   {
     const struct IndicatorTable *window = &top_subdial[config.face_index];
-  
+
     switch (config.top_subdial) {
     case TSM_off:
     break;
@@ -1050,7 +1050,7 @@ void draw_clock_face(Layer *me, GContext *ctx) {
     case TSM_pebble_label:
       draw_pebble_label(me, ctx, window->invert);
       break;
-    
+
     case TSM_moon_phase:
       draw_moon_phase_subdial(me, ctx, window->invert);
       break;
@@ -1107,13 +1107,13 @@ void draw_phase_1_hands(GContext *ctx) {
   // Since the second hand is a tiny subdial in the Chrono case, and
   // is overlaid by the hour and minute hands, we have to draw the
   // second hand and everything else in phase_2.
-  
+
 #else  // MAKE_CHRONOGRAPH
   // The normal, non-chrono implementation, with only hour, minute,
   // and second hands; and we assume the second hand is a sweep-second
   // hand that covers the entire face and must be drawn last (rather
   // than a subdial second hand that must be drawn first).
-  
+
 #ifdef HOUR_MINUTE_OVERLAP
   // Draw the hour and minute hands overlapping, so they share a
   // common mask.  Rosewright A and B share this property, because
@@ -1137,7 +1137,7 @@ void draw_phase_1_hands(GContext *ctx) {
 
   draw_hand(&minute_cache RESOURCE_CACHE_PARAMS(NULL, 0), &minute_hand_def, current_placement.minute_hand_index, ctx);
 #endif  //  HOUR_MINUTE_OVERLAP
-  
+
 #endif  // MAKE_CHRONOGRAPH
 }
 
@@ -1159,7 +1159,7 @@ void draw_phase_2_hands(GContext *ctx) {
   if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
     draw_hand(&chrono_second_cache RESOURCE_CACHE_PARAMS(chrono_second_resource_cache, chrono_second_resource_cache_size), &chrono_second_hand_def, current_placement.chrono_second_hand_index, ctx);
   }
-  
+
 #else  // MAKE_CHRONOGRAPH
   // The normal, non-chrono implementation; and here in phase 2 we
   // only need to draw the second hand.
@@ -1167,9 +1167,9 @@ void draw_phase_2_hands(GContext *ctx) {
   if (config.second_hand) {
     draw_hand(&second_cache RESOURCE_CACHE_PARAMS(second_resource_cache, second_resource_cache_size), &second_hand_def, current_placement.second_hand_index, ctx);
   }
-  
+
 #endif  // MAKE_CHRONOGRAPH
-} 
+}
 
 // Triggers a memory panic if at least MIN_BYTES_FREE are not available.
 void check_min_bytes_free() {
@@ -1212,90 +1212,90 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
     if (!hide_clock_face) {
       // Perform framebuffer caching to minimize redraws.
       if (clock_face.bitmap == NULL || redraw_clock_face) {
-	// The clock face needs to be redrawn (or drawn for the first
-	// time).  This is every part of the display except for the
-	// hands, including the date windows and top subdial.  If the
-	// second hand is enabled, it also includes the hour and minute
-	// hands.
-	bwd_destroy(&clock_face);
-	redraw_clock_face = false;
-	
-	// Draw the clock face into the frame buffer.
-	draw_clock_face(me, ctx);
+        // The clock face needs to be redrawn (or drawn for the first
+        // time).  This is every part of the display except for the
+        // hands, including the date windows and top subdial.  If the
+        // second hand is enabled, it also includes the hour and minute
+        // hands.
+        bwd_destroy(&clock_face);
+        redraw_clock_face = false;
 
-	if (SEPARATE_PHASE_HANDS) {
-	  // If the second hand is enabled, then we also draw the
-	  // phase_1 hands at this time, so they get cached in the clock
-	  // face buffer.
-	  draw_phase_1_hands(ctx);
-	}
-	
-	if (save_framebuffer) {
-	  // Now save the render for next time.
-	  GBitmap *fb = graphics_capture_frame_buffer(ctx);
-	  assert(clock_face.bitmap == NULL);
-	  
-	  if (!keep_face_asset) {
-	    // Destroy face_bitmap only after we have already drawn
-	    // everything else that goes onto it, and just before we
-	    // dupe the framebuffer.  This helps minimize fragmentation.
+        // Draw the clock face into the frame buffer.
+        draw_clock_face(me, ctx);
+
+        if (SEPARATE_PHASE_HANDS) {
+          // If the second hand is enabled, then we also draw the
+          // phase_1 hands at this time, so they get cached in the clock
+          // face buffer.
+          draw_phase_1_hands(ctx);
+        }
+
+        if (save_framebuffer) {
+          // Now save the render for next time.
+          GBitmap *fb = graphics_capture_frame_buffer(ctx);
+          assert(clock_face.bitmap == NULL);
+
+          if (!keep_face_asset) {
+            // Destroy face_bitmap only after we have already drawn
+            // everything else that goes onto it, and just before we
+            // dupe the framebuffer.  This helps minimize fragmentation.
 #ifdef PBL_PLATFORM_APLITE
-	    // On Aplite we can go one step further (and we probably
-	    // have to because memory is so tight here): we can use the
-	    // *same* memory for framebuffer that we had already
-	    // allocated for face_bitmap, because they will be the same
-	    // bitmap format and size.
-	    clock_face = face_bitmap;
-	    face_bitmap.bitmap = NULL;
-	    bwd_copy_into_from_bitmap(&clock_face, fb);
-	    
+            // On Aplite we can go one step further (and we probably
+            // have to because memory is so tight here): we can use the
+            // *same* memory for framebuffer that we had already
+            // allocated for face_bitmap, because they will be the same
+            // bitmap format and size.
+            clock_face = face_bitmap;
+            face_bitmap.bitmap = NULL;
+            bwd_copy_into_from_bitmap(&clock_face, fb);
+
 #else  //  PBL_PLATFORM_APLITE
-	    // On other platforms, they are likely to have a different
-	    // format (the clock face will be 4-bit palette), so we have
-	    // to deallocate and reallocate.
-	    bwd_destroy(&face_bitmap);
-	    clock_face = bwd_copy_bitmap(fb);
-	    if (clock_face.bitmap == NULL) {
-	      trigger_memory_panic(__LINE__);
-	    }
+            // On other platforms, they are likely to have a different
+            // format (the clock face will be 4-bit palette), so we have
+            // to deallocate and reallocate.
+            bwd_destroy(&face_bitmap);
+            clock_face = bwd_copy_bitmap(fb);
+            if (clock_face.bitmap == NULL) {
+              trigger_memory_panic(__LINE__);
+            }
 #endif  //  PBL_PLATFORM_APLITE
-	  } else {
-	    // If we're confident we can keep both the face_bitmap and
-	    // clock_face around together, do so.
-	    clock_face = bwd_copy_bitmap(fb);
-	    if (clock_face.bitmap == NULL) {
-	      trigger_memory_panic(__LINE__);
-	    }
-	  }
-	  
-	  graphics_release_frame_buffer(ctx, fb);
-	}
-	
+          } else {
+            // If we're confident we can keep both the face_bitmap and
+            // clock_face around together, do so.
+            clock_face = bwd_copy_bitmap(fb);
+            if (clock_face.bitmap == NULL) {
+              trigger_memory_panic(__LINE__);
+            }
+          }
+
+          graphics_release_frame_buffer(ctx, fb);
+        }
+
       } else {
-	// The rendered clock face is already saved from a previous
-	// update; redraw it now.
-	GRect destination = layer_get_bounds(me);
-	destination.origin.x = 0;
-	destination.origin.y = 0;
-	graphics_context_set_compositing_mode(ctx, GCompOpAssign);
-	graphics_draw_bitmap_in_rect(ctx, clock_face.bitmap, destination);
+        // The rendered clock face is already saved from a previous
+        // update; redraw it now.
+        GRect destination = layer_get_bounds(me);
+        destination.origin.x = 0;
+        destination.origin.y = 0;
+        graphics_context_set_compositing_mode(ctx, GCompOpAssign);
+        graphics_draw_bitmap_in_rect(ctx, clock_face.bitmap, destination);
       }
     }
-    
+
     if (date_window_debug) {
       // Now fill in the per-frame debug text, if needed.
       for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
-	draw_date_window_debug_text(ctx, i);
+        draw_date_window_debug_text(ctx, i);
       }
     }
-    
+
     if (!SEPARATE_PHASE_HANDS || hide_clock_face) {
       // If the second hand is *not* enabled, then we draw the phase_1
       // hands at this time, so we don't have to invalidate the buffer
       // each minute.
       draw_phase_1_hands(ctx);
     }
-    
+
     // And we always draw the phase_2 hands last, each update.  These
     // are the most dynamic hands that are never part of the captured
     // framebuffer.
@@ -1332,7 +1332,7 @@ void draw_date_window_background(GContext *ctx, int date_window_index, unsigned 
   graphics_context_set_compositing_mode(ctx, draw_mode_table[bg_draw_mode].paint_bg);
   graphics_draw_bitmap_in_rect(ctx, date_window_mask.bitmap, box);
 #endif  // PBL_PLATFORM_APLITE
-  
+
   if (date_window.bitmap == NULL) {
     date_window = rle_bwd_create(RESOURCE_ID_DATE_WINDOW);
     if (date_window.bitmap == NULL) {
@@ -1344,7 +1344,7 @@ void draw_date_window_background(GContext *ctx, int date_window_index, unsigned 
     remap_colors_date(&date_window);
 #endif  // PBL_PLATFORM_APLITE
   }
-  
+
   graphics_context_set_compositing_mode(ctx, draw_mode_table[fg_draw_mode].paint_fg);
   graphics_draw_bitmap_in_rect(ctx, date_window.bitmap, box);
 }
@@ -1361,7 +1361,7 @@ void draw_date_window_text(GContext *ctx, int date_window_index, const char *tex
   GRect box = GRect(window->x, window->y, date_window_size.w, date_window_size.h);
 
 #ifdef PBL_PLATFORM_APLITE
-  unsigned int draw_mode = window->invert ^ config.draw_mode ^ APLITE_INVERT;
+  unsigned int draw_mode = window->invert ^ config.draw_mode ^ BW_INVERT;
   graphics_context_set_text_color(ctx, draw_mode_table[draw_mode].colors[1]);
 #else
   struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
@@ -1420,7 +1420,7 @@ int raw_compute_week_number(int yday, int wday, int day_of_week, int first_week_
 
 int compute_week_number(int yday, int wday, int year, int day_of_week, int first_week_contains) {
   int week_number = raw_compute_week_number(yday, wday, day_of_week, first_week_contains);
-  
+
   if (week_number < 1) {
     // It's possible to come up with the answer 0, in which case we
     // really meant the last week of the previous year.
@@ -1464,12 +1464,12 @@ void draw_full_date_window(GContext *ctx, int date_window_index) {
   int indicator_face_index = get_indicator_face_index();
   const struct IndicatorTable *window = &date_windows[date_window_index][indicator_face_index];
 
-  unsigned int draw_mode = window->invert ^ config.draw_mode ^ APLITE_INVERT;
+  unsigned int draw_mode = window->invert ^ config.draw_mode ^ BW_INVERT;
   draw_date_window_background(ctx, date_window_index, draw_mode, draw_mode);
 
   // Format the date or weekday or whatever text for display.
   char buffer[DATE_WINDOW_BUFFER_SIZE];
-  
+
   GFont font = date_numeric_font;
   struct FontPlacement *font_placement = &date_lang_font_placement[0];
   if (dwm >= DWM_weekday && dwm <= DWM_ampm) {
@@ -1480,7 +1480,7 @@ void draw_full_date_window(GContext *ctx, int date_window_index) {
   }
 
   char *text = buffer;
-  
+
   switch (dwm) {
   case DWM_identify:
     snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%c", toupper((int)(DATE_WINDOW_KEYS[date_window_index])));
@@ -1499,17 +1499,17 @@ void draw_full_date_window(GContext *ctx, int date_window_index) {
     case WNM_mon_4:
       compute_and_format_week_number(buffer, 1, 3);
       break;
-      
+
     case WNM_sun_1:
       compute_and_format_week_number(buffer, 0, 0);
       break;
-      
+
     case WNM_sat_1:
       compute_and_format_week_number(buffer, 6, 0);
       break;
     }
     break;
-      
+
   case DWM_yday:
     format_date_number(buffer, current_placement.ordinal_date_index + 1);
     break;
@@ -1525,11 +1525,11 @@ void draw_full_date_window(GContext *ctx, int date_window_index) {
     // re-render each frame.
     date_window_debug = true;
     return;
-    
+
   case DWM_weekday:
     text = date_names[current_placement.day_index];
     break;
-    
+
   case DWM_month:
     text = date_names[current_placement.month_index + NUM_WEEKDAY_NAMES];
     break;
@@ -1594,7 +1594,7 @@ void draw_date_window_debug_text(GContext *ctx, int date_window_index) {
   if (date_debug_font == NULL) {
     date_debug_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
   }
-  
+
   draw_date_window_text(ctx, date_window_index, text, &debug_font_placement, date_debug_font);
 }
 
@@ -1817,7 +1817,7 @@ void reset_memory_panic_count() {
   // of this cached in RAM, until proven otherwise.
   keep_assets = true;
   // hack
-  //keep_face_asset = true;  
+  //keep_face_asset = true;
 
   hide_date_windows = false;
   hide_clock_face = false;
@@ -1950,7 +1950,7 @@ void create_temporal_objects() {
   hand_cache_init(&second_cache);
 
   invalidate_clock_face();
-  
+
   init_battery_gauge();
   init_bluetooth_indicator();
 
@@ -1969,7 +1969,7 @@ void destroy_temporal_objects() {
   bwd_destroy(&pebble_label);
   bwd_destroy(&top_subdial_bitmap);
   bwd_destroy(&moon_wheel_bitmap);
-  
+
   bwd_destroy(&clock_face);
   face_index = -1;
 
@@ -1985,7 +1985,7 @@ void destroy_temporal_objects() {
 #ifdef MAKE_CHRONOGRAPH
   bwd_clear_cache(chrono_second_resource_cache, CHRONO_SECOND_RESOURCE_CACHE_SIZE + CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE);
 #endif  // MAKE_CHRONOGRAPH
-  
+
   hand_cache_destroy(&hour_cache);
   hand_cache_destroy(&minute_cache);
   hand_cache_destroy(&second_cache);
@@ -2080,7 +2080,7 @@ void reset_memory_panic() {
   ++memory_panic_count;
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "reset_memory_panic begin, count = %d", memory_panic_count);
-    
+
   recreate_all_objects();
 
   // Start resetting some options if the memory panic count grows too high.
@@ -2101,7 +2101,7 @@ void reset_memory_panic() {
 #endif  // SUPPORT_RESOURCE_CACHE
   if (memory_panic_count > 3) {
     config.second_hand = false;
-  } 
+  }
   if (memory_panic_count > 4) {
     save_framebuffer = false;
   }
@@ -2119,7 +2119,7 @@ void reset_memory_panic() {
       }
     }
     hide_date_windows = true;
-  } 
+  }
   if (memory_panic_count > 8) {
     config.chrono_dial = 0;
   }

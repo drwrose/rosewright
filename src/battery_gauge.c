@@ -26,7 +26,7 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
   BatteryChargeState charge_state = battery_state_service_peek();
 
 #ifdef BATTERY_HACK
-  time_t now = time(NULL);  
+  time_t now = time(NULL);
   charge_state.charge_percent = 100 - ((now / 2) % 11) * 10;
 #endif  // BATTERY_HACK
 
@@ -45,7 +45,7 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
   GColor fg_color, bg_color;
   GCompOp mask_mode;
 
-  if (invert ^ config.draw_mode ^ APLITE_INVERT) {
+  if (invert ^ config.draw_mode ^ BW_INVERT) {
     fg_mode = GCompOpSet;
     bg_color = GColorBlack;
     fg_color = GColorWhite;
@@ -66,7 +66,7 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
     graphics_context_set_compositing_mode(ctx, mask_mode);
     graphics_draw_bitmap_in_rect(ctx, charging_mask.bitmap, box);
   }
-  
+
   if (config.battery_gauge != IM_digital) {
     // Erase the battery gauge shape.
     if (battery_gauge_mask.bitmap == NULL) {
@@ -88,7 +88,7 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
     graphics_context_set_compositing_mode(ctx, fg_mode);
     graphics_draw_bitmap_in_rect(ctx, charging.bitmap, box);
   }
-  
+
   if (!charge_state.is_charging && charge_state.is_plugged && charge_state.charge_percent >= 80) {
     // Plugged in but not charging.  Draw the charged icon.
     if (battery_gauge_charged.bitmap == NULL) {
@@ -115,8 +115,8 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
     GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
     graphics_context_set_text_color(ctx, fg_color);
     graphics_draw_text(ctx, text_buffer, font, GRect(x, y - 4, 18, 10),
-		       GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
-		       NULL);
+                       GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
+                       NULL);
   }
 
   if (!keep_assets) {

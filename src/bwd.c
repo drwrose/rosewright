@@ -68,22 +68,22 @@ void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source) {
   case GBitmapFormat1Bit:
     pixels_per_byte = 8;
     break;
-    
+
   case GBitmapFormat8Bit:
   case GBitmapFormat8BitCircular:
     pixels_per_byte = 1;
     break;
-    
+
   case GBitmapFormat1BitPalette:
     palette_count = 2;
     pixels_per_byte = 8;
     break;
-    
+
   case GBitmapFormat2BitPalette:
     palette_count = 4;
     pixels_per_byte = 4;
     break;
-    
+
   case GBitmapFormat4BitPalette:
     palette_count = 16;
     pixels_per_byte = 2;
@@ -108,13 +108,13 @@ void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source) {
   GSize size = gbitmap_get_bounds(source).size;
   assert(size.h == gbitmap_get_bounds(dest->bitmap).size.h &&
          size.w == gbitmap_get_bounds(dest->bitmap).size.w)
-  
+
 #ifdef PBL_SDK_2
   int stride = gbitmap_get_bytes_per_row(source);
   assert(stride == gbitmap_get_bytes_per_row(dest->bitmap))
   uint8_t *source_data = gbitmap_get_data(source);
   size_t data_size = stride * size.h;
-  
+
   uint8_t *dest_data = gbitmap_get_data(dest->bitmap);
   memcpy(dest_data, source_data, data_size);
 
@@ -198,7 +198,7 @@ typedef struct {
 static void rbuffer_init_resource(RBuffer *rb, int resource_id, size_t offset) {
   //  rb->_buffer = (uint8_t *)malloc(RBUFFER_SIZE);
   //  assert(rb->_buffer != NULL);
-  
+
   rb->_rh = resource_get_handle(resource_id);
   rb->_total_size = resource_size(rb->_rh);
   rb->_i = 0;
@@ -213,7 +213,7 @@ static void rbuffer_init_resource(RBuffer *rb, int resource_id, size_t offset) {
 static void rbuffer_init_data(RBuffer *rb, unsigned char *data, size_t data_size) {
   //  rb->_buffer = (uint8_t *)malloc(RBUFFER_SIZE);
   //  assert(rb->_buffer != NULL);
-  
+
   rb->_rh = 0;
   rb->_i = 0;
   rb->_total_size = rb->_filled_size = rb->_bytes_read = data_size;
@@ -240,7 +240,7 @@ static void rbuffer_split(RBuffer *rb_front, RBuffer *rb_back, size_t point) {
     rb_back->_bytes_read = rb_back->_filled_size = rb_front->_total_size;
     rb_back->_i = point;
   }
-  
+
   if (rb_front->_total_size > point) {
     rb_front->_total_size = point;
 
@@ -343,7 +343,7 @@ static int rl2unpacker_getc(Rl2Unpacker *rl2) {
       bv = (rl2->b & (bmask << (rl2->bi - rl2->n)));
     }
   }
-    
+
   // Infer from that the number of chunks, and hence the number of
   // bits, that make up the value we will extract.
   int num_chunks = (zero_count + 1);
@@ -403,7 +403,7 @@ typedef void Packer(int value, int count, int *b, uint8_t **dp, uint8_t *dp_stop
 // Packs a series of identical 1-bit values into (*dp) beginning at bit (*b).
 void pack_1bit(int value, int count, int *b, uint8_t **dp, uint8_t *dp_stop) {
   assert(*dp < dp_stop);
-  
+
   if (value) {
     // Generate count 1-bits.
     int b1 = (*b) + count;
@@ -482,7 +482,7 @@ void pack_2bit(int value, int count, int *b, uint8_t **dp, uint8_t *dp_stop) {
     (*b) += count * 2;
     (*dp) += (*b) / 8;
     (*b) = (*b) % 8;
-  }    
+  }
 }
 
 
@@ -519,7 +519,7 @@ void pack_4bit(int value, int count, int *b, uint8_t **dp, uint8_t *dp_stop) {
     (*b) += count * 4;
     (*dp) += (*b) / 8;
     (*b) = (*b) % 8;
-  }    
+  }
 }
 
 // Packs a series of identical 8-bit values into (*dp).
@@ -546,7 +546,7 @@ rle_bwd_create_rb(RBuffer *rb) {
   //         (uint8_t)  format (see below)
   //         (uint16_t) offset to start of values, or 0 if format == 0
   //         (uint16_t) offset to start of palette, or 0 if format <= 1
-  
+
   int width = rbuffer_getc(rb);
   int height = rbuffer_getc(rb);
   int n = rbuffer_getc(rb);
@@ -561,7 +561,7 @@ rle_bwd_create_rb(RBuffer *rb) {
   unsigned int po = (po_hi << 8) | po_lo;
 
   assert(vo != 0 && po >= vo && po <= rb->_total_size);
-  
+
   int do_unscreen = (n & 0x80);
   n = n & 0x7f;
 
@@ -575,13 +575,13 @@ rle_bwd_create_rb(RBuffer *rb) {
   case GBitmapFormat1Bit:
     packer_func = pack_1bit;
     break;
-    
+
   case GBitmapFormat2BitPalette:
     vn = 2;
     palette_count = 4;
     packer_func = pack_2bit;
     break;
-    
+
   case GBitmapFormat4BitPalette:
     vn = 4;
     palette_count = 16;
@@ -600,7 +600,7 @@ rle_bwd_create_rb(RBuffer *rb) {
   if (palette_count != 0) {
     palette = (GColor *)malloc(palette_count * sizeof(GColor));
   }
-  
+
   GBitmap *image = gbitmap_create_blank_with_palette(GSize(width, height), format, palette, true);
   if (image == NULL) {
     free(palette);
@@ -628,7 +628,7 @@ rle_bwd_create_rb(RBuffer *rb) {
   uint8_t *dp = bitmap_data;
   uint8_t *dp_stop = dp + data_size;
   int b = 0;
-  
+
   if (packer_func == pack_1bit) {
     // Unpack a 1-bit file.
 
@@ -660,7 +660,7 @@ rle_bwd_create_rb(RBuffer *rb) {
 
   //app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "wrote %d bytes", dp - bitmap_data);
   assert(dp == dp_stop && b == 0);
-  
+
   if (do_unscreen) {
     unscreen_bitmap(image);
   }
@@ -674,9 +674,9 @@ rle_bwd_create_rb(RBuffer *rb) {
     }
     rbuffer_deinit(&rb_po);
   }
-  
+
   rbuffer_deinit(&rb_vo);
-  
+
   return bwd_create(image, NULL);
 }
 
@@ -696,7 +696,7 @@ rle_bwd_create_rb(RBuffer *rb) {
   //         (uint8_t)  format (see below)
   //         (uint16_t) offset to start of values, or 0 if format == 0
   //         (uint16_t) offset to start of palette, or 0 if format <= 1
-  
+
   int width = rbuffer_getc(rb);
   int height = rbuffer_getc(rb);
   assert(width > 0 && width <= SCREEN_WIDTH && height > 0 && height <= SCREEN_HEIGHT);
@@ -711,13 +711,17 @@ rle_bwd_create_rb(RBuffer *rb) {
   /*uint8_t vo_hi = */rbuffer_getc(rb);
   /*uint8_t po_lo = */rbuffer_getc(rb);
   /*uint8_t po_hi = */rbuffer_getc(rb);
-  
+
   int do_unscreen = (n & 0x80);
   n = n & 0x7f;
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "reading bitmap %d x %d, n = %d, format = %d", width, height, n, format);
-  
+
+#ifdef PBL_SDK_2
   GBitmap *image = __gbitmap_create_blank(GSize(width, height));
+#else
+  GBitmap *image = gbitmap_create_blank(GSize(width, height), GBitmapFormat1Bit);
+#endif
   if (image == NULL) {
     return bwd_create(NULL, NULL);
   }
@@ -733,7 +737,7 @@ rle_bwd_create_rb(RBuffer *rb) {
   uint8_t *dp = bitmap_data;
   uint8_t *dp_stop = dp + data_size;
   int b = 0;
-  
+
   // Unpack a 1-bit file.
 
   // The initial value is 0.
@@ -752,11 +756,11 @@ rle_bwd_create_rb(RBuffer *rb) {
 
   //app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "wrote %d bytes", dp - bitmap_data);
   assert(dp == dp_stop && b == 0);
-  
+
   if (do_unscreen) {
     unscreen_bitmap(image);
   }
-  
+
   return bwd_create(image, NULL);
 }
 
@@ -766,7 +770,7 @@ BitmapWithData
 rle_bwd_create(int resource_id) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "rle_bwd_create(%d)", resource_id);
   ++bwd_resource_reads;
-  
+
   RBuffer rb;
   rbuffer_init_resource(&rb, resource_id, 0);
   BitmapWithData result = rle_bwd_create_rb(&rb);
@@ -832,7 +836,7 @@ void bwd_remap_colors(BitmapWithData *bwd, GColor cb, GColor c1, GColor c2, GCol
     int r = cb.r;
     int g = cb.g;
     int b = cb.b;
-    
+
     GColor p = palette[pi];
 
     r = (3 * r + p.r * (c1.r - r)) / 3;  // Blend from r to c1.r
@@ -852,11 +856,11 @@ void bwd_remap_colors(BitmapWithData *bwd, GColor cb, GColor c1, GColor c2, GCol
     palette[pi].b = (b < 0x3) ? b : 0x3;
 
     //    GColor q = palette[pi]; app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "cb = %02x, c1 = %02x, c2 = %02x, c3 = %02x.  %d: %02x/%02x/%02x/%02x becomes %02x/%02x/%02x/%02x (%d, %d, %d)", cb.argb, c1.argb, c2.argb, c3.argb, pi, p.argb & 0xc0, p.argb & 0x30, p.argb & 0x0c, p.argb & 0x03, q.argb & 0xc0, q.argb & 0x30, q.argb & 0x0c, q.argb & 0x03, r, g, b);
-    
+
     if (invert_colors) {
       palette[pi].argb ^= 0x3f;
     }
   }
-    
+
 #endif // PBL_PLATFORM_APLITE
 }
