@@ -1852,10 +1852,20 @@ void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 void health_event_handler(HealthEventType event, void *context) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "health event");
 
-  // Just redraw the hands no matter what the event is.
-  update_hands(NULL);
+  // Just redraw the clock face no matter what the event is.
+  layer_mark_dirty(clock_face_layer);
 }
 #endif  // PBL_PLATFORM_APLITE
+
+void did_focus_handler(bool in_focus) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "did_focus: %d", (int)in_focus);
+  if (in_focus) {
+    // We have just regained focus from a notification or something.
+    // Ensure the window is completely redrawn.
+    layer_mark_dirty(clock_face_layer);
+  }
+}
+
 
 void window_load_handler(struct Window *window) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "main window loads");
@@ -2196,6 +2206,12 @@ void handle_init() {
 
   apply_config();
   check_memory_usage();
+
+  AppFocusHandlers focus_handlers;
+  memset(&focus_handlers, 0, sizeof(focus_handlers));
+  //focus_handlers.will_focus = did_focus_handler;
+  focus_handlers.did_focus = did_focus_handler;
+  app_focus_service_subscribe_handlers(focus_handlers);
 }
 
 void trigger_memory_panic(int line_number) {
