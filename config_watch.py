@@ -1064,34 +1064,34 @@ struct HandDef %(hand)s_hand_def = {
             global enableChronoTenthHand
             enableChronoTenthHand = True
 
+        paintChannel = 0
+        resourceId = '0'
+        bitmapCenters = 'NULL'
+        bitmapTable = 'NULL'
+        vectorTable = 'NULL'
+
         if bitmapParams:
+            colorMode = bitmapParams[1]
+            paintChannel, useTransparency, dither = parseColorMode(colorMode)
+            resourceId = 'RESOURCE_ID_%s_0' % (hand.upper())
+            bitmapCenters = '%s_hand_bitmap_lookup' % (hand)
+            bitmapTable = '%s_hand_bitmap_table' % (hand)
             resourceStr += makeBitmapHands(generatedTable, generatedDefs, useRle, hand, *bitmapParams)
+
         if vectorParams:
+            vectorTable = '&%s_hand_vector_table' % (hand)
             resourceStr += makeVectorHands(generatedTable, paintChannel, generatedDefs, hand, vectorParams)
 
         for platform in targetPlatforms:
-            resourceId = '0'
             resourceMaskId = resourceId
-            paintChannel = 0
-            bitmapCenters = 'NULL'
-            bitmapTable = 'NULL'
-            vectorTable = 'NULL'
 
             bwPlatform = (platform in ['aplite', 'diorite'])
             roundPlatform = (platform in ['chalk'])
 
             if bitmapParams:
-                colorMode = bitmapParams[1]
-                paintChannel, useTransparency, dither = parseColorMode(colorMode)
-                resourceId = 'RESOURCE_ID_%s_0' % (hand.upper())
                 resourceMaskId = resourceId
                 if useTransparency and bwPlatform:
                     resourceMaskId = 'RESOURCE_ID_%s_0_MASK' % (hand.upper())
-                bitmapCenters = '%s_hand_bitmap_lookup' % (hand)
-                bitmapTable = '%s_hand_bitmap_table' % (hand)
-
-            if vectorParams:
-                vectorTable = '&%s_hand_vector_table' % (hand)
 
             if roundPlatform:
                 placeX = cxdRound.get(hand, roundCenterX)
