@@ -300,7 +300,7 @@ def makeLang():
 
     # Ensure the latin font includes the digits, plus whatever other
     # characters we might need there.
-    for char in '0123456789ABCDk!':
+    for char in '0123456789.ABCDk!:- ':
         neededChars['latin'].add(ord(char))
 
     fontEntry = """    {

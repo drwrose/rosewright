@@ -57,16 +57,26 @@ typedef enum {
   DWM_weekday = 6,
   DWM_month = 7,
   DWM_ampm = 8,
-  
-  // Special case.
+
+  // No longer used.
   DWM_moon_unused = 9,
 
-  // Debug options.
-  DWM_debug_heap_free = 10,
-  DWM_debug_memory_panic_count = 11,
-  DWM_debug_resource_reads = 12,
-  DWM_debug_cache_hits = 13,
-  DWM_debug_cache_total_size = 14,
+  // Uses date_numeric_font.
+  DWM_step_count = 10,
+  DWM_step_count_10 = 11,
+  DWM_active_time = 12,
+  DWM_walked_distance = 13,
+  DWM_sleep_time = 14,
+  DWM_sleep_restful_time = 15,
+  DWM_calories_burned = 16,
+  DWM_heart_rate = 17,
+
+  // Debug options.  These are always at the end.
+  DWM_debug_heap_free = 201,
+  DWM_debug_memory_panic_count = 202,
+  DWM_debug_resource_reads = 203,
+  DWM_debug_cache_hits = 204,
+  DWM_debug_cache_total_size = 205,
 } DateWindowMode;
 
 typedef enum {
@@ -79,7 +89,7 @@ typedef enum {
   WNM_mon_4 = 0,  // EU, Asia, Oceania
   WNM_sun_1 = 1,  // Americas, China, Japan
   WNM_sat_1 = 2,  // Middle East
-} WeekNumberingMode;  
+} WeekNumberingMode;
 
 typedef struct {
   IndicatorMode battery_gauge;

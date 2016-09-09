@@ -17,7 +17,9 @@ Layer *clock_face_layer;
 
 BitmapWithData date_window;
 BitmapWithData date_window_mask;
-bool date_window_debug = false;
+bool date_window_dynamic = false;
+bool date_window_health_metric = false;
+bool health_service_subscribed = false;
 
 BitmapWithData face_bitmap;
 BitmapWithData pebble_label;
@@ -29,7 +31,6 @@ BitmapWithData moon_wheel_bitmap;
 GFont fallback_font = NULL;
 GFont date_numeric_font = NULL;
 GFont date_lang_font = NULL;
-GFont date_debug_font = NULL;
 
 bool keep_assets = true;
 //bool keep_face_asset = true;
@@ -72,14 +73,6 @@ typedef struct __attribute__((__packed__)) {
 struct FontPlacement {
   unsigned char resource_id;
   signed char vshift;  // Value determined empirically for each font.
-};
-
-struct FontPlacement debug_font_placement = {
-#ifdef PBL_ROUND
-  0, -2
-#else  // PBL_ROUND
-  0, -3
-#endif  // PBL_ROUND
 };
 
 #define NUM_DATE_LANG_FONTS 12
@@ -179,7 +172,8 @@ void create_temporal_objects();
 void destroy_temporal_objects();
 void recreate_all_objects();
 void draw_full_date_window(GContext *ctx, int date_window_index);
-void draw_date_window_debug_text(GContext *ctx, int date_window_index);
+void draw_date_window_dynamic_text(GContext *ctx, int date_window_index);
+void health_event_handler(HealthEventType event, void *context);
 
 // Loads a font from the resource and returns it.  It may return
 // either the intended font, or the fallback font.  If it returns
@@ -264,7 +258,7 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
   uint16_t t_ms = 0;
   unsigned int ms;
 
-  if (needs_sub_second) {
+  if (needs_sub_second || stime == NULL) {
     // If we do need sub-second precision, it replaces the stime
     // structure we were passed in.
 
@@ -1058,7 +1052,8 @@ void draw_clock_face(Layer *me, GContext *ctx) {
 
   // Draw the date windows.
   {
-    date_window_debug = false;
+    date_window_dynamic = false;
+    date_window_health_metric = false;
     for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
       draw_full_date_window(ctx, i);
     }
@@ -1066,6 +1061,20 @@ void draw_clock_face(Layer *me, GContext *ctx) {
       bwd_destroy(&date_window);
       bwd_destroy(&date_window_mask);
     }
+
+#ifndef PBL_PLATFORM_APLITE
+    if (health_service_subscribed != date_window_health_metric) {
+      // Subscribe to health service updates as needed.
+      if (date_window_health_metric) {
+        app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "subscribing to health service");
+        health_service_events_subscribe(health_event_handler, NULL);
+      } else {
+        app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "unsubscribing to health service");
+        health_service_events_unsubscribe();
+      }
+      health_service_subscribed = date_window_health_metric;
+    }
+#endif  // PBL_PLATFORM_APLITE
   }
 
 #ifdef MAKE_CHRONOGRAPH
@@ -1281,10 +1290,10 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
       }
     }
 
-    if (date_window_debug) {
-      // Now fill in the per-frame debug text, if needed.
+    if (date_window_dynamic) {
+      // Now fill in the per-frame dynamic text, if needed.
       for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
-        draw_date_window_debug_text(ctx, i);
+        draw_date_window_dynamic_text(ctx, i);
       }
     }
 
@@ -1391,6 +1400,58 @@ void draw_date_window_text(GContext *ctx, int date_window_index, const char *tex
 void format_date_number(char buffer[DATE_WINDOW_BUFFER_SIZE], int value) {
   snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", value);
 }
+
+#ifndef PBL_PLATFORM_APLITE
+void format_health_metric_count_today(char buffer[DATE_WINDOW_BUFFER_SIZE], HealthMetric metric, int scale_factor) {
+  int value = (int)health_service_sum_today(metric) / scale_factor;
+  // Show only the bottom four digits.
+  if (value < 10000) {
+    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", value);
+  } else {
+    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%04d", value % 10000);
+  }
+}
+
+void format_health_metric_calories_today(char buffer[DATE_WINDOW_BUFFER_SIZE]) {
+  int value = (int)(health_service_sum_today(HealthMetricRestingKCalories) + health_service_sum_today(HealthMetricActiveKCalories));
+  snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", value);
+}
+
+void format_health_metric_time_today(char buffer[DATE_WINDOW_BUFFER_SIZE], HealthMetric metric) {
+  int seconds = (int)health_service_sum_today(metric);
+  int minutes = seconds / 60;
+  int hours = minutes / 60;
+
+  snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d:%02d", hours, minutes % 60);
+}
+
+void format_health_metric_distance_today(char buffer[DATE_WINDOW_BUFFER_SIZE], HealthMetric metric) {
+  int meters = (int)health_service_sum_today(metric);
+
+  switch (health_service_get_measurement_system_for_display(metric)) {
+  case MeasurementSystemImperial:
+    {
+      int tenth_miles = ((meters * 1000 + 80467) / 160934);
+      snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d.%01d", tenth_miles / 10, tenth_miles % 10);
+    }
+    break;
+
+  case MeasurementSystemMetric:
+  default:
+    {
+      int hm = (meters + 50) / 100;  // "hectometers"
+      snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d.%01d", hm / 10, hm % 10);
+    }
+    break;
+  }
+}
+
+void format_health_metric_count_peek(char buffer[DATE_WINDOW_BUFFER_SIZE], HealthMetric metric) {
+  int value = (int)health_service_peek_current_value(metric);
+  snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", value);
+}
+
+#endif  // PBL_PLATFORM_APLITE
 
 // yday is the current ordinal date [0..365], wday is the current day
 // of the week [0..6], 0 = Sunday.  year is the current year less 1900.
@@ -1520,9 +1581,9 @@ void draw_full_date_window(GContext *ctx, int date_window_index) {
   case DWM_debug_cache_hits:
   case DWM_debug_cache_total_size:
 #endif  // SUPPORT_RESOURCE_CACHE
-    // We have some debug text that will need a separate pass to
+    // We have some dynamic text that will need a separate pass to
     // re-render each frame.
-    date_window_debug = true;
+    date_window_dynamic = true;
     return;
 
   case DWM_weekday:
@@ -1537,25 +1598,49 @@ void draw_full_date_window(GContext *ctx, int date_window_index) {
     text = date_names[current_placement.ampm_value + NUM_WEEKDAY_NAMES + NUM_MONTH_NAMES];
     break;
 
+#ifndef PBL_PLATFORM_APLITE
+  case DWM_step_count:
+  case DWM_step_count_10:
+  case DWM_active_time:
+  case DWM_walked_distance:
+  case DWM_calories_burned:
+    date_window_dynamic = true;
+    date_window_health_metric = true;
+    return;
+
+  case DWM_sleep_time:
+    format_health_metric_time_today(buffer, HealthMetricSleepSeconds);
+    date_window_health_metric = true;
+    break;
+
+  case DWM_sleep_restful_time:
+    format_health_metric_time_today(buffer, HealthMetricSleepRestfulSeconds);
+    date_window_health_metric = true;
+    break;
+#endif  // PBL_PLATFORM_APLITE
+
+#ifdef PBL_PLATFORM_DIORITE
+  case DWM_heart_rate:
+    date_window_dynamic = true;
+    date_window_health_metric = true;
+    return;
+#endif  // PBL_PLATFORM_DIORITE
+
   case DWM_moon_unused:
   default:
-    buffer[0] = '\0';
+    strcpy(buffer, "- -");
   }
 
   draw_date_window_text(ctx, date_window_index, text, font_placement, font);
 }
 
-// Fills in the debug text on top of the date window if needed.  (This
-// is re-rendered per frame and doesn't get baked into the clock_face
-// bitmap.)
-void draw_date_window_debug_text(GContext *ctx, int date_window_index) {
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_date_window_debug_text %c", date_window_index + 'a');
+// Fills in the dynamic text on top of the date window if needed.
+// (This is re-rendered per frame and doesn't get baked into the
+// clock_face bitmap.)
+void draw_date_window_dynamic_text(GContext *ctx, int date_window_index) {
+  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_date_window_dynamic_text %c", date_window_index + 'a');
 
   DateWindowMode dwm = config.date_windows[date_window_index];
-  if (dwm < DWM_debug_heap_free) {
-    // Do nothing.
-    return;
-  }
 
   // Format the date or weekday or whatever text for display.
 #define DATE_WINDOW_BUFFER_SIZE 16
@@ -1586,15 +1671,54 @@ void draw_date_window_debug_text(GContext *ctx, int date_window_index) {
     break;
 #endif  // SUPPORT_RESOURCE_CACHE
 
+  case DWM_weekday:
+    text = date_names[current_placement.day_index];
+    break;
+
+  case DWM_month:
+    text = date_names[current_placement.month_index + NUM_WEEKDAY_NAMES];
+    break;
+
+  case DWM_ampm:
+    text = date_names[current_placement.ampm_value + NUM_WEEKDAY_NAMES + NUM_MONTH_NAMES];
+    break;
+
+#ifndef PBL_PLATFORM_APLITE
+  case DWM_step_count:
+    format_health_metric_count_today(buffer, HealthMetricStepCount, 1);
+    break;
+
+  case DWM_step_count_10:
+    format_health_metric_count_today(buffer, HealthMetricStepCount, 10);
+    break;
+
+  case DWM_active_time:
+    format_health_metric_time_today(buffer, HealthMetricActiveSeconds);
+    break;
+
+  case DWM_walked_distance:
+    format_health_metric_distance_today(buffer, HealthMetricWalkedDistanceMeters);
+    break;
+
+  case DWM_calories_burned:
+    format_health_metric_calories_today(buffer);
+    break;
+#endif  // PBL_PLATFORM_APLITE
+
+#ifdef PBL_PLATFORM_DIORITE
+  case DWM_heart_rate:
+    format_health_metric_count_peek(buffer, HealthMetricHeartRateBPM);
+    break;
+#endif  // PBL_PLATFORM_DIORITE
+
   default:
-    buffer[0] = '\0';
+    // Not a dynamic element.  Do nothing.
+    return;
   }
 
-  if (date_debug_font == NULL) {
-    date_debug_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
-  }
-
-  draw_date_window_text(ctx, date_window_index, text, &debug_font_placement, date_debug_font);
+  GFont font = date_numeric_font;
+  struct FontPlacement *font_placement = &date_lang_font_placement[0];
+  draw_date_window_text(ctx, date_window_index, text, font_placement, font);
 }
 
 // Called once per epoch (e.g. once per second, or once per minute) to
@@ -1721,6 +1845,15 @@ void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 
   check_memory_usage();
 }
+
+#ifndef PBL_PLATFORM_APLITE
+void health_event_handler(HealthEventType event, void *context) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "health event");
+
+  // Just redraw the hands no matter what the event is.
+  update_hands(NULL);
+}
+#endif  // PBL_PLATFORM_APLITE
 
 void window_load_handler(struct Window *window) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "main window loads");
