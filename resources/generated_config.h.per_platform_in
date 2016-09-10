@@ -1,0 +1,38 @@
+#ifdef PBL_PLATFORM_%(platformUpper)s
+
+// The number of subdivisions around the face for each kind of hand.
+#define NUM_STEPS_HOUR %(numStepsHour)s
+#define NUM_STEPS_MINUTE %(numStepsMinute)s
+#define NUM_STEPS_SECOND %(numStepsSecond)s
+#define NUM_STEPS_CHRONO_MINUTE %(numStepsChronoMinute)s
+#define NUM_STEPS_CHRONO_SECOND %(numStepsChronoSecond)s
+#define NUM_STEPS_CHRONO_TENTH %(numStepsChronoTenth)s
+#define NUM_STEPS_MOON %(numStepsMoon)s
+
+#if %(limitResourceCache)s
+  // If this condition is true, we don't implement the resource-cache
+  // feature on this platform.
+  #undef SUPPORT_RESOURCE_CACHE
+#else
+  #define SUPPORT_RESOURCE_CACHE 1
+#endif
+
+#ifdef SUPPORT_RESOURCE_CACHE
+
+#define SECOND_RESOURCE_CACHE_SIZE %(secondResourceCacheSize)s
+#define CHRONO_SECOND_RESOURCE_CACHE_SIZE %(chronoSecondResourceCacheSize)s
+#define SECOND_MASK_RESOURCE_CACHE_SIZE %(secondMaskResourceCacheSize)s
+// Also for now, these are never used.
+#define CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE 0
+
+#else
+
+// If !SUPPORT_RESOURCE_CACHE, then all of these are zero.
+#define SECOND_RESOURCE_CACHE_SIZE 0
+#define CHRONO_SECOND_RESOURCE_CACHE_SIZE 0
+#define SECOND_MASK_RESOURCE_CACHE_SIZE 0
+#define CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE 0
+
+#endif  // SUPPORT_RESOURCE_CACHE
+
+#endif  // PBL_PLATFORM_%(platformUpper)s
