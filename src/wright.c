@@ -34,15 +34,15 @@ GFont date_numeric_font = NULL;
 GFont date_lang_font = NULL;
 
 bool keep_assets = true;
-//bool keep_face_asset = true;
-#define keep_face_asset 0  // hack
+bool keep_face_asset = true;
 bool save_framebuffer = true;
 
 bool hide_date_windows = false;
 bool hide_clock_face = false;
 bool redraw_clock_face = false;
 
-// hack
+// Drawing the phase hands separately doesn't seem to be a performance
+// win for some reason.
 #define SEPARATE_PHASE_HANDS 0
 //#define SEPARATE_PHASE_HANDS (config.second_hand)
 
@@ -643,6 +643,7 @@ void draw_bitmap_hand_mask(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PA
 #endif  // PBL_BW
   {
     // The draw-without-a-mask case.  Do nothing here.
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_bitmap_hand_mask %d no_basalt_mask %d", hand_index, no_basalt_mask);
   } else {
     // The hand has a mask, so use it to draw the hand opaquely.
     if (hand_cache->image.bitmap == NULL) {
@@ -685,6 +686,7 @@ void draw_bitmap_hand_mask(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PA
 
     graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ BW_INVERT].paint_fg);
     graphics_draw_bitmap_in_rect(ctx, hand_cache->mask.bitmap, destination);
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_bitmap_hand_mask %d format %d", hand_index, gbitmap_get_format(hand_cache->mask.bitmap));
   }
 }
 
@@ -1965,8 +1967,7 @@ void reset_memory_panic_count() {
   // Confidently start out with the expectation that we keep keep all
   // of this cached in RAM, until proven otherwise.
   keep_assets = true;
-  // hack
-  //keep_face_asset = true;
+  keep_face_asset = true;
 
   hide_date_windows = false;
   hide_clock_face = false;
@@ -2239,8 +2240,7 @@ void reset_memory_panic() {
 
   // Start resetting some options if the memory panic count grows too high.
   if (memory_panic_count > 0) {
-    //hack
-    //keep_face_asset = false;
+    keep_face_asset = false;
   }
   if (memory_panic_count > 1) {
     keep_assets = false;

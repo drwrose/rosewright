@@ -1101,10 +1101,11 @@ struct HandDef %(hand)s_hand_def = {
 
             bwPlatform = (platform in ['aplite', 'diorite'])
             roundPlatform = (platform in ['chalk'])
+            hourMinuteOverlap = ('hour_minute_overlap' in defaults)
 
             if bitmapParams:
                 resourceMaskId = resourceId
-                if useTransparency and bwPlatform:
+                if useTransparency and (bwPlatform or hourMinuteOverlap):
                     resourceMaskId = 'RESOURCE_ID_%s_0_MASK' % (hand.upper())
 
             if roundPlatform:
