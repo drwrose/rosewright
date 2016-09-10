@@ -249,7 +249,7 @@ faces = {
                             (110, 57, 'b'), (132, 33, 'b'),
                             (110, 57, 'b'), (132, 33, 'b'),
                             ],
-        'defaults' : [ 'date:b', 'moon_phase', 'pebble_label', 'moon_dark', 'second', 'hour_minute_overlap' ],
+        'defaults' : [ 'date:b', 'moon_phase', 'pebble_label', 'moon_dark', 'second', 'hour_minute_overlap', 'sweep' ],
         },
     'b' : {
         'filename' : ['b_face.png', 'b_face_clean.png'],
@@ -282,7 +282,7 @@ faces = {
         'battery_round' : [ (110, 57, 'b'), (132, 33, 'b'),
                             (110, 57, 'b'), (132, 33, 'b'),
                             ],
-        'defaults' : [ 'day:c', 'date:d', 'second', 'hour_minute_overlap', 'pebble_label' ],
+        'defaults' : [ 'day:c', 'date:d', 'second', 'hour_minute_overlap', 'pebble_label', 'sweep' ],
         },
     'c' : {
         'filename' : ['c_face.png'],
@@ -340,7 +340,7 @@ faces = {
                             (103, 52, 'b'), (121, 47, 'b'),
                             (103, 52, 'b'), (121, 47, 'b'),
                             ],
-        'defaults' : [ 'day:c', 'date:d', 'bluetooth', 'battery' ],
+        'defaults' : [ 'day:c', 'date:d', 'bluetooth', 'battery', 'sweep' ],
         },
     'e' : {
         'filename' : ['e_face.png', 'e_face_white.png', 'e_face_clean.png'],
@@ -366,7 +366,7 @@ faces = {
         'battery_rect' : [ (115, 16, 'b'), (115, 16, 'w'), (115, 16, 'b'), ],
         'bluetooth_round' : [ (26, 26, 'b'), (26, 26, 'w'), (26, 26, 'b'), ],
         'battery_round' : [ (139, 30, 'b'), (139, 30, 'w'), (139, 30, 'b'), ],
-        'defaults' : [ 'date:c', 'moon_dark', 'limit_cache' ],
+        'defaults' : [ 'date:c', 'moon_dark', 'limit_cache_aplite', 'limit_cache_basalt', 'limit_cache_chalk' ],
         },
     }
 
@@ -472,8 +472,8 @@ def makeFaces(generatedTable, generatedDefs):
 
         resourceStr += make_rle('clock_faces/' + window, name = 'DATE_WINDOW', useRle = supportRle, platforms = targetPlatforms)
 
-        if mask:
-            resourceStr += make_rle('clock_faces/' + mask, name = 'DATE_WINDOW_MASK', useRle = supportRle, platforms = targetPlatforms)
+        if mask and bwPlatforms:
+            resourceStr += make_rle('clock_faces/' + mask, name = 'DATE_WINDOW_MASK', useRle = supportRle, platforms = bwPlatforms)
 
     if targetChronoTenths:
         resourceStr += make_rle_trans('clock_faces/' + targetChronoTenths, name = 'CHRONO_DIAL_TENTHS', useRle = supportRle, platforms = targetPlatforms)
@@ -509,13 +509,13 @@ def makeVectorHands(generatedTable, paintChannel, generatedDefs, hand, groupList
 
     return resourceStr
 
-def getNumSteps(hand):
+def getNumSteps(hand, platform):
     # Get the number of subdivisions for the hand.
     numStepsHand = numSteps[hand]
 
     # If we're building support for sweep-second hands, we might need
     # more subdivisions.
-    if supportSweep:
+    if 'sweep' in defaults and platform != 'aplite':
         if makeChronograph:
             if hand == 'chrono_second':
                 numStepsHand = numStepsSweep[hand]
@@ -525,11 +525,21 @@ def getNumSteps(hand):
 
     return numStepsHand
 
-def getResourceCacheSize(hand):
-    return resourceCacheSize.get(hand, [0, 0])[0]
+def getResourceCacheSize(hand, platform):
+    if platform == 'aplite' and hand != 'second':
+        # On Aplite, we only ever cache the second hand--not enough
+        # RAM to play around with.
+        return 0
 
-def getMaskResourceCacheSize(hand):
-    return resourceCacheSize.get(hand, [0, 0])[1]
+    return resourceCacheSize.get((hand, platform), [0, 0])[0]
+
+def getMaskResourceCacheSize(hand, platform):
+    if platform not in bwPlatforms:
+        # When we're building for a color platform, we don't bother
+        # cachings masks.
+        return 0
+
+    return resourceCacheSize.get((hand, platform), [0, 0])[1]
 
 def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale):
     if isinstance(scale, type(())):
@@ -615,7 +625,7 @@ def makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, a
     large1Mask = PIL.Image.new('L', size, 0)
     large1Mask.paste(source1Mask, (center[0] - pivot[0], center[1] - pivot[1]))
 
-    numStepsHand = getNumSteps(hand)
+    numStepsHand = getNumSteps(hand, platform)
     for i in range(numStepsHand):
         flip_x = False
         flip_y = False
@@ -765,7 +775,7 @@ def makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, a
         numMaskBitmaps = numBitmaps
     else:
         numMaskBitmaps = 0
-    resourceCacheSize[hand] = numBitmaps, numMaskBitmaps
+    resourceCacheSize[hand, platform] = numBitmaps, numMaskBitmaps
 
     print >> generatedTable, "struct BitmapHandCenterRow %s_hand_bitmap_lookup[] = {" % (hand)
     for i in range(numBitmaps):
@@ -831,7 +841,7 @@ def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode
         largeMaskExplicit = PIL.Image.new('RGBA', size, (0, 0, 0, 0))
         largeMaskExplicit.paste(sourceMaskExplicit, (center[0] - pivot[0], center[1] - pivot[1]))
 
-    numStepsHand = getNumSteps(hand)
+    numStepsHand = getNumSteps(hand, platform)
     for i in range(numStepsHand):
         flip_x = False
         flip_y = False
@@ -1012,7 +1022,7 @@ def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode
         numMaskBitmaps = numBitmaps
     else:
         numMaskBitmaps = 0
-    resourceCacheSize[hand] = numBitmaps, numMaskBitmaps
+    resourceCacheSize[hand, platform] = numBitmaps, numMaskBitmaps
 
     print >> generatedTable, "struct BitmapHandCenterRow %s_hand_bitmap_lookup[] = {" % (hand)
     for i in range(numBitmaps):
@@ -1180,94 +1190,108 @@ def makeIndicatorTable(generatedTable, generatedDefs, name, (indicator_rect, ind
     else:
         print >> generatedTable, "};\n";
 
-def makeMoonWheel():
+def get_variants_for_platforms(platforms):
+    variants = set()
+    if "aplite" in platforms or "diorite" in platforms:
+        variants.add("~bw")
+    if "basalt" in platforms:
+        variants.add("~color")
+        variants.add("~color~rect")
+    if "chalk" in platforms:
+        variants.add("~color")
+        variants.add("~color~round")
+    return list(variants)
+
+def makeMoonWheel(platform):
     """ Returns the resource strings needed to include the moon wheel
     icons, for the optional moon wheel window. """
 
-    # moon_wheel_white_*.png is for when the moon is to be drawn as white pixels on black (not used on Basalt).
-    # moon_wheel_black_*.png is for when the moon is to be drawn as black pixels on white.
+    resourceStr = ''
 
-    numStepsMoon = getNumSteps('moon')
+    # moon_wheel_white_*.png is for when the moon is to be drawn as white pixels on black (used on b&w platforms only).
+    # moon_wheel_black_*.png is for when the moon is to be drawn as black pixels on white (b&w and color platforms).
+
+    numStepsMoon = getNumSteps('moon', platform)
     wheelSize = 80, 80
     subdialSize = 80, 41
 
-    for mode in [ '~color', '~bw' ]:
-        if mode not in targetModes:
-            continue
+    prefix = resourcesDir + '/'
+    basename = 'clock_faces/top_subdial_internal_mask'
+    ext = '.png'
+    for variant in get_variants_for_platforms([platform]) + ['']:
+        # Handle the specialized variant files.
+        if os.path.exists(prefix + basename + variant + ext):
+            break
 
-        subdialMaskPathname = '%s/clock_faces/top_subdial_internal_mask%s.png' % (resourcesDir, mode)
-        subdialMask = PIL.Image.open(subdialMaskPathname)
-        assert subdialMask.size == subdialSize
-        subdialMask = subdialMask.convert('L')
-        subdialMaskBinary = subdialMask.point(thresholdMask)
-        black = PIL.Image.new('L', subdialMask.size, 0)
-        white = PIL.Image.new('L', subdialMask.size, 255)
+    subdialMaskPathname = prefix + basename + variant + ext
+    subdialMask = PIL.Image.open(subdialMaskPathname)
+    assert subdialMask.size == subdialSize
+    subdialMask = subdialMask.convert('L')
+    subdialMaskBinary = subdialMask.point(thresholdMask)
+    black = PIL.Image.new('L', subdialMask.size, 0)
+    white = PIL.Image.new('L', subdialMask.size, 255)
 
-        for cat in ['white', 'black']:
-            wheelSourcePathname = '%s/clock_faces/moon_wheel_%s%s.png' % (resourcesDir, cat, mode)
-            wheelSource = PIL.Image.open(wheelSourcePathname)
+    if variant == '~bw':
+        cats = ['white', 'black']
+    else:
+        # Ignore the white image on color platforms.
+        cats = ['black']
 
-            for i in range(numStepsMoon):
-                if cat == 'white' and mode != '~bw':
-                    # Ignore the white image on Basalt.
-                    p = wheelSource
-                else:
-                    # Process the image normally.
-                    angle = i * 180.0 / numStepsMoon
+    for cat in cats:
+        wheelSourcePathname = '%s/clock_faces/moon_wheel_%s%s.png' % (resourcesDir, cat, variant)
+        wheelSource = PIL.Image.open(wheelSourcePathname)
 
-                    # Rotate the moon wheel to the appropriate angle.
-                    p = wheelSource.rotate(-angle, PIL.Image.BICUBIC, True)
-
-                    cx, cy = p.size[0] / 2, p.size[1] / 2
-                    px, py = cx - wheelSize[0] / 2, cy - wheelSize[1] / 2
-                    cropbox = (px, py, px + subdialSize[0], py + subdialSize[1])
-                    p = p.crop(cropbox)
-
-                    # Now make the 1-bit version for B&W platforms and
-                    # the 2-bit version for color platforms.
-                    if mode == '~bw':
-                        p = p.convert('1')
-                        if cat == 'white':
-                            # Invert the image for moon_wheel_white.
-                            p = PIL.Image.composite(black, white, p)
-
-                        # Now apply the mask.
-                        p = PIL.Image.composite(p, black, subdialMask)
-
-                    else:
-                        r, g, b = p.split()
-                        r = r.point(threshold2Bit).convert('L')
-                        g = g.point(threshold2Bit).convert('L')
-                        b = b.point(threshold2Bit).convert('L')
-
-                        # Now apply the mask.
-                        r = PIL.Image.composite(r, black, subdialMaskBinary)
-                        g = PIL.Image.composite(g, black, subdialMaskBinary)
-                        b = PIL.Image.composite(b, black, subdialMaskBinary)
-
-                        p = PIL.Image.merge('RGBA', [r, g, b, subdialMask])
-
-                        # And quantize to 16 colors.
-                        p = p.convert("P", palette = PIL.Image.ADAPTIVE, colors = 16)
-
-                targetBasename = 'build/rot_moon_wheel_%s_%s%s.png' % (cat, i, mode)
-                p.save('%s/%s' % (resourcesDir, targetBasename))
-
-
-    # Now encode to RLE and build the resource string (which is global
-    # rather than dependent on the platform).
-    resourceStr = ''
-
-    resourceStr += make_rle('clock_faces/pebble_label.png', name = 'PEBBLE_LABEL', useRle = supportRle, platforms = targetPlatforms)
-    resourceStr += make_rle('clock_faces/pebble_label_mask.png', name = 'PEBBLE_LABEL_MASK', useRle = supportRle, platforms = targetPlatforms)
-
-    resourceStr += make_rle('clock_faces/top_subdial.png', name = 'TOP_SUBDIAL', useRle = supportRle, platforms = targetPlatforms)
-    resourceStr += make_rle('clock_faces/top_subdial_mask.png', name = 'TOP_SUBDIAL_MASK', useRle = supportRle, platforms = targetPlatforms)
-    resourceStr += make_rle('clock_faces/top_subdial_frame_mask.png', name = 'TOP_SUBDIAL_FRAME_MASK', useRle = supportRle, platforms = targetPlatforms)
-    for cat in ['white', 'black']:
         for i in range(numStepsMoon):
-            targetBasename = 'build/rot_moon_wheel_%s_%s.png' % (cat, i)
-            resourceStr += make_rle(targetBasename, name = 'MOON_WHEEL_%s_%s' % (cat.upper(), i), useRle = supportRle, platforms = targetPlatforms)
+            angle = i * 180.0 / numStepsMoon
+
+            # Rotate the moon wheel to the appropriate angle.
+            p = wheelSource.rotate(-angle, PIL.Image.BICUBIC, True)
+
+            cx, cy = p.size[0] / 2, p.size[1] / 2
+            px, py = cx - wheelSize[0] / 2, cy - wheelSize[1] / 2
+            cropbox = (px, py, px + subdialSize[0], py + subdialSize[1])
+            p = p.crop(cropbox)
+
+            # Now make the 1-bit version for B&W platforms and
+            # the 2-bit version for color platforms.
+            if variant == '~bw':
+                p = p.convert('1')
+                if cat == 'white':
+                    # Invert the image for moon_wheel_white.
+                    p = PIL.Image.composite(black, white, p)
+
+                # Now apply the mask.
+                p = PIL.Image.composite(p, black, subdialMask)
+
+            else:
+                r, g, b = p.split()
+                r = r.point(threshold2Bit).convert('L')
+                g = g.point(threshold2Bit).convert('L')
+                b = b.point(threshold2Bit).convert('L')
+
+                # Now apply the mask.
+                r = PIL.Image.composite(r, black, subdialMaskBinary)
+                g = PIL.Image.composite(g, black, subdialMaskBinary)
+                b = PIL.Image.composite(b, black, subdialMaskBinary)
+
+                p = PIL.Image.merge('RGBA', [r, g, b, subdialMask])
+
+                # And quantize to 16 colors.
+                p = p.convert("P", palette = PIL.Image.ADAPTIVE, colors = 16)
+
+            targetBasename = 'build/rot_moon_wheel_%s_%s_%s.png' % (cat, i, platform)
+            p.save('%s/%s' % (resourcesDir, targetBasename))
+            resourceStr += make_rle(targetBasename, name = 'MOON_WHEEL_%s_%s' % (cat.upper(), i), useRle = supportRle, platforms = [platform])
+
+    # Let's also throw in the other subdial decorations here.
+    resourceStr += make_rle('clock_faces/pebble_label.png', name = 'PEBBLE_LABEL', useRle = supportRle, platforms = [platform])
+    if platform in bwPlatforms:
+        resourceStr += make_rle('clock_faces/pebble_label_mask.png', name = 'PEBBLE_LABEL_MASK', useRle = supportRle, platforms = [platform])
+
+    resourceStr += make_rle('clock_faces/top_subdial.png', name = 'TOP_SUBDIAL', useRle = supportRle, platforms = [platform])
+    if platform in bwPlatforms:
+        resourceStr += make_rle('clock_faces/top_subdial_mask.png', name = 'TOP_SUBDIAL_MASK', useRle = supportRle, platforms = [platform])
+        resourceStr += make_rle('clock_faces/top_subdial_frame_mask.png', name = 'TOP_SUBDIAL_FRAME_MASK', useRle = supportRle, platforms = [platform])
 
     return resourceStr
 
@@ -1294,7 +1318,8 @@ def configWatch():
     resourceStr += makeHands(generatedTable, generatedDefs)
 
     if top_subdial_rect[0]:
-        resourceStr += makeMoonWheel()
+        for platform in targetPlatforms:
+            resourceStr += makeMoonWheel(platform)
 
     print >> generatedDefs, "extern struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_INDICATOR_FACES];"
     print >> generatedTable, "struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_INDICATOR_FACES] = {"
@@ -1359,7 +1384,7 @@ def configWatch():
         'defaultBattery' : defaultBattery,
         'defaultSecondHand' : int('second' in defaults),
         'defaultHourBuzzer' : int('buzzer' in defaults),
-        'enableSweepSeconds' : int(supportSweep),
+        'enableSweepSeconds' : int('sweep' in defaults),
         'defaultDateWindows' : repr(defaultDateWindows),
         'displayLangLookup' : displayLangLookup,
         'enableTopSubdial' : int(bool(top_subdial_rect[0])),
@@ -1369,8 +1394,26 @@ def configWatch():
         'pebbleLabel' : int('pebble_label' in defaults),
         }
 
+    configPerPlatformIn = open('%s/generated_config.h.per_platform_in' % (resourcesDir), 'r').read()
     configIn = open('%s/generated_config.h.in' % (resourcesDir), 'r').read()
     config = open('%s/generated_config.h' % (resourcesDir), 'w')
+
+    for platform in targetPlatforms:
+        print >> config, configPerPlatformIn % {
+            'platformUpper' : platform.upper(),
+            'numStepsHour' : getNumSteps('hour', platform),
+            'numStepsMinute' : getNumSteps('minute', platform),
+            'numStepsSecond' : getNumSteps('second', platform),
+            'numStepsChronoMinute' : getNumSteps('chrono_minute', platform),
+            'numStepsChronoSecond' : getNumSteps('chrono_second', platform),
+            'numStepsChronoTenth' : getNumSteps('chrono_tenth', platform),
+            'numStepsMoon' : getNumSteps('moon', platform),
+            'limitResourceCache' : int('limit_cache' in defaults or 'limit_cache_' + platform in defaults),
+            'secondResourceCacheSize' : getResourceCacheSize('second', platform),
+            'chronoSecondResourceCacheSize' : getResourceCacheSize('chrono_second', platform),
+            'secondMaskResourceCacheSize' : getMaskResourceCacheSize('second', platform),
+            'chronoSecondMaskResourceCacheSize' : getMaskResourceCacheSize('chrono_second', platform),
+            }
 
     print >> config, configIn % {
         'persistKey' : 0x5151 + uuId[-1],
@@ -1382,17 +1425,6 @@ def configWatch():
         'defaultFaceIndex' : defaultFaceIndex,
         'numDateWindows' : len(date_window_keys),
         'dateWindowKeys' : date_window_keys,
-        'numStepsHour' : numSteps['hour'],
-        'numStepsMinute' : numSteps['minute'],
-        'numStepsSecond' : getNumSteps('second'),
-        'numStepsChronoMinute' : numSteps['chrono_minute'],
-        'numStepsChronoSecond' : getNumSteps('chrono_second'),
-        'numStepsChronoTenth' : numSteps['chrono_tenth'],
-        'numStepsMoon' : numSteps['moon'],
-        'secondResourceCacheSize' : getResourceCacheSize('second'),
-        'chronoSecondResourceCacheSize' : getResourceCacheSize('chrono_second'),
-        'secondMaskResourceCacheSize' : getMaskResourceCacheSize('second'),
-        'chronoSecondMaskResourceCacheSize' : getMaskResourceCacheSize('chrono_second'),
         'compileDebugging' : int(compileDebugging),
         'screenshotBuild' : int(screenshotBuild),
         'defaultDateWindows' : repr(defaultDateWindows)[1:-1],
@@ -1402,7 +1434,7 @@ def configWatch():
         'defaultBattery' : defaultBattery,
         'defaultSecondHand' : int('second' in defaults),
         'defaultHourBuzzer' : int('buzzer' in defaults),
-        'enableSweepSeconds' : int(supportSweep),
+        'enableSweepSeconds' : int('sweep' in defaults),
         'makeChronograph' : int(makeChronograph and enableChronoSecondHand),
         'enableTopSubdial' : int(bool(top_subdial_rect[0])),
         'defaultTopSubdial' : defaultTopSubdial,
@@ -1411,8 +1443,6 @@ def configWatch():
         'enableChronoSecondHand' : int(enableChronoSecondHand),
         'enableChronoTenthHand' : int(enableChronoTenthHand),
         'hourMinuteOverlap' : int('hour_minute_overlap' in defaults),
-        'limitResourceCacheAplite' : int('limit_cache_aplite' in defaults),
-        'limitResourceCache' : int('limit_cache' in defaults),
         }
 
     # Also generate the html pages for this version, if needed.
@@ -1443,7 +1473,6 @@ config_langs = [ 'en', 'es', 'de', 'fr', 'bg' ]
 watchStyle = None
 handStyle = None
 faceStyle = None
-supportSweep = False
 compileDebugging = False
 screenshotBuild = False
 supportRle = True
@@ -1467,8 +1496,6 @@ for opt, arg in opts:
             sys.exit(1)
     elif opt == '-c':
         makeChronograph = True
-    elif opt == '-w':
-        supportSweep = True
     elif opt == '-x':
         supportRle = False
     elif opt == '-p':
@@ -1487,16 +1514,8 @@ if not watchStyle:
 if not targetPlatforms:
     targetPlatforms = [ "aplite", "basalt", "chalk", "diorite" ]
 
-targetModes = set()
-if "aplite" in targetPlatforms or "diorite" in targetPlatforms:
-    targetModes.add("~bw")
-if "basalt" in targetPlatforms:
-    targetModes.add("~color")
-    targetModes.add("~color~rect")
-if "chalk" in targetPlatforms:
-    targetModes.add("~color")
-    targetModes.add("~color~round")
-targetModes = list(targetModes)
+bwPlatforms = set(targetPlatforms) & set(['aplite', 'diorite'])
+colorPlatforms = set(targetPlatforms) - bwPlatforms
 
 watchName, defaultHandStyle, defaultFaceStyle, uuId = watches[watchStyle]
 

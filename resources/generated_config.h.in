@@ -32,59 +32,6 @@
   #define TOP_SUBDIAL 1
 #endif
 
-// The number of subdivisions around the face for each kind of hand.
-#define NUM_STEPS_HOUR %(numStepsHour)s
-#define NUM_STEPS_MINUTE %(numStepsMinute)s
-#define NUM_STEPS_SECOND %(numStepsSecond)s
-#define NUM_STEPS_CHRONO_MINUTE %(numStepsChronoMinute)s
-#define NUM_STEPS_CHRONO_SECOND %(numStepsChronoSecond)s
-#define NUM_STEPS_CHRONO_TENTH %(numStepsChronoTenth)s
-#define NUM_STEPS_MOON %(numStepsMoon)s
-
-#if %(limitResourceCacheAplite)s && defined(PBL_PLATFORM_APLITE)
-  // If this symbol is defined, we don't implement the resource-cache
-  // feature on Aplite.
-  #undef SUPPORT_RESOURCE_CACHE
-#elif %(limitResourceCache)s
-  // If this symbol is defined, we don't implement the resource-cache
-  // feature on any platform.
-  #undef SUPPORT_RESOURCE_CACHE
-#else
-  #define SUPPORT_RESOURCE_CACHE 1
-#endif
-
-#ifdef SUPPORT_RESOURCE_CACHE
-#define SECOND_RESOURCE_CACHE_SIZE %(secondResourceCacheSize)s
-
-#ifndef PBL_PLATFORM_APLITE
-#define CHRONO_SECOND_RESOURCE_CACHE_SIZE %(chronoSecondResourceCacheSize)s
-#else  // PBL_PLATFORM_APLITE
-// On Aplite, we never cache these--not enough RAM to play with.
-#define CHRONO_SECOND_RESOURCE_CACHE_SIZE 0
-#endif  // PBL_PLATFORM_APLITE
-
-#ifndef PBL_PLATFORM_APLITE
-// For now, Basalt doesn't use masks--at least not on any second
-// hands--so doesn't need to cache them.
-#define SECOND_MASK_RESOURCE_CACHE_SIZE 0
-#else
-#define SECOND_MASK_RESOURCE_CACHE_SIZE %(secondMaskResourceCacheSize)s
-#endif  //  PBL_PLATFORM_APLITE
-
-// Also for now, these are never used.
-#define CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE 0
-
-#else
-// If !SUPPORT_RESOURCE_CACHE, then all of these are zero.
-#define SECOND_RESOURCE_CACHE_SIZE 0
-#define CHRONO_SECOND_RESOURCE_CACHE_SIZE 0
-
-#define SECOND_MASK_RESOURCE_CACHE_SIZE 0
-#define CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE 0
-
-#endif  // SUPPORT_RESOURCE_CACHE
-
-
 #if %(hourMinuteOverlap)s
   // Defined if the hour and minute hands should be drawn in the same
   // operation, so that they share a unified mask (instead of masking
@@ -122,7 +69,12 @@
 #define DEFAULT_BATTERY_GAUGE %(defaultBattery)s
 
 #define DEFAULT_SECOND_HAND %(defaultSecondHand)s
+
+#ifdef PBL_PLATFORM_APLITE
+#define ENABLE_SWEEP_SECONDS 0
+#else  // PBL_PLATFORM_APLITE
 #define ENABLE_SWEEP_SECONDS %(enableSweepSeconds)s
+#endif  // PBL_PLATFORM_APLITE
 
 #define DEFAULT_HOUR_BUZZER %(defaultHourBuzzer)s
 

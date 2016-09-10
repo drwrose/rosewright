@@ -67,7 +67,7 @@ function logLocalStorage() {
     var keys = Object.keys(localStorage);
     console.log("  localStorage = {");
     for (var key in keys) {
-	console.log('      "' + keys[key] + '" : ' + localStorage[keys[key]] + ',');
+        console.log('      "' + keys[key] + '" : ' + localStorage[keys[key]] + ',');
     }
     console.log("  }");
     */
@@ -80,13 +80,13 @@ function writeToStorage(keyword, value) {
 function getIntFromStorage(keyword, default_value) {
     var value = localStorage.getItem(watch_name + ":" + keyword);
     if (!value) {
-	value = default_value;
+        value = default_value;
         console.log("   " + keyword + ": default " + value);
         return value;
     }
     value = parseInt(value);
     if (isNaN(value)) {
-	value = default_value;
+        value = default_value;
         console.log("   " + keyword + ": default " + value);
         return value;
     }
@@ -98,7 +98,7 @@ function getIntFromStorage(keyword, default_value) {
 function getStringFromStorage(keyword, default_value) {
     var value = localStorage.getItem(watch_name + ":" + keyword);
     if (!value) {
-	value = default_value;
+        value = default_value;
     }
 
     console.log("   " + keyword + ": '" + value + "'");
@@ -107,27 +107,27 @@ function getStringFromStorage(keyword, default_value) {
 
 function configAtLeastVersion(major, minor) {
     return ((config_version_major > major) ||
-	    (config_version_major == major && config_version_minor >= minor));
+            (config_version_major == major && config_version_minor >= minor));
 }
 
 var initialized = false;
 function initialize() {
     console.log("initialize: " + initialized);
     if (initialized) {
-	return;
+        return;
     }
 
     // Massage the default_display_lang variable to ensure it is one of
     // the supported language options.
     default_display_lang = navigator.language;
     if (!(default_display_lang in display_lang_lookup)) {
-	default_display_lang = default_display_lang.replace('-', '_');
+        default_display_lang = default_display_lang.replace('-', '_');
     }
     if (!(default_display_lang in display_lang_lookup)) {
-	default_display_lang = default_display_lang.split('_')[0];
+        default_display_lang = default_display_lang.split('_')[0];
     }
     if (!(default_display_lang in display_lang_lookup)) {
-	default_display_lang = 'en_US';  // Fallback value.
+        default_display_lang = 'en_US';  // Fallback value.
     }
     default_display_lang = display_lang_reverse[display_lang_lookup[default_display_lang]];
     console.log("navigator.language = " + navigator.language + ", default_display_lang = " + default_display_lang);
@@ -161,8 +161,8 @@ function initialize() {
     date_windows = [];
     for (var i = 0; i < num_date_windows; ++i) {
         var key = date_window_keys.charAt(i);
-	var sym = 'date_window_' + key;
-	date_windows.push(getIntFromStorage(sym, default_date_windows[i]));
+        var sym = 'date_window_' + key;
+        date_windows.push(getIntFromStorage(sym, default_date_windows[i]));
     }
     lunar_background = getIntFromStorage('lunar_background', default_lunar_background);
     lunar_direction = getIntFromStorage('lunar_direction', default_lunar_direction);
@@ -171,29 +171,29 @@ function initialize() {
     show_debug = getIntFromStorage('show_debug', default_show_debug);
 
     if (!configAtLeastVersion(4, 0)) {
-	// Prior to version 4.0, top_subdial was either 0 or 1.
+        // Prior to version 4.0, top_subdial was either 0 or 1.
         console.log("updating config version");
-	if (top_subdial == 1) {
+        if (top_subdial == 1) {
             // If the user had selected 1, meaning lunar dial, show it.
-	    top_subdial = 2;
-	} else {
+            top_subdial = 2;
+        } else {
             // If the user had selected 0, meaning no lunar dial, set
             // it to either "pebble label" or "off", according to
             // the setting of pebble_label.
             if (pebble_label) {
-	        top_subdial = 1;
+                top_subdial = 1;
             } else {
                 top_subdial = 0;
             }
-	}
-	// If any date windows are lunar, turn them off, but turn the
-	// top lunar subdial on.
-	for (var i = 0; i < num_date_windows; ++i) {
-	    if (date_windows[i] == 7) {
-		date_windows[i] = 0;
-		top_subdial = 2;
-	    }
-	}
+        }
+        // If any date windows are lunar, turn them off, but turn the
+        // top lunar subdial on.
+        for (var i = 0; i < num_date_windows; ++i) {
+            if (date_windows[i] == 7) {
+                date_windows[i] = 0;
+                top_subdial = 2;
+            }
+        }
         if (watch_name == "Rosewright B") {
             // Reorder the date_windows on Rosewright B.
             date_windows[3] = date_windows[2];
@@ -202,15 +202,15 @@ function initialize() {
         }
         config_version_major = 4;
         config_version_minor = 0;
-    }        
+    }
 
     if (!configAtLeastVersion(4, 3)) {
         // Insert DWM_yday, DWM_week at positions 4 and 5.
-	for (var i = 0; i < num_date_windows; ++i) {
-	    if (date_windows[i] >= 4) {
-		date_windows[i] += 2;
-	    }
-	}
+        for (var i = 0; i < num_date_windows; ++i) {
+            if (date_windows[i] >= 4) {
+                date_windows[i] += 2;
+            }
+        }
         config_version_major = 4;
         config_version_minor = 3;
     }
@@ -225,31 +225,31 @@ Pebble.addEventListener("ready", function(e) {
     // second to give the Pebble a chance to set itself up for
     // receiving messages.
     setTimeout(function() {
-	var configuration = {
-	    'battery_gauge' : battery_gauge,
-	    'bluetooth_indicator' : bluetooth_indicator,
-	    'second_hand' : second_hand,
-	    'hour_buzzer' : hour_buzzer,
-	    'bluetooth_buzzer' : bluetooth_buzzer,
-	    'draw_mode' : draw_mode,
-	    'color_mode' : color_mode,
-	    'chrono_dial' : chrono_dial,
-	    'sweep_seconds' : sweep_seconds,
-	    'display_lang' : display_lang_lookup[display_lang],
-	    'face_index' : face_index,
-	    'lunar_background' : lunar_background,
-	    'lunar_direction' : lunar_direction,
-	    'week_numbering' : week_numbering,
-	    'top_subdial' : top_subdial,
-	    'show_debug' : show_debug,
-	};
-	for (var i = 0; i < num_date_windows; ++i) {
+        var configuration = {
+            'battery_gauge' : battery_gauge,
+            'bluetooth_indicator' : bluetooth_indicator,
+            'second_hand' : second_hand,
+            'hour_buzzer' : hour_buzzer,
+            'bluetooth_buzzer' : bluetooth_buzzer,
+            'draw_mode' : draw_mode,
+            'color_mode' : color_mode,
+            'chrono_dial' : chrono_dial,
+            'sweep_seconds' : sweep_seconds,
+            'display_lang' : display_lang_lookup[display_lang],
+            'face_index' : face_index,
+            'lunar_background' : lunar_background,
+            'lunar_direction' : lunar_direction,
+            'week_numbering' : week_numbering,
+            'top_subdial' : top_subdial,
+            'show_debug' : show_debug,
+        };
+        for (var i = 0; i < num_date_windows; ++i) {
             var key = date_window_keys.charAt(i);
-	    var sym = 'date_window_' + key;
-	    configuration[sym] = date_windows[i];
-	}
-   	console.log("sending init config: " + JSON.stringify(configuration));
-	Pebble.sendAppMessage(configuration, sent_ack, sent_nack);
+            var sym = 'date_window_' + key;
+            configuration[sym] = date_windows[i];
+        }
+        console.log("sending init config: " + JSON.stringify(configuration));
+        Pebble.sendAppMessage(configuration, sent_ack, sent_nack);
     }, 1000)
 });
 
@@ -260,22 +260,22 @@ Pebble.addEventListener("showConfiguration", function(e) {
     var prefix = default_display_lang.split('_')[0];
     var lang_extension = '.en';
     if (config_langs.indexOf(prefix) >= 0) {
-	lang_extension = '.' + prefix;
+        lang_extension = '.' + prefix;
     }
     var url = "http://s3.amazonaws.com/us.ddrose/pebble/rosewright/html/rosewright_%(configVersionMajor)s_%(configVersionMinor)s_configure" + lang_extension + ".html?watch_name=" + encodeURIComponent(watch_name) + "&version=" + encodeURIComponent(version_str) + "&battery_gauge=" + battery_gauge + "&bluetooth_indicator=" + bluetooth_indicator + "&second_hand=" + second_hand + "&hour_buzzer=" + hour_buzzer + "&bluetooth_buzzer=" + bluetooth_buzzer + "&draw_mode=" + draw_mode + "&color_mode=" + color_mode + "&default_display_lang=" + default_display_lang + "&display_lang=" + display_lang + "&face_index=" + face_index + "&num_faces=" + num_faces + "&num_face_colors=" + num_face_colors + "&date_window_keys=" + date_window_keys + "&lunar_background=" + lunar_background + "&lunar_direction=" + lunar_direction + "&week_numbering=" + week_numbering;
     if (show_top_subdial) {
         url += "&top_subdial=" + top_subdial;
     }
     if (show_chrono_dial) {
-	url += "&chrono_dial=" + chrono_dial;
+        url += "&chrono_dial=" + chrono_dial;
     }
     if (enable_sweep_seconds) {
-	url += "&sweep_seconds=" + sweep_seconds;
+        url += "&sweep_seconds=" + sweep_seconds;
     }
     for (var i = 0; i < num_date_windows; ++i) {
         var key = date_window_keys.charAt(i);
-	var sym = 'date_window_' + key;
-	url += "&" + sym + "=" + date_windows[i];
+        var sym = 'date_window_' + key;
+        url += "&" + sym + "=" + date_windows[i];
     }
     if (show_debug) {
         url += "&show_debug=1";
@@ -291,85 +291,85 @@ Pebble.addEventListener("webviewclosed", function(e) {
     console.log(e.response);
 
     if (e.response && e.response != 'CANCELLED') {
-	// Get the configuration from the webpage
-	var configuration = JSON.parse(decodeURIComponent(e.response));
+        // Get the configuration from the webpage
+        var configuration = JSON.parse(decodeURIComponent(e.response));
 
-	// And record the longterm storage in the phone app.
-	writeToStorage('config_version_major', %(configVersionMajor)s);
-	writeToStorage('config_version_minor', %(configVersionMinor)s);
+        // And record the longterm storage in the phone app.
+        writeToStorage('config_version_major', %(configVersionMajor)s);
+        writeToStorage('config_version_minor', %(configVersionMinor)s);
 
-	battery_gauge = configuration["battery_gauge"];
-	writeToStorage("battery_gauge", battery_gauge);
-	
-	bluetooth_indicator = configuration["bluetooth_indicator"];
-	writeToStorage("bluetooth_indicator", bluetooth_indicator);
-	
-	second_hand = configuration["second_hand"];
-	writeToStorage("second_hand", second_hand);
-	
-	hour_buzzer = configuration["hour_buzzer"];
-	writeToStorage("hour_buzzer", hour_buzzer);
-	
-	bluetooth_buzzer = configuration["bluetooth_buzzer"];
-	writeToStorage("bluetooth_buzzer", bluetooth_buzzer);
-	
-	draw_mode = configuration["draw_mode"];
-	writeToStorage("draw_mode", draw_mode);
-	
-	color_mode = configuration["color_mode"];
-	writeToStorage("color_mode", color_mode);
-	
-	if (show_chrono_dial) {
-	    chrono_dial = configuration["chrono_dial"];
-	    writeToStorage("chrono_dial", chrono_dial);
+        battery_gauge = configuration["battery_gauge"];
+        writeToStorage("battery_gauge", battery_gauge);
+
+        bluetooth_indicator = configuration["bluetooth_indicator"];
+        writeToStorage("bluetooth_indicator", bluetooth_indicator);
+
+        second_hand = configuration["second_hand"];
+        writeToStorage("second_hand", second_hand);
+
+        hour_buzzer = configuration["hour_buzzer"];
+        writeToStorage("hour_buzzer", hour_buzzer);
+
+        bluetooth_buzzer = configuration["bluetooth_buzzer"];
+        writeToStorage("bluetooth_buzzer", bluetooth_buzzer);
+
+        draw_mode = configuration["draw_mode"];
+        writeToStorage("draw_mode", draw_mode);
+
+        color_mode = configuration["color_mode"];
+        writeToStorage("color_mode", color_mode);
+
+        if (show_chrono_dial) {
+            chrono_dial = configuration["chrono_dial"];
+            writeToStorage("chrono_dial", chrono_dial);
         }
 
-	if (enable_sweep_seconds) {
-	    sweep_seconds = configuration["sweep_seconds"];
-	    writeToStorage("sweep_seconds", sweep_seconds);
+        if (enable_sweep_seconds) {
+            sweep_seconds = configuration["sweep_seconds"];
+            writeToStorage("sweep_seconds", sweep_seconds);
         }
-	
-	display_lang = configuration["display_lang"];
-	writeToStorage("display_lang_" + default_display_lang, display_lang);
 
-	face_index = configuration["face_index"];
-	writeToStorage("face_index", face_index);
+        display_lang = configuration["display_lang"];
+        writeToStorage("display_lang_" + default_display_lang, display_lang);
 
-	date_windows = [];
-	for (var i = 0; i < num_date_windows; ++i) {
+        face_index = configuration["face_index"];
+        writeToStorage("face_index", face_index);
+
+        date_windows = [];
+        for (var i = 0; i < num_date_windows; ++i) {
             var key = date_window_keys.charAt(i);
-	    var sym = 'date_window_' + key;
-	    date_windows.push(configuration[sym]);
-	    writeToStorage("" + sym, date_windows[i]);
-	}
-
-	week_numbering = configuration["week_numbering"];
-	writeToStorage("week_numbering", week_numbering);
-
-	if (show_top_subdial) {
-	    top_subdial = configuration["top_subdial"];
-	    writeToStorage("top_subdial", top_subdial);
+            var sym = 'date_window_' + key;
+            date_windows.push(configuration[sym]);
+            writeToStorage("" + sym, date_windows[i]);
         }
 
-	lunar_background = configuration["lunar_background"];
-	writeToStorage("lunar_background", lunar_background);
+        week_numbering = configuration["week_numbering"];
+        writeToStorage("week_numbering", week_numbering);
 
-	lunar_direction = configuration["lunar_direction"];
-	writeToStorage("lunar_direction", lunar_direction);
+        if (show_top_subdial) {
+            top_subdial = configuration["top_subdial"];
+            writeToStorage("top_subdial", top_subdial);
+        }
 
-	show_debug = configuration["show_debug"];
-	writeToStorage("show_debug", show_debug);
+        lunar_background = configuration["lunar_background"];
+        writeToStorage("lunar_background", lunar_background);
 
-	// Finally, massage any elements as needed for Pebble's
-	// storage conventions (which are slightly different than the
-	// JS conventions--in particular, the display_lang string
-	// id is converted to a one-byte integer).
-	configuration['display_lang'] = display_lang_lookup[display_lang]
+        lunar_direction = configuration["lunar_direction"];
+        writeToStorage("lunar_direction", lunar_direction);
 
-	// And send it on to Pebble.
-	console.log("sending runtime config: " + JSON.stringify(configuration));
-	Pebble.sendAppMessage(configuration, sent_ack, sent_nack);
+        show_debug = configuration["show_debug"];
+        writeToStorage("show_debug", show_debug);
 
-	logLocalStorage();
+        // Finally, massage any elements as needed for Pebble's
+        // storage conventions (which are slightly different than the
+        // JS conventions--in particular, the display_lang string
+        // id is converted to a one-byte integer).
+        configuration['display_lang'] = display_lang_lookup[display_lang]
+
+        // And send it on to Pebble.
+        console.log("sending runtime config: " + JSON.stringify(configuration));
+        Pebble.sendAppMessage(configuration, sent_ack, sent_nack);
+
+        logLocalStorage();
     }
 });

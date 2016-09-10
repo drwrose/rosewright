@@ -2209,7 +2209,6 @@ void handle_init() {
 
   AppFocusHandlers focus_handlers;
   memset(&focus_handlers, 0, sizeof(focus_handlers));
-  //focus_handlers.will_focus = did_focus_handler;
   focus_handlers.did_focus = did_focus_handler;
   app_focus_service_subscribe_handlers(focus_handlers);
 }
