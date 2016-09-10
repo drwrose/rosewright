@@ -18,9 +18,15 @@ Layer *clock_face_layer;
 BitmapWithData date_window;
 BitmapWithData date_window_mask;
 bool date_window_dynamic = false;
-bool date_window_health_metric = false;
-bool health_service_subscribed = false;
 bool tick_seconds_subscribed = false;
+int cached_sleep_time = -1;
+int cached_sleep_restful_time = -1;
+int cached_step_count = -1;
+int cached_step_count_10 = -1;
+int cached_active_time = -1;
+int cached_walked_distance = -1;
+int cached_calories_burned = -1;
+int cached_heart_rate = -1;
 
 BitmapWithData face_bitmap;
 BitmapWithData pebble_label;
@@ -1056,7 +1062,6 @@ void draw_clock_face(Layer *me, GContext *ctx) {
   // Draw the date windows.
   {
     date_window_dynamic = false;
-    date_window_health_metric = false;
     for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
       draw_full_date_window(ctx, i);
     }
@@ -1064,21 +1069,6 @@ void draw_clock_face(Layer *me, GContext *ctx) {
       bwd_destroy(&date_window);
       bwd_destroy(&date_window_mask);
     }
-
-#ifndef PBL_PLATFORM_APLITE
-    bool needs_health_service = (date_window_health_metric && !tick_seconds_subscribed);
-    if (health_service_subscribed != needs_health_service) {
-      // Subscribe to health service updates as needed.
-      if (needs_health_service) {
-        app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "subscribing to health service");
-        health_service_events_subscribe(health_event_handler, NULL);
-      } else {
-        app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "unsubscribing to health service");
-        health_service_events_unsubscribe();
-      }
-      health_service_subscribed = needs_health_service;
-    }
-#endif  // PBL_PLATFORM_APLITE
   }
 
 #ifdef MAKE_CHRONOGRAPH
@@ -1406,8 +1396,15 @@ void format_date_number(char buffer[DATE_WINDOW_BUFFER_SIZE], int value) {
 }
 
 #ifndef PBL_PLATFORM_APLITE
-void format_health_metric_count_today(char buffer[DATE_WINDOW_BUFFER_SIZE], HealthMetric metric, int scale_factor) {
-  int value = (int)health_service_sum_today(metric) / scale_factor;
+void format_health_metric_count_today(char buffer[DATE_WINDOW_BUFFER_SIZE], HealthMetric metric, int *cached_value, int scale_factor) {
+  int value;
+  if (*cached_value >= 0) {
+    value = *cached_value;
+  } else {
+    value = (int)health_service_sum_today(metric) / scale_factor;
+    *cached_value = value;
+  }
+
   // Show only the bottom four digits.
   if (value < 10000) {
     snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", value);
@@ -1416,42 +1413,65 @@ void format_health_metric_count_today(char buffer[DATE_WINDOW_BUFFER_SIZE], Heal
   }
 }
 
-void format_health_metric_calories_today(char buffer[DATE_WINDOW_BUFFER_SIZE]) {
-  int value = (int)(health_service_sum_today(HealthMetricRestingKCalories) + health_service_sum_today(HealthMetricActiveKCalories));
+void format_health_metric_calories_today(char buffer[DATE_WINDOW_BUFFER_SIZE], int *cached_value) {
+  int value;
+  if (*cached_value >= 0) {
+    value = *cached_value;
+  } else {
+    value = (int)(health_service_sum_today(HealthMetricRestingKCalories) + health_service_sum_today(HealthMetricActiveKCalories));
+    *cached_value = value;
+  }
   snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", value);
 }
 
-void format_health_metric_time_today(char buffer[DATE_WINDOW_BUFFER_SIZE], HealthMetric metric) {
-  int seconds = (int)health_service_sum_today(metric);
-  int minutes = seconds / 60;
+void format_health_metric_time_today(char buffer[DATE_WINDOW_BUFFER_SIZE], HealthMetric metric, int *cached_value) {
+  int value;
+  if (*cached_value >= 0) {
+    value = *cached_value;
+  } else {
+    value = (int)health_service_sum_today(metric);
+    *cached_value = value;
+  }
+  int minutes = value / 60;
   int hours = minutes / 60;
 
   snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d:%02d", hours, minutes % 60);
 }
 
-void format_health_metric_distance_today(char buffer[DATE_WINDOW_BUFFER_SIZE], HealthMetric metric) {
-  int meters = (int)health_service_sum_today(metric);
+void format_health_metric_distance_today(char buffer[DATE_WINDOW_BUFFER_SIZE], HealthMetric metric, int *cached_value) {
+  int value;
+  if (*cached_value >= 0) {
+    value = *cached_value;
+  } else {
+    int meters = (int)health_service_sum_today(metric);
+    switch (health_service_get_measurement_system_for_display(metric)) {
+    case MeasurementSystemImperial:
+      {
+        value = ((meters * 1000 + 80467) / 160934);  // 0.1 miles
+      }
+      break;
 
-  switch (health_service_get_measurement_system_for_display(metric)) {
-  case MeasurementSystemImperial:
-    {
-      int tenth_miles = ((meters * 1000 + 80467) / 160934);
-      snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d.%01d", tenth_miles / 10, tenth_miles % 10);
+    case MeasurementSystemMetric:
+    default:
+      {
+        value = (meters + 50) / 100;  // "hectometers", 0.1 kilometers
+      }
+      break;
     }
-    break;
-
-  case MeasurementSystemMetric:
-  default:
-    {
-      int hm = (meters + 50) / 100;  // "hectometers"
-      snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d.%01d", hm / 10, hm % 10);
-    }
-    break;
+    *cached_value = value;
   }
+
+  snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d.%01d", value / 10, value % 10);
 }
 
-void format_health_metric_count_peek(char buffer[DATE_WINDOW_BUFFER_SIZE], HealthMetric metric) {
-  int value = (int)health_service_peek_current_value(metric);
+void format_health_metric_count_peek(char buffer[DATE_WINDOW_BUFFER_SIZE], HealthMetric metric, int *cached_value) {
+  int value;
+  if (*cached_value >= 0) {
+    value = *cached_value;
+  } else {
+    value = (int)health_service_peek_current_value(metric);
+    *cached_value = value;
+  }
   snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", value);
 }
 
@@ -1609,24 +1629,20 @@ void draw_full_date_window(GContext *ctx, int date_window_index) {
   case DWM_walked_distance:
   case DWM_calories_burned:
     date_window_dynamic = true;
-    date_window_health_metric = true;
     return;
 
   case DWM_sleep_time:
-    format_health_metric_time_today(buffer, HealthMetricSleepSeconds);
-    date_window_health_metric = true;
+    format_health_metric_time_today(buffer, HealthMetricSleepSeconds, &cached_sleep_time);
     break;
 
   case DWM_sleep_restful_time:
-    format_health_metric_time_today(buffer, HealthMetricSleepRestfulSeconds);
-    date_window_health_metric = true;
+    format_health_metric_time_today(buffer, HealthMetricSleepRestfulSeconds, &cached_sleep_restful_time);
     break;
 #endif  // PBL_PLATFORM_APLITE
 
 #ifdef PBL_PLATFORM_DIORITE
   case DWM_heart_rate:
     date_window_dynamic = true;
-    date_window_health_metric = true;
     return;
 #endif  // PBL_PLATFORM_DIORITE
 
@@ -1689,29 +1705,29 @@ void draw_date_window_dynamic_text(GContext *ctx, int date_window_index) {
 
 #ifndef PBL_PLATFORM_APLITE
   case DWM_step_count:
-    format_health_metric_count_today(buffer, HealthMetricStepCount, 1);
+    format_health_metric_count_today(buffer, HealthMetricStepCount, &cached_step_count, 1);
     break;
 
   case DWM_step_count_10:
-    format_health_metric_count_today(buffer, HealthMetricStepCount, 10);
+    format_health_metric_count_today(buffer, HealthMetricStepCount, &cached_step_count_10, 10);
     break;
 
   case DWM_active_time:
-    format_health_metric_time_today(buffer, HealthMetricActiveSeconds);
+    format_health_metric_time_today(buffer, HealthMetricActiveSeconds, &cached_active_time);
     break;
 
   case DWM_walked_distance:
-    format_health_metric_distance_today(buffer, HealthMetricWalkedDistanceMeters);
+    format_health_metric_distance_today(buffer, HealthMetricWalkedDistanceMeters, &cached_walked_distance);
     break;
 
   case DWM_calories_burned:
-    format_health_metric_calories_today(buffer);
+    format_health_metric_calories_today(buffer, &cached_calories_burned);
     break;
 #endif  // PBL_PLATFORM_APLITE
 
 #ifdef PBL_PLATFORM_DIORITE
   case DWM_heart_rate:
-    format_health_metric_count_peek(buffer, HealthMetricHeartRateBPM);
+    format_health_metric_count_peek(buffer, HealthMetricHeartRateBPM, &cached_heart_rate);
     break;
 #endif  // PBL_PLATFORM_DIORITE
 
@@ -1854,8 +1870,52 @@ void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 void health_event_handler(HealthEventType event, void *context) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "health event");
 
-  // Just redraw the clock face no matter what the event is.
-  layer_mark_dirty(clock_face_layer);
+  switch (event) {
+  case HealthEventSignificantUpdate:
+    // Invalidate everything.
+    cached_sleep_time = -1;
+    cached_sleep_restful_time = -1;
+    cached_step_count = -1;
+    cached_step_count_10 = -1;
+    cached_active_time = -1;
+    cached_walked_distance = -1;
+    cached_calories_burned = -1;
+    cached_heart_rate = -1;
+    break;
+
+  case HealthEventMovementUpdate:
+    // Invalidate step count, active time, and distance walked.
+    cached_step_count = -1;
+    cached_step_count_10 = -1;
+    cached_active_time = -1;
+    cached_walked_distance = -1;
+    cached_calories_burned = -1;
+    break;
+
+  case HealthEventSleepUpdate:
+    // Invalidate sleep time.
+    cached_sleep_time = -1;
+    cached_sleep_restful_time = -1;
+    break;
+
+  case HealthEventHeartRateUpdate:
+    // Invalidate heart rate.
+    cached_heart_rate = -1;
+    break;
+
+  case HealthEventMetricAlert:
+    // Some threshold was crossed; we don't care about that here.
+    break;
+  }
+
+  if (!tick_seconds_subscribed) {
+    // If we have a second hand update, we don't need to explicitly
+    // redraw the watchface now (because redrawing on the next second
+    // will be good enough); but if we're only updating on the minute,
+    // then we should redraw so the user can see his new step count or
+    // heart rate or whatever.
+    layer_mark_dirty(clock_face_layer);
+  }
 }
 #endif  // PBL_PLATFORM_APLITE
 
@@ -2212,6 +2272,10 @@ void handle_init() {
   memset(&focus_handlers, 0, sizeof(focus_handlers));
   focus_handlers.did_focus = did_focus_handler;
   app_focus_service_subscribe_handlers(focus_handlers);
+
+#ifndef PBL_PLATFORM_APLITE
+  health_service_events_subscribe(health_event_handler, NULL);
+#endif  // PBL_PLATFORM_APLITE
 }
 
 void trigger_memory_panic(int line_number) {
