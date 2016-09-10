@@ -39,9 +39,20 @@ GFont fallback_font = NULL;
 GFont date_numeric_font = NULL;
 GFont date_lang_font = NULL;
 
+#ifndef PBL_PLATFORM_DIORITE
+// It turns out that, so far, only Diorite has enough spare RAM to
+// keep the face bitmap around all the time.
+#define NEVER_KEEP_FACE_ASSET
+#endif  // PBL_PLATFORM_DIORITE
+
 bool keep_assets = true;
-bool keep_face_asset = true;
 bool save_framebuffer = true;
+
+#ifdef NEVER_KEEP_FACE_ASSET
+#define keep_face_asset false
+#else
+bool keep_face_asset = true;
+#endif  // NEVER_KEEP_FACE_ASSET
 
 bool hide_date_windows = false;
 bool hide_clock_face = false;
@@ -2027,7 +2038,9 @@ void reset_memory_panic_count() {
   // Confidently start out with the expectation that we keep keep all
   // of this cached in RAM, until proven otherwise.
   keep_assets = true;
+#ifndef NEVER_KEEP_FACE_ASSET
   keep_face_asset = true;
+#endif  // NEVER_KEEP_FACE_ASSET
 
   hide_date_windows = false;
   hide_clock_face = false;
@@ -2304,7 +2317,9 @@ void reset_memory_panic() {
 
   // Start resetting some options if the memory panic count grows too high.
   if (memory_panic_count > 0) {
+#ifndef NEVER_KEEP_FACE_ASSET
     keep_face_asset = false;
+#endif  // NEVER_KEEP_FACE_ASSET
   }
   if (memory_panic_count > 1) {
     keep_assets = false;
