@@ -544,7 +544,7 @@ bwResourceEntry = """
       "file": "%(file)s",
       "type": "bitmap",
       "memoryFormat" : "1Bit",
-      "spaceOptimization" : "memory",
+      "spaceOptimization" : "%(spaceOptimization)s",
       "targetPlatforms": [ %(targetPlatforms)s ]
     },"""
 
@@ -553,13 +553,15 @@ colorResourceEntry = """
       "name": "%(name)s",
       "file": "%(file)s",
       "type": "bitmap",
+      "memoryFormat" : "SmallestPalette",
+      "spaceOptimization" : "%(spaceOptimization)s",
       "targetPlatforms": [ %(targetPlatforms)s ]
     },"""
 
 def format_platforms(platforms):
     return ', '.join(map(lambda platform: '"%s"' % (platform), list(platforms)))
 
-def make_rle(filename, name = None, prefix = 'resources/', useRle = True, platforms = None):
+def make_rle(filename, name = None, prefix = 'resources/', useRle = True, platforms = None, compress = True):
     resourceStr = ''
 
     for platform in platforms:
@@ -567,15 +569,19 @@ def make_rle(filename, name = None, prefix = 'resources/', useRle = True, platfo
         for variant in get_variants_for_platforms([platform]) + ['']:
             # Handle the specialized variant files.
             if os.path.exists(prefix + basename + variant + ext):
-                resourceStr += make_rle_file(basename, variant, ext, name = name, prefix = prefix, useRle = useRle, platform = platform)
+                resourceStr += make_rle_file(basename, variant, ext, name = name, prefix = prefix, useRle = useRle, platform = platform, compress = compress)
                 break
 
     return resourceStr
 
-def make_rle_file(basename, variant, ext, name = None, prefix = 'resources/', useRle = True, platform = None):
+def make_rle_file(basename, variant, ext, name = None, prefix = 'resources/', useRle = True, platform = None, compress = True):
     filename = basename + variant + ext
     targetFilename = basename + variant
     needsCopy = False
+
+    spaceOptimization = 'memory'
+    if platform != 'aplite' and compress:
+        spaceOptimization = 'storage'
 
     resourceStr = ''
     dirname, basename = os.path.split(basename)
@@ -605,18 +611,20 @@ def make_rle_file(basename, variant, ext, name = None, prefix = 'resources/', us
             resourceStr += bwResourceEntry % {
                 'name' : name,
                 'file' : targetFilename + '.png',
-                'targetPlatforms' : format_platforms([platform])
+                'spaceOptimization' : spaceOptimization,
+                'targetPlatforms' : format_platforms([platform]),
                 }
         else:
             resourceStr += colorResourceEntry % {
                 'name' : name,
                 'file' : targetFilename + '.png',
+                'spaceOptimization' : spaceOptimization,
                 'targetPlatforms' : format_platforms([platform])
                 }
 
     return resourceStr
 
-def make_rle_trans(filename, name = None, prefix = 'resources/', useRle = True, platforms = None):
+def make_rle_trans(filename, name = None, prefix = 'resources/', useRle = True, platforms = None, compress = True):
     resourceStr = ''
 
     for platform in platforms:
@@ -624,19 +632,23 @@ def make_rle_trans(filename, name = None, prefix = 'resources/', useRle = True, 
         for variant in get_variants_for_platforms([platform]) + ['']:
             # Handle the specialized variant files.
             if os.path.exists(prefix + basename + variant + ext):
-                resourceStr += make_rle_trans_file(basename, variant, ext, name = name, prefix = prefix, useRle = useRle, platform = platform)
+                resourceStr += make_rle_trans_file(basename, variant, ext, name = name, prefix = prefix, useRle = useRle, platform = platform, compress = compress)
                 break
 
     return resourceStr
 
 
-def make_rle_trans_file(basename, variant, ext, name = None, prefix = 'resources/', useRle = True, platform = None):
+def make_rle_trans_file(basename, variant, ext, name = None, prefix = 'resources/', useRle = True, platform = None, compress = True):
     filename = basename + variant + ext
     if platform not in ['aplite', 'diorite']:
         # In the color case, this is almost the same as make_rle_file(),
         # but we append '_WHITE' to the name (and we don't create a
         # _BLACK version).
-        return make_rle_file(basename, variant, ext, name = name + '_WHITE', prefix = prefix, useRle = useRle, platform = platform)
+        return make_rle_file(basename, variant, ext, name = name + '_WHITE', prefix = prefix, useRle = useRle, platform = platform, compress = compress)
+
+    spaceOptimization = 'memory'
+    if platform != 'aplite' and compress:
+        spaceOptimization = 'storage'
 
     # In the bw case, we split the image into white and black versions.
     resourceStr = ''
@@ -680,11 +692,13 @@ def make_rle_trans_file(basename, variant, ext, name = None, prefix = 'resources
         resourceStr += bwResourceEntry % {
             'name' : name + '_WHITE',
             'file' : whiteFilename + '.png',
+            'spaceOptimization' : spaceOptimization,
             'targetPlatforms' : format_platforms([platform]),
             }
         resourceStr += bwResourceEntry % {
             'name' : name + '_BLACK',
             'file' : blackFilename + '.png',
+            'spaceOptimization' : spaceOptimization,
             'targetPlatforms' : format_platforms([platform]),
             }
 
