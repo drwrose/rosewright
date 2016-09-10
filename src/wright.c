@@ -1896,6 +1896,18 @@ void health_event_handler(HealthEventType event, void *context) {
   switch (event) {
   case HealthEventSignificantUpdate:
     // Invalidate everything.
+    if (cached_sleep_time < 0 &&
+        cached_sleep_restful_time < 0 &&
+        cached_step_count < 0 &&
+        cached_step_count_10 < 0 &&
+        cached_active_time < 0 &&
+        cached_walked_distance < 0 &&
+        cached_calories_burned < 0 &&
+        cached_heart_rate < 0) {
+      // No changes.
+      return;
+    }
+
     cached_sleep_time = -1;
     cached_sleep_restful_time = -1;
     cached_step_count = -1;
@@ -1908,6 +1920,14 @@ void health_event_handler(HealthEventType event, void *context) {
 
   case HealthEventMovementUpdate:
     // Invalidate step count, active time, and distance walked.
+    if (cached_step_count < 0 &&
+        cached_step_count_10 < 0 &&
+        cached_active_time < 0 &&
+        cached_walked_distance < 0 &&
+        cached_calories_burned < 0) {
+      // No changes.
+      return;
+    }
     cached_step_count = -1;
     cached_step_count_10 = -1;
     cached_active_time = -1;
@@ -1917,6 +1937,11 @@ void health_event_handler(HealthEventType event, void *context) {
 
   case HealthEventSleepUpdate:
     // Invalidate sleep time.
+    if (cached_sleep_time < 0 &&
+        cached_sleep_restful_time < 0) {
+      // No changes.
+      return;
+    }
     cached_sleep_time = -1;
     cached_sleep_restful_time = -1;
     break;
@@ -1924,6 +1949,10 @@ void health_event_handler(HealthEventType event, void *context) {
 #ifdef SUPPORT_HEART_RATE
   case HealthEventHeartRateUpdate:
     // Invalidate heart rate.
+    if (cached_heart_rate < 0) {
+      // No changes.
+      return;
+    }
     cached_heart_rate = -1;
     break;
 #endif  // SUPPORT_HEART_RATE
@@ -1931,7 +1960,7 @@ void health_event_handler(HealthEventType event, void *context) {
 #ifdef PBL_SDK_4
   case HealthEventMetricAlert:
     // Some threshold was crossed; we don't care about that here.
-    break;
+    return;
 #endif  // PBL_SDK_4
   }
 
