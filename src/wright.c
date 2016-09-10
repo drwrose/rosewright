@@ -45,6 +45,13 @@ GFont date_lang_font = NULL;
 #define NEVER_KEEP_FACE_ASSET
 #endif  // PBL_PLATFORM_DIORITE
 
+#ifdef PBL_PLATFORM_DIORITE
+// Although I'm told that Pebble Time can support heart rate with a
+// Smartstrap, I haven't seen any such beast out there, and I'm
+// therefore (for now) defining this support only for diorite.
+#define SUPPORT_HEART_RATE
+#endif  // PBL_PLATFORM_DIORITE
+
 bool keep_assets = true;
 bool save_framebuffer = true;
 
@@ -85,6 +92,7 @@ const GPoint pebble_label_offset = { 22, 13 };
 typedef struct __attribute__((__packed__)) {
   unsigned char date_window_index;
 } DateWindowData;
+
 
 // This structure specifies how to load, and how to shift each
 // different font to appear properly within the date window.
@@ -1475,6 +1483,10 @@ void format_health_metric_distance_today(char buffer[DATE_WINDOW_BUFFER_SIZE], H
   snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d.%01d", value / 10, value % 10);
 }
 
+#endif  // PBL_PLATFORM_APLITE
+
+#ifdef SUPPORT_HEART_RATE
+
 void format_health_metric_count_peek(char buffer[DATE_WINDOW_BUFFER_SIZE], HealthMetric metric, int *cached_value) {
   int value;
   if (*cached_value >= 0) {
@@ -1486,7 +1498,7 @@ void format_health_metric_count_peek(char buffer[DATE_WINDOW_BUFFER_SIZE], Healt
   snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", value);
 }
 
-#endif  // PBL_PLATFORM_APLITE
+#endif  // SUPPORT_HEART_RATE
 
 // yday is the current ordinal date [0..365], wday is the current day
 // of the week [0..6], 0 = Sunday.  year is the current year less 1900.
@@ -1736,11 +1748,11 @@ void draw_date_window_dynamic_text(GContext *ctx, int date_window_index) {
     break;
 #endif  // PBL_PLATFORM_APLITE
 
-#ifdef PBL_PLATFORM_DIORITE
+#ifdef SUPPORT_HEART_RATE
   case DWM_heart_rate:
     format_health_metric_count_peek(buffer, HealthMetricHeartRateBPM, &cached_heart_rate);
     break;
-#endif  // PBL_PLATFORM_DIORITE
+#endif  // SUPPORT_HEART_RATE
 
   default:
     // Not a dynamic element.  Do nothing.
@@ -1909,14 +1921,18 @@ void health_event_handler(HealthEventType event, void *context) {
     cached_sleep_restful_time = -1;
     break;
 
+#ifdef SUPPORT_HEART_RATE
   case HealthEventHeartRateUpdate:
     // Invalidate heart rate.
     cached_heart_rate = -1;
     break;
+#endif  // SUPPORT_HEART_RATE
 
+#ifdef PBL_SDK_4
   case HealthEventMetricAlert:
     // Some threshold was crossed; we don't care about that here.
     break;
+#endif  // PBL_SDK_4
   }
 
   if (!tick_seconds_subscribed) {
