@@ -30,14 +30,8 @@ Options:
         Overrides the face style.  The following styles are available:
           %(faceStyles)s
 
-    -c
-        Enable chronograph mode (if the selected hand style includes
-        chrono hands).  This builds the watch as a standard app,
-        instead of as a watch face, to activate the chronograph
-        buttons.
-
     -x
-        Perform no RLE compression of images.
+        Perform RLE compression of images.
 
     -p platform[,platform...]
         Specifies the build platform (aplite, basalt, chalk, diorite).
@@ -95,7 +89,8 @@ roundCenterX, roundCenterY = 180 / 2, 180 / 2
 watches = {
     'a' : ('Rosewright A', 'a', 'a', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC5]),
     'b' : ('Rosewright B', 'b', 'b', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC6]),
-    'c' : ('Rosewright Chronograph', 'c', 'c', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC7]),
+    'c' : ('Rosewright C', 'c', 'c', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xCA]),
+    'c2' : ('Rosewright Chronograph', 'c2', 'c2', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC7]),
     'd' : ('Rosewright D', 'd', 'd', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC8]),
     'e' : ('Rosewright E', 'e', 'e', [0xA4, 0x9C, 0x82, 0xFD, 0x83, 0x0E, 0x48, 0xB4, 0xA8, 0x2E, 0x9C, 0xF8, 0xDA, 0x77, 0xF4, 0xC9]),
     }
@@ -154,12 +149,18 @@ hands = {
            ('second', ('c_chrono1_hand', 2, False, (32, -27), (0.14, 0.15)),
             [(2, [(0, -2), (0, -26)], (1.0, 1.05)),
              ]),
-           ('chrono_minute', ('c_chrono2_hand', 2, False, (37, 195), 0.14), None),
-           ('chrono_second', ('c_second_hand', 1, False, (41, -29), 0.14),
-            [(1, [(0, -4), (0, -88)], (1.0, 1.0)),
-             ]),
-           ('chrono_tenth', ('c_chrono2_hand', 2, False, (37, 195), 0.14), None),
            ],
+    'c2' : [('hour', ('c_hour_hand', 't%', False, (59, 434), (0.14, 0.15)), None),
+            ('minute', ('c_minute_hand', 't%', False, (38, 584), (0.14, 0.15)), None),
+            ('second', ('c_chrono1_hand', 2, False, (32, -27), (0.14, 0.15)),
+             [(2, [(0, -2), (0, -26)], (1.0, 1.05)),
+              ]),
+            ('chrono_minute', ('c_chrono2_hand', 2, False, (37, 195), 0.14), None),
+            ('chrono_second', ('c_second_hand', 1, False, (41, -29), 0.14),
+             [(1, [(0, -4), (0, -88)], (1.0, 1.0)),
+              ]),
+            ('chrono_tenth', ('c_chrono2_hand', 2, False, (37, 195), 0.14), None),
+            ],
     'd' : [('hour', ('d_hour_hand', 't', False, (24, 193), (0.24, 0.28)), None),
            ('minute', ('d_minute_hand', 't', False, (27, 267), (0.24, 0.28)), None),
            ('second', ('d_second_hand', 1, False, (14, -8), (0.24, 0.28)),
@@ -290,6 +291,27 @@ faces = {
                      (('Yellow', 'Black', 'Blue', 'Red'), ('PastelYellow', 'Black')),
                      (('ElectricUltramarine', 'Black', 'Yellow', 'White'), ('VividCerulean', 'Black')),
                      ],
+        'centers_rect' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
+        'centers_round' : (('chrono_minute', 135, 90), ('chrono_tenth', 90, 135), ('second', 45, 90)),
+        'date_window_a_rect' : [ (35, 37, 'b'), (5, 128, 'b') ],
+        'date_window_b_rect' : [ (75, 37, 'b'), (102, 128, 'b') ],
+        'date_window_a_round' : [ (45, 36, 'b'), (19, 120, 'b') ],
+        'date_window_b_round' : [ (94, 36, 'b'), (119, 120, 'b') ],
+        'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
+        'top_subdial_rect' : (32, 16, 'b'),
+        'top_subdial_round' : (50, 20, 'b'),
+        'bluetooth_rect' : (16, 18, 'b'),
+        'battery_rect' : (109, 21, 'b'),
+        'bluetooth_round' : (33, 41, 'b'),
+        'battery_round' : (127, 49, 'b'),
+        'defaults' : [ 'second' ],
+        },
+    'c2' : {
+        'filename' : ['c_face.png'],
+        'colors' : [ (('Black', 'White', 'White', 'Yellow'), ('Black', 'White')),
+                     (('Yellow', 'Black', 'Blue', 'Red'), ('PastelYellow', 'Black')),
+                     (('ElectricUltramarine', 'Black', 'Yellow', 'White'), ('VividCerulean', 'Black')),
+                     ],
         'chrono' : ('c_face_chrono_tenths.png', 'c_face_chrono_hours.png'),
         'centers_rect' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
         'centers_round' : (('chrono_minute', 135, 90), ('chrono_tenth', 90, 135), ('second', 45, 90)),
@@ -370,7 +392,6 @@ faces = {
         },
     }
 
-makeChronograph = False
 enableSecondHand = False
 enableChronoMinuteHand = False
 enableChronoSecondHand = False
@@ -516,7 +537,7 @@ def getNumSteps(hand, platform):
     # If we're building support for sweep-second hands, we might need
     # more subdivisions.
     if 'sweep' in defaults and platform != 'aplite':
-        if makeChronograph:
+        if enableChronoSecondHand:
             if hand == 'chrono_second':
                 numStepsHand = numStepsSweep[hand]
         else:
@@ -1343,7 +1364,7 @@ def configWatch():
     watchface = 'true'
     if screenshotBuild:
         watchface = 'false'
-    elif makeChronograph and enableChronoSecondHand:
+    elif enableChronoSecondHand:
         watchface = 'false'
 
     langData = open('%s/lang_data.json' % (resourcesDir), 'r').read()
@@ -1384,7 +1405,7 @@ def configWatch():
         'numFaceColors' : numFaceColors,
         'defaultFaceIndex' : defaultFaceIndex,
         'dateWindowKeys' : date_window_keys,
-        'enableChronoDial' : int(makeChronograph),
+        'enableChronoDial' : int(enableChronoSecondHand),
         'defaultBluetooth' : defaultBluetooth,
         'defaultBattery' : defaultBattery,
         'defaultSecondHand' : int('second' in defaults),
@@ -1440,7 +1461,7 @@ def configWatch():
         'defaultSecondHand' : int('second' in defaults),
         'defaultHourBuzzer' : int('buzzer' in defaults),
         'enableSweepSeconds' : int('sweep' in defaults),
-        'makeChronograph' : int(makeChronograph and enableChronoSecondHand),
+        'makeChronograph' : int(enableChronoSecondHand),
         'enableTopSubdial' : int(bool(top_subdial_rect[0])),
         'defaultTopSubdial' : defaultTopSubdial,
         'defaultLunarBackground' : defaultLunarBackground,
@@ -1468,7 +1489,7 @@ def configWatch():
 
 # Main.
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:ciwm:xp:dDh')
+    opts, args = getopt.getopt(sys.argv[1:], 's:H:F:iwm:xp:dDh')
 except getopt.error, msg:
     usage(1, msg)
 
@@ -1480,8 +1501,7 @@ handStyle = None
 faceStyle = None
 compileDebugging = False
 screenshotBuild = False
-supportRle = True
-#supportRle = False
+supportRle = False
 targetPlatforms = [ ]
 for opt, arg in opts:
     if opt == '-s':
@@ -1499,10 +1519,8 @@ for opt, arg in opts:
         if faceStyle not in faces:
             print >> sys.stderr, "Unknown face style '%s'." % (arg)
             sys.exit(1)
-    elif opt == '-c':
-        makeChronograph = True
     elif opt == '-x':
-        supportRle = False
+        supportRle = True
     elif opt == '-p':
         targetPlatforms += arg.split(',')
     elif opt == '-d':

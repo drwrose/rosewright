@@ -1290,9 +1290,9 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
       } else {
         // The rendered clock face is already saved from a previous
         // update; redraw it now.
-        GRect destination = layer_get_bounds(me);
-        destination.origin.x = 0;
-        destination.origin.y = 0;
+        GRect destination = layer_get_frame(me);
+        destination.origin.x = -destination.origin.x;
+        destination.origin.y = -destination.origin.y;
         graphics_context_set_compositing_mode(ctx, GCompOpAssign);
         graphics_draw_bitmap_in_rect(ctx, clock_face.bitmap, destination);
       }
