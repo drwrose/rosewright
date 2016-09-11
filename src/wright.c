@@ -39,25 +39,13 @@ GFont fallback_font = NULL;
 GFont date_numeric_font = NULL;
 GFont date_lang_font = NULL;
 
-#ifndef PBL_PLATFORM_DIORITE
-// It turns out that, so far, only Diorite has enough spare RAM to
-// keep the face bitmap around all the time.
-#define NEVER_KEEP_FACE_ASSET
-#endif  // PBL_PLATFORM_DIORITE
-
-#ifdef PBL_PLATFORM_DIORITE
-// Although I'm told that Pebble Time can support heart rate with a
-// Smartstrap, I haven't seen any such beast out there, and I'm
-// therefore (for now) defining this support only for diorite.
-#define SUPPORT_HEART_RATE
-#endif  // PBL_PLATFORM_DIORITE
-
-bool keep_assets = true;
 bool save_framebuffer = true;
 
-#ifdef NEVER_KEEP_FACE_ASSET
-#define keep_face_asset false
-#else
+#ifndef NEVER_KEEP_ASSETS
+bool keep_assets = true;
+#endif  // NEVER_KEEP_ASSETS
+
+#ifndef NEVER_KEEP_FACE_ASSET
 bool keep_face_asset = true;
 #endif  // NEVER_KEEP_FACE_ASSET
 
@@ -2082,7 +2070,9 @@ void reset_memory_panic_count() {
 
   // Confidently start out with the expectation that we keep keep all
   // of this cached in RAM, until proven otherwise.
+#ifndef NEVER_KEEP_ASSETS
   keep_assets = true;
+#endif  // NEVER_KEEP_ASSETS
 #ifndef NEVER_KEEP_FACE_ASSET
   keep_face_asset = true;
 #endif  // NEVER_KEEP_FACE_ASSET
@@ -2367,7 +2357,9 @@ void reset_memory_panic() {
 #endif  // NEVER_KEEP_FACE_ASSET
   }
   if (memory_panic_count > 1) {
+#ifndef NEVER_KEEP_ASSETS
     keep_assets = false;
+#endif  // NEVER_KEEP_ASSETS
   }
 #ifdef SUPPORT_RESOURCE_CACHE
   if (memory_panic_count > 2) {

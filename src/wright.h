@@ -31,6 +31,25 @@
 #define SCREEN_HEIGHT 168
 #endif  // PBL_ROUND
 
+#ifndef PBL_PLATFORM_DIORITE
+// It turns out that, so far, only Diorite has enough spare RAM to
+// keep the face bitmap around all the time.
+#define NEVER_KEEP_FACE_ASSET
+#endif  // PBL_PLATFORM_DIORITE
+
+#ifdef PBL_PLATFORM_APLITE
+// And on Aplite, we should just not bother trying to keep any assets
+// around.
+#define NEVER_KEEP_ASSETS
+#endif  // PBL_PLATFORM_APLITE
+
+#ifdef PBL_PLATFORM_DIORITE
+// Although I'm told that Pebble Time can support heart rate with a
+// Smartstrap, I haven't seen any such beast out there, and I'm
+// therefore (for now) defining this support only for diorite.
+#define SUPPORT_HEART_RATE
+#endif  // PBL_PLATFORM_DIORITE
+
 // This structure keeps track of the things that change on the visible
 // watch face and their current state.
 struct __attribute__((__packed__)) HandPlacement {
@@ -89,7 +108,18 @@ typedef struct {
 
 extern bool memory_panic_flag;
 extern int memory_panic_count;
+
+#ifdef NEVER_KEEP_ASSETS
+#define keep_assets false
+#else
 extern bool keep_assets;
+#endif  // NEVER_KEEP_ASSETS
+
+#ifdef NEVER_KEEP_FACE_ASSET
+#define keep_face_asset false
+#else
+bool keep_face_asset = true;
+#endif  // NEVER_KEEP_FACE_ASSET
 
 extern DrawModeTable draw_mode_table[2];
 extern int sweep_timer_ms;
