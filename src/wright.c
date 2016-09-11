@@ -1945,11 +1945,9 @@ void health_event_handler(HealthEventType event, void *context) {
     break;
 #endif  // SUPPORT_HEART_RATE
 
-#ifdef PBL_SDK_4
-  case HealthEventMetricAlert:
-    // Some threshold was crossed; we don't care about that here.
+  default:
+    // Some other event we don't care about.
     return;
-#endif  // PBL_SDK_4
   }
 
   if (!tick_seconds_subscribed) {
