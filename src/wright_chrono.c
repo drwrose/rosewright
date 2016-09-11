@@ -31,10 +31,8 @@ size_t chrono_second_resource_cache_size = CHRONO_SECOND_RESOURCE_CACHE_SIZE +  
 // This window is pushed on top of the chrono dial to display the
 // readout in digital form for ease of recording.
 Window *chrono_digital_window;
-#ifdef PBL_SDK_3
 StatusBarLayer *chrono_status_bar_layer = NULL;
 Layer *chrono_digital_contents_layer = NULL;
-#endif  // PBL_SDK_3
 TextLayer *chrono_digital_current_layer = NULL;
 TextLayer *chrono_digital_laps_layer[CHRONO_MAX_LAPS];
 Layer *chrono_digital_line_layer = NULL;
@@ -404,7 +402,6 @@ void chrono_digital_window_load_handler(struct Window *window) {
   GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
 
 
-#ifdef PBL_SDK_3
   Layer *chrono_digital_window_layer = window_get_root_layer(chrono_digital_window);
   chrono_status_bar_layer = status_bar_layer_create();
   if (chrono_status_bar_layer == NULL) {
@@ -419,13 +416,6 @@ void chrono_digital_window_load_handler(struct Window *window) {
     return;
   }
   layer_add_child(chrono_digital_window_layer, chrono_digital_contents_layer);
-
-#else  // PBL_SDK_3
-  // On SDK 2.0 and before, we don't create a separate contents layer;
-  // we just use the root layer.
-  Layer *chrono_digital_contents_layer = window_get_root_layer(chrono_digital_window);
-
-#endif  // PBL_SDK_3
 
   chrono_digital_current_layer = text_layer_create(GRect(25, LAP_HEIGHT * CHRONO_MAX_LAPS, 94, LAP_HEIGHT));
   if (chrono_digital_current_layer == NULL) {
@@ -506,7 +496,6 @@ void chrono_digital_window_unload_handler(struct Window *window) {
     }
   }
 
-#ifdef PBL_SDK_3
   if (chrono_digital_contents_layer != NULL) {
     layer_destroy(chrono_digital_contents_layer);
     chrono_digital_contents_layer = NULL;
@@ -515,7 +504,6 @@ void chrono_digital_window_unload_handler(struct Window *window) {
     status_bar_layer_destroy(chrono_status_bar_layer);
     chrono_status_bar_layer = NULL;
   }
-#endif  // PDL_SDK_3
 }
 
 void push_chrono_digital_handler(ClickRecognizerRef recognizer, void *context) {

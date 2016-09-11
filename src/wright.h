@@ -118,7 +118,7 @@ extern bool keep_assets;
 #ifdef NEVER_KEEP_FACE_ASSET
 #define keep_face_asset false
 #else
-bool keep_face_asset = true;
+extern bool keep_face_asset;
 #endif  // NEVER_KEEP_FACE_ASSET
 
 extern DrawModeTable draw_mode_table[2];

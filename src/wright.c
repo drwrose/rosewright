@@ -40,6 +40,7 @@ GFont date_numeric_font = NULL;
 GFont date_lang_font = NULL;
 
 bool save_framebuffer = true;
+bool any_obstructed_area = false;
 
 #ifndef NEVER_KEEP_ASSETS
 bool keep_assets = true;
@@ -477,16 +478,12 @@ void flip_bitmap_x(GBitmap *image, short *cx) {
   uint8_t *data = gbitmap_get_data(image);
 
   for (int y = 0; y < height; ++y) {
-#ifdef PBL_SDK_2
-    uint8_t *row = data + y * stride;
-#else
     // Get the min and max x values for this row
     GBitmapDataRowInfo info = gbitmap_get_data_row_info(image, y);
     uint8_t *row = &info.data[info.min_x];
     width = info.max_x - info.min_x + 1;
     assert(width % pixels_per_byte == 0);
     int width_bytes = width / pixels_per_byte;
-#endif  // PBL_SDK_2
 
     switch (pixels_per_byte) {
     case 8:
@@ -547,10 +544,6 @@ void flip_bitmap_y(GBitmap *image, short *cy) {
   for (int y1 = (height - 1) / 2; y1 >= 0; --y1) {
     int y2 = height - 1 - y1;
 
-#ifdef PBL_SDK_2
-    uint8_t *row1 = data + y1 * stride;
-    uint8_t *row2 = data + y2 * stride;
-#else
     // Get the min and max x values for this row
     GBitmapDataRowInfo info1 = gbitmap_get_data_row_info(image, y1);
     GBitmapDataRowInfo info2 = gbitmap_get_data_row_info(image, y2);
@@ -560,7 +553,6 @@ void flip_bitmap_y(GBitmap *image, short *cy) {
     uint8_t *row1 = &info1.data[info1.min_x];
     uint8_t *row2 = &info2.data[info2.min_x];
     width_bytes = width1 / pixels_per_byte;
-#endif  // PBL_SDK_2
 
     // Swap rows y1 and y2.
     memcpy(buffer, row1, width_bytes);
@@ -1207,6 +1199,21 @@ void check_memory_usage() {
     check_min_bytes_free();
   }
 }
+
+#if !defined(PBL_PLATFORM_APLITE) && PBL_API_EXISTS(layer_get_unobstructed_bounds)
+void root_layer_update_callback(Layer *me, GContext *ctx) {
+  //app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "root_layer");
+
+  // Only bother filling in the root layer if part of the window is
+  // obstructed.  We do this to ensure the entire window is cleared in
+  // case we're not drawing all of it.
+  if (any_obstructed_area) {
+    GRect destination = layer_get_frame(me);
+    graphics_context_set_fill_color(ctx, GColorBlack);
+    graphics_fill_rect(ctx, destination, 0, GCornerNone);
+  }
+}
+#endif  // PBL_API_EXISTS(layer_get_unobstructed_bounds)
 
 void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
   // Make sure we have reset our memory usage before we start to draw.
@@ -1966,7 +1973,7 @@ void did_focus_handler(bool in_focus) {
   if (in_focus) {
     // We have just regained focus from a notification or something.
     // Ensure the window is completely redrawn.
-    layer_mark_dirty(clock_face_layer);
+    invalidate_clock_face();
   }
 }
 
@@ -2155,6 +2162,32 @@ void load_date_fonts() {
   }
 }
 
+#if !defined(PBL_PLATFORM_APLITE) && PBL_API_EXISTS(layer_get_unobstructed_bounds)
+// The unobstructed area of the watchface is changing (e.g. due to a
+// timeline quick view message).  Adjust layers accordingly.
+void adjust_unobstructed_area() {
+  struct Layer *window_layer = window_get_root_layer(window);
+  GRect bounds = layer_get_unobstructed_bounds(window_layer);
+  GRect orig_bounds = layer_get_bounds(window_layer);
+  any_obstructed_area = (memcmp(&bounds, &orig_bounds, sizeof(bounds)) != 0);
+
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "unobstructed_area: %d %d %d %d, any_obstructed_area = %d", bounds.origin.x, bounds.origin.y, bounds.size.w, bounds.size.h, any_obstructed_area);
+
+  // Shift the face layer to center the face within the new region.
+  int cx = bounds.origin.x + bounds.size.w / 2;
+  int cy = bounds.origin.y + bounds.size.h / 2;
+
+  GRect face_layer_shifted = { { cx - SCREEN_WIDTH / 2, cy - SCREEN_HEIGHT / 2 },
+                               { SCREEN_WIDTH, SCREEN_HEIGHT } };
+  layer_set_frame(clock_face_layer, face_layer_shifted);
+  invalidate_clock_face();
+}
+
+void unobstructed_area_change_handler(AnimationProgress progress, void *context) {
+  adjust_unobstructed_area();
+}
+#endif  // PBL_API_EXISTS(layer_get_unobstructed_bounds)
+
 // This is called only once, at startup.
 void create_permanent_objects() {
   window = window_create();
@@ -2168,9 +2201,6 @@ void create_permanent_objects() {
   window_handlers.unload = window_unload_handler;
   window_set_window_handlers(window, window_handlers);
 
-#ifdef PBL_SDK_2
-  window_set_fullscreen(window, true);
-#endif  //  PBL_SDK_2
   window_stack_push(window, true);
 
   // clock_face_layer must be a permanent object, since we might call
@@ -2182,6 +2212,16 @@ void create_permanent_objects() {
   assert(clock_face_layer != NULL);
   layer_set_update_proc(clock_face_layer, &clock_face_layer_update_callback);
   layer_add_child(window_layer, clock_face_layer);
+
+#if !defined(PBL_PLATFORM_APLITE) && PBL_API_EXISTS(layer_get_unobstructed_bounds)
+  layer_set_update_proc(window_layer, &root_layer_update_callback);
+
+  struct UnobstructedAreaHandlers unobstructed_area_handlers;
+  memset(&unobstructed_area_handlers, 0, sizeof(unobstructed_area_handlers));
+  unobstructed_area_handlers.change = unobstructed_area_change_handler;
+  unobstructed_area_service_subscribe(unobstructed_area_handlers, NULL);
+  adjust_unobstructed_area();
+#endif  // PBL_API_EXISTS(layer_get_unobstructed_bounds)
 }
 
 // This is, of course, called only once, at shutdown.
@@ -2330,9 +2370,7 @@ void trigger_memory_panic(int line_number) {
   app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "memory_panic at line %d, heap_bytes_free = %d!", line_number, heap_bytes_free());
   memory_panic_flag = true;
 
-  if (clock_face_layer != NULL) {
-    layer_mark_dirty(clock_face_layer);
-  }
+  invalidate_clock_face();
 }
 
 void reset_memory_panic() {

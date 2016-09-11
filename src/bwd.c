@@ -47,19 +47,14 @@ BitmapWithData bwd_copy_bitmap(GBitmap *source) {
 
   GSize size = gbitmap_get_bounds(source).size;
 
-#ifdef PBL_SDK_2
-  dest.bitmap = __gbitmap_create_blank(size);
-#else
   GBitmapFormat format = gbitmap_get_format(source);
   dest.bitmap = gbitmap_create_blank(size, format);
-#endif
 
   bwd_copy_into_from_bitmap(&dest, source);
   return dest;
 }
 
 void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source) {
-#ifndef PBL_SDK_2
   int pixels_per_byte = 8;
   GBitmapFormat format = gbitmap_get_format(source);
 
@@ -99,7 +94,6 @@ void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source) {
     }
     memcpy(dest_palette, source_palette, palette_count);
   }
-#endif  // PBL_SDK_2
 
   if (dest->bitmap == NULL) {
     return;
@@ -109,16 +103,6 @@ void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source) {
   assert(size.h == gbitmap_get_bounds(dest->bitmap).size.h &&
          size.w == gbitmap_get_bounds(dest->bitmap).size.w)
 
-#ifdef PBL_SDK_2
-  int stride = gbitmap_get_bytes_per_row(source);
-  assert(stride == gbitmap_get_bytes_per_row(dest->bitmap))
-  uint8_t *source_data = gbitmap_get_data(source);
-  size_t data_size = stride * size.h;
-
-  uint8_t *dest_data = gbitmap_get_data(dest->bitmap);
-  memcpy(dest_data, source_data, data_size);
-
-#else  // PBL_SDK_2
   assert(format == gbitmap_get_format(dest->bitmap));
 
   for (int y = 0; y < size.h; ++y) {
@@ -132,8 +116,6 @@ void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source) {
     int width_bytes = width / pixels_per_byte;
     memcpy(dest_row, source_row, width_bytes);
   }
-
-#endif  // PBL_SDK_2
 }
 
 // Initialize a bitmap from a regular unencoded resource (i.e. as
@@ -717,11 +699,7 @@ rle_bwd_create_rb(RBuffer *rb) {
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "reading bitmap %d x %d, n = %d, format = %d", width, height, n, format);
 
-#ifdef PBL_SDK_2
-  GBitmap *image = __gbitmap_create_blank(GSize(width, height));
-#else
   GBitmap *image = gbitmap_create_blank(GSize(width, height), GBitmapFormat1Bit);
-#endif
   if (image == NULL) {
     return bwd_create(NULL, NULL);
   }
