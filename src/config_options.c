@@ -25,9 +25,6 @@ void sanitize_config() {
   config.chrono_dial = config.chrono_dial % (CDM_dual + 1);
   config.display_lang = config.display_lang % num_langs;
   config.face_index = config.face_index % NUM_FACES;
-  for (int i = 0; i < NUM_DATE_WINDOWS; ++i) {
-    config.date_windows[i] = config.date_windows[i] % (DWM_debug_cache_total_size + 1);
-  }
   config.week_numbering = config.week_numbering % (WNM_sat_1 + 1);
   config.top_subdial = config.top_subdial % (TSM_moon_phase + 1);
   config.color_mode = config.color_mode % NUM_FACE_COLORS;
@@ -153,7 +150,7 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
   if (show_debug != NULL) {
     config.show_debug = (show_debug->value->int32 != 0);
   }
-  
+
   sanitize_config();
 
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "New config");
@@ -201,20 +198,20 @@ static void int_to_config() {
       false, false, 2, TSM_off,
       WNM_mon_4, false
     },
-    
+
     { IM_off, IM_off, false, false,
       true, 0, CDM_tenths, false,
       0, 2,
       { DWM_off, DWM_off, DWM_off, DWM_off },
-      true, false, 3, TSM_off, 
+      true, false, 3, TSM_off,
       WNM_mon_4, false
     },
-    
+
     { IM_off, IM_off, false, false,
       true, 1, CDM_tenths, false,
       0, 0,
       { DWM_off, DWM_off, DWM_off, DWM_off },
-      true, false, 3, TSM_pebble_label, 
+      true, false, 3, TSM_pebble_label,
       WNM_mon_4, false
     },
 
@@ -223,7 +220,7 @@ static void int_to_config() {
       true, 0, CDM_tenths, false,
       0, 0,
       { DWM_off, DWM_off, DWM_date, DWM_weekday },
-      false, false, 1, TSM_moon_phase, 
+      false, false, 1, TSM_moon_phase,
       WNM_mon_4, false
     },
 
@@ -231,23 +228,23 @@ static void int_to_config() {
       true, 0, CDM_tenths, false,
       5, 0,
       { DWM_weekday, DWM_date, DWM_off, DWM_off },
-      false, false, 2, TSM_pebble_label, 
+      false, false, 2, TSM_pebble_label,
       WNM_mon_4, false
     },
-    
+
     { IM_off, IM_off, false, false,
       true, 0, CDM_tenths, false,
       0, 1,
       { DWM_off, DWM_off, DWM_off, DWM_off },
-      true, false, 3, TSM_off, 
+      true, false, 3, TSM_off,
       WNM_mon_4, false
     },
-    
+
     { IM_always, IM_always, false, false,
       true, 1, CDM_tenths, false,
       0, 0,
       { DWM_off, DWM_off, DWM_off, DWM_off },
-      true, false, 3, TSM_pebble_label, 
+      true, false, 3, TSM_pebble_label,
       WNM_mon_4, false
     },
 
@@ -256,7 +253,7 @@ static void int_to_config() {
       true, 0, CDM_off, false,
       0, 0,
       { DWM_weekday, DWM_date },
-      true, false, 1, TSM_moon_phase, 
+      true, false, 1, TSM_moon_phase,
       WNM_mon_4, false
     },
 
@@ -264,15 +261,15 @@ static void int_to_config() {
       true, 0, CDM_hours, false,
       5, 0,
       { DWM_date, DWM_weekday },
-      false, false, 2, TSM_off, 
+      false, false, 2, TSM_off,
       WNM_mon_4, false
     },
-    
+
     { IM_always, IM_always, true, false,
       true, 1, CDM_off, false,
       0, 0,
       { DWM_off, DWM_off },
-      true, false, 3, TSM_pebble_label, 
+      true, false, 3, TSM_pebble_label,
       WNM_mon_4, false
     },
 
@@ -281,7 +278,7 @@ static void int_to_config() {
       true, 0, CDM_tenths, false,
       0, 1,
       { DWM_weekday, DWM_date, DWM_month, DWM_ampm },
-      false, false, 1, TSM_moon_phase, 
+      false, false, 1, TSM_moon_phase,
       WNM_mon_4, false
     },
 
@@ -289,23 +286,23 @@ static void int_to_config() {
       true, 0, CDM_tenths, false,
       11, 0,
       { DWM_off, DWM_off, DWM_weekday, DWM_month },
-      false, false, 2, TSM_pebble_label, 
+      false, false, 2, TSM_pebble_label,
       WNM_mon_4, false
     },
-    
+
     { IM_off, IM_off, false, false,
       true, 0, CDM_tenths, false,
       0, 2,
       { DWM_off, DWM_off, DWM_off, DWM_off },
-      true, false, 3, TSM_off, 
+      true, false, 3, TSM_off,
       WNM_mon_4, false
     },
-    
+
     { IM_always, IM_always, true, false,
       true, 1, CDM_tenths, false,
       0, 1,
       { DWM_off, DWM_off, DWM_off, DWM_off },
-      true, false, 3, TSM_off, 
+      true, false, 3, TSM_off,
       WNM_mon_4, false
     },
 
@@ -314,7 +311,7 @@ static void int_to_config() {
       true, 0, CDM_tenths, false,
       0, 1,
       { DWM_off, DWM_weekday, DWM_date, DWM_off },
-      true, false, 1, TSM_moon_phase, 
+      true, false, 1, TSM_moon_phase,
       WNM_mon_4, false
     },
 
@@ -322,23 +319,23 @@ static void int_to_config() {
       true, 0, CDM_tenths, false,
       11, 0,
       { DWM_weekday, DWM_month, DWM_ampm, DWM_date },
-      false, false, 2, TSM_pebble_label, 
+      false, false, 2, TSM_pebble_label,
       WNM_mon_4, false
     },
-    
+
     { IM_always, IM_always, false, false,
       true, 0, CDM_tenths, false,
       0, 0,
       { DWM_off, DWM_off, DWM_off, DWM_off },
-      true, false, 3, TSM_off, 
+      true, false, 3, TSM_off,
       WNM_mon_4, false
     },
-    
+
     { IM_always, IM_always, false, false,
       true, 1, CDM_tenths, false,
       0, 0,
       { DWM_off, DWM_off, DWM_off, DWM_off },
-      true, false, 3, TSM_pebble_label, 
+      true, false, 3, TSM_pebble_label,
       WNM_mon_4, false
     },
 
@@ -355,15 +352,15 @@ static void int_to_config() {
     // Generic iteration through config indexes (especially colors).
     config = default_options;
     unsigned int index = (unsigned int)current_config_index - num_screenshot_options;
-    
+
     // Third digit: color_mode.
     config.color_mode = index % NUM_FACE_COLORS;
     index /= NUM_FACE_COLORS;
-    
+
     // Second digit: draw_mode.
     config.draw_mode = index % 2;
     index /= 2;
-    
+
     // First digit: face_index.
     config.face_index = index % NUM_FACES;
     index /= NUM_FACES;

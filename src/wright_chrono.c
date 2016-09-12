@@ -119,6 +119,7 @@ void compute_chrono_hands(unsigned int ms, struct HandPlacement *placement) {
     // The dial has changed states; reload and redraw it.
     chrono_dial_shows_tenths = chrono_dial_wants_tenths;
     bwd_destroy(&chrono_dial_white);
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono dial changed mode");
     invalidate_clock_face();
   }
 
@@ -236,9 +237,10 @@ void update_chrono_hands(struct HandPlacement *new_placement) {
     current_placement.chrono_minute_hand_index = new_placement->chrono_minute_hand_index;
     layer_mark_dirty(clock_face_layer);
 
-    if (config.second_hand) {
+    if (SEPARATE_PHASE_HANDS) {
       // If the second hand is enabled, the hour and minute hands are
       // baked into the clock face cache, which must be redrawn now.
+      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono minute hand changed with SEPARATE_PHASE_HANDS");
       invalidate_clock_face();
     }
   }
@@ -256,9 +258,10 @@ void update_chrono_hands(struct HandPlacement *new_placement) {
     current_placement.chrono_tenth_hand_index = new_placement->chrono_tenth_hand_index;
     layer_mark_dirty(clock_face_layer);
 
-    if (config.second_hand) {
+    if (SEPARATE_PHASE_HANDS) {
       // If the second hand is enabled, the hour and minute hands are
       // baked into the clock face cache, which must be redrawn now.
+      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono tenth hand changed with SEPARATE_PHASE_HANDS");
       invalidate_clock_face();
     }
   }

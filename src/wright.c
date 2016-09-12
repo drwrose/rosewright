@@ -8,6 +8,8 @@
 
 bool memory_panic_flag = false;
 int memory_panic_count = 0;
+int draw_face_count = 0;
+bool app_in_focus = true;
 
 Window *window;
 
@@ -53,11 +55,6 @@ bool keep_face_asset = true;
 bool hide_date_windows = false;
 bool hide_clock_face = false;
 bool redraw_clock_face = false;
-
-// Drawing the phase hands separately doesn't seem to be a performance
-// win for some reason.
-#define SEPARATE_PHASE_HANDS 0
-//#define SEPARATE_PHASE_HANDS (config.second_hand)
 
 //#define MIN_BYTES_FREE 3072 // seems enough
 //#define MIN_BYTES_FREE 512  // not enough
@@ -648,7 +645,6 @@ void draw_bitmap_hand_mask(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PA
 #endif  // PBL_BW
   {
     // The draw-without-a-mask case.  Do nothing here.
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_bitmap_hand_mask %d no_basalt_mask %d", hand_index, no_basalt_mask);
   } else {
     // The hand has a mask, so use it to draw the hand opaquely.
     if (hand_cache->image.bitmap == NULL) {
@@ -691,7 +687,6 @@ void draw_bitmap_hand_mask(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PA
 
     graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ BW_INVERT].paint_fg);
     graphics_draw_bitmap_in_rect(ctx, hand_cache->mask.bitmap, destination);
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_bitmap_hand_mask %d format %d", hand_index, gbitmap_get_format(hand_cache->mask.bitmap));
   }
 }
 
@@ -1021,6 +1016,7 @@ int get_indicator_face_index() {
 
 void draw_clock_face(Layer *me, GContext *ctx) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_clock_face");
+  ++draw_face_count;
 
   // Reload the face bitmap from the resource file, if we don't
   // already have it.
@@ -1619,10 +1615,7 @@ void draw_full_date_window(GContext *ctx, int date_window_index) {
   case DWM_debug_heap_free:
   case DWM_debug_memory_panic_count:
   case DWM_debug_resource_reads:
-#ifdef SUPPORT_RESOURCE_CACHE
-  case DWM_debug_cache_hits:
-  case DWM_debug_cache_total_size:
-#endif  // SUPPORT_RESOURCE_CACHE
+  case DWM_debug_draw_face_count:
     // We have some dynamic text that will need a separate pass to
     // re-render each frame.
     date_window_dynamic = true;
@@ -1699,26 +1692,8 @@ void draw_date_window_dynamic_text(GContext *ctx, int date_window_index) {
     snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", bwd_resource_reads);
     break;
 
-#ifdef SUPPORT_RESOURCE_CACHE
-  case DWM_debug_cache_hits:
-    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", bwd_cache_hits);
-    break;
-
-  case DWM_debug_cache_total_size:
-    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%dk", bwd_cache_total_size / 1024);
-    break;
-#endif  // SUPPORT_RESOURCE_CACHE
-
-  case DWM_weekday:
-    text = date_names[current_placement.day_index];
-    break;
-
-  case DWM_month:
-    text = date_names[current_placement.month_index + NUM_WEEKDAY_NAMES];
-    break;
-
-  case DWM_ampm:
-    text = date_names[current_placement.ampm_value + NUM_WEEKDAY_NAMES + NUM_MONTH_NAMES];
+  case DWM_debug_draw_face_count:
+    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", draw_face_count);
     break;
 
 #ifndef PBL_PLATFORM_APLITE
@@ -1776,6 +1751,7 @@ void update_hands(struct tm *time) {
     if (SEPARATE_PHASE_HANDS) {
       // If the hour and minute hands are baked into the clock face
       // cache, it must be redrawn now.
+      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "hour hand changed with SEPARATE_PHASE_HANDS");
       invalidate_clock_face();
     }
   }
@@ -1787,6 +1763,7 @@ void update_hands(struct tm *time) {
     if (SEPARATE_PHASE_HANDS) {
       // If the hour and minute hands are baked into the clock face
       // cache, it must be redrawn now.
+      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "minute hand changed with SEPARATE_PHASE_HANDS");
       invalidate_clock_face();
     }
   }
@@ -1830,6 +1807,7 @@ void update_hands(struct tm *time) {
     current_placement.ampm_value = new_placement.ampm_value;
     current_placement.ordinal_date_index = new_placement.ordinal_date_index;
 
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "date changed");
     invalidate_clock_face();
   }
 
@@ -1838,6 +1816,7 @@ void update_hands(struct tm *time) {
   if (new_placement.lunar_index != current_placement.lunar_index) {
     current_placement.lunar_index = new_placement.lunar_index;
     bwd_destroy(&moon_wheel_bitmap);
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "moon changed");
     invalidate_clock_face();
   }
 #endif  // TOP_SUBDIAL
@@ -1968,11 +1947,18 @@ void health_event_handler(HealthEventType event, void *context) {
 }
 #endif  // PBL_PLATFORM_APLITE
 
-void did_focus_handler(bool in_focus) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "did_focus: %d", (int)in_focus);
-  if (in_focus) {
+void did_focus_handler(bool new_in_focus) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "did_focus: %d", (int)new_in_focus);
+  if (new_in_focus == app_in_focus) {
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "no change to focus");
+    return;
+  }
+
+  app_in_focus = new_in_focus;
+  if (app_in_focus) {
     // We have just regained focus from a notification or something.
     // Ensure the window is completely redrawn.
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "regained focus");
     invalidate_clock_face();
   }
 }
@@ -2180,6 +2166,7 @@ void adjust_unobstructed_area() {
   GRect face_layer_shifted = { { cx - SCREEN_WIDTH / 2, cy - SCREEN_HEIGHT / 2 },
                                { SCREEN_WIDTH, SCREEN_HEIGHT } };
   layer_set_frame(clock_face_layer, face_layer_shifted);
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "unobstructed area changed");
   invalidate_clock_face();
 }
 
@@ -2294,6 +2281,7 @@ void recreate_all_objects() {
   destroy_temporal_objects();
   create_temporal_objects();
   load_date_fonts();
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "recreate_all_objects");
   invalidate_clock_face();
 }
 

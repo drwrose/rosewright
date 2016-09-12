@@ -6,8 +6,6 @@
 //#define SUPPORT_RLE 1
 
 int bwd_resource_reads = 0;
-int bwd_cache_hits = 0;
-size_t bwd_cache_total_size = 0;
 
 #ifdef SUPPORT_RESOURCE_CACHE
 void bwd_clear_cache(struct ResourceCache *resource_cache, size_t resource_cache_size) {

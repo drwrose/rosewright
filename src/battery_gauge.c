@@ -10,6 +10,9 @@ BitmapWithData battery_gauge_mask;
 BitmapWithData charging;
 BitmapWithData charging_mask;
 
+bool got_charge_state = false;
+BatteryChargeState charge_state;
+
 void destroy_battery_gauge_bitmaps() {
   bwd_destroy(&battery_gauge_empty);
   bwd_destroy(&battery_gauge_charged);
@@ -23,7 +26,10 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
     return;
   }
 
-  BatteryChargeState charge_state = battery_state_service_peek();
+  if (!got_charge_state) {
+    charge_state = battery_state_service_peek();
+    got_charge_state = true;
+  }
 
 #ifdef BATTERY_HACK
   time_t now = time(NULL);
@@ -125,7 +131,17 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
 }
 
 // Update the battery guage.
-void handle_battery(BatteryChargeState charge_state) {
+void handle_battery(BatteryChargeState new_charge_state) {
+  if (got_charge_state && memcmp(&charge_state, &new_charge_state, sizeof(charge_state)) == 0) {
+    // No change; ignore the update.
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "battery update received, no change to battery");
+    return;
+  }
+
+  charge_state = new_charge_state;
+  got_charge_state = true;
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "battery changed to %d%%, %d %d", charge_state.charge_percent, charge_state.is_charging, charge_state.is_plugged);
+
   if (config.battery_gauge != IM_off) {
     invalidate_clock_face();
   }

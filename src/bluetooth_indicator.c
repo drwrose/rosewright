@@ -7,7 +7,10 @@
 BitmapWithData bluetooth_disconnected;
 BitmapWithData bluetooth_connected;
 BitmapWithData bluetooth_mask;
-bool bluetooth_state = false;
+
+bool got_bluetooth_state = false;
+bool bluetooth_state;
+bool bluetooth_buzzed_state = false;
 
 void destroy_bluetooth_bitmaps() {
   bwd_destroy(&bluetooth_disconnected);
@@ -43,16 +46,19 @@ void draw_bluetooth_indicator(GContext *ctx, int x, int y, bool invert) {
   fg_mode = GCompOpSet;
 #endif  // PBL_BW
 
-  bool new_state = bluetooth_connection_service_peek();
-  if (new_state != bluetooth_state) {
-    bluetooth_state = new_state;
-    if (config.bluetooth_buzzer && !bluetooth_state) {
+  if (!got_bluetooth_state) {
+    bluetooth_state = bluetooth_connection_service_peek();
+    got_bluetooth_state = true;
+  }
+  if (bluetooth_state != bluetooth_buzzed_state) {
+    bluetooth_buzzed_state = bluetooth_state;
+    if (config.bluetooth_buzzer && !bluetooth_buzzed_state) {
       // We just lost the bluetooth connection.  Ring the buzzer.
       vibes_short_pulse();
     }
   }
 
-  if (bluetooth_state) {
+  if (bluetooth_buzzed_state) {
     if (config.bluetooth_indicator != IM_when_needed) {
       // We don't draw the "connected" bitmap if bluetooth_indicator
       // is set to IM_when_needed; only on IM_always.
@@ -92,7 +98,17 @@ void draw_bluetooth_indicator(GContext *ctx, int x, int y, bool invert) {
 }
 
 // Update the bluetooth guage.
-void handle_bluetooth(bool connected) {
+void handle_bluetooth(bool new_bluetooth_state) {
+  if (got_bluetooth_state && bluetooth_state != new_bluetooth_state) {
+    // No change; ignore the update.
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "bluetooth update received, no change to bluetooth");
+    return;
+  }
+
+  bluetooth_state = new_bluetooth_state;
+  got_bluetooth_state = true;
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "bluetooth changed to %d", bluetooth_state);
+
   if (config.bluetooth_indicator != IM_off) {
     invalidate_clock_face();
   }

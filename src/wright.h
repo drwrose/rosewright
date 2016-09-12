@@ -50,6 +50,11 @@
 #define SUPPORT_HEART_RATE
 #endif  // PBL_PLATFORM_DIORITE
 
+// Drawing the phase hands separately doesn't seem to be a performance
+// win for some reason.
+#define SEPARATE_PHASE_HANDS 0
+//#define SEPARATE_PHASE_HANDS (config.second_hand)
+
 // This structure keeps track of the things that change on the visible
 // watch face and their current state.
 struct __attribute__((__packed__)) HandPlacement {

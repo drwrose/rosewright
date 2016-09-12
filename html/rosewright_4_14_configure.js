@@ -168,8 +168,7 @@ if ($.url().param("show_debug")) {
     date_window_options.push([201, "(dev) heap free"]);
     date_window_options.push([202, "(dev) memory panic count"]);
     date_window_options.push([203, "(dev) resource reads"]);
-    date_window_options.push([204, "(dev) cache hits"]);
-    date_window_options.push([205, "(dev) cache total size"]);
+    date_window_options.push([204, "(dev) draw face count"]);
 }
 
 var top_subdial_options = [
