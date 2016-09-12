@@ -5,8 +5,6 @@
 // features, including start/stop and lap buttons on the chrono dials.
 // Specifically, this code is used only for Rosewright Chronograph.
 
-#ifdef MAKE_CHRONOGRAPH
-
 // The screen width of the chrono_digital_layer.  Always 144, even on Chalk.
 #define DIGITAL_LAYER_WIDTH 144
 
@@ -17,13 +15,21 @@
 #define LAP_HEIGHT 30
 #endif
 
-const GSize chrono_dial_size = { 56, 56 };
-
+#ifdef ENABLE_CHRONO_DIAL
 struct HandCache chrono_minute_cache;
-struct HandCache chrono_second_cache;
 struct HandCache chrono_tenth_cache;
 
+const GSize chrono_dial_size = { 56, 56 };
 BitmapWithData chrono_dial_white;
+
+// True if we're currently showing tenths, false if we're currently
+// showing hours, in the chrono subdial.
+bool chrono_dial_shows_tenths = false;
+#endif // ENABLE_CHRONO_DIAL
+
+#ifdef MAKE_CHRONOGRAPH
+
+struct HandCache chrono_second_cache;
 
 struct ResourceCache chrono_second_resource_cache[CHRONO_SECOND_RESOURCE_CACHE_SIZE + CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE];
 size_t chrono_second_resource_cache_size = CHRONO_SECOND_RESOURCE_CACHE_SIZE +  + CHRONO_SECOND_MASK_RESOURCE_CACHE_SIZE;
@@ -45,10 +51,6 @@ char chrono_laps_buffer[CHRONO_MAX_LAPS][CHRONO_DIGITAL_BUFFER_SIZE];
 
 #define CHRONO_DIGITAL_TICK_MS 100 // Every 0.1 seconds
 
-// True if we're currently showing tenths, false if we're currently
-// showing hours, in the chrono subdial.
-bool chrono_dial_shows_tenths = false;
-
 int sweep_chrono_seconds_ms = 60 * 1000 / NUM_STEPS_CHRONO_SECOND;
 
 ChronoData chrono_data = { false, false, 0, 0, { 0, 0, 0, 0 } };
@@ -60,41 +62,10 @@ static VibePattern chrono_tap = {
   1,
 };
 
-// Returns the number of milliseconds since midnight, UTC.
-unsigned int get_time_ms() {
-  time_t gmt;
-  uint16_t t_ms;
-  unsigned int ms_utc;
+#endif  // MAKE_CHRONOGRAPH
 
-  time_ms(&gmt, &t_ms);
-  ms_utc = (unsigned int)((gmt % SECONDS_PER_DAY) * 1000 + t_ms);
-
-#ifdef FAST_TIME
-  ms_utc *= 67;
-#endif  // FAST_TIME
-
-  return ms_utc;
-}
-
-// Returns the time showing on the chronograph, given the ms returned
-// by get_time_ms().  Returns the current lap time if the lap is
-// paused.
-unsigned int get_chrono_ms(unsigned int ms) {
-  unsigned int chrono_ms;
-  if (chrono_data.running && !chrono_data.lap_paused) {
-    // The chronograph is running.  Show the active elapsed time.
-    chrono_ms = (ms - chrono_data.start_ms + MS_PER_DAY) % MS_PER_DAY;
-  } else {
-    // The chronograph is paused.  Show the time it is paused on.
-    chrono_ms = chrono_data.hold_ms;
-  }
-
-  return chrono_ms;
-}
-
-void compute_chrono_hands(unsigned int ms, struct HandPlacement *placement) {
-  unsigned int chrono_ms = get_chrono_ms(ms);
-
+#ifdef ENABLE_CHRONO_DIAL
+void update_chrono_dial_mode(int chrono_ms) {
   bool chrono_dial_wants_tenths = true;
   switch (config.chrono_dial) {
   case CDM_off:
@@ -122,61 +93,18 @@ void compute_chrono_hands(unsigned int ms, struct HandPlacement *placement) {
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono dial changed mode");
     invalidate_clock_face();
   }
-
-#ifdef ENABLE_CHRONO_MINUTE_HAND
-  // The chronograph minute hand rolls completely around in 30
-  // minutes (not 60).
-  {
-    unsigned int use_ms = chrono_ms % (1800 * 1000);
-    placement->chrono_minute_hand_index = ((NUM_STEPS_CHRONO_MINUTE * use_ms) / (1800 * 1000)) % NUM_STEPS_CHRONO_MINUTE;
-  }
-#endif  // ENABLE_CHRONO_MINUTE_HAND
-
-#ifdef ENABLE_CHRONO_SECOND_HAND
-  {
-    // Avoid overflowing the integer arithmetic by pre-constraining
-    // the ms value to the appropriate range.
-    unsigned int use_ms = chrono_ms % (60 * 1000);
-    if (!config.sweep_seconds) {
-      // Also constrain to an integer second if we've not enabled sweep-second resolution.
-      use_ms = (use_ms / 1000) * 1000;
-    }
-    placement->chrono_second_hand_index = ((NUM_STEPS_CHRONO_SECOND * use_ms) / (60 * 1000));
-  }
-#endif  // ENABLE_CHRONO_SECOND_HAND
-
-#ifdef ENABLE_CHRONO_TENTH_HAND
-  if (config.chrono_dial == CDM_off) {
-    // Don't keep updating this hand if we're not showing it anyway.
-    placement->chrono_tenth_hand_index = 0;
-  } else {
-    if (chrono_dial_shows_tenths) {
-      // Drawing tenths-of-a-second.
-      if (chrono_data.running && !chrono_data.lap_paused) {
-	// We don't actually show the tenths time while the chrono is running.
-	placement->chrono_tenth_hand_index = 0;
-      } else {
-	// We show the tenths time when the chrono is stopped or showing
-	// the lap time.
-	unsigned int use_ms = chrono_ms % 1000;
-	// Truncate to the previous 0.1 seconds (100 ms), just to
-	// make the dial easier to read.
-	use_ms = 100 * (use_ms / 100);
-	placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * use_ms) / (1000)) % NUM_STEPS_CHRONO_TENTH;
-      }
-    } else {
-      // Drawing hours.  12-hour scale.
-      unsigned int use_ms = chrono_ms % (12 * SECONDS_PER_HOUR * 1000);
-      placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * use_ms) / (12 * SECONDS_PER_HOUR * 1000)) % NUM_STEPS_CHRONO_TENTH;
-    }
-  }
-#endif  // ENABLE_CHRONO_TENTH_HAND
 }
 
 void draw_chrono_dial(GContext *ctx) {
   //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_chrono_dial");
 
   if (config.chrono_dial != CDM_off) {
+#ifndef MAKE_CHRONOGRAPH
+    // If we're not implementing full chrono functionality, this dial
+    // is just for show.  Make sure it shows the correct type.
+    update_chrono_dial_mode(0);
+#endif  // MAKE_CHRONOGRAPH
+
 #ifdef PBL_BW
     BitmapWithData chrono_dial_black;
     if (chrono_dial_shows_tenths) {
@@ -228,6 +156,96 @@ void draw_chrono_dial(GContext *ctx) {
     bwd_destroy(&chrono_dial_black);
 #endif  // PBL_BW
   }
+}
+#endif  // ENABLE_CHRONO_DIAL
+
+#ifdef MAKE_CHRONOGRAPH
+
+// Returns the number of milliseconds since midnight, UTC.
+unsigned int get_time_ms() {
+  time_t gmt;
+  uint16_t t_ms;
+  unsigned int ms_utc;
+
+  time_ms(&gmt, &t_ms);
+  ms_utc = (unsigned int)((gmt % SECONDS_PER_DAY) * 1000 + t_ms);
+
+#ifdef FAST_TIME
+  ms_utc *= 67;
+#endif  // FAST_TIME
+
+  return ms_utc;
+}
+
+// Returns the time showing on the chronograph, given the ms returned
+// by get_time_ms().  Returns the current lap time if the lap is
+// paused.
+unsigned int get_chrono_ms(unsigned int ms) {
+  unsigned int chrono_ms;
+  if (chrono_data.running && !chrono_data.lap_paused) {
+    // The chronograph is running.  Show the active elapsed time.
+    chrono_ms = (ms - chrono_data.start_ms + MS_PER_DAY) % MS_PER_DAY;
+  } else {
+    // The chronograph is paused.  Show the time it is paused on.
+    chrono_ms = chrono_data.hold_ms;
+  }
+
+  return chrono_ms;
+}
+
+void compute_chrono_hands(unsigned int ms, struct HandPlacement *placement) {
+  unsigned int chrono_ms = get_chrono_ms(ms);
+
+  update_chrono_dial_mode(chrono_ms);
+
+#ifdef ENABLE_CHRONO_MINUTE_HAND
+  // The chronograph minute hand rolls completely around in 30
+  // minutes (not 60).
+  {
+    unsigned int use_ms = chrono_ms % (1800 * 1000);
+    placement->chrono_minute_hand_index = ((NUM_STEPS_CHRONO_MINUTE * use_ms) / (1800 * 1000)) % NUM_STEPS_CHRONO_MINUTE;
+  }
+#endif  // ENABLE_CHRONO_MINUTE_HAND
+
+#ifdef ENABLE_CHRONO_SECOND_HAND
+  {
+    // Avoid overflowing the integer arithmetic by pre-constraining
+    // the ms value to the appropriate range.
+    unsigned int use_ms = chrono_ms % (60 * 1000);
+    if (!config.sweep_seconds) {
+      // Also constrain to an integer second if we've not enabled sweep-second resolution.
+      use_ms = (use_ms / 1000) * 1000;
+    }
+    placement->chrono_second_hand_index = ((NUM_STEPS_CHRONO_SECOND * use_ms) / (60 * 1000));
+  }
+#endif  // ENABLE_CHRONO_SECOND_HAND
+
+#ifdef ENABLE_CHRONO_TENTH_HAND
+  if (config.chrono_dial == CDM_off) {
+    // Don't keep updating this hand if we're not showing it anyway.
+    placement->chrono_tenth_hand_index = 0;
+  } else {
+    if (chrono_dial_shows_tenths) {
+      // Drawing tenths-of-a-second.
+      if (chrono_data.running && !chrono_data.lap_paused) {
+        // We don't actually show the tenths time while the chrono is running.
+        placement->chrono_tenth_hand_index = 0;
+      } else {
+        // We show the tenths time when the chrono is stopped or showing
+        // the lap time.
+        unsigned int use_ms = chrono_ms % 1000;
+        // Truncate to the previous 0.1 seconds (100 ms), just to
+        // make the dial easier to read.
+        use_ms = 100 * (use_ms / 100);
+        placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * use_ms) / (1000)) % NUM_STEPS_CHRONO_TENTH;
+      }
+    } else {
+      // Drawing hours.  12-hour scale.
+      unsigned int use_ms = chrono_ms % (12 * SECONDS_PER_HOUR * 1000);
+      placement->chrono_tenth_hand_index = ((NUM_STEPS_CHRONO_TENTH * use_ms) / (12 * SECONDS_PER_HOUR * 1000)) % NUM_STEPS_CHRONO_TENTH;
+    }
+  }
+#endif  // ENABLE_CHRONO_TENTH_HAND
 }
 
 
@@ -522,8 +540,8 @@ void push_chrono_digital_handler(ClickRecognizerRef recognizer, void *context) {
     if (chrono_digital_window == NULL) {
       chrono_digital_window = window_create();
       if (chrono_digital_window == NULL) {
-	trigger_memory_panic(__LINE__);
-	return;
+        trigger_memory_panic(__LINE__);
+        return;
       }
 
       struct WindowHandlers chrono_digital_window_handlers;
@@ -601,7 +619,7 @@ void update_chrono_laps_time() {
     } else {
       // Real data: formatted string.
       snprintf(chrono_laps_buffer[i], CHRONO_DIGITAL_BUFFER_SIZE, "%u:%02u:%02u.%u",
-	       chrono_h, chrono_m, chrono_s, chrono_t);
+               chrono_h, chrono_m, chrono_s, chrono_t);
     }
     if (chrono_digital_laps_layer[i] != NULL) {
       layer_mark_dirty((Layer *)chrono_digital_laps_layer[i]);
@@ -625,7 +643,7 @@ void update_chrono_current_time() {
   unsigned int chrono_t = (chrono_ms / (100)) % 10;
 
   snprintf(chrono_current_buffer, CHRONO_DIGITAL_BUFFER_SIZE, "%u:%02u:%02u.%u",
-	   chrono_h, chrono_m, chrono_s, chrono_t);
+           chrono_h, chrono_m, chrono_s, chrono_t);
   if (chrono_digital_current_layer != NULL) {
     layer_mark_dirty((Layer *)chrono_digital_current_layer);
   }
@@ -712,6 +730,5 @@ void destroy_chrono_objects() {
 
   bwd_destroy(&chrono_dial_white);
 }
-
 
 #endif  // MAKE_CHRONOGRAPH

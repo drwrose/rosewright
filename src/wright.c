@@ -1068,9 +1068,9 @@ void draw_clock_face(Layer *me, GContext *ctx) {
     }
   }
 
-#ifdef MAKE_CHRONOGRAPH
+#ifdef ENABLE_CHRONO_DIAL
   draw_chrono_dial(ctx);
-#endif  // MAKE_CHRONOGRAPH
+#endif  // ENABLE_CHRONO_DIAL
 
   int indicator_face_index = get_indicator_face_index();
   {
@@ -1106,6 +1106,20 @@ void draw_phase_1_hands(GContext *ctx) {
   // Since the second hand is a tiny subdial in the Chrono case, and
   // is overlaid by the hour and minute hands, we have to draw the
   // second hand and everything else in phase_2.
+
+#elif defined(ENABLE_CHRONO_DIAL)
+  // In this case, we're not implementing full chrono functionality,
+  // but we want to look like a chonograph, so draw the minute and
+  // tenth hands at 0.
+  if (config.second_hand) {
+    draw_hand(&chrono_minute_cache RESOURCE_CACHE_PARAMS(NULL, 0), &chrono_minute_hand_def, 0, ctx);
+  }
+
+  if (config.chrono_dial != CDM_off) {
+    if (config.second_hand) {
+      draw_hand(&chrono_tenth_cache RESOURCE_CACHE_PARAMS(NULL, 0), &chrono_tenth_hand_def, 0, ctx);
+    }
+  }
 
 #else  // MAKE_CHRONOGRAPH
   // The normal, non-chrono implementation, with only hour, minute,
@@ -1158,6 +1172,17 @@ void draw_phase_2_hands(GContext *ctx) {
   if (config.second_hand || chrono_data.running || chrono_data.hold_ms != 0) {
     draw_hand(&chrono_second_cache RESOURCE_CACHE_PARAMS(chrono_second_resource_cache, chrono_second_resource_cache_size), &chrono_second_hand_def, current_placement.chrono_second_hand_index, ctx);
   }
+
+#elif defined(ENABLE_CHRONO_DIAL)
+  // In this case, we're not implementing full chrono functionality,
+  // but we still have to deal with that little second hand.
+  if (config.second_hand) {
+    draw_hand(&second_cache RESOURCE_CACHE_PARAMS(second_resource_cache, second_resource_cache_size), &second_hand_def, current_placement.second_hand_index, ctx);
+  }
+
+  draw_hand(&hour_cache RESOURCE_CACHE_PARAMS(NULL, 0), &hour_hand_def, current_placement.hour_hand_index, ctx);
+
+  draw_hand(&minute_cache RESOURCE_CACHE_PARAMS(NULL, 0), &minute_hand_def, current_placement.minute_hand_index, ctx);
 
 #else  // MAKE_CHRONOGRAPH
   // The normal, non-chrono implementation; and here in phase 2 we
