@@ -157,6 +157,35 @@ void draw_chrono_dial(GContext *ctx) {
 #endif  // PBL_BW
   }
 }
+
+void create_chrono_objects() {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "create_chrono_objects");
+  hand_cache_init(&chrono_minute_cache);
+  hand_cache_init(&chrono_tenth_cache);
+
+#ifdef MAKE_CHRONOGRAPH
+  hand_cache_init(&chrono_second_cache);
+  update_chrono_laps_time();
+#endif  // MAKE_CHRONOGRAPH
+}
+
+
+void destroy_chrono_objects() {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "destroy_chrono_objects");
+
+  hand_cache_destroy(&chrono_minute_cache);
+  hand_cache_destroy(&chrono_tenth_cache);
+  bwd_destroy(&chrono_dial_white);
+
+#ifdef MAKE_CHRONOGRAPH
+  if (chrono_digital_window != NULL) {
+    window_destroy(chrono_digital_window);
+    chrono_digital_window = NULL;
+  }
+  hand_cache_destroy(&chrono_second_cache);
+#endif  // MAKE_CHRONOGRAPH
+}
+
 #endif  // ENABLE_CHRONO_DIAL
 
 #ifdef MAKE_CHRONOGRAPH
@@ -704,31 +733,6 @@ void save_chrono_data() {
       app_log(APP_LOG_LEVEL_ERROR, __FILE__, __LINE__, "Error saving chrono_data (%d, %d): %d", PERSIST_KEY + 0x100, sizeof(chrono_data), wrote);
     }
   }
-}
-
-void create_chrono_objects() {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "create_chrono_objects");
-  hand_cache_init(&chrono_minute_cache);
-  hand_cache_init(&chrono_second_cache);
-  hand_cache_init(&chrono_tenth_cache);
-
-  update_chrono_laps_time();
-}
-
-
-void destroy_chrono_objects() {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "destroy_chrono_objects");
-
-  if (chrono_digital_window != NULL) {
-    window_destroy(chrono_digital_window);
-    chrono_digital_window = NULL;
-  }
-
-  hand_cache_destroy(&chrono_minute_cache);
-  hand_cache_destroy(&chrono_second_cache);
-  hand_cache_destroy(&chrono_tenth_cache);
-
-  bwd_destroy(&chrono_dial_white);
 }
 
 #endif  // MAKE_CHRONOGRAPH

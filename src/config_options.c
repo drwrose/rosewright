@@ -248,7 +248,7 @@ static void int_to_config() {
       WNM_mon_4, false
     },
 
-#elif PERSIST_KEY == 0x5151 + 0xc7  // Rosewright Chronograph
+#elif PERSIST_KEY == 0x5151 + 0xc7 ||  PERSIST_KEY == 0x5151 + 0xca   // Rosewright Chronograph
     { IM_always, IM_always, true, false,
       true, 0, CDM_off, false,
       0, 0,

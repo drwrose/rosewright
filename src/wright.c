@@ -2264,9 +2264,9 @@ void create_temporal_objects() {
   init_battery_gauge();
   init_bluetooth_indicator();
 
-#ifdef MAKE_CHRONOGRAPH
+#ifdef ENABLE_CHRONO_DIAL
   create_chrono_objects();
-#endif  // MAKE_CHRONOGRAPH
+#endif  // ENABLE_CHRONO_DIAL
 }
 
 // Destroys the objects created by create_temporal_objects().
@@ -2283,9 +2283,9 @@ void destroy_temporal_objects() {
   bwd_destroy(&clock_face);
   face_index = -1;
 
-#ifdef MAKE_CHRONOGRAPH
+#ifdef ENABLE_CHRONO_DIAL
   destroy_chrono_objects();
-#endif  // MAKE_CHRONOGRAPH
+#endif  // ENABLE_CHRONO_DIAL
 
   deinit_battery_gauge();
   deinit_bluetooth_indicator();

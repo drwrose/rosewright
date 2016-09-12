@@ -6,6 +6,11 @@
 #ifdef ENABLE_CHRONO_DIAL
 extern struct HandCache chrono_tenth_cache;
 extern struct HandCache chrono_minute_cache;
+
+void draw_chrono_dial(GContext *ctx);
+void create_chrono_objects();
+void destroy_chrono_objects();
+
 #endif // ENABLE_CHRONO_DIAL
 
 #ifdef MAKE_CHRONOGRAPH
@@ -39,8 +44,6 @@ void record_chrono_lap(int chrono_ms);
 void update_chrono_laps_time();
 void chrono_set_click_config(struct Window *window);
 
-void create_chrono_objects();
-void destroy_chrono_objects();
 void load_chrono_data();
 void save_chrono_data();
 
@@ -57,9 +60,5 @@ void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx);
 #endif
 
 #endif  // MAKE_CHRONOGRAPH
-
-#ifdef ENABLE_CHRONO_DIAL
-void draw_chrono_dial(GContext *ctx);
-#endif  // ENABLE_CHRONO_DIAL
 
 #endif
