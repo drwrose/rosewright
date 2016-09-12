@@ -819,27 +819,16 @@ void remap_colors_clock(BitmapWithData *bwd) {
 
 // Applies the appropriate color-remapping according to the selected
 // color mode, for the indicated date-window bitmap.
-static void remap_colors_date(BitmapWithData *bwd) {
+void remap_colors_date(BitmapWithData *bwd) {
 #ifndef PBL_BW
   struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
-  GColor bg, fg;
-  bg.argb = cd->db_argb8;
-  fg.argb = cd->d1_argb8;
+  GColor db, d1, cb, c2;
+  db.argb = cd->db_argb8;
+  d1.argb = cd->d1_argb8;
+  cb.argb = cd->cb_argb8;
+  c2.argb = cd->c2_argb8;
 
-  bwd_remap_colors(bwd, bg, fg, GColorBlack, GColorWhite, config.draw_mode);
-#endif  // PBL_BW
-}
-
-// Applies the appropriate color-remapping according to the selected
-// color mode, for the indicated battery-indicator bitmap.
-void remap_colors_battery(BitmapWithData *bwd, bool invert) {
-#ifndef PBL_BW
-  struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
-  if (invert) {
-    bwd_remap_colors(bwd, (GColor8){.argb=cd->cb_argb8}, GColorBlack, (GColor8){.argb=cd->c2_argb8}, GColorWhite, config.draw_mode);
-  } else {
-    bwd_remap_colors(bwd, (GColor8){.argb=cd->cb_argb8}, GColorWhite, (GColor8){.argb=cd->c2_argb8}, GColorBlack, config.draw_mode);
-  }
+  bwd_remap_colors(bwd, db, d1, c2, cb, config.draw_mode);
 #endif  // PBL_BW
 }
 

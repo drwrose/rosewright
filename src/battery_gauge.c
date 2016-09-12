@@ -66,14 +66,14 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
 #else  // PBL_BW
   // In Basalt, we always use GCompOpSet because the icon includes its
   // own alpha channel.
+  extern struct FaceColorDef clock_face_color_table[];
+  struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
   fg_mode = GCompOpSet;
-
-  if (invert ^ config.draw_mode) {
-    bg_color = GColorBlack;
-    fg_color = GColorWhite;
-  } else {
-    bg_color = GColorWhite;
-    fg_color = GColorBlack;
+  bg_color.argb = cd->db_argb8;
+  fg_color.argb = cd->d1_argb8;
+  if (config.draw_mode) {
+    bg_color.argb ^= 0x3f;
+    fg_color.argb ^= 0x3f;
   }
 #endif  // PBL_BW
 
@@ -110,7 +110,7 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
     // Actively charging.  Draw the charging icon.
     if (charging.bitmap == NULL) {
       charging = png_bwd_create(RESOURCE_ID_CHARGING);
-      remap_colors_battery(&charging, invert);
+      remap_colors_date(&charging);
     }
     graphics_context_set_compositing_mode(ctx, fg_mode);
     graphics_draw_bitmap_in_rect(ctx, charging.bitmap, box);
@@ -120,7 +120,7 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
     // Plugged in but not charging.  Draw the charged icon.
     if (battery_gauge_charged.bitmap == NULL) {
       battery_gauge_charged = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_CHARGED);
-      remap_colors_battery(&battery_gauge_charged, invert);
+      remap_colors_date(&battery_gauge_charged);
     }
     graphics_context_set_compositing_mode(ctx, fg_mode);
     graphics_draw_bitmap_in_rect(ctx, battery_gauge_charged.bitmap, box);
@@ -129,7 +129,7 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
     // Not plugged in.  Draw the analog battery icon.
     if (battery_gauge_empty.bitmap == NULL) {
       battery_gauge_empty = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_EMPTY);
-      remap_colors_battery(&battery_gauge_empty, invert);
+      remap_colors_date(&battery_gauge_empty);
     }
     graphics_context_set_compositing_mode(ctx, fg_mode);
     graphics_context_set_fill_color(ctx, fg_color);

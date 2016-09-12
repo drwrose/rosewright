@@ -158,7 +158,7 @@ void draw_hand_mask(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PARAMS, s
 void draw_hand_fg(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PARAMS, struct HandDef *hand_def, int hand_index, bool no_basalt_mask, GContext *ctx);
 void draw_hand(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PARAMS, struct HandDef *hand_def, int hand_index, GContext *ctx);
 void remap_colors_clock(BitmapWithData *bwd);
-void remap_colors_battery(BitmapWithData *bwd, bool invert);
+void remap_colors_date(BitmapWithData *bwd);
 void invalidate_clock_face();
 void destroy_objects();
 void create_objects();
