@@ -99,7 +99,7 @@ void draw_bluetooth_indicator(GContext *ctx, int x, int y, bool invert) {
 
 // Update the bluetooth guage.
 void handle_bluetooth(bool new_bluetooth_state) {
-  if (got_bluetooth_state && bluetooth_state != new_bluetooth_state) {
+  if (got_bluetooth_state && bluetooth_state == new_bluetooth_state) {
     // No change; ignore the update.
     app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "bluetooth update received, no change to bluetooth");
     return;
