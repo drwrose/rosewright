@@ -301,7 +301,7 @@ faces = {
         'top_subdial_rect' : (32, 16, 'b'),
         'top_subdial_round' : (50, 20, 'b'),
         'bluetooth_rect' : (16, 18, 'b'),
-        'battery_rect' : (109, 21, 'b'),
+        'battery_rect' : (109, 25, 'b'),
         'bluetooth_round' : (33, 41, 'b'),
         'battery_round' : (127, 49, 'b'),
         'defaults' : [ 'second' ],

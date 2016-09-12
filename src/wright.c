@@ -832,10 +832,14 @@ static void remap_colors_date(BitmapWithData *bwd) {
 
 // Applies the appropriate color-remapping according to the selected
 // color mode, for the indicated battery-indicator bitmap.
-void remap_colors_battery(BitmapWithData *bwd) {
+void remap_colors_battery(BitmapWithData *bwd, bool invert) {
 #ifndef PBL_BW
   struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
-  bwd_remap_colors(bwd, (GColor8){.argb=cd->cb_argb8}, GColorWhite, (GColor8){.argb=cd->c2_argb8}, GColorBlack, config.draw_mode);
+  if (invert) {
+    bwd_remap_colors(bwd, (GColor8){.argb=cd->cb_argb8}, GColorBlack, (GColor8){.argb=cd->c2_argb8}, GColorWhite, config.draw_mode);
+  } else {
+    bwd_remap_colors(bwd, (GColor8){.argb=cd->cb_argb8}, GColorWhite, (GColor8){.argb=cd->c2_argb8}, GColorBlack, config.draw_mode);
+  }
 #endif  // PBL_BW
 }
 

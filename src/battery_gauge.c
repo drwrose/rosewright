@@ -67,9 +67,17 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
   // In Basalt, we always use GCompOpSet because the icon includes its
   // own alpha channel.
   fg_mode = GCompOpSet;
-  bg_color = GColorWhite;
-  fg_color = GColorBlack;
+
+  if (invert ^ config.draw_mode) {
+    bg_color = GColorBlack;
+    fg_color = GColorWhite;
+  } else {
+    bg_color = GColorWhite;
+    fg_color = GColorBlack;
+  }
 #endif  // PBL_BW
+
+  bool fully_charged = (!charge_state.is_charging && charge_state.is_plugged && charge_state.charge_percent >= 80);
 
 #ifdef PBL_BW
   // Draw the background of the layer.
@@ -83,7 +91,7 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
   }
 #endif  // PBL_BW
 
-  if (config.battery_gauge != IM_digital) {
+  if (config.battery_gauge != IM_digital || fully_charged) {
 #ifdef PBL_BW
     // Erase the battery gauge shape.
     if (battery_gauge_mask.bitmap == NULL) {
@@ -102,17 +110,17 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
     // Actively charging.  Draw the charging icon.
     if (charging.bitmap == NULL) {
       charging = png_bwd_create(RESOURCE_ID_CHARGING);
-      remap_colors_battery(&charging);
+      remap_colors_battery(&charging, invert);
     }
     graphics_context_set_compositing_mode(ctx, fg_mode);
     graphics_draw_bitmap_in_rect(ctx, charging.bitmap, box);
   }
 
-  if (!charge_state.is_charging && charge_state.is_plugged && charge_state.charge_percent >= 80) {
+  if (fully_charged) {
     // Plugged in but not charging.  Draw the charged icon.
     if (battery_gauge_charged.bitmap == NULL) {
       battery_gauge_charged = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_CHARGED);
-      remap_colors_battery(&battery_gauge_charged);
+      remap_colors_battery(&battery_gauge_charged, invert);
     }
     graphics_context_set_compositing_mode(ctx, fg_mode);
     graphics_draw_bitmap_in_rect(ctx, battery_gauge_charged.bitmap, box);
@@ -121,7 +129,7 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
     // Not plugged in.  Draw the analog battery icon.
     if (battery_gauge_empty.bitmap == NULL) {
       battery_gauge_empty = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_EMPTY);
-      remap_colors_battery(&battery_gauge_empty);
+      remap_colors_battery(&battery_gauge_empty, invert);
     }
     graphics_context_set_compositing_mode(ctx, fg_mode);
     graphics_context_set_fill_color(ctx, fg_color);
