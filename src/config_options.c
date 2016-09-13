@@ -371,6 +371,14 @@ static void int_to_config() {
 #endif  // SCREENSHOT_BUILD
 
 #ifdef SCREENSHOT_BUILD
+static void config_button_tap_handler(AccelAxisType axis, int32_t direction) {
+  ++current_config_index;
+  int_to_config();
+  apply_config();
+}
+#endif  // SCREENSHOT_BUILD
+
+#ifdef SCREENSHOT_BUILD
 static void config_button_up_handler(ClickRecognizerRef recognizer, void *context) {
   ++current_config_index;
   int_to_config();
@@ -390,6 +398,7 @@ static void config_button_down_handler(ClickRecognizerRef recognizer, void *cont
 static void config_click_config_provider(void *context) {
   window_single_click_subscribe(BUTTON_ID_UP, &config_button_up_handler);
   window_single_click_subscribe(BUTTON_ID_DOWN, &config_button_down_handler);
+  accel_tap_service_subscribe(config_button_tap_handler);
 }
 #endif  // SCREENSHOT_BUILD
 
