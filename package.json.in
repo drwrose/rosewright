@@ -144,7 +144,7 @@
     },
     "targetPlatforms": [ %(targetPlatforms)s ],
     "capabilities": [
-      "configurable"
+        "configurable", "health"
     ]
   },
   "name": "%(watchName)s"
