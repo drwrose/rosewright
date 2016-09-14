@@ -31,7 +31,6 @@ int cached_calories_burned = -1;
 int cached_heart_rate = -1;
 
 BitmapWithData face_bitmap;
-BitmapWithData pebble_label;
 BitmapWithData top_subdial_frame_mask;
 BitmapWithData top_subdial_mask;
 BitmapWithData top_subdial_bitmap;
@@ -56,10 +55,7 @@ bool hide_date_windows = false;
 bool hide_clock_face = false;
 bool redraw_clock_face = false;
 
-//#define MIN_BYTES_FREE 3072 // seems enough
-//#define MIN_BYTES_FREE 512  // not enough
-//#define MIN_BYTES_FREE 1024 // not quite enough
-#define MIN_BYTES_FREE 1536
+#define MIN_BYTES_FREE 512  // maybe this is enough?
 
 #define DATE_WINDOW_BUFFER_SIZE 16
 
@@ -71,8 +67,6 @@ const GSize date_window_size = { 37, 19 };
 #endif  // PBL_ROUND
 
 const GSize top_subdial_size = { 80, 41 };
-const GSize pebble_label_size = { 36, 15 };
-const GPoint pebble_label_offset = { 22, 13 };
 
 // This structure is the data associated with a date window layer.
 typedef struct __attribute__((__packed__)) {
@@ -855,42 +849,6 @@ static void remap_colors_moon(BitmapWithData *bwd) {
 #endif  // PBL_BW
 }
 
-void draw_pebble_label(Layer *me, GContext *ctx, bool invert) {
-  unsigned int draw_mode = invert ^ config.draw_mode ^ BW_INVERT;
-
-  const struct IndicatorTable *window = &top_subdial[config.face_index];
-  GRect destination = GRect(window->x + pebble_label_offset.x, window->y + pebble_label_offset.y, pebble_label_size.w, pebble_label_size.h);
-
-#ifdef PBL_BW
-  BitmapWithData pebble_label_mask;
-  pebble_label_mask = rle_bwd_create(RESOURCE_ID_PEBBLE_LABEL_MASK);
-  if (pebble_label_mask.bitmap == NULL) {
-    trigger_memory_panic(__LINE__);
-    return;
-  }
-  graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_bg);
-  graphics_draw_bitmap_in_rect(ctx, pebble_label_mask.bitmap, destination);
-  bwd_destroy(&pebble_label_mask);
-#endif  // PBL_BW
-
-  if (pebble_label.bitmap == NULL) {
-    pebble_label = rle_bwd_create(RESOURCE_ID_PEBBLE_LABEL);
-    if (pebble_label.bitmap == NULL) {
-      trigger_memory_panic(__LINE__);
-      return;
-    }
-#ifndef PBL_BW
-    remap_colors_clock(&pebble_label);
-#endif  // PBL_BW
-  }
-
-  graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_fg);
-  graphics_draw_bitmap_in_rect(ctx, pebble_label.bitmap, destination);
-  if (!keep_assets) {
-    bwd_destroy(&pebble_label);
-  }
-}
-
 #ifdef TOP_SUBDIAL
 // Draws a special moon subdial window that shows the lunar phase in more detail.
 void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
@@ -1024,7 +982,10 @@ void draw_clock_face(Layer *me, GContext *ctx) {
   // Reload the face bitmap from the resource file, if we don't
   // already have it.
   if (face_bitmap.bitmap == NULL) {
-    face_bitmap = rle_bwd_create(clock_face_table[config.face_index].resource_id);
+    // We load either the face resource, or if the pebble_label is
+    // enabled, we load the next consecutive resource instead.
+    int resource_id = clock_face_table[config.face_index].resource_id + (config.top_subdial == TSM_pebble_label);
+    face_bitmap = rle_bwd_create(resource_id);
     if (face_bitmap.bitmap == NULL) {
       trigger_memory_panic(__LINE__);
       return;
@@ -1045,10 +1006,7 @@ void draw_clock_face(Layer *me, GContext *ctx) {
 
     switch (config.top_subdial) {
     case TSM_off:
-    break;
-
-    case TSM_pebble_label:
-      draw_pebble_label(me, ctx, window->invert);
+    case TSM_pebble_label:  // handled by loading a different face_bitmap
       break;
 
     case TSM_moon_phase:
@@ -2277,7 +2235,6 @@ void destroy_temporal_objects() {
   bwd_destroy(&date_window);
   bwd_destroy(&date_window_mask);
   bwd_destroy(&face_bitmap);
-  bwd_destroy(&pebble_label);
   bwd_destroy(&top_subdial_bitmap);
   bwd_destroy(&moon_wheel_bitmap);
 

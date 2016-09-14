@@ -460,6 +460,62 @@ def parseColorMode(colorMode):
 
     return paintChannel, useTransparency, dither
 
+def applyLabel(outputFilename, faceIndex, platforms = None):
+    """ Applies the "Pebble" label to the clock face image.  Reads
+    faceFilename and applies pebble_label.png onto it, writing the
+    result to outputFilename. """
+
+    faceFilename = 'clock_faces/' + faceFilenames[faceIndex]
+    faceBasename, faceExt = os.path.splitext(faceFilename)
+    outputBasename, outputExt = os.path.splitext(outputFilename)
+
+    pebble_label_size = (36, 15)
+    pebble_label_offset = (22, 13)
+
+    prefix = resourcesDir + '/'
+
+    for platform in platforms:
+        for faceVariant in get_variants_for_platforms([platform]) + ['']:
+            # Handle the specialized variant files.
+            if os.path.exists(prefix + faceBasename + faceVariant + faceExt):
+                break
+
+        faceFilename = prefix + faceBasename + faceVariant + faceExt
+        face = PIL.Image.open(faceFilename)
+
+        labelBasename = 'clock_faces/pebble_label'
+        labelExt = '.png'
+        for labelVariant in get_variants_for_platforms([platform]) + ['']:
+            # Handle the specialized variant files.
+            if os.path.exists(prefix + labelBasename + labelVariant + labelExt):
+                break
+
+        labelFilename = prefix + labelBasename + labelVariant + labelExt
+        label = PIL.Image.open(labelFilename)
+
+        if 'round' in faceVariant:
+            top_subdial = top_subdial_round[faceIndex]
+        else:
+            top_subdial = top_subdial_rect[faceIndex]
+
+        x = top_subdial[0] + pebble_label_offset[0]
+        y = top_subdial[1] + pebble_label_offset[1]
+
+
+        if labelVariant == '~bw':
+            # For bw platforms, load the mask separately.
+            maskFilename = prefix + 'clock_faces/pebble_label_mask' + labelVariant + labelExt
+            mask = PIL.Image.open(maskFilename)
+        else:
+            # For color platforms, extract the mask from the alpha channel.
+            r, g, b, mask = label.convert('RGBA').split()
+            label = PIL.Image.merge('RGB', [r, g, b])
+
+        face.paste(label, box = (x, y), mask = mask)
+
+        outputFilename = prefix + outputBasename + faceVariant + outputExt
+        face.save(outputFilename)
+
 def makeFaces(generatedTable, generatedDefs):
 
     resourceStr = ''
@@ -479,7 +535,17 @@ def makeFaces(generatedTable, generatedDefs):
     for i in range(len(faceFilenames)):
         print >> generatedTable, "  { RESOURCE_ID_CLOCK_FACE_%s }," % (i)
 
-        resourceStr += make_rle('clock_faces/' + faceFilenames[i], name = 'CLOCK_FACE_%s' % (i), useRle = supportRle, platforms = targetPlatforms, compress = True)
+        faceFilename = 'clock_faces/' + faceFilenames[i]
+        resourceStr += make_rle(faceFilename, name = 'CLOCK_FACE_%s' % (i), useRle = supportRle, platforms = targetPlatforms, compress = True)
+
+        # Also generate a pre-labeled clock face.
+        basename = os.path.split(faceFilename)[1]
+        basename = os.path.splitext(basename)[0]
+        outputFilename = 'build/%s_label.png' % (basename)
+        applyLabel(outputFilename, i, platforms = targetPlatforms)
+        resourceStr += make_rle(outputFilename, name = 'CLOCK_FACE_%s_LABEL' % (i), useRle = supportRle, platforms = targetPlatforms, compress = True)
+
+
     print >> generatedTable, "};\n"
 
     faceColors = fd.get('colors')
