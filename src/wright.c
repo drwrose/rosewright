@@ -355,6 +355,7 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
       use_ms = (use_ms / 1000) * 1000;
     }
     placement->second_hand_index = ((NUM_STEPS_SECOND * use_ms) / (60 * 1000));
+    //placement->second_hand_index = (placement->second_hand_index & 3) + 9;    // hack.
   }
 
   // Record data for date windows.

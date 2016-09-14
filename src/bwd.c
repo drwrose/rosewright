@@ -54,6 +54,7 @@ BitmapWithData bwd_copy_bitmap(GBitmap *source) {
 
 void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source) {
   int pixels_per_byte = 8;
+#ifndef PBL_BW
   GBitmapFormat format = gbitmap_get_format(source);
 
   size_t palette_count = 0;
@@ -92,6 +93,7 @@ void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source) {
     }
     memcpy(dest_palette, source_palette, palette_count);
   }
+#endif  // PBL_BW
 
   if (dest->bitmap == NULL) {
     return;
@@ -548,6 +550,9 @@ rle_bwd_create_rb(RBuffer *rb) {
   Packer *packer_func = NULL;
   size_t palette_count = 0;
   int vn = 0;
+#ifdef PBL_BW
+    packer_func = pack_1bit;
+#else  // PBL_BW
   switch (format) {
   case GBitmapFormat1BitPalette:
     palette_count = 2;
@@ -574,6 +579,7 @@ rle_bwd_create_rb(RBuffer *rb) {
     packer_func = pack_8bit;
     break;
   }
+#endif  // PBL_BW
   assert(packer_func != NULL);
 
   GColor *palette = NULL;
