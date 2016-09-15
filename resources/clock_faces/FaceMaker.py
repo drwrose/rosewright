@@ -442,6 +442,7 @@ class FaceMaker:
             pivot = (self.d2b(pivot[0] / pixelScale),
                      self.d2b(pivot[1] / pixelScale))
             p = self.p2b(*p)
+            print size, p
             im = im.resize(size, PIL.Image.ANTIALIAS)
             color, mask = im.split()
             color.paste(255, (0, 0, color.size[0], color.size[1]))
