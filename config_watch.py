@@ -329,7 +329,7 @@ faces = {
         'battery_rect' : (109, 21, 'b'),
         'bluetooth_round' : (33, 41, 'b'),
         'battery_round' : (127, 49, 'b'),
-        'defaults' : [ 'second', 'limit_cache_aplite' ],
+        'defaults' : [ 'second', 'limit_cache_aplite', 'prebake_label' ],
         },
     'd' : {
         'filename' : ['d_face.png', 'd_face_white.png', 'd_face_clean.png'],
@@ -494,9 +494,10 @@ def applyLabel(outputFilename, faceIndex, platforms = None):
         label = PIL.Image.open(labelFilename)
 
         if 'round' in faceVariant:
-            top_subdial = top_subdial_round[faceIndex]
+            top_subdial = top_subdial_round
         else:
-            top_subdial = top_subdial_rect[faceIndex]
+            top_subdial = top_subdial_rect
+        top_subdial = expandIndicatorList(top_subdial, numIndicatorFaces)[faceIndex]
 
         x = top_subdial[0] + pebble_label_offset[0]
         y = top_subdial[1] + pebble_label_offset[1]
@@ -538,12 +539,13 @@ def makeFaces(generatedTable, generatedDefs):
         faceFilename = 'clock_faces/' + faceFilenames[i]
         resourceStr += make_rle(faceFilename, name = 'CLOCK_FACE_%s' % (i), useRle = supportRle, platforms = targetPlatforms, compress = True)
 
-        # Also generate a pre-labeled clock face.
-        basename = os.path.split(faceFilename)[1]
-        basename = os.path.splitext(basename)[0]
-        outputFilename = 'build/%s_label.png' % (basename)
-        applyLabel(outputFilename, i, platforms = targetPlatforms)
-        resourceStr += make_rle(outputFilename, name = 'CLOCK_FACE_%s_LABEL' % (i), useRle = supportRle, platforms = targetPlatforms, compress = True)
+        if prebakeLabel:
+            # Also generate a pre-labeled clock face.
+            basename = os.path.split(faceFilename)[1]
+            basename = os.path.splitext(basename)[0]
+            outputFilename = 'build/%s_label.png' % (basename)
+            applyLabel(outputFilename, i, platforms = targetPlatforms)
+            resourceStr += make_rle(outputFilename, name = 'CLOCK_FACE_%s_LABEL' % (i), useRle = supportRle, platforms = targetPlatforms, compress = True)
 
 
     print >> generatedTable, "};\n"
@@ -1239,6 +1241,24 @@ def getIndicator(fd, indicator):
 
     return list_rect, list_round
 
+def expandIndicatorList(indicator, numFaces):
+    """ Given an indicator list, e.g. top_subdial_rect or
+    top_subdial_round, from the table, return a list whose length is
+    the number of faces. """
+    if len(indicator) == 1 and numFaces != 1:
+        indicator = [indicator[0]] * numFaces
+    if len(indicator) == numFaces / 2:
+      # Implicitly expand it by doubling each face.
+      i2 = indicator
+      indicator = []
+      for i in i2:
+        indicator.append(i)
+        indicator.append(i)
+
+    assert len(indicator) == numFaces
+
+    return indicator
+
 def makeIndicatorTable(generatedTable, generatedDefs, name, (indicator_rect, indicator_round), numFaces, anonymous = False):
     """ Makes an array of IndicatorTable values to define how a given
     indicator (that is, a bluetooth or battery indicator, or a
@@ -1257,18 +1277,7 @@ def makeIndicatorTable(generatedTable, generatedDefs, name, (indicator_rect, ind
         print >> generatedTable, "struct IndicatorTable %s[%s] = {" % (name, numFaces)
 
     def writeTable(generatedTable, indicator, numFaces):
-        if len(indicator) == 1 and numFaces != 1:
-            indicator = [indicator[0]] * numFaces
-        if len(indicator) == numFaces / 2:
-          # Implicitly expand it by doubling each face.
-          i2 = indicator
-          indicator = []
-          for i in i2:
-            indicator.append(i)
-            indicator.append(i)
-
-        assert len(indicator) == numFaces
-
+        indicator = expandIndicatorList(indicator, numFaces)
         for x, y, c in indicator:
             print >> generatedTable, "   { %s, %s, %s }," % (
                 x, y, int(c[0] == 'b'))
@@ -1379,9 +1388,10 @@ def makeMoonWheel(platform):
             resourceStr += make_rle(targetBasename, name = 'MOON_WHEEL_%s_%s' % (cat.upper(), i), useRle = supportRle, platforms = [platform], compress = True)
 
     # Let's also throw in the other subdial decorations here.
-    resourceStr += make_rle('clock_faces/pebble_label.png', name = 'PEBBLE_LABEL', useRle = supportRle, platforms = [platform], compress = True)
-    if platform in bwPlatforms:
-        resourceStr += make_rle('clock_faces/pebble_label_mask.png', name = 'PEBBLE_LABEL_MASK', useRle = supportRle, platforms = [platform], compress = True)
+    if not prebakeLabel:
+        resourceStr += make_rle('clock_faces/pebble_label.png', name = 'PEBBLE_LABEL', useRle = supportRle, platforms = [platform], compress = True)
+        if platform in bwPlatforms:
+            resourceStr += make_rle('clock_faces/pebble_label_mask.png', name = 'PEBBLE_LABEL_MASK', useRle = supportRle, platforms = [platform], compress = True)
 
     resourceStr += make_rle('clock_faces/top_subdial.png', name = 'TOP_SUBDIAL', useRle = supportRle, platforms = [platform], compress = True)
     if platform in bwPlatforms:
@@ -1515,6 +1525,7 @@ def configWatch():
         'supportRle' : int(bool(supportRle)),
         'bwInvert' : int(bool(bwInvert)),
         'numFaces' : numFaces,
+        'prebakeLabel' : int(bool(prebakeLabel)),
         'numIndicatorFaces' : numIndicatorFaces,
         'numFaceColors' : numFaceColors,
         'defaultFaceIndex' : defaultFaceIndex,
@@ -1664,6 +1675,8 @@ for keyword in defaults:
             i = ord(ch) - 97
             defaultDateWindows[i] = value
             break
+
+prebakeLabel = ('prebake_label' in defaults)
 
 defaultTopSubdial = 0
 if 'moon_phase' in defaults:

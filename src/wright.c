@@ -36,6 +36,10 @@ BitmapWithData top_subdial_mask;
 BitmapWithData top_subdial_bitmap;
 BitmapWithData moon_wheel_bitmap;
 
+#ifndef PREBAKE_LABEL
+BitmapWithData pebble_label;
+#endif  // PREBAKE_LABEL
+
 GFont fallback_font = NULL;
 GFont date_numeric_font = NULL;
 GFont date_lang_font = NULL;
@@ -67,6 +71,11 @@ const GSize date_window_size = { 37, 19 };
 #endif  // PBL_ROUND
 
 const GSize top_subdial_size = { 80, 41 };
+
+#ifndef PREBAKE_LABEL
+const GSize pebble_label_size = { 36, 15 };
+const GPoint pebble_label_offset = { 22, 13 };
+#endif  // PREBAKE_LABEL
 
 // This structure is the data associated with a date window layer.
 typedef struct __attribute__((__packed__)) {
@@ -849,6 +858,44 @@ static void remap_colors_moon(BitmapWithData *bwd) {
 #endif  // PBL_BW
 }
 
+#ifndef PREBAKE_LABEL
+void draw_pebble_label(Layer *me, GContext *ctx, bool invert) {
+  unsigned int draw_mode = invert ^ config.draw_mode ^ BW_INVERT;
+
+  const struct IndicatorTable *window = &top_subdial[config.face_index];
+  GRect destination = GRect(window->x + pebble_label_offset.x, window->y + pebble_label_offset.y, pebble_label_size.w, pebble_label_size.h);
+
+#ifdef PBL_BW
+  BitmapWithData pebble_label_mask;
+  pebble_label_mask = rle_bwd_create(RESOURCE_ID_PEBBLE_LABEL_MASK);
+  if (pebble_label_mask.bitmap == NULL) {
+    trigger_memory_panic(__LINE__);
+    return;
+  }
+  graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_bg);
+  graphics_draw_bitmap_in_rect(ctx, pebble_label_mask.bitmap, destination);
+  bwd_destroy(&pebble_label_mask);
+#endif  // PBL_BW
+
+  if (pebble_label.bitmap == NULL) {
+    pebble_label = rle_bwd_create(RESOURCE_ID_PEBBLE_LABEL);
+    if (pebble_label.bitmap == NULL) {
+      trigger_memory_panic(__LINE__);
+      return;
+    }
+#ifndef PBL_BW
+    remap_colors_clock(&pebble_label);
+#endif  // PBL_BW
+  }
+
+  graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_fg);
+  graphics_draw_bitmap_in_rect(ctx, pebble_label.bitmap, destination);
+  if (!keep_assets) {
+    bwd_destroy(&pebble_label);
+  }
+}
+#endif  // PREBAKE_LABEL
+
 #ifdef TOP_SUBDIAL
 // Draws a special moon subdial window that shows the lunar phase in more detail.
 void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
@@ -982,9 +1029,13 @@ void draw_clock_face(Layer *me, GContext *ctx) {
   // Reload the face bitmap from the resource file, if we don't
   // already have it.
   if (face_bitmap.bitmap == NULL) {
-    // We load either the face resource, or if the pebble_label is
-    // enabled, we load the next consecutive resource instead.
-    int resource_id = clock_face_table[config.face_index].resource_id + (config.top_subdial == TSM_pebble_label);
+    int resource_id = clock_face_table[config.face_index].resource_id;
+#ifdef PREBAKE_LABEL
+    // If the pebble_label is enabled (and we've prebaked the labels
+    // into the faces), we load the next consecutive resource instead.
+    resource_id += (config.top_subdial == TSM_pebble_label);
+#endif  // PREBAKE_LABEL
+
     face_bitmap = rle_bwd_create(resource_id);
     if (face_bitmap.bitmap == NULL) {
       trigger_memory_panic(__LINE__);
@@ -1006,7 +1057,12 @@ void draw_clock_face(Layer *me, GContext *ctx) {
 
     switch (config.top_subdial) {
     case TSM_off:
-    case TSM_pebble_label:  // handled by loading a different face_bitmap
+      break;
+
+    case TSM_pebble_label:
+#ifndef PREBAKE_LABEL
+      draw_pebble_label(me, ctx, window->invert);
+#endif  // PREBAKE_LABEL
       break;
 
     case TSM_moon_phase:

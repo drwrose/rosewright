@@ -14,6 +14,12 @@
 // The number of different clock faces available.
 #define NUM_FACES %(numFaces)s
 
+#if %(prebakeLabel)s
+// Defined if the "pebble" label is already baked into the clock face
+// images; not defined if it should be applied at runtime.
+#define PREBAKE_LABEL 1
+#endif
+
 // The number of "faces" for the purposes of defining indicator
 // placements; this doubles the face count when the top subdial is
 // enabled.
