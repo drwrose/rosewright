@@ -50,6 +50,11 @@
 #define SUPPORT_HEART_RATE
 #endif  // PBL_PLATFORM_DIORITE
 
+// Drawing the phase hands separately doesn't seem to be a performance
+// win for some reason.
+#define SEPARATE_PHASE_HANDS 0
+//#define SEPARATE_PHASE_HANDS (config.second_hand)
+
 // This structure keeps track of the things that change on the visible
 // watch face and their current state.
 struct __attribute__((__packed__)) HandPlacement {
@@ -118,7 +123,7 @@ extern bool keep_assets;
 #ifdef NEVER_KEEP_FACE_ASSET
 #define keep_face_asset false
 #else
-bool keep_face_asset = true;
+extern bool keep_face_asset;
 #endif  // NEVER_KEEP_FACE_ASSET
 
 extern DrawModeTable draw_mode_table[2];
@@ -153,6 +158,7 @@ void draw_hand_mask(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PARAMS, s
 void draw_hand_fg(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PARAMS, struct HandDef *hand_def, int hand_index, bool no_basalt_mask, GContext *ctx);
 void draw_hand(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PARAMS, struct HandDef *hand_def, int hand_index, GContext *ctx);
 void remap_colors_clock(BitmapWithData *bwd);
+void remap_colors_date(BitmapWithData *bwd);
 void invalidate_clock_face();
 void destroy_objects();
 void create_objects();

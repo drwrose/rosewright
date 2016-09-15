@@ -82,6 +82,10 @@
   #define MAKE_CHRONOGRAPH 1
 #endif
 
+#if %(enableChronoDial)s
+  #define ENABLE_CHRONO_DIAL 1
+#endif
+
 #if %(enableChronoMinuteHand)s
   #define ENABLE_CHRONO_MINUTE_HAND 1
 #endif

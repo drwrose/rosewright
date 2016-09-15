@@ -23,8 +23,6 @@ struct __attribute__((__packed__)) ResourceCache {
 };
 
 extern int bwd_resource_reads;
-extern int bwd_cache_hits;
-extern size_t bwd_cache_total_size;
 
 BitmapWithData bwd_create(GBitmap *bitmap, unsigned char *data);
 void bwd_destroy(BitmapWithData *bwd);

@@ -10,6 +10,9 @@ BitmapWithData battery_gauge_mask;
 BitmapWithData charging;
 BitmapWithData charging_mask;
 
+bool got_charge_state = false;
+BatteryChargeState charge_state;
+
 void destroy_battery_gauge_bitmaps() {
   bwd_destroy(&battery_gauge_empty);
   bwd_destroy(&battery_gauge_charged);
@@ -23,7 +26,10 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
     return;
   }
 
-  BatteryChargeState charge_state = battery_state_service_peek();
+  if (!got_charge_state) {
+    charge_state = battery_state_service_peek();
+    got_charge_state = true;
+  }
 
 #ifdef BATTERY_HACK
   time_t now = time(NULL);
@@ -43,8 +49,9 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
 
   GCompOp fg_mode;
   GColor fg_color, bg_color;
-  GCompOp mask_mode;
 
+#ifdef PBL_BW
+  GCompOp mask_mode;
   if (invert ^ config.draw_mode ^ BW_INVERT) {
     fg_mode = GCompOpSet;
     bg_color = GColorBlack;
@@ -56,7 +63,23 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
     fg_color = GColorBlack;
     mask_mode = GCompOpSet;
   }
+#else  // PBL_BW
+  // In Basalt, we always use GCompOpSet because the icon includes its
+  // own alpha channel.
+  extern struct FaceColorDef clock_face_color_table[];
+  struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
+  fg_mode = GCompOpSet;
+  bg_color.argb = cd->db_argb8;
+  fg_color.argb = cd->d1_argb8;
+  if (config.draw_mode) {
+    bg_color.argb ^= 0x3f;
+    fg_color.argb ^= 0x3f;
+  }
+#endif  // PBL_BW
 
+  bool fully_charged = (!charge_state.is_charging && charge_state.is_plugged && charge_state.charge_percent >= 80);
+
+#ifdef PBL_BW
   // Draw the background of the layer.
   if (charge_state.is_charging) {
     // Erase the charging icon shape.
@@ -66,14 +89,17 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
     graphics_context_set_compositing_mode(ctx, mask_mode);
     graphics_draw_bitmap_in_rect(ctx, charging_mask.bitmap, box);
   }
+#endif  // PBL_BW
 
-  if (config.battery_gauge != IM_digital) {
+  if (config.battery_gauge != IM_digital || fully_charged) {
+#ifdef PBL_BW
     // Erase the battery gauge shape.
     if (battery_gauge_mask.bitmap == NULL) {
       battery_gauge_mask = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_MASK);
     }
     graphics_context_set_compositing_mode(ctx, mask_mode);
     graphics_draw_bitmap_in_rect(ctx, battery_gauge_mask.bitmap, box);
+#endif  // PBL_BW
   } else {
     // Erase a rectangle for text.
     graphics_context_set_fill_color(ctx, bg_color);
@@ -84,15 +110,17 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
     // Actively charging.  Draw the charging icon.
     if (charging.bitmap == NULL) {
       charging = png_bwd_create(RESOURCE_ID_CHARGING);
+      remap_colors_date(&charging);
     }
     graphics_context_set_compositing_mode(ctx, fg_mode);
     graphics_draw_bitmap_in_rect(ctx, charging.bitmap, box);
   }
 
-  if (!charge_state.is_charging && charge_state.is_plugged && charge_state.charge_percent >= 80) {
+  if (fully_charged) {
     // Plugged in but not charging.  Draw the charged icon.
     if (battery_gauge_charged.bitmap == NULL) {
       battery_gauge_charged = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_CHARGED);
+      remap_colors_date(&battery_gauge_charged);
     }
     graphics_context_set_compositing_mode(ctx, fg_mode);
     graphics_draw_bitmap_in_rect(ctx, battery_gauge_charged.bitmap, box);
@@ -101,6 +129,7 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
     // Not plugged in.  Draw the analog battery icon.
     if (battery_gauge_empty.bitmap == NULL) {
       battery_gauge_empty = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_EMPTY);
+      remap_colors_date(&battery_gauge_empty);
     }
     graphics_context_set_compositing_mode(ctx, fg_mode);
     graphics_context_set_fill_color(ctx, fg_color);
@@ -125,7 +154,17 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
 }
 
 // Update the battery guage.
-void handle_battery(BatteryChargeState charge_state) {
+void handle_battery(BatteryChargeState new_charge_state) {
+  if (got_charge_state && memcmp(&charge_state, &new_charge_state, sizeof(charge_state)) == 0) {
+    // No change; ignore the update.
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "battery update received, no change to battery");
+    return;
+  }
+
+  charge_state = new_charge_state;
+  got_charge_state = true;
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "battery changed to %d%%, %d %d", charge_state.charge_percent, charge_state.is_charging, charge_state.is_plugged);
+
   if (config.battery_gauge != IM_off) {
     invalidate_clock_face();
   }

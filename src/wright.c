@@ -8,6 +8,8 @@
 
 bool memory_panic_flag = false;
 int memory_panic_count = 0;
+int draw_face_count = 0;
+bool app_in_focus = true;
 
 Window *window;
 
@@ -29,7 +31,6 @@ int cached_calories_burned = -1;
 int cached_heart_rate = -1;
 
 BitmapWithData face_bitmap;
-BitmapWithData pebble_label;
 BitmapWithData top_subdial_frame_mask;
 BitmapWithData top_subdial_mask;
 BitmapWithData top_subdial_bitmap;
@@ -40,6 +41,7 @@ GFont date_numeric_font = NULL;
 GFont date_lang_font = NULL;
 
 bool save_framebuffer = true;
+bool any_obstructed_area = false;
 
 #ifndef NEVER_KEEP_ASSETS
 bool keep_assets = true;
@@ -53,15 +55,7 @@ bool hide_date_windows = false;
 bool hide_clock_face = false;
 bool redraw_clock_face = false;
 
-// Drawing the phase hands separately doesn't seem to be a performance
-// win for some reason.
-#define SEPARATE_PHASE_HANDS 0
-//#define SEPARATE_PHASE_HANDS (config.second_hand)
-
-//#define MIN_BYTES_FREE 3072 // seems enough
-//#define MIN_BYTES_FREE 512  // not enough
-//#define MIN_BYTES_FREE 1024 // not quite enough
-#define MIN_BYTES_FREE 1536
+#define MIN_BYTES_FREE 512  // maybe this is enough?
 
 #define DATE_WINDOW_BUFFER_SIZE 16
 
@@ -73,8 +67,6 @@ const GSize date_window_size = { 37, 19 };
 #endif  // PBL_ROUND
 
 const GSize top_subdial_size = { 80, 41 };
-const GSize pebble_label_size = { 36, 15 };
-const GPoint pebble_label_offset = { 22, 13 };
 
 // This structure is the data associated with a date window layer.
 typedef struct __attribute__((__packed__)) {
@@ -357,6 +349,7 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
       use_ms = (use_ms / 1000) * 1000;
     }
     placement->second_hand_index = ((NUM_STEPS_SECOND * use_ms) / (60 * 1000));
+    //placement->second_hand_index = (placement->second_hand_index & 3) + 9;    // hack.
   }
 
   // Record data for date windows.
@@ -477,16 +470,12 @@ void flip_bitmap_x(GBitmap *image, short *cx) {
   uint8_t *data = gbitmap_get_data(image);
 
   for (int y = 0; y < height; ++y) {
-#ifdef PBL_SDK_2
-    uint8_t *row = data + y * stride;
-#else
     // Get the min and max x values for this row
     GBitmapDataRowInfo info = gbitmap_get_data_row_info(image, y);
     uint8_t *row = &info.data[info.min_x];
     width = info.max_x - info.min_x + 1;
     assert(width % pixels_per_byte == 0);
     int width_bytes = width / pixels_per_byte;
-#endif  // PBL_SDK_2
 
     switch (pixels_per_byte) {
     case 8:
@@ -547,10 +536,6 @@ void flip_bitmap_y(GBitmap *image, short *cy) {
   for (int y1 = (height - 1) / 2; y1 >= 0; --y1) {
     int y2 = height - 1 - y1;
 
-#ifdef PBL_SDK_2
-    uint8_t *row1 = data + y1 * stride;
-    uint8_t *row2 = data + y2 * stride;
-#else
     // Get the min and max x values for this row
     GBitmapDataRowInfo info1 = gbitmap_get_data_row_info(image, y1);
     GBitmapDataRowInfo info2 = gbitmap_get_data_row_info(image, y2);
@@ -560,7 +545,6 @@ void flip_bitmap_y(GBitmap *image, short *cy) {
     uint8_t *row1 = &info1.data[info1.min_x];
     uint8_t *row2 = &info2.data[info2.min_x];
     width_bytes = width1 / pixels_per_byte;
-#endif  // PBL_SDK_2
 
     // Swap rows y1 and y2.
     memcpy(buffer, row1, width_bytes);
@@ -656,7 +640,6 @@ void draw_bitmap_hand_mask(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PA
 #endif  // PBL_BW
   {
     // The draw-without-a-mask case.  Do nothing here.
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_bitmap_hand_mask %d no_basalt_mask %d", hand_index, no_basalt_mask);
   } else {
     // The hand has a mask, so use it to draw the hand opaquely.
     if (hand_cache->image.bitmap == NULL) {
@@ -699,7 +682,6 @@ void draw_bitmap_hand_mask(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PA
 
     graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ BW_INVERT].paint_fg);
     graphics_draw_bitmap_in_rect(ctx, hand_cache->mask.bitmap, destination);
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_bitmap_hand_mask %d format %d", hand_index, gbitmap_get_format(hand_cache->mask.bitmap));
   }
 }
 
@@ -832,14 +814,16 @@ void remap_colors_clock(BitmapWithData *bwd) {
 
 // Applies the appropriate color-remapping according to the selected
 // color mode, for the indicated date-window bitmap.
-static void remap_colors_date(BitmapWithData *bwd) {
+void remap_colors_date(BitmapWithData *bwd) {
 #ifndef PBL_BW
   struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
-  GColor bg, fg;
-  bg.argb = cd->db_argb8;
-  fg.argb = cd->d1_argb8;
+  GColor db, d1, cb, c2;
+  db.argb = cd->db_argb8;
+  d1.argb = cd->d1_argb8;
+  cb.argb = cd->cb_argb8;
+  c2.argb = cd->c2_argb8;
 
-  bwd_remap_colors(bwd, bg, fg, GColorBlack, GColorWhite, config.draw_mode);
+  bwd_remap_colors(bwd, db, d1, c2, cb, config.draw_mode);
 #endif  // PBL_BW
 }
 
@@ -863,42 +847,6 @@ static void remap_colors_moon(BitmapWithData *bwd) {
 
   bwd_remap_colors(bwd, bg, fg, GColorBlack, GColorPastelYellow, false);
 #endif  // PBL_BW
-}
-
-void draw_pebble_label(Layer *me, GContext *ctx, bool invert) {
-  unsigned int draw_mode = invert ^ config.draw_mode ^ BW_INVERT;
-
-  const struct IndicatorTable *window = &top_subdial[config.face_index];
-  GRect destination = GRect(window->x + pebble_label_offset.x, window->y + pebble_label_offset.y, pebble_label_size.w, pebble_label_size.h);
-
-#ifdef PBL_BW
-  BitmapWithData pebble_label_mask;
-  pebble_label_mask = rle_bwd_create(RESOURCE_ID_PEBBLE_LABEL_MASK);
-  if (pebble_label_mask.bitmap == NULL) {
-    trigger_memory_panic(__LINE__);
-    return;
-  }
-  graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_bg);
-  graphics_draw_bitmap_in_rect(ctx, pebble_label_mask.bitmap, destination);
-  bwd_destroy(&pebble_label_mask);
-#endif  // PBL_BW
-
-  if (pebble_label.bitmap == NULL) {
-    pebble_label = rle_bwd_create(RESOURCE_ID_PEBBLE_LABEL);
-    if (pebble_label.bitmap == NULL) {
-      trigger_memory_panic(__LINE__);
-      return;
-    }
-#ifndef PBL_BW
-    remap_colors_clock(&pebble_label);
-#endif  // PBL_BW
-  }
-
-  graphics_context_set_compositing_mode(ctx, draw_mode_table[draw_mode].paint_fg);
-  graphics_draw_bitmap_in_rect(ctx, pebble_label.bitmap, destination);
-  if (!keep_assets) {
-    bwd_destroy(&pebble_label);
-  }
 }
 
 #ifdef TOP_SUBDIAL
@@ -1029,11 +977,15 @@ int get_indicator_face_index() {
 
 void draw_clock_face(Layer *me, GContext *ctx) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_clock_face");
+  ++draw_face_count;
 
   // Reload the face bitmap from the resource file, if we don't
   // already have it.
   if (face_bitmap.bitmap == NULL) {
-    face_bitmap = rle_bwd_create(clock_face_table[config.face_index].resource_id);
+    // We load either the face resource, or if the pebble_label is
+    // enabled, we load the next consecutive resource instead.
+    int resource_id = clock_face_table[config.face_index].resource_id + (config.top_subdial == TSM_pebble_label);
+    face_bitmap = rle_bwd_create(resource_id);
     if (face_bitmap.bitmap == NULL) {
       trigger_memory_panic(__LINE__);
       return;
@@ -1054,10 +1006,7 @@ void draw_clock_face(Layer *me, GContext *ctx) {
 
     switch (config.top_subdial) {
     case TSM_off:
-    break;
-
-    case TSM_pebble_label:
-      draw_pebble_label(me, ctx, window->invert);
+    case TSM_pebble_label:  // handled by loading a different face_bitmap
       break;
 
     case TSM_moon_phase:
@@ -1078,9 +1027,9 @@ void draw_clock_face(Layer *me, GContext *ctx) {
     }
   }
 
-#ifdef MAKE_CHRONOGRAPH
+#ifdef ENABLE_CHRONO_DIAL
   draw_chrono_dial(ctx);
-#endif  // MAKE_CHRONOGRAPH
+#endif  // ENABLE_CHRONO_DIAL
 
   int indicator_face_index = get_indicator_face_index();
   {
@@ -1116,6 +1065,20 @@ void draw_phase_1_hands(GContext *ctx) {
   // Since the second hand is a tiny subdial in the Chrono case, and
   // is overlaid by the hour and minute hands, we have to draw the
   // second hand and everything else in phase_2.
+
+#elif defined(ENABLE_CHRONO_DIAL)
+  // In this case, we're not implementing full chrono functionality,
+  // but we want to look like a chonograph, so draw the minute and
+  // tenth hands at 0.
+  if (config.second_hand) {
+    draw_hand(&chrono_minute_cache RESOURCE_CACHE_PARAMS(NULL, 0), &chrono_minute_hand_def, 0, ctx);
+  }
+
+  if (config.chrono_dial != CDM_off) {
+    if (config.second_hand) {
+      draw_hand(&chrono_tenth_cache RESOURCE_CACHE_PARAMS(NULL, 0), &chrono_tenth_hand_def, 0, ctx);
+    }
+  }
 
 #else  // MAKE_CHRONOGRAPH
   // The normal, non-chrono implementation, with only hour, minute,
@@ -1169,6 +1132,17 @@ void draw_phase_2_hands(GContext *ctx) {
     draw_hand(&chrono_second_cache RESOURCE_CACHE_PARAMS(chrono_second_resource_cache, chrono_second_resource_cache_size), &chrono_second_hand_def, current_placement.chrono_second_hand_index, ctx);
   }
 
+#elif defined(ENABLE_CHRONO_DIAL)
+  // In this case, we're not implementing full chrono functionality,
+  // but we still have to deal with that little second hand.
+  if (config.second_hand) {
+    draw_hand(&second_cache RESOURCE_CACHE_PARAMS(second_resource_cache, second_resource_cache_size), &second_hand_def, current_placement.second_hand_index, ctx);
+  }
+
+  draw_hand(&hour_cache RESOURCE_CACHE_PARAMS(NULL, 0), &hour_hand_def, current_placement.hour_hand_index, ctx);
+
+  draw_hand(&minute_cache RESOURCE_CACHE_PARAMS(NULL, 0), &minute_hand_def, current_placement.minute_hand_index, ctx);
+
 #else  // MAKE_CHRONOGRAPH
   // The normal, non-chrono implementation; and here in phase 2 we
   // only need to draw the second hand.
@@ -1207,6 +1181,21 @@ void check_memory_usage() {
     check_min_bytes_free();
   }
 }
+
+#if !defined(PBL_PLATFORM_APLITE) && PBL_API_EXISTS(layer_get_unobstructed_bounds)
+void root_layer_update_callback(Layer *me, GContext *ctx) {
+  //app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "root_layer");
+
+  // Only bother filling in the root layer if part of the window is
+  // obstructed.  We do this to ensure the entire window is cleared in
+  // case we're not drawing all of it.
+  if (any_obstructed_area) {
+    GRect destination = layer_get_frame(me);
+    graphics_context_set_fill_color(ctx, GColorBlack);
+    graphics_fill_rect(ctx, destination, 0, GCornerNone);
+  }
+}
+#endif  // PBL_API_EXISTS(layer_get_unobstructed_bounds)
 
 void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
   // Make sure we have reset our memory usage before we start to draw.
@@ -1283,9 +1272,9 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
       } else {
         // The rendered clock face is already saved from a previous
         // update; redraw it now.
-        GRect destination = layer_get_bounds(me);
-        destination.origin.x = 0;
-        destination.origin.y = 0;
+        GRect destination = layer_get_frame(me);
+        destination.origin.x = -destination.origin.x;
+        destination.origin.y = -destination.origin.y;
         graphics_context_set_compositing_mode(ctx, GCompOpAssign);
         graphics_draw_bitmap_in_rect(ctx, clock_face.bitmap, destination);
       }
@@ -1612,10 +1601,7 @@ void draw_full_date_window(GContext *ctx, int date_window_index) {
   case DWM_debug_heap_free:
   case DWM_debug_memory_panic_count:
   case DWM_debug_resource_reads:
-#ifdef SUPPORT_RESOURCE_CACHE
-  case DWM_debug_cache_hits:
-  case DWM_debug_cache_total_size:
-#endif  // SUPPORT_RESOURCE_CACHE
+  case DWM_debug_draw_face_count:
     // We have some dynamic text that will need a separate pass to
     // re-render each frame.
     date_window_dynamic = true;
@@ -1692,26 +1678,8 @@ void draw_date_window_dynamic_text(GContext *ctx, int date_window_index) {
     snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", bwd_resource_reads);
     break;
 
-#ifdef SUPPORT_RESOURCE_CACHE
-  case DWM_debug_cache_hits:
-    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", bwd_cache_hits);
-    break;
-
-  case DWM_debug_cache_total_size:
-    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%dk", bwd_cache_total_size / 1024);
-    break;
-#endif  // SUPPORT_RESOURCE_CACHE
-
-  case DWM_weekday:
-    text = date_names[current_placement.day_index];
-    break;
-
-  case DWM_month:
-    text = date_names[current_placement.month_index + NUM_WEEKDAY_NAMES];
-    break;
-
-  case DWM_ampm:
-    text = date_names[current_placement.ampm_value + NUM_WEEKDAY_NAMES + NUM_MONTH_NAMES];
+  case DWM_debug_draw_face_count:
+    snprintf(buffer, DATE_WINDOW_BUFFER_SIZE, "%d", draw_face_count);
     break;
 
 #ifndef PBL_PLATFORM_APLITE
@@ -1769,6 +1737,7 @@ void update_hands(struct tm *time) {
     if (SEPARATE_PHASE_HANDS) {
       // If the hour and minute hands are baked into the clock face
       // cache, it must be redrawn now.
+      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "hour hand changed with SEPARATE_PHASE_HANDS");
       invalidate_clock_face();
     }
   }
@@ -1780,6 +1749,7 @@ void update_hands(struct tm *time) {
     if (SEPARATE_PHASE_HANDS) {
       // If the hour and minute hands are baked into the clock face
       // cache, it must be redrawn now.
+      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "minute hand changed with SEPARATE_PHASE_HANDS");
       invalidate_clock_face();
     }
   }
@@ -1823,6 +1793,7 @@ void update_hands(struct tm *time) {
     current_placement.ampm_value = new_placement.ampm_value;
     current_placement.ordinal_date_index = new_placement.ordinal_date_index;
 
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "date changed");
     invalidate_clock_face();
   }
 
@@ -1831,6 +1802,7 @@ void update_hands(struct tm *time) {
   if (new_placement.lunar_index != current_placement.lunar_index) {
     current_placement.lunar_index = new_placement.lunar_index;
     bwd_destroy(&moon_wheel_bitmap);
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "moon changed");
     invalidate_clock_face();
   }
 #endif  // TOP_SUBDIAL
@@ -1945,11 +1917,9 @@ void health_event_handler(HealthEventType event, void *context) {
     break;
 #endif  // SUPPORT_HEART_RATE
 
-#ifdef PBL_SDK_4
-  case HealthEventMetricAlert:
-    // Some threshold was crossed; we don't care about that here.
+  default:
+    // Some other event we don't care about.
     return;
-#endif  // PBL_SDK_4
   }
 
   if (!tick_seconds_subscribed) {
@@ -1963,12 +1933,19 @@ void health_event_handler(HealthEventType event, void *context) {
 }
 #endif  // PBL_PLATFORM_APLITE
 
-void did_focus_handler(bool in_focus) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "did_focus: %d", (int)in_focus);
-  if (in_focus) {
+void did_focus_handler(bool new_in_focus) {
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "did_focus: %d", (int)new_in_focus);
+  if (new_in_focus == app_in_focus) {
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "no change to focus");
+    return;
+  }
+
+  app_in_focus = new_in_focus;
+  if (app_in_focus) {
     // We have just regained focus from a notification or something.
     // Ensure the window is completely redrawn.
-    layer_mark_dirty(clock_face_layer);
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "regained focus");
+    invalidate_clock_face();
   }
 }
 
@@ -2157,6 +2134,33 @@ void load_date_fonts() {
   }
 }
 
+#if !defined(PBL_PLATFORM_APLITE) && PBL_API_EXISTS(layer_get_unobstructed_bounds)
+// The unobstructed area of the watchface is changing (e.g. due to a
+// timeline quick view message).  Adjust layers accordingly.
+void adjust_unobstructed_area() {
+  struct Layer *window_layer = window_get_root_layer(window);
+  GRect bounds = layer_get_unobstructed_bounds(window_layer);
+  GRect orig_bounds = layer_get_bounds(window_layer);
+  any_obstructed_area = (memcmp(&bounds, &orig_bounds, sizeof(bounds)) != 0);
+
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "unobstructed_area: %d %d %d %d, any_obstructed_area = %d", bounds.origin.x, bounds.origin.y, bounds.size.w, bounds.size.h, any_obstructed_area);
+
+  // Shift the face layer to center the face within the new region.
+  int cx = bounds.origin.x + bounds.size.w / 2;
+  int cy = bounds.origin.y + bounds.size.h / 2;
+
+  GRect face_layer_shifted = { { cx - SCREEN_WIDTH / 2, cy - SCREEN_HEIGHT / 2 },
+                               { SCREEN_WIDTH, SCREEN_HEIGHT } };
+  layer_set_frame(clock_face_layer, face_layer_shifted);
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "unobstructed area changed");
+  invalidate_clock_face();
+}
+
+void unobstructed_area_change_handler(AnimationProgress progress, void *context) {
+  adjust_unobstructed_area();
+}
+#endif  // PBL_API_EXISTS(layer_get_unobstructed_bounds)
+
 // This is called only once, at startup.
 void create_permanent_objects() {
   window = window_create();
@@ -2170,9 +2174,6 @@ void create_permanent_objects() {
   window_handlers.unload = window_unload_handler;
   window_set_window_handlers(window, window_handlers);
 
-#ifdef PBL_SDK_2
-  window_set_fullscreen(window, true);
-#endif  //  PBL_SDK_2
   window_stack_push(window, true);
 
   // clock_face_layer must be a permanent object, since we might call
@@ -2184,6 +2185,16 @@ void create_permanent_objects() {
   assert(clock_face_layer != NULL);
   layer_set_update_proc(clock_face_layer, &clock_face_layer_update_callback);
   layer_add_child(window_layer, clock_face_layer);
+
+#if !defined(PBL_PLATFORM_APLITE) && PBL_API_EXISTS(layer_get_unobstructed_bounds)
+  layer_set_update_proc(window_layer, &root_layer_update_callback);
+
+  struct UnobstructedAreaHandlers unobstructed_area_handlers;
+  memset(&unobstructed_area_handlers, 0, sizeof(unobstructed_area_handlers));
+  unobstructed_area_handlers.change = unobstructed_area_change_handler;
+  unobstructed_area_service_subscribe(unobstructed_area_handlers, NULL);
+  adjust_unobstructed_area();
+#endif  // PBL_API_EXISTS(layer_get_unobstructed_bounds)
 }
 
 // This is, of course, called only once, at shutdown.
@@ -2212,9 +2223,9 @@ void create_temporal_objects() {
   init_battery_gauge();
   init_bluetooth_indicator();
 
-#ifdef MAKE_CHRONOGRAPH
+#ifdef ENABLE_CHRONO_DIAL
   create_chrono_objects();
-#endif  // MAKE_CHRONOGRAPH
+#endif  // ENABLE_CHRONO_DIAL
 }
 
 // Destroys the objects created by create_temporal_objects().
@@ -2224,16 +2235,15 @@ void destroy_temporal_objects() {
   bwd_destroy(&date_window);
   bwd_destroy(&date_window_mask);
   bwd_destroy(&face_bitmap);
-  bwd_destroy(&pebble_label);
   bwd_destroy(&top_subdial_bitmap);
   bwd_destroy(&moon_wheel_bitmap);
 
   bwd_destroy(&clock_face);
   face_index = -1;
 
-#ifdef MAKE_CHRONOGRAPH
+#ifdef ENABLE_CHRONO_DIAL
   destroy_chrono_objects();
-#endif  // MAKE_CHRONOGRAPH
+#endif  // ENABLE_CHRONO_DIAL
 
   deinit_battery_gauge();
   deinit_bluetooth_indicator();
@@ -2256,6 +2266,7 @@ void recreate_all_objects() {
   destroy_temporal_objects();
   create_temporal_objects();
   load_date_fonts();
+  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "recreate_all_objects");
   invalidate_clock_face();
 }
 
@@ -2332,9 +2343,7 @@ void trigger_memory_panic(int line_number) {
   app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "memory_panic at line %d, heap_bytes_free = %d!", line_number, heap_bytes_free());
   memory_panic_flag = true;
 
-  if (clock_face_layer != NULL) {
-    layer_mark_dirty(clock_face_layer);
-  }
+  invalidate_clock_face();
 }
 
 void reset_memory_panic() {

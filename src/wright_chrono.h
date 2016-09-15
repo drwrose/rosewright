@@ -3,6 +3,16 @@
 
 #include "wright.h"
 
+#ifdef ENABLE_CHRONO_DIAL
+extern struct HandCache chrono_tenth_cache;
+extern struct HandCache chrono_minute_cache;
+
+void draw_chrono_dial(GContext *ctx);
+void create_chrono_objects();
+void destroy_chrono_objects();
+
+#endif // ENABLE_CHRONO_DIAL
+
 #ifdef MAKE_CHRONOGRAPH
 
 // Number of laps preserved for the laps digital display
@@ -18,9 +28,7 @@ typedef struct __attribute__((__packed__)) {
 
 extern ChronoData chrono_data;
 
-extern struct HandCache chrono_minute_cache;
 extern struct HandCache chrono_second_cache;
-extern struct HandCache chrono_tenth_cache;
 
 extern struct ResourceCache chrono_second_resource_cache[CHRONO_SECOND_RESOURCE_CACHE_SIZE];
 extern size_t chrono_second_resource_cache_size;
@@ -36,11 +44,8 @@ void record_chrono_lap(int chrono_ms);
 void update_chrono_laps_time();
 void chrono_set_click_config(struct Window *window);
 
-void create_chrono_objects();
-void destroy_chrono_objects();
 void load_chrono_data();
 void save_chrono_data();
-void draw_chrono_dial(GContext *ctx);
 
 #ifdef ENABLE_CHRONO_MINUTE_HAND
 void chrono_minute_layer_update_callback(Layer *me, GContext *ctx);
@@ -53,7 +58,6 @@ void chrono_second_layer_update_callback(Layer *me, GContext *ctx);
 #ifdef ENABLE_CHRONO_TENTH_HAND
 void chrono_tenth_layer_update_callback(Layer *me, GContext *ctx);
 #endif
-
 
 #endif  // MAKE_CHRONOGRAPH
 
