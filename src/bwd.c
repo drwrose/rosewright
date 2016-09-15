@@ -56,6 +56,7 @@ void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source) {
   int pixels_per_byte = 8;
 #ifndef PBL_BW
   GBitmapFormat format = gbitmap_get_format(source);
+  assert(format == gbitmap_get_format(dest->bitmap));
 
   size_t palette_count = 0;
   switch (format) {
@@ -102,8 +103,6 @@ void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source) {
   GSize size = gbitmap_get_bounds(source).size;
   assert(size.h == gbitmap_get_bounds(dest->bitmap).size.h &&
          size.w == gbitmap_get_bounds(dest->bitmap).size.w)
-
-  assert(format == gbitmap_get_format(dest->bitmap));
 
   for (int y = 0; y < size.h; ++y) {
     GBitmapDataRowInfo source_info = gbitmap_get_data_row_info(source, y);
