@@ -34,7 +34,7 @@ Options:
         Perform RLE compression of images.
 
     -p platform[,platform...]
-        Specifies the build platform (aplite, basalt, chalk, diorite).
+        Specifies the build platform (aplite, basalt, chalk, diorite, emery).
 
     -d
         Compile for debugging.  Specifically this enables "fast time",
@@ -67,11 +67,16 @@ def usage(code, msg = ''):
     print >> sys.stderr, msg
     sys.exit(code)
 
-
-# The default center for placing hands on the watch face, if not
-# otherwise specified in the centers tables below.
-rectCenterX, rectCenterY = 144 / 2, 168 / 2
-roundCenterX, roundCenterY = 180 / 2, 180 / 2
+screenSizes = {
+    'aplite' : (144, 168),
+    'basalt' : (144, 168),
+    'chalk' : (180, 180),
+    'diorite' : (144, 168),
+    'emery' : (200, 228),
+    }
+scaleFactors = {
+    'emery' : 1.357,
+    }
 
 # Table of watch styles.  A watch style is a combination of a hand
 # style and face style, and a unique identifier.  For each style,
@@ -233,9 +238,14 @@ faces = {
         'date_window_b_round': (134, 79, 'b'),
         'date_window_c_round': (46, 116, 'b'),
         'date_window_d_round': (92, 116, 'b'),
+        'date_window_a_emery': (3, 102, 'b'),
+        'date_window_b_emery': (147, 102, 'b'),
+        'date_window_c_emery': (49, 137, 'b'),
+        'date_window_d_emery': (194, 137, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : (32, 32, 'b'),
         'top_subdial_round' : (50, 32, 'b'),
+        'top_subdial_emery' : (44, 43, 'b'),
         'bluetooth_rect' : [ (37, 47, 'b'), (17, 29, 'b'),
                              (37, 47, 'b'), (17, 29, 'b'),
                              (37, 47, 'b'), (17, 29, 'b'),
@@ -251,6 +261,14 @@ faces = {
         'battery_round' : [ (110, 57, 'b'), (132, 33, 'b'),
                             (110, 57, 'b'), (132, 33, 'b'),
                             (110, 57, 'b'), (132, 33, 'b'),
+                            ],
+        'bluetooth_emery' : [ (51, 64, 'b'), (24, 39, 'b'),
+                              (51, 64, 'b'), (24, 39, 'b'),
+                              (51, 64, 'b'), (24, 39, 'b'),
+                             ],
+        'battery_emery' : [ (128, 69, 'b'), (153, 43, 'b'),
+                            (128, 69, 'b'), (153, 43, 'b'),
+                            (128, 69, 'b'), (153, 43, 'b'),
                             ],
         'defaults' : [ 'date:b', 'moon_phase', 'pebble_label', 'moon_dark', 'second', 'hour_minute_overlap', 'sweep' ],
         },
@@ -401,6 +419,7 @@ enableChronoSecondHand = False
 enableChronoTenthHand = False
 date_windows_rect = []
 date_windows_round = []
+date_windows_emery = []
 date_window_filename = None
 bluetooth = [None]
 battery = [None]
@@ -493,8 +512,10 @@ def applyLabel(outputFilename, faceIndex, platforms = None):
         labelFilename = prefix + labelBasename + labelVariant + labelExt
         label = PIL.Image.open(labelFilename)
 
-        if 'round' in faceVariant:
+        if platform in ['chalk']:
             top_subdial = top_subdial_round
+        elif platform in ['emery']:
+            top_subdial = top_subdial_emery
         else:
             top_subdial = top_subdial_rect
         top_subdial = expandIndicatorList(top_subdial, numIndicatorFaces)[faceIndex]
@@ -585,16 +606,21 @@ def makeVectorHands(generatedTable, paintChannel, generatedDefs, hand, groupList
     print >> generatedTable, "struct VectorHand %s_hand_vector_table = {" % (hand)
     print >> generatedTable, "  %s," % (paintChannel)
     print >> generatedTable, "  %s, (struct VectorHandGroup[]){" % (len(groupList))
-    for fillType, points, (scale_rect, scale_round) in groupList:
-        print >> generatedTable, "  { { %s, (GPoint[]){" % (len(points))
-        print >> generatedTable, "#ifdef PBL_ROUND"
-        for px, py in points:
-            print >> generatedTable, "    { %d, %d }," % (px * scale_round, py * scale_round)
-        print >> generatedTable, "#else  // PBL_ROUND"
-        for px, py in points:
-            print >> generatedTable, "    { %d, %d }," % (px * scale_rect, py * scale_rect)
-        print >> generatedTable, "#endif  // PBL_ROUND"
-        print >> generatedTable, "  } } },"
+    for platform in targetPlatforms:
+        roundPlatform = (platform in ['chalk'])
+        scaleFactor = scaleFactors.get(platform, 1.0)
+
+        print >> generatedTable, "#ifdef PBL_PLATFORM_%s" % (platform.upper)
+        for fillType, points, (scale_rect, scale_round) in groupList:
+            if roundPlatform:
+                scale = scale_round * scaleFactor
+            else:
+                scale = scale_rect * scaleFactor
+            print >> generatedTable, "  { { %s, (GPoint[]){" % (len(points))
+            for px, py in points:
+                print >> generatedTable, "    { %d, %d }," % (px * scale, py * scale)
+            print >> generatedTable, "  } } },"
+        print >> generatedTable, "#endif  // PBL_PLATFORM_%s" % (platform.upper)
 
     print >> generatedTable, "  }"
     print >> generatedTable, "};\n"
@@ -661,6 +687,11 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceBasename,
         print >> generatedTable, "#ifdef PBL_PLATFORM_DIORITE"
         resourceStr += makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_rect, 'diorite')
         print >> generatedTable, "#endif  // PBL_PLATFORM_DIORITE"
+
+    if 'emery' in targetPlatforms:
+        print >> generatedTable, "#ifdef PBL_PLATFORM_EMERY"
+        resourceStr += makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_rect * scaleFactors['emery'], 'emery')
+        print >> generatedTable, "#endif  // PBL_PLATFORM_EMERY"
 
     return resourceStr
 
@@ -1195,17 +1226,14 @@ struct HandDef %(hand)s_hand_def = {
             roundPlatform = (platform in ['chalk'])
             hourMinuteOverlap = ('hour_minute_overlap' in defaults)
 
+            screenSize = screenSizes[platform]
+            placeX = screenSize[0] / 2
+            placeY = screenSize[1] / 2
+
             if bitmapParams:
                 resourceMaskId = resourceId
                 if useTransparency and (bwPlatform or hourMinuteOverlap):
                     resourceMaskId = 'RESOURCE_ID_%s_0_MASK' % (hand.upper())
-
-            if roundPlatform:
-                placeX = cxdRound.get(hand, roundCenterX)
-                placeY = cydRound.get(hand, roundCenterY)
-            else:
-                placeX = cxdRect.get(hand, rectCenterX)
-                placeY = cydRect.get(hand, rectCenterY)
 
             handDef = handDefEntry % {
                 'hand' : hand,
@@ -1228,8 +1256,8 @@ struct HandDef %(hand)s_hand_def = {
 
 def getIndicator(fd, indicator):
     """ Gets an indicator tuple from the config dictionary.  Finds
-    either a tuple or a list of tuples; in either case returns a pair
-    of lists of tuples: rect, round. """
+    either a tuple or a list of tuples; in either case returns a
+    dictionary of lists of tuples: rect, round, emery. """
 
     list = fd.get(indicator, None)
     list_rect = fd.get(indicator + '_rect', list)
