@@ -163,7 +163,7 @@ hands = {
                  ('chrono_tenth', ('c_chrono2_hand', 2, False, (37, 195), 0.14), None),
                  ],
     'c_scale' : { 'rect' : 1.0,
-                  'round' : 1.07,
+                  'round' : 1.05,
                   'emery' : 1.36,
                   },
     'c2_hands' : [('hour', ('c_hour_hand', 't%', False, (59, 434), 0.14), None),
@@ -178,7 +178,7 @@ hands = {
                   ('chrono_tenth', ('c_chrono2_hand', 2, False, (37, 195), 0.14), None),
                   ],
     'c2_scale' : { 'rect' : 1.0,
-                   'round' : 1.07,
+                   'round' : 1.05,
                    'emery' : 1.36,
                    },
     'd_hands' : [('hour', ('d_hour_hand', 't', False, (24, 193), 0.24), None),
@@ -333,8 +333,12 @@ faces = {
                      (('ElectricUltramarine', 'Black', 'Yellow', 'White'), ('VividCerulean', 'Black')),
                      ],
         'chrono' : ('c_face_chrono_tenths.png', 'c_face_chrono_hours.png'),
-        'centers' : { 'rect' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
-                      'round' : (('chrono_minute', 135, 90), ('chrono_tenth', 90, 135), ('second', 45, 90)),
+        'centers' : { 'rect' : { 'chrono_minute': (115, 84),
+                                 'chrono_tenth' : (72, 126),
+                                 'second': (29, 84) },
+                      'round' : { 'chrono_minute' : (135, 90),
+                                  'chrono_tenth' : (90, 135),
+                                  'second' : (45, 90), },
                       },
         'date_window_a_rect' : [ (35, 37, 'b'), (5, 128, 'b') ],
         'date_window_b_rect' : [ (75, 37, 'b'), (102, 128, 'b') ],
@@ -356,8 +360,12 @@ faces = {
                      (('ElectricUltramarine', 'Black', 'Yellow', 'White'), ('VividCerulean', 'Black')),
                      ],
         'chrono' : ('c_face_chrono_tenths.png', 'c_face_chrono_hours.png'),
-        'centers' : { 'rect' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
-                      'round' : (('chrono_minute', 135, 90), ('chrono_tenth', 90, 135), ('second', 45, 90)),
+        'centers' : { 'rect' : { 'chrono_minute': (115, 84),
+                                 'chrono_tenth' : (72, 126),
+                                 'second': (29, 84) },
+                      'round' : { 'chrono_minute' : (135, 90),
+                                  'chrono_tenth' : (90, 135),
+                                  'second' : (45, 90), },
                       },
         'date_window_a_rect' : [ (35, 37, 'b'), (5, 128, 'b') ],
         'date_window_b_rect' : [ (75, 37, 'b'), (102, 128, 'b') ],
@@ -1227,13 +1235,16 @@ struct HandDef %(hand)s_hand_def = {
         for platform in targetPlatforms:
             resourceMaskId = resourceId
 
+            shape = getPlatformShape(platform)
             bwPlatform = (platform in ['aplite', 'diorite'])
-            roundPlatform = (platform in ['chalk'])
             hourMinuteOverlap = ('hour_minute_overlap' in defaults)
 
             screenSize = screenSizes[platform]
             placeX = screenSize[0] / 2
             placeY = screenSize[1] / 2
+
+            if centers and shape in centers and hand in centers[shape]:
+                placeX, placeY = centers[shape][hand]
 
             if bitmapParams:
                 resourceMaskId = resourceId
@@ -1694,8 +1705,7 @@ date_window_filename = fd.get('date_window_filename', None)
 bluetooth = getIndicator(fd, 'bluetooth')
 battery = getIndicator(fd, 'battery')
 defaults = fd.get('defaults', [])
-centers_rect = fd.get('centers_rect', ())
-centers_round = fd.get('centers_round', ())
+centers = fd.get('centers', [])
 
 # Look for 'day' and 'date' prefixes in the defaults.
 defaultDateWindows = [0] * len(date_window_keys)
@@ -1718,11 +1728,5 @@ elif 'pebble_label' in defaults:
 defaultLunarBackground = 0
 if 'moon_dark' in defaults:
     defaultLunarBackground = 1
-
-# Map the centers tuple into a dictionary of points for x and y.
-cxdRect = dict(map(lambda (hand, x, y): (hand, x), centers_rect))
-cydRect = dict(map(lambda (hand, x, y): (hand, y), centers_rect))
-cxdRound = dict(map(lambda (hand, x, y): (hand, x), centers_round))
-cydRound = dict(map(lambda (hand, x, y): (hand, y), centers_round))
 
 configWatch()
