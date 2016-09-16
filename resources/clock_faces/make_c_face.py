@@ -12,8 +12,9 @@ platform = 'emery'
 
 #layer = 'ticks1'
 #layer = 'ticks2'
-layer = 'background'
-#layer = 'tenths'
+#layer = 'background'
+#layer = 'chrono'
+layer = 'chrono_mask'
 
 if platform in ['aplite', 'basalt']:
     face = FaceMaker.FaceMaker(zoom = 1.25, bg = 0, fg = 255, screenSize = (144, 168))
@@ -35,7 +36,10 @@ def drawChrono(c, smallTicks, bigTicks, labels, handFilename, handPivot):
     face.drawCircularLabels(labels, 0.2200, font, center = c, align = 'i')
 
     # Tell the developer where to place the chrono dials.
-    print handFilename, face.p2s(*c)
+    #print handFilename, face.p2s(*c)
+
+def drawChronoMask(c):
+    face.fillCircle(0.2720, center = c)
 
 if layer == 'ticks1':
     face.drawTicks(60, 0.2, 1.7, width = 0.004)
@@ -74,6 +78,7 @@ elif layer == 'background':
     font = face.loadFont('Multicolore.otf', 0.08)
     face.drawCircularLabels([(0, '12'), (180, '6')], 0.5800, font)
 
+elif layer == 'chrono':
     # Draw the little chonograph dials.
     drawChrono((-0.2033, 0.0), 60, 12,
                [(60, '10'), (120, '20'), (180, '30'),
@@ -84,10 +89,16 @@ elif layer == 'background':
                 (240, '20'), (300, '25'), (0, '30')],
                'c_chrono2_hand.png', (37, 195))
 
-elif layer == 'tenths':
+    # tenths at the bottom
     drawChrono((0, 0.2033), 0, 10, [(72, '2'), (144, '4'), (216, '6'), (288, '8'), (0, '0')], 'c_chrono2_hand.png', (37, 195))
 
-elif layer == 'hours':
-    drawChrono((0, 0.2033), 0, 12, [(0, '12'), (180, '6')], 'c_chrono2_hand.png', (37, 195))
+    # hours at the top (for working)
+    drawChrono((0, -0.2033), 0, 12, [(0, '12'), (180, '6')], 'c_chrono2_hand.png', (37, 195))
+
+elif layer == 'chrono_mask':
+    drawChronoMask((-0.2033, 0.0))
+    drawChronoMask((0.2033, 0.0))
+    drawChronoMask((0, 0.2033))
+    drawChronoMask((0, -0.2033))
 
 face.save('c_face_working.png')
