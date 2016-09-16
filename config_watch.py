@@ -68,10 +68,8 @@ def usage(code, msg = ''):
     sys.exit(code)
 
 screenSizes = {
-    'aplite' : (144, 168),
-    'basalt' : (144, 168),
-    'chalk' : (180, 180),
-    'diorite' : (144, 168),
+    'rect' : (144, 168),
+    'round' : (180, 180),
     'emery' : (200, 228),
     }
 
@@ -1239,7 +1237,7 @@ struct HandDef %(hand)s_hand_def = {
             bwPlatform = (platform in ['aplite', 'diorite'])
             hourMinuteOverlap = ('hour_minute_overlap' in defaults)
 
-            screenSize = screenSizes[platform]
+            screenSize = screenSizes[shape]
             placeX = screenSize[0] / 2
             placeY = screenSize[1] / 2
 
