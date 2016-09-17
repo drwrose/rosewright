@@ -9,6 +9,15 @@
 #define NUM_STEPS_CHRONO_TENTH %(numStepsChronoTenth)s
 #define NUM_STEPS_MOON %(numStepsMoon)s
 
+#define SUBDIAL_SIZE_X %(subdialSizeX)s
+#define SUBDIAL_SIZE_Y %(subdialSizeY)s
+
+#define DATE_WINDOW_SIZE_X %(dateWindowSizeX)s
+#define DATE_WINDOW_SIZE_Y %(dateWindowSizeY)s
+
+#define PEBBLE_LABEL_SIZE_X %(pebbleLabelSizeX)s
+#define PEBBLE_LABEL_SIZE_Y %(pebbleLabelSizeY)s
+
 #if %(limitResourceCache)s
   // If this condition is true, we don't implement the resource-cache
   // feature on this platform.

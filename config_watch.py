@@ -517,6 +517,35 @@ def getPlatformShape(platform):
         raise StandardError
     return shape
 
+def getPlatformColor(platform):
+    if platform in ['aplite', 'diorite']:
+        color = 'bw'
+    elif platform in ['chalk', 'basalt', 'emery']:
+        color = 'color'
+    else:
+        raise StandardError
+    return color
+
+
+def getPlatformFilenameAndVariant(filename, platform):
+    """ Returns the (filename, variant) pair, after finding the
+    appropriate filename modified with the ~variant for the
+    platform. """
+
+    basename, ext = os.path.splitext(filename)
+
+    for variant in getVariantsForPlatforms([platform]) + ['']:
+        if os.path.exists(basename + variant + ext):
+            return basename + variant + ext, variant
+
+    raise StandardError, 'No filename for %s, platform %s' % (filename, platform)
+
+
+def getPlatformFilename(filename, platform):
+    """ Returns the filename modified with the ~variant for the
+    platform. """
+
+    return getPlatformFilenameAndVariant(filename, platform)[0]
 
 def applyLabel(outputFilename, faceIndex, platforms = None):
     """ Applies the "Pebble" label to the clock face image.  Reads
@@ -524,40 +553,28 @@ def applyLabel(outputFilename, faceIndex, platforms = None):
     result to outputFilename. """
 
     faceFilename = 'clock_faces/' + faceFilenames[faceIndex]
-    faceBasename, faceExt = os.path.splitext(faceFilename)
     outputBasename, outputExt = os.path.splitext(outputFilename)
-
-    pebble_label_size = (36, 15)
-    pebble_label_offset = (22, 13)
 
     prefix = resourcesDir + '/'
 
     for platform in platforms:
-        for faceVariant in get_variants_for_platforms([platform]) + ['']:
-            # Handle the specialized variant files.
-            if os.path.exists(prefix + faceBasename + faceVariant + faceExt):
-                break
-
-        faceFilename = prefix + faceBasename + faceVariant + faceExt
+        color = getPlatformColor(platform)
+        faceFilename, faceVariant = getPlatformFilenameAndVariant(prefix + faceFilename, platform)
         face = PIL.Image.open(faceFilename)
 
-        labelBasename = 'clock_faces/pebble_label'
-        labelExt = '.png'
-        for labelVariant in get_variants_for_platforms([platform]) + ['']:
-            # Handle the specialized variant files.
-            if os.path.exists(prefix + labelBasename + labelVariant + labelExt):
-                break
-
-        labelFilename = prefix + labelBasename + labelVariant + labelExt
+        labelFilename = getPlatformFilename(prefix + 'clock_faces/pebble_label.png', platform)
         label = PIL.Image.open(labelFilename)
 
         top_subdial_placement = expandIndicatorList(top_subdial[platform], numIndicatorFaces)[faceIndex]
-        x = top_subdial_placement[0] + pebble_label_offset[0]
-        y = top_subdial_placement[1] + pebble_label_offset[1]
+        pebble_label_offset_x = ((subdialSizes[platform][0] - pebbleLabelSizes[platform][0]) / 2)
+        pebble_label_offset_y = ((subdialSizes[platform][1] - pebbleLabelSizes[platform][1]) / 2)
 
-        if labelVariant == '~bw':
+        x = top_subdial_placement[0] + pebble_label_offset_x
+        y = top_subdial_placement[1] + pebble_label_offset_y
+
+        if color == 'bw':
             # For bw platforms, load the mask separately.
-            maskFilename = prefix + 'clock_faces/pebble_label_mask' + labelVariant + labelExt
+            maskFilename = getPlatformFilename(prefix + 'clock_faces/pebble_label_mask.png', platform)
             mask = PIL.Image.open(maskFilename)
         else:
             # For color platforms, extract the mask from the alpha channel.
@@ -583,6 +600,27 @@ def makeFaces(generatedTable, generatedDefs):
     chronoFilenames = fd.get('chrono')
     if chronoFilenames:
         targetChronoTenths, targetChronoHours = chronoFilenames
+
+    if date_windows and date_window_filename:
+        window, mask = date_window_filename
+
+        for platform in targetPlatforms:
+            im = PIL.Image.open(getPlatformFilename('resources/clock_faces/' + window, platform))
+            dateWindowSizes[platform] = im.size
+
+        resourceStr += make_rle('clock_faces/' + window, name = 'DATE_WINDOW', useRle = supportRle, platforms = targetPlatforms, compress = True)
+
+        if mask and bwPlatforms:
+            resourceStr += make_rle('clock_faces/' + mask, name = 'DATE_WINDOW_MASK', useRle = supportRle, platforms = bwPlatforms, compress = True)
+
+    if targetChronoTenths:
+        resourceStr += make_rle_trans('clock_faces/' + targetChronoTenths, name = 'CHRONO_DIAL_TENTHS', useRle = supportRle, platforms = targetPlatforms, compress = True)
+        resourceStr += make_rle_trans('clock_faces/' + targetChronoHours, name = 'CHRONO_DIAL_HOURS', useRle = supportRle, platforms = targetPlatforms, compress = True)
+
+    for platform in targetPlatforms:
+        labelFilename = getPlatformFilename('resources/clock_faces/pebble_label.png', platform)
+        im = PIL.Image.open(labelFilename)
+        pebbleLabelSizes[platform] = im.size
 
     print >> generatedTable, "struct FaceDef clock_face_table[NUM_FACES] = {"
     for i in range(len(faceFilenames)):
@@ -610,18 +648,6 @@ def makeFaces(generatedTable, generatedDefs):
         print >> generatedTable, "  { GColor%sARGB8, GColor%sARGB8, GColor%sARGB8, GColor%sARGB8, GColor%sARGB8, GColor%sARGB8 }," % (cb[0], cb[1], cb[2], cb[3], db[0], db[1])
     print >> generatedTable, "};"
     print >> generatedTable, "#endif  // PBL_BW\n"
-
-    if date_windows and date_window_filename:
-        window, mask = date_window_filename
-
-        resourceStr += make_rle('clock_faces/' + window, name = 'DATE_WINDOW', useRle = supportRle, platforms = targetPlatforms, compress = True)
-
-        if mask and bwPlatforms:
-            resourceStr += make_rle('clock_faces/' + mask, name = 'DATE_WINDOW_MASK', useRle = supportRle, platforms = bwPlatforms, compress = True)
-
-    if targetChronoTenths:
-        resourceStr += make_rle_trans('clock_faces/' + targetChronoTenths, name = 'CHRONO_DIAL_TENTHS', useRle = supportRle, platforms = targetPlatforms, compress = True)
-        resourceStr += make_rle_trans('clock_faces/' + targetChronoHours, name = 'CHRONO_DIAL_HOURS', useRle = supportRle, platforms = targetPlatforms, compress = True)
 
     return resourceStr
 
@@ -692,11 +718,12 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, scaleFactors, s
 
     for platform in targetPlatforms:
         shape = getPlatformShape(platform)
+        color = getPlatformColor(platform)
         scaleFactor = scaleFactors.get(shape, 1.0)
 
         print >> generatedTable, "#ifdef PBL_PLATFORM_%s" % (platform.upper())
 
-        if platform in ['aplite', 'diorite']:
+        if color == 'bw':
             resourceStr += makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale * scaleFactor, platform)
         else:
             resourceStr += makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale * scaleFactor, platform)
@@ -1234,7 +1261,7 @@ struct HandDef %(hand)s_hand_def = {
             resourceMaskId = resourceId
 
             shape = getPlatformShape(platform)
-            bwPlatform = (platform in ['aplite', 'diorite'])
+            color = getPlatformColor(platform)
             hourMinuteOverlap = ('hour_minute_overlap' in defaults)
 
             screenSize = screenSizes[shape]
@@ -1246,7 +1273,7 @@ struct HandDef %(hand)s_hand_def = {
 
             if bitmapParams:
                 resourceMaskId = resourceId
-                if useTransparency and (bwPlatform or hourMinuteOverlap):
+                if useTransparency and (color == 'bw' or hourMinuteOverlap):
                     resourceMaskId = 'RESOURCE_ID_%s_0_MASK' % (hand.upper())
 
             handDef = handDefEntry % {
@@ -1336,16 +1363,18 @@ def makeIndicatorTable(generatedTable, generatedDefs, name, indicator, numFaces,
     else:
         print >> generatedTable, "};\n";
 
-def get_variants_for_platforms(platforms):
+def getVariantsForPlatforms(platforms):
     variants = set()
-    if "aplite" in platforms or "diorite" in platforms:
-        variants.add("~bw")
-    if "basalt" in platforms:
-        variants.add("~color")
-        variants.add("~color~rect")
-    if "chalk" in platforms:
-        variants.add("~color")
-        variants.add("~color~round")
+    if 'aplite' in platforms or 'diorite' in platforms:
+        variants.add('~bw')
+    if 'basalt' in platforms:
+        variants.add('~color')
+        variants.add('~color~rect')
+    if 'chalk' in platforms:
+        variants.add('~color')
+        variants.add('~color~round')
+    if 'emery' in platforms:
+        variants.add('~emery')
     return list(variants)
 
 def makeMoonWheel(platform):
@@ -1358,34 +1387,28 @@ def makeMoonWheel(platform):
     # moon_wheel_black_*.png is for when the moon is to be drawn as black pixels on white (b&w and color platforms).
 
     numStepsMoon = getNumSteps('moon', platform)
-    wheelSize = 80, 80
-    subdialSize = 80, 41
+    color = getPlatformColor(platform)
 
-    prefix = resourcesDir + '/'
-    basename = 'clock_faces/top_subdial_internal_mask'
-    ext = '.png'
-    for variant in get_variants_for_platforms([platform]) + ['']:
-        # Handle the specialized variant files.
-        if os.path.exists(prefix + basename + variant + ext):
-            break
-
-    subdialMaskPathname = prefix + basename + variant + ext
+    subdialMaskPathname = getPlatformFilename(resourcesDir + '/clock_faces/top_subdial_internal_mask.png', platform)
     subdialMask = PIL.Image.open(subdialMaskPathname)
-    assert subdialMask.size == subdialSize
+    subdialSize = subdialMask.size
+    subdialSizes[platform] = subdialSize
+
     subdialMask = subdialMask.convert('L')
     subdialMaskBinary = subdialMask.point(thresholdMask)
     black = PIL.Image.new('L', subdialMask.size, 0)
     white = PIL.Image.new('L', subdialMask.size, 255)
 
-    if variant == '~bw':
+    if color == 'bw':
         cats = ['white', 'black']
     else:
-        # Ignore the white image on color platforms.
+        # We need only the white image on color platforms.
         cats = ['black']
 
     for cat in cats:
-        wheelSourcePathname = '%s/clock_faces/moon_wheel_%s%s.png' % (resourcesDir, cat, variant)
+        wheelSourcePathname = getPlatformFilename('%s/clock_faces/moon_wheel_%s.png' % (resourcesDir, cat), platform)
         wheelSource = PIL.Image.open(wheelSourcePathname)
+        wheelSize = wheelSource.size
 
         for i in range(numStepsMoon):
             angle = i * 180.0 / numStepsMoon
@@ -1400,7 +1423,7 @@ def makeMoonWheel(platform):
 
             # Now make the 1-bit version for B&W platforms and
             # the 2-bit version for color platforms.
-            if variant == '~bw':
+            if color == 'bw':
                 p = p.convert('1')
                 if cat == 'white':
                     # Invert the image for moon_wheel_white.
@@ -1461,12 +1484,13 @@ def configWatch():
     generatedDefs = open('%s/generated_defs.h' % (resourcesDir), 'w')
 
     resourceStr = ''
-    resourceStr += makeFaces(generatedTable, generatedDefs)
-    resourceStr += makeHands(generatedTable, generatedDefs)
 
     if top_subdial.values()[0][0]:
         for platform in targetPlatforms:
             resourceStr += makeMoonWheel(platform)
+
+    resourceStr += makeFaces(generatedTable, generatedDefs)
+    resourceStr += makeHands(generatedTable, generatedDefs)
 
     print >> generatedDefs, "extern struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_INDICATOR_FACES];"
     print >> generatedTable, "struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_INDICATOR_FACES] = {"
@@ -1555,6 +1579,12 @@ def configWatch():
             'numStepsChronoSecond' : getNumSteps('chrono_second', platform),
             'numStepsChronoTenth' : getNumSteps('chrono_tenth', platform),
             'numStepsMoon' : getNumSteps('moon', platform),
+            'subdialSizeX' : subdialSizes[platform][0],
+            'subdialSizeY' : subdialSizes[platform][1],
+            'dateWindowSizeX' : dateWindowSizes[platform][0],
+            'dateWindowSizeY' : dateWindowSizes[platform][1],
+            'pebbleLabelSizeX' : pebbleLabelSizes[platform][0],
+            'pebbleLabelSizeY' : pebbleLabelSizes[platform][1],
             'limitResourceCache' : int('limit_cache' in defaults or 'limit_cache_' + platform in defaults),
             'secondResourceCacheSize' : getResourceCacheSize('second', platform),
             'chronoSecondResourceCacheSize' : getResourceCacheSize('chrono_second', platform),
@@ -1661,7 +1691,6 @@ if not targetPlatforms:
     targetPlatforms = [ 'aplite', 'basalt', 'chalk', 'diorite' ]
 
 bwPlatforms = set(targetPlatforms) & set(['aplite', 'diorite'])
-colorPlatforms = set(targetPlatforms) - bwPlatforms
 
 watchName, defaultHandStyle, defaultFaceStyle, uuId = watches[watchStyle]
 
@@ -1704,6 +1733,11 @@ bluetooth = getIndicator(fd, 'bluetooth')
 battery = getIndicator(fd, 'battery')
 defaults = fd.get('defaults', [])
 centers = fd.get('centers', [])
+
+subdialSizes = {}  # filled in by makeMoonWheel()
+dateWindowSizes = {} # filled in by makeFaces()
+pebbleLabelSizes = {} # filled in by makeFaces()
+
 
 # Look for 'day' and 'date' prefixes in the defaults.
 defaultDateWindows = [0] * len(date_window_keys)
