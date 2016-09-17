@@ -63,19 +63,8 @@ bool redraw_clock_face = false;
 
 #define DATE_WINDOW_BUFFER_SIZE 16
 
-// For now, the size of the date window is hardcoded.
-#ifdef PBL_ROUND
-const GSize date_window_size = { 42, 22 };
-#else  // PBL_ROUND
-const GSize date_window_size = { 37, 19 };
-#endif  // PBL_ROUND
-
-const GSize top_subdial_size = { 80, 41 };
-
-#ifndef PREBAKE_LABEL
-const GSize pebble_label_size = { 36, 15 };
-const GPoint pebble_label_offset = { 22, 13 };
-#endif  // PREBAKE_LABEL
+#define PEBBLE_LABEL_OFFSET_X ((SUBDIAL_SIZE_X - PEBBLE_LABEL_SIZE_X) / 2)
+#define PEBBLE_LABEL_OFFSET_Y ((SUBDIAL_SIZE_Y - PEBBLE_LABEL_SIZE_Y) / 2)
 
 // This structure is the data associated with a date window layer.
 typedef struct __attribute__((__packed__)) {
@@ -863,7 +852,7 @@ void draw_pebble_label(Layer *me, GContext *ctx, bool invert) {
   unsigned int draw_mode = invert ^ config.draw_mode ^ BW_INVERT;
 
   const struct IndicatorTable *window = &top_subdial[config.face_index];
-  GRect destination = GRect(window->x + pebble_label_offset.x, window->y + pebble_label_offset.y, pebble_label_size.w, pebble_label_size.h);
+  GRect destination = GRect(window->x + PEBBLE_LABEL_OFFSET_X, window->y + PEBBLE_LABEL_OFFSET_Y, PEBBLE_LABEL_SIZE_X, PEBBLE_LABEL_SIZE_Y);
 
 #ifdef PBL_BW
   BitmapWithData pebble_label_mask;
@@ -910,7 +899,7 @@ void draw_moon_phase_subdial(Layer *me, GContext *ctx, bool invert) {
   }
 
   const struct IndicatorTable *window = &top_subdial[config.face_index];
-  GRect destination = GRect(window->x, window->y, top_subdial_size.w, top_subdial_size.h);
+  GRect destination = GRect(window->x, window->y, SUBDIAL_SIZE_X, SUBDIAL_SIZE_Y);
 
   // First draw the subdial details (including the background).
 #ifdef PBL_BW
@@ -1372,7 +1361,7 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
 void draw_date_window_background(GContext *ctx, int date_window_index, unsigned int fg_draw_mode, unsigned int bg_draw_mode) {
   int indicator_face_index = get_indicator_face_index();
   const struct IndicatorTable *window = &date_windows[date_window_index][indicator_face_index];
-  GRect box = GRect(window->x, window->y, date_window_size.w, date_window_size.h);
+  GRect box = GRect(window->x, window->y, DATE_WINDOW_SIZE_X, DATE_WINDOW_SIZE_Y);
 
 #ifdef PBL_BW
   // We only need the mask on B&W watches.
@@ -1412,7 +1401,7 @@ void draw_date_window_text(GContext *ctx, int date_window_index, const char *tex
   }
   int indicator_face_index = get_indicator_face_index();
   const struct IndicatorTable *window = &date_windows[date_window_index][indicator_face_index];
-  GRect box = GRect(window->x, window->y, date_window_size.w, date_window_size.h);
+  GRect box = GRect(window->x, window->y, DATE_WINDOW_SIZE_X, DATE_WINDOW_SIZE_Y);
 
 #ifdef PBL_BW
   unsigned int draw_mode = window->invert ^ config.draw_mode ^ BW_INVERT;

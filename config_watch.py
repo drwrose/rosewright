@@ -34,7 +34,7 @@ Options:
         Perform RLE compression of images.
 
     -p platform[,platform...]
-        Specifies the build platform (aplite, basalt, chalk, diorite).
+        Specifies the build platform (aplite, basalt, chalk, diorite, emery).
 
     -d
         Compile for debugging.  Specifically this enables "fast time",
@@ -67,11 +67,11 @@ def usage(code, msg = ''):
     print >> sys.stderr, msg
     sys.exit(code)
 
-
-# The default center for placing hands on the watch face, if not
-# otherwise specified in the centers tables below.
-rectCenterX, rectCenterY = 144 / 2, 168 / 2
-roundCenterX, roundCenterY = 180 / 2, 180 / 2
+screenSizes = {
+    'rect' : (144, 168),
+    'round' : (180, 180),
+    'emery' : (200, 228),
+    }
 
 # Table of watch styles.  A watch style is a combination of a hand
 # style and face style, and a unique identifier.  For each style,
@@ -105,7 +105,7 @@ watches = {
 #    hand, bitmapParams, vectorParams
 #
 #  For bitmapParams:
-#     (filename, colorMode, asymmetric, pivot, (scale_rect, scale_round))
+#     (filename, colorMode, asymmetric, pivot, scale)
 #
 #   hand - the hand type being defined.
 #   filename - the png image that defines this hand, pointing upward.
@@ -121,10 +121,10 @@ watches = {
 #       mirroring, which doubles the resource cost again.
 #   pivot - the (x, y) pixel point of the center of rotation of the
 #       hand in its image.
-#   (scale_rect, scale_round) - a scale factor for reducing the hand to its final size.
+#   scale - a scale factor for reducing the hand to its final size.
 #
 #  For vectorParams:
-#     [(fillType, points, (scale_rect, scale_round)), (fillType, points, (scale_rect, scale_round)), ...]
+#     [(fillType, points, scale), (fillType, points, scale), ...]
 #
 #   fillType - Deprecated.
 #   points - a list of points in the vector.  Draw the hand in the
@@ -132,47 +132,71 @@ watches = {
 #
 
 hands = {
-    'a' : [('hour', ('a_hour_hand', 't', False, (90, 410), (0.12, 0.15)), None),
-           ('minute', ('a_minute_hand', 't', True, (49, 565), (0.12, 0.15)), None),
-           ('second', ('a_second_hand', 2, False, (37, 37), (0.12, 0.15)),
-            [(2, [(0, -5), (0, -70)], (1.0, 1.25)),
-             ]),
-           ],
-    'b' : [('hour', ('b_hour_hand', 't', False, (33, 211), (0.27, 0.30)), None),
-           ('minute', ('b_minute_hand', 't', False, (24, 292), (0.27, 0.30)), None),
-           ('second', ('b_second_hand', 2, False, (32, 21), (0.27, 0.30)),
-            [(2, [(0, -5), (0, -75)], (1.0, 1.11)),
-             ]),
-           ],
-    'c' : [('hour', ('c_hour_hand', 't%', False, (59, 434), (0.14, 0.15)), None),
-           ('minute', ('c_minute_hand', 't%', False, (38, 584), (0.14, 0.15)), None),
-           ('second', ('c_chrono1_hand', 2, False, (32, -27), (0.14, 0.15)),
-            [(2, [(0, -2), (0, -26)], (1.0, 1.05)),
-             ]),
-           ('chrono_minute', ('c_chrono2_hand', 2, False, (37, 195), 0.14), None),
-           ('chrono_tenth', ('c_chrono2_hand', 2, False, (37, 195), 0.14), None),
-           ],
-    'c2' : [('hour', ('c_hour_hand', 't%', False, (59, 434), (0.14, 0.15)), None),
-            ('minute', ('c_minute_hand', 't%', False, (38, 584), (0.14, 0.15)), None),
-            ('second', ('c_chrono1_hand', 2, False, (32, -27), (0.14, 0.15)),
-             [(2, [(0, -2), (0, -26)], (1.0, 1.05)),
-              ]),
-            ('chrono_minute', ('c_chrono2_hand', 2, False, (37, 195), 0.14), None),
-            ('chrono_second', ('c_second_hand', 1, False, (41, -29), 0.14),
-             [(1, [(0, -4), (0, -88)], (1.0, 1.0)),
-              ]),
-            ('chrono_tenth', ('c_chrono2_hand', 2, False, (37, 195), 0.14), None),
-            ],
-    'd' : [('hour', ('d_hour_hand', 't', False, (24, 193), (0.24, 0.28)), None),
-           ('minute', ('d_minute_hand', 't', False, (27, 267), (0.24, 0.28)), None),
-           ('second', ('d_second_hand', 1, False, (14, -8), (0.24, 0.28)),
-            [(1, [(0, -3), (0, -64)], (1.0, 1.19)),
-             ]),
-           ],
-    'e' : [('hour', ('e_hour_hand', 't%', False, (28, 99), (0.53, 0.60)), None),
-           ('minute', ('e_minute_hand', 't%', False, (22, 142), (0.53, 0.60)), None),
-           ('second', ('e_second_hand', 't%', False, (18, 269), (0.24, 0.27)), None),
-           ],
+    'a_hands' : [('hour', ('a_hour_hand', 't', False, (90, 410), 0.12), None),
+                 ('minute', ('a_minute_hand', 't', True, (49, 565), 0.12), None),
+                 ('second', ('a_second_hand', 2, False, (37, 37), 0.12),
+                  [(2, [(0, -5), (0, -70)], 1.0),
+                   ]),
+                 ],
+    'a_scale' : { 'rect' : 1.0,
+                  'round' : 1.19,
+                  'emery' : 1.36,
+                  },
+    'b_hands' : [('hour', ('b_hour_hand', 't', False, (33, 211), 0.27), None),
+                 ('minute', ('b_minute_hand', 't', False, (24, 292), 0.27), None),
+                 ('second', ('b_second_hand', 2, False, (32, 21), 0.27),
+                  [(2, [(0, -5), (0, -75)], 1.0),
+                   ]),
+                 ],
+    'b_scale' : { 'rect' : 1.0,
+                  'round' : 1.11,
+                  'emery' : 1.36,
+                  },
+    'c_hands' : [('hour', ('c_hour_hand', 't%', False, (59, 434), 0.14), None),
+                 ('minute', ('c_minute_hand', 't%', False, (38, 584), 0.14), None),
+                 ('second', ('c_chrono1_hand', 2, False, (32, -27), 0.14),
+                  [(2, [(0, -2), (0, -26)], 1.0),
+                   ]),
+                 ('chrono_minute', ('c_chrono2_hand', 2, False, (37, 195), 0.14), None),
+                 ('chrono_tenth', ('c_chrono2_hand', 2, False, (37, 195), 0.14), None),
+                 ],
+    'c_scale' : { 'rect' : 1.0,
+                  'round' : 1.05,
+                  'emery' : 1.36,
+                  },
+    'c2_hands' : [('hour', ('c_hour_hand', 't%', False, (59, 434), 0.14), None),
+                  ('minute', ('c_minute_hand', 't%', False, (38, 584), 0.14), None),
+                  ('second', ('c_chrono1_hand', 2, False, (32, -27), 0.14),
+                   [(2, [(0, -2), (0, -26)], 1.0),
+                    ]),
+                  ('chrono_minute', ('c_chrono2_hand', 2, False, (37, 195), 0.14), None),
+                  ('chrono_second', ('c_second_hand', 1, False, (41, -29), 0.14),
+                   [(1, [(0, -4), (0, -88)], 1.0),
+                    ]),
+                  ('chrono_tenth', ('c_chrono2_hand', 2, False, (37, 195), 0.14), None),
+                  ],
+    'c2_scale' : { 'rect' : 1.0,
+                   'round' : 1.05,
+                   'emery' : 1.36,
+                   },
+    'd_hands' : [('hour', ('d_hour_hand', 't', False, (24, 193), 0.24), None),
+                 ('minute', ('d_minute_hand', 't', False, (27, 267), 0.24), None),
+                 ('second', ('d_second_hand', 1, False, (14, -8), 0.24),
+                  [(1, [(0, -3), (0, -64)], 1.0),
+                   ]),
+                 ],
+    'd_scale' : { 'rect' : 1.0,
+                  'round' : 1.17,
+                  'emery' : 1.36,
+                  },
+    'e_hands' : [('hour', ('e_hour_hand', 't%', False, (28, 99), 0.53), None),
+                 ('minute', ('e_minute_hand', 't%', False, (22, 142), 0.53), None),
+                 ('second', ('e_second_hand', 't%', False, (18, 269), 0.24), None),
+                 ],
+    'e_scale' : { 'rect' : 1.0,
+                  'round' : 1.13,
+                  'emery' : 1.36,
+                  },
     }
 
 # Table of face styles.  For each style, specify the following:
@@ -233,9 +257,14 @@ faces = {
         'date_window_b_round': (134, 79, 'b'),
         'date_window_c_round': (46, 116, 'b'),
         'date_window_d_round': (92, 116, 'b'),
+        'date_window_a_emery': (3, 102, 'b'),
+        'date_window_b_emery': (147, 102, 'b'),
+        'date_window_c_emery': (49, 137, 'b'),
+        'date_window_d_emery': (194, 137, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : (32, 32, 'b'),
         'top_subdial_round' : (50, 32, 'b'),
+        'top_subdial_emery' : (44, 43, 'b'),
         'bluetooth_rect' : [ (37, 47, 'b'), (17, 29, 'b'),
                              (37, 47, 'b'), (17, 29, 'b'),
                              (37, 47, 'b'), (17, 29, 'b'),
@@ -251,6 +280,14 @@ faces = {
         'battery_round' : [ (110, 57, 'b'), (132, 33, 'b'),
                             (110, 57, 'b'), (132, 33, 'b'),
                             (110, 57, 'b'), (132, 33, 'b'),
+                            ],
+        'bluetooth_emery' : [ (51, 64, 'b'), (24, 39, 'b'),
+                              (51, 64, 'b'), (24, 39, 'b'),
+                              (51, 64, 'b'), (24, 39, 'b'),
+                             ],
+        'battery_emery' : [ (128, 69, 'b'), (153, 43, 'b'),
+                            (128, 69, 'b'), (153, 43, 'b'),
+                            (128, 69, 'b'), (153, 43, 'b'),
                             ],
         'defaults' : [ 'date:b', 'moon_phase', 'pebble_label', 'moon_dark', 'second', 'hour_minute_overlap', 'sweep' ],
         },
@@ -294,8 +331,13 @@ faces = {
                      (('ElectricUltramarine', 'Black', 'Yellow', 'White'), ('VividCerulean', 'Black')),
                      ],
         'chrono' : ('c_face_chrono_tenths.png', 'c_face_chrono_hours.png'),
-        'centers_rect' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
-        'centers_round' : (('chrono_minute', 135, 90), ('chrono_tenth', 90, 135), ('second', 45, 90)),
+        'centers' : { 'rect' : { 'chrono_minute': (115, 84),
+                                 'chrono_tenth' : (72, 126),
+                                 'second': (29, 84) },
+                      'round' : { 'chrono_minute' : (135, 90),
+                                  'chrono_tenth' : (90, 135),
+                                  'second' : (45, 90), },
+                      },
         'date_window_a_rect' : [ (35, 37, 'b'), (5, 128, 'b') ],
         'date_window_b_rect' : [ (75, 37, 'b'), (102, 128, 'b') ],
         'date_window_a_round' : [ (45, 36, 'b'), (19, 120, 'b') ],
@@ -316,8 +358,13 @@ faces = {
                      (('ElectricUltramarine', 'Black', 'Yellow', 'White'), ('VividCerulean', 'Black')),
                      ],
         'chrono' : ('c_face_chrono_tenths.png', 'c_face_chrono_hours.png'),
-        'centers_rect' : (('chrono_minute', 115, 84), ('chrono_tenth', 72, 126), ('second', 29, 84)),
-        'centers_round' : (('chrono_minute', 135, 90), ('chrono_tenth', 90, 135), ('second', 45, 90)),
+        'centers' : { 'rect' : { 'chrono_minute': (115, 84),
+                                 'chrono_tenth' : (72, 126),
+                                 'second': (29, 84) },
+                      'round' : { 'chrono_minute' : (135, 90),
+                                  'chrono_tenth' : (90, 135),
+                                  'second' : (45, 90), },
+                      },
         'date_window_a_rect' : [ (35, 37, 'b'), (5, 128, 'b') ],
         'date_window_b_rect' : [ (75, 37, 'b'), (102, 128, 'b') ],
         'date_window_a_round' : [ (45, 36, 'b'), (19, 120, 'b') ],
@@ -399,8 +446,7 @@ enableSecondHand = False
 enableChronoMinuteHand = False
 enableChronoSecondHand = False
 enableChronoTenthHand = False
-date_windows_rect = []
-date_windows_round = []
+date_windows = []
 date_window_filename = None
 bluetooth = [None]
 battery = [None]
@@ -460,52 +506,75 @@ def parseColorMode(colorMode):
 
     return paintChannel, useTransparency, dither
 
+def getPlatformShape(platform):
+    if platform in ['aplite', 'basalt', 'diorite']:
+        shape = 'rect'
+    elif platform in ['chalk']:
+        shape = 'round'
+    elif platform in ['emery']:
+        shape = 'emery'
+    else:
+        raise StandardError
+    return shape
+
+def getPlatformColor(platform):
+    if platform in ['aplite', 'diorite']:
+        color = 'bw'
+    elif platform in ['chalk', 'basalt', 'emery']:
+        color = 'color'
+    else:
+        raise StandardError
+    return color
+
+
+def getPlatformFilenameAndVariant(filename, platform):
+    """ Returns the (filename, variant) pair, after finding the
+    appropriate filename modified with the ~variant for the
+    platform. """
+
+    basename, ext = os.path.splitext(filename)
+
+    for variant in getVariantsForPlatforms([platform]) + ['']:
+        if os.path.exists(basename + variant + ext):
+            return basename + variant + ext, variant
+
+    raise StandardError, 'No filename for %s, platform %s' % (filename, platform)
+
+
+def getPlatformFilename(filename, platform):
+    """ Returns the filename modified with the ~variant for the
+    platform. """
+
+    return getPlatformFilenameAndVariant(filename, platform)[0]
+
 def applyLabel(outputFilename, faceIndex, platforms = None):
     """ Applies the "Pebble" label to the clock face image.  Reads
     faceFilename and applies pebble_label.png onto it, writing the
     result to outputFilename. """
 
     faceFilename = 'clock_faces/' + faceFilenames[faceIndex]
-    faceBasename, faceExt = os.path.splitext(faceFilename)
     outputBasename, outputExt = os.path.splitext(outputFilename)
-
-    pebble_label_size = (36, 15)
-    pebble_label_offset = (22, 13)
 
     prefix = resourcesDir + '/'
 
     for platform in platforms:
-        for faceVariant in get_variants_for_platforms([platform]) + ['']:
-            # Handle the specialized variant files.
-            if os.path.exists(prefix + faceBasename + faceVariant + faceExt):
-                break
-
-        faceFilename = prefix + faceBasename + faceVariant + faceExt
+        color = getPlatformColor(platform)
+        faceFilename, faceVariant = getPlatformFilenameAndVariant(prefix + faceFilename, platform)
         face = PIL.Image.open(faceFilename)
 
-        labelBasename = 'clock_faces/pebble_label'
-        labelExt = '.png'
-        for labelVariant in get_variants_for_platforms([platform]) + ['']:
-            # Handle the specialized variant files.
-            if os.path.exists(prefix + labelBasename + labelVariant + labelExt):
-                break
-
-        labelFilename = prefix + labelBasename + labelVariant + labelExt
+        labelFilename = getPlatformFilename(prefix + 'clock_faces/pebble_label.png', platform)
         label = PIL.Image.open(labelFilename)
 
-        if 'round' in faceVariant:
-            top_subdial = top_subdial_round
-        else:
-            top_subdial = top_subdial_rect
-        top_subdial = expandIndicatorList(top_subdial, numIndicatorFaces)[faceIndex]
+        top_subdial_placement = expandIndicatorList(top_subdial[platform], numIndicatorFaces)[faceIndex]
+        pebble_label_offset_x = ((subdialSizes[platform][0] - pebbleLabelSizes[platform][0]) / 2)
+        pebble_label_offset_y = ((subdialSizes[platform][1] - pebbleLabelSizes[platform][1]) / 2)
 
-        x = top_subdial[0] + pebble_label_offset[0]
-        y = top_subdial[1] + pebble_label_offset[1]
+        x = top_subdial_placement[0] + pebble_label_offset_x
+        y = top_subdial_placement[1] + pebble_label_offset_y
 
-
-        if labelVariant == '~bw':
+        if color == 'bw':
             # For bw platforms, load the mask separately.
-            maskFilename = prefix + 'clock_faces/pebble_label_mask' + labelVariant + labelExt
+            maskFilename = getPlatformFilename(prefix + 'clock_faces/pebble_label_mask.png', platform)
             mask = PIL.Image.open(maskFilename)
         else:
             # For color platforms, extract the mask from the alpha channel.
@@ -531,6 +600,27 @@ def makeFaces(generatedTable, generatedDefs):
     chronoFilenames = fd.get('chrono')
     if chronoFilenames:
         targetChronoTenths, targetChronoHours = chronoFilenames
+
+    if date_windows and date_window_filename:
+        window, mask = date_window_filename
+
+        for platform in targetPlatforms:
+            im = PIL.Image.open(getPlatformFilename('resources/clock_faces/' + window, platform))
+            dateWindowSizes[platform] = im.size
+
+        resourceStr += make_rle('clock_faces/' + window, name = 'DATE_WINDOW', useRle = supportRle, platforms = targetPlatforms, compress = True)
+
+        if mask and bwPlatforms:
+            resourceStr += make_rle('clock_faces/' + mask, name = 'DATE_WINDOW_MASK', useRle = supportRle, platforms = bwPlatforms, compress = True)
+
+    if targetChronoTenths:
+        resourceStr += make_rle_trans('clock_faces/' + targetChronoTenths, name = 'CHRONO_DIAL_TENTHS', useRle = supportRle, platforms = targetPlatforms, compress = True)
+        resourceStr += make_rle_trans('clock_faces/' + targetChronoHours, name = 'CHRONO_DIAL_HOURS', useRle = supportRle, platforms = targetPlatforms, compress = True)
+
+    for platform in targetPlatforms:
+        labelFilename = getPlatformFilename('resources/clock_faces/pebble_label.png', platform)
+        im = PIL.Image.open(labelFilename)
+        pebbleLabelSizes[platform] = im.size
 
     print >> generatedTable, "struct FaceDef clock_face_table[NUM_FACES] = {"
     for i in range(len(faceFilenames)):
@@ -559,21 +649,9 @@ def makeFaces(generatedTable, generatedDefs):
     print >> generatedTable, "};"
     print >> generatedTable, "#endif  // PBL_BW\n"
 
-    if date_windows_rect and date_window_filename:
-        window, mask = date_window_filename
-
-        resourceStr += make_rle('clock_faces/' + window, name = 'DATE_WINDOW', useRle = supportRle, platforms = targetPlatforms, compress = True)
-
-        if mask and bwPlatforms:
-            resourceStr += make_rle('clock_faces/' + mask, name = 'DATE_WINDOW_MASK', useRle = supportRle, platforms = bwPlatforms, compress = True)
-
-    if targetChronoTenths:
-        resourceStr += make_rle_trans('clock_faces/' + targetChronoTenths, name = 'CHRONO_DIAL_TENTHS', useRle = supportRle, platforms = targetPlatforms, compress = True)
-        resourceStr += make_rle_trans('clock_faces/' + targetChronoHours, name = 'CHRONO_DIAL_HOURS', useRle = supportRle, platforms = targetPlatforms, compress = True)
-
     return resourceStr
 
-def makeVectorHands(generatedTable, paintChannel, generatedDefs, hand, groupList):
+def makeVectorHands(generatedTable, paintChannel, generatedDefs, hand, scaleFactors, groupList):
     resourceStr = ''
 
     colorMap = {
@@ -585,16 +663,18 @@ def makeVectorHands(generatedTable, paintChannel, generatedDefs, hand, groupList
     print >> generatedTable, "struct VectorHand %s_hand_vector_table = {" % (hand)
     print >> generatedTable, "  %s," % (paintChannel)
     print >> generatedTable, "  %s, (struct VectorHandGroup[]){" % (len(groupList))
-    for fillType, points, (scale_rect, scale_round) in groupList:
-        print >> generatedTable, "  { { %s, (GPoint[]){" % (len(points))
-        print >> generatedTable, "#ifdef PBL_ROUND"
-        for px, py in points:
-            print >> generatedTable, "    { %d, %d }," % (px * scale_round, py * scale_round)
-        print >> generatedTable, "#else  // PBL_ROUND"
-        for px, py in points:
-            print >> generatedTable, "    { %d, %d }," % (px * scale_rect, py * scale_rect)
-        print >> generatedTable, "#endif  // PBL_ROUND"
-        print >> generatedTable, "  } } },"
+    for platform in targetPlatforms:
+        shape = getPlatformShape(platform)
+        scaleFactor = scaleFactors.get(shape, 1.0)
+
+        print >> generatedTable, "#ifdef PBL_PLATFORM_%s" % (platform.upper())
+        for fillType, points, scale in groupList:
+            scale *= scaleFactor
+            print >> generatedTable, "  { { %s, (GPoint[]){" % (len(points))
+            for px, py in points:
+                print >> generatedTable, "    { %d, %d }," % (px * scale, py * scale)
+            print >> generatedTable, "  } } },"
+        print >> generatedTable, "#endif  // PBL_PLATFORM_%s" % (platform.upper())
 
     print >> generatedTable, "  }"
     print >> generatedTable, "};\n"
@@ -633,34 +713,22 @@ def getMaskResourceCacheSize(hand, platform):
 
     return resourceCacheSize.get((hand, platform), [0, 0])[1]
 
-def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale):
-    if isinstance(scale, type(())):
-        scale_rect, scale_round = scale
-    else:
-        scale_rect = scale
-        scale_round = scale
-
+def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, scaleFactors, sourceBasename, colorMode, asymmetric, pivot, scale):
     resourceStr = ''
 
-    if 'aplite' in targetPlatforms:
-        print >> generatedTable, "#ifdef PBL_PLATFORM_APLITE"
-        resourceStr += makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_rect, 'aplite')
-        print >> generatedTable, "#endif  // PBL_PLATFORM_APLITE"
+    for platform in targetPlatforms:
+        shape = getPlatformShape(platform)
+        color = getPlatformColor(platform)
+        scaleFactor = scaleFactors.get(shape, 1.0)
 
-    if 'basalt' in targetPlatforms:
-        print >> generatedTable, "#ifdef PBL_PLATFORM_BASALT"
-        resourceStr += makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_rect, 'basalt')
-        print >> generatedTable, "#endif  // PBL_PLATFORM_BASALT"
+        print >> generatedTable, "#ifdef PBL_PLATFORM_%s" % (platform.upper())
 
-    if 'chalk' in targetPlatforms:
-        print >> generatedTable, "#ifdef PBL_PLATFORM_CHALK"
-        resourceStr += makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_round, 'chalk')
-        print >> generatedTable, "#endif  // PBL_PLATFORM_CHALK"
+        if color == 'bw':
+            resourceStr += makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale * scaleFactor, platform)
+        else:
+            resourceStr += makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale * scaleFactor, platform)
 
-    if 'diorite' in targetPlatforms:
-        print >> generatedTable, "#ifdef PBL_PLATFORM_DIORITE"
-        resourceStr += makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale_rect, 'diorite')
-        print >> generatedTable, "#endif  // PBL_PLATFORM_DIORITE"
+        print >> generatedTable, "#endif  // PBL_PLATFORM_%s" % (platform.upper())
 
     return resourceStr
 
@@ -1153,7 +1221,8 @@ struct HandDef %(hand)s_hand_def = {
 #endif  // PBL_PLATFORM_%(platformUpper)s
 """
 
-    for hand, bitmapParams, vectorParams in hands[handStyle]:
+    scaleFactors = hands[handStyle + '_scale']
+    for hand, bitmapParams, vectorParams in hands[handStyle + '_hands']:
         useRle = supportRle
         if hand == 'second':
             global enableSecondHand
@@ -1182,30 +1251,30 @@ struct HandDef %(hand)s_hand_def = {
             resourceId = 'RESOURCE_ID_%s_0' % (hand.upper())
             bitmapCenters = '%s_hand_bitmap_lookup' % (hand)
             bitmapTable = '%s_hand_bitmap_table' % (hand)
-            resourceStr += makeBitmapHands(generatedTable, generatedDefs, useRle, hand, *bitmapParams)
+            resourceStr += makeBitmapHands(generatedTable, generatedDefs, useRle, hand, scaleFactors, *bitmapParams)
 
         if vectorParams:
             vectorTable = '&%s_hand_vector_table' % (hand)
-            resourceStr += makeVectorHands(generatedTable, paintChannel, generatedDefs, hand, vectorParams)
+            resourceStr += makeVectorHands(generatedTable, paintChannel, generatedDefs, hand, scaleFactors, vectorParams)
 
         for platform in targetPlatforms:
             resourceMaskId = resourceId
 
-            bwPlatform = (platform in ['aplite', 'diorite'])
-            roundPlatform = (platform in ['chalk'])
+            shape = getPlatformShape(platform)
+            color = getPlatformColor(platform)
             hourMinuteOverlap = ('hour_minute_overlap' in defaults)
+
+            screenSize = screenSizes[shape]
+            placeX = screenSize[0] / 2
+            placeY = screenSize[1] / 2
+
+            if centers and shape in centers and hand in centers[shape]:
+                placeX, placeY = centers[shape][hand]
 
             if bitmapParams:
                 resourceMaskId = resourceId
-                if useTransparency and (bwPlatform or hourMinuteOverlap):
+                if useTransparency and (color == 'bw' or hourMinuteOverlap):
                     resourceMaskId = 'RESOURCE_ID_%s_0_MASK' % (hand.upper())
-
-            if roundPlatform:
-                placeX = cxdRound.get(hand, roundCenterX)
-                placeY = cydRound.get(hand, roundCenterY)
-            else:
-                placeX = cxdRect.get(hand, rectCenterX)
-                placeY = cydRect.get(hand, rectCenterY)
 
             handDef = handDefEntry % {
                 'hand' : hand,
@@ -1226,46 +1295,47 @@ struct HandDef %(hand)s_hand_def = {
 
     return resourceStr
 
-def getIndicator(fd, indicator):
+def getIndicator(fd, token):
     """ Gets an indicator tuple from the config dictionary.  Finds
-    either a tuple or a list of tuples; in either case returns a pair
-    of lists of tuples: rect, round. """
+    either a tuple or a list of tuples; in either case returns a
+    dictionary of lists of platform to tuples. """
 
-    list = fd.get(indicator, None)
-    list_rect = fd.get(indicator + '_rect', list)
-    list_round = fd.get(indicator + '_round', list)
-    if not isinstance(list_rect, type([])):
-        list_rect = [list_rect]
-    if not isinstance(list_round, type([])):
-        list_round = [list_round]
-
-    return list_rect, list_round
-
-def expandIndicatorList(indicator, numFaces):
-    """ Given an indicator list, e.g. top_subdial_rect or
-    top_subdial_round, from the table, return a list whose length is
-    the number of faces. """
-    if len(indicator) == 1 and numFaces != 1:
-        indicator = [indicator[0]] * numFaces
-    if len(indicator) == numFaces / 2:
-      # Implicitly expand it by doubling each face.
-      i2 = indicator
-      indicator = []
-      for i in i2:
-        indicator.append(i)
-        indicator.append(i)
-
-    assert len(indicator) == numFaces
+    list = fd.get(token, None)
+    indicator = {}
+    for platform in targetPlatforms:
+        shape = getPlatformShape(platform)
+        list_shape = fd.get(token + '_' + shape, list)
+        if not isinstance(list_shape, type([])):
+            list_shape = [list_shape]
+        indicator[platform] = list_shape
 
     return indicator
 
-def makeIndicatorTable(generatedTable, generatedDefs, name, (indicator_rect, indicator_round), numFaces, anonymous = False):
+def expandIndicatorList(list_shape, numFaces):
+    """ Given an indicator list, e.g. getIndicator()[platform], return
+    a list whose length is the number of faces. """
+
+    if len(list_shape) == 1 and numFaces != 1:
+        list_shape = [list_shape[0]] * numFaces
+    if len(list_shape) == numFaces / 2:
+      # Implicitly expand it by doubling each face.
+      i2 = list_shape
+      list_shape = []
+      for i in i2:
+        list_shape.append(i)
+        list_shape.append(i)
+
+    assert len(list_shape) == numFaces
+
+    return list_shape
+
+def makeIndicatorTable(generatedTable, generatedDefs, name, indicator, numFaces, anonymous = False):
     """ Makes an array of IndicatorTable values to define how a given
     indicator (that is, a bluetooth or battery indicator, or a
     day/date window) is meant to be rendered for each of the alternate
     faces. """
 
-    if not indicator_rect[0]:
+    if not indicator.values()[0][0]:
         return
 
     if anonymous:
@@ -1276,17 +1346,16 @@ def makeIndicatorTable(generatedTable, generatedDefs, name, (indicator_rect, ind
         print >> generatedDefs, "extern struct IndicatorTable %s[%s];" % (name, numFaces)
         print >> generatedTable, "struct IndicatorTable %s[%s] = {" % (name, numFaces)
 
-    def writeTable(generatedTable, indicator, numFaces):
-        indicator = expandIndicatorList(indicator, numFaces)
-        for x, y, c in indicator:
+    def writeTable(generatedTable, list_shape, numFaces):
+        list_shape = expandIndicatorList(list_shape, numFaces)
+        for x, y, c in list_shape:
             print >> generatedTable, "   { %s, %s, %s }," % (
                 x, y, int(c[0] == 'b'))
 
-    print >> generatedTable, "#ifdef PBL_ROUND"
-    writeTable(generatedTable, indicator_round, numFaces)
-    print >> generatedTable, "#else  // PBL_ROUND"
-    writeTable(generatedTable, indicator_rect, numFaces)
-    print >> generatedTable, "#endif  // PBL_ROUND"
+    for platform in targetPlatforms:
+        print >> generatedTable, "#ifdef PBL_PLATFORM_%s" % (platform.upper())
+        writeTable(generatedTable, indicator[platform], numFaces)
+        print >> generatedTable, "#endif  // PBL_PLATFORM_%s" % (platform.upper())
 
     if anonymous:
         # Anonymous structure within a table
@@ -1294,16 +1363,18 @@ def makeIndicatorTable(generatedTable, generatedDefs, name, (indicator_rect, ind
     else:
         print >> generatedTable, "};\n";
 
-def get_variants_for_platforms(platforms):
+def getVariantsForPlatforms(platforms):
     variants = set()
-    if "aplite" in platforms or "diorite" in platforms:
-        variants.add("~bw")
-    if "basalt" in platforms:
-        variants.add("~color")
-        variants.add("~color~rect")
-    if "chalk" in platforms:
-        variants.add("~color")
-        variants.add("~color~round")
+    if 'aplite' in platforms or 'diorite' in platforms:
+        variants.add('~bw')
+    if 'basalt' in platforms:
+        variants.add('~color')
+        variants.add('~color~rect')
+    if 'chalk' in platforms:
+        variants.add('~color')
+        variants.add('~color~round')
+    if 'emery' in platforms:
+        variants.add('~emery')
     return list(variants)
 
 def makeMoonWheel(platform):
@@ -1316,34 +1387,28 @@ def makeMoonWheel(platform):
     # moon_wheel_black_*.png is for when the moon is to be drawn as black pixels on white (b&w and color platforms).
 
     numStepsMoon = getNumSteps('moon', platform)
-    wheelSize = 80, 80
-    subdialSize = 80, 41
+    color = getPlatformColor(platform)
 
-    prefix = resourcesDir + '/'
-    basename = 'clock_faces/top_subdial_internal_mask'
-    ext = '.png'
-    for variant in get_variants_for_platforms([platform]) + ['']:
-        # Handle the specialized variant files.
-        if os.path.exists(prefix + basename + variant + ext):
-            break
-
-    subdialMaskPathname = prefix + basename + variant + ext
+    subdialMaskPathname = getPlatformFilename(resourcesDir + '/clock_faces/top_subdial_internal_mask.png', platform)
     subdialMask = PIL.Image.open(subdialMaskPathname)
-    assert subdialMask.size == subdialSize
+    subdialSize = subdialMask.size
+    subdialSizes[platform] = subdialSize
+
     subdialMask = subdialMask.convert('L')
     subdialMaskBinary = subdialMask.point(thresholdMask)
     black = PIL.Image.new('L', subdialMask.size, 0)
     white = PIL.Image.new('L', subdialMask.size, 255)
 
-    if variant == '~bw':
+    if color == 'bw':
         cats = ['white', 'black']
     else:
-        # Ignore the white image on color platforms.
+        # We need only the white image on color platforms.
         cats = ['black']
 
     for cat in cats:
-        wheelSourcePathname = '%s/clock_faces/moon_wheel_%s%s.png' % (resourcesDir, cat, variant)
+        wheelSourcePathname = getPlatformFilename('%s/clock_faces/moon_wheel_%s.png' % (resourcesDir, cat), platform)
         wheelSource = PIL.Image.open(wheelSourcePathname)
+        wheelSize = wheelSource.size
 
         for i in range(numStepsMoon):
             angle = i * 180.0 / numStepsMoon
@@ -1358,7 +1423,7 @@ def makeMoonWheel(platform):
 
             # Now make the 1-bit version for B&W platforms and
             # the 2-bit version for color platforms.
-            if variant == '~bw':
+            if color == 'bw':
                 p = p.convert('1')
                 if cat == 'white':
                     # Invert the image for moon_wheel_white.
@@ -1419,23 +1484,24 @@ def configWatch():
     generatedDefs = open('%s/generated_defs.h' % (resourcesDir), 'w')
 
     resourceStr = ''
-    resourceStr += makeFaces(generatedTable, generatedDefs)
-    resourceStr += makeHands(generatedTable, generatedDefs)
 
-    if top_subdial_rect[0]:
+    if top_subdial.values()[0][0]:
         for platform in targetPlatforms:
             resourceStr += makeMoonWheel(platform)
+
+    resourceStr += makeFaces(generatedTable, generatedDefs)
+    resourceStr += makeHands(generatedTable, generatedDefs)
 
     print >> generatedDefs, "extern struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_INDICATOR_FACES];"
     print >> generatedTable, "struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_INDICATOR_FACES] = {"
     for i in range(len(date_window_keys)):
         ch = chr(97 + i)
-        makeIndicatorTable(generatedTable, generatedDefs, ch, (date_windows_rect[i], date_windows_round[i]), numIndicatorFaces, anonymous = True)
+        makeIndicatorTable(generatedTable, generatedDefs, ch, date_windows[i], numIndicatorFaces, anonymous = True)
     print >> generatedTable, "};\n"
 
-    makeIndicatorTable(generatedTable, generatedDefs, 'battery_table', (battery_rect, battery_round), numIndicatorFaces)
-    makeIndicatorTable(generatedTable, generatedDefs, 'bluetooth_table', (bluetooth_rect, bluetooth_round), numIndicatorFaces)
-    makeIndicatorTable(generatedTable, generatedDefs, 'top_subdial', (top_subdial_rect, top_subdial_round), numFaces)
+    makeIndicatorTable(generatedTable, generatedDefs, 'battery_table', battery, numIndicatorFaces)
+    makeIndicatorTable(generatedTable, generatedDefs, 'bluetooth_table', bluetooth, numIndicatorFaces)
+    makeIndicatorTable(generatedTable, generatedDefs, 'top_subdial', top_subdial, numFaces)
 
     resourceIn = open('%s/package.json.in' % (rootDir), 'r').read()
     resource = open('%s/package.json' % (rootDir), 'w')
@@ -1492,7 +1558,7 @@ def configWatch():
         'enableSweepSeconds' : int('sweep' in defaults),
         'defaultDateWindows' : repr(defaultDateWindows),
         'displayLangLookup' : displayLangLookup,
-        'enableTopSubdial' : int(bool(top_subdial_rect[0])),
+        'enableTopSubdial' : int(bool(top_subdial.values()[0][0])),
         'enableDebug' : int(compileDebugging),
         'defaultTopSubdial' : defaultTopSubdial,
         'defaultLunarBackground' : defaultLunarBackground,
@@ -1513,6 +1579,12 @@ def configWatch():
             'numStepsChronoSecond' : getNumSteps('chrono_second', platform),
             'numStepsChronoTenth' : getNumSteps('chrono_tenth', platform),
             'numStepsMoon' : getNumSteps('moon', platform),
+            'subdialSizeX' : subdialSizes[platform][0],
+            'subdialSizeY' : subdialSizes[platform][1],
+            'dateWindowSizeX' : dateWindowSizes[platform][0],
+            'dateWindowSizeY' : dateWindowSizes[platform][1],
+            'pebbleLabelSizeX' : pebbleLabelSizes[platform][0],
+            'pebbleLabelSizeY' : pebbleLabelSizes[platform][1],
             'limitResourceCache' : int('limit_cache' in defaults or 'limit_cache_' + platform in defaults),
             'secondResourceCacheSize' : getResourceCacheSize('second', platform),
             'chronoSecondResourceCacheSize' : getResourceCacheSize('chrono_second', platform),
@@ -1534,16 +1606,16 @@ def configWatch():
         'compileDebugging' : int(compileDebugging),
         'screenshotBuild' : int(screenshotBuild),
         'defaultDateWindows' : repr(defaultDateWindows)[1:-1],
-        'enableBluetooth' : int(bool(bluetooth[0])),
+        'enableBluetooth' : int(bool(bluetooth.values()[0][0])),
         'defaultBluetooth' : defaultBluetooth,
-        'enableBatteryGauge' : int(bool(battery[0])),
+        'enableBatteryGauge' : int(bool(battery.values()[0][0])),
         'defaultBattery' : defaultBattery,
         'defaultSecondHand' : int('second' in defaults),
         'defaultHourBuzzer' : int('buzzer' in defaults),
         'enableSweepSeconds' : int('sweep' in defaults),
         'makeChronograph' : int(enableChronoSecondHand),
         'enableChronoDial' : int('chrono' in fd),
-        'enableTopSubdial' : int(bool(top_subdial_rect[0])),
+        'enableTopSubdial' : int(bool(top_subdial.values()[0][0])),
         'defaultTopSubdial' : defaultTopSubdial,
         'defaultLunarBackground' : defaultLunarBackground,
         'enableChronoMinuteHand' : int(enableChronoMinuteHand),
@@ -1616,10 +1688,9 @@ if not watchStyle:
     sys.exit(1)
 
 if not targetPlatforms:
-    targetPlatforms = [ "aplite", "basalt", "chalk", "diorite" ]
+    targetPlatforms = [ 'aplite', 'basalt', 'chalk', 'diorite' ]
 
 bwPlatforms = set(targetPlatforms) & set(['aplite', 'diorite'])
-colorPlatforms = set(targetPlatforms) - bwPlatforms
 
 watchName, defaultHandStyle, defaultFaceStyle, uuId = watches[watchStyle]
 
@@ -1642,29 +1713,31 @@ numFaceColors = len(faceColors)
 
 defaultFaceIndex = fd.get('default_face', 0)
 
-top_subdial_rect, top_subdial_round = getIndicator(fd, 'top_subdial')
-if top_subdial_rect[0]:
+top_subdial = getIndicator(fd, 'top_subdial')
+if top_subdial.values()[0][0]:
     numIndicatorFaces = numFaces * 2
 else:
     numIndicatorFaces = numFaces
 
 # Get the set of date_windows defined for the watchface.
-date_windows_rect = []
-date_windows_round = []
+date_windows = []
 date_window_keys = ''
 for key in 'abcd':
-    dw_rect, dw_round = getIndicator(fd, 'date_window_%s' % (key))
-    if dw_rect[0] and dw_round[0]:
-        date_windows_rect.append(dw_rect)
-        date_windows_round.append(dw_round)
+    dw = getIndicator(fd, 'date_window_%s' % (key))
+    if dw.values()[0][0]:
+        date_windows.append(dw)
         date_window_keys += key
 
 date_window_filename = fd.get('date_window_filename', None)
-bluetooth_rect, bluetooth_round = getIndicator(fd, 'bluetooth')
-battery_rect, battery_round = getIndicator(fd, 'battery')
+bluetooth = getIndicator(fd, 'bluetooth')
+battery = getIndicator(fd, 'battery')
 defaults = fd.get('defaults', [])
-centers_rect = fd.get('centers_rect', ())
-centers_round = fd.get('centers_round', ())
+centers = fd.get('centers', [])
+
+subdialSizes = {}  # filled in by makeMoonWheel()
+dateWindowSizes = {} # filled in by makeFaces()
+pebbleLabelSizes = {} # filled in by makeFaces()
+
 
 # Look for 'day' and 'date' prefixes in the defaults.
 defaultDateWindows = [0] * len(date_window_keys)
@@ -1687,11 +1760,5 @@ elif 'pebble_label' in defaults:
 defaultLunarBackground = 0
 if 'moon_dark' in defaults:
     defaultLunarBackground = 1
-
-# Map the centers tuple into a dictionary of points for x and y.
-cxdRect = dict(map(lambda (hand, x, y): (hand, x), centers_rect))
-cydRect = dict(map(lambda (hand, x, y): (hand, y), centers_rect))
-cxdRound = dict(map(lambda (hand, x, y): (hand, x), centers_round))
-cydRound = dict(map(lambda (hand, x, y): (hand, y), centers_round))
 
 configWatch()
