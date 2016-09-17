@@ -528,6 +528,8 @@ def get_variants_for_platforms(platforms):
     if "chalk" in platforms:
         variants.add("~color")
         variants.add("~color~round")
+    if 'emery' in platforms:
+        variants.add('~emery')
     return list(variants)
 
 rawResourceEntry = """

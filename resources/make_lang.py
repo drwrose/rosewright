@@ -20,21 +20,21 @@ make_lang.py [opts]
 
 fontChoices = [ 'latin', 'el', 'ru', 'hy', 'rtl_he', 'rtl_ar', 'zh', 'ja', 'ko', 'th', 'ta', 'hi' ]
 
-# Font (rect, round) filenames and (rect, round) pixel sizes.  Font
-# sizes are encoded into the resource names, which appear in wright.c.
+# Font (rect, round, emery) filenames and (rect, round, emery) pixel
+# sizes and (rect, round, emery) vshift values.
 fontNames = {
-    'latin' : (('ArchivoNarrow-Bold-16.bdf', 'ArchivoNarrow-Bold-18.bdf'), (16, 18)),
-    'el' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16)),
-    'ru' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16)),
-    'hy' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16)),
-    'rtl_he' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16)),
-    'rtl_ar' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16)),
-    'zh' : ('wqy-microhei_filtered.ttf', (16, 18)),
-    'ja' : ('TakaoPGothic_filtered.ttf', (16, 18)),
-    'ko' : ('UnDotum.ttf', (16, 18)),
-    'th' : ('Waree.ttf', (16, 18)),
-    'ta' : ('TAMu_Kalyani.ttf', (16, 18)),
-    'hi' : ('lohit_hi.ttf', (16, 18)),
+    'latin' : (('ArchivoNarrow-Bold-16.bdf', 'ArchivoNarrow-Bold-18.bdf', 'ArchivoNarrow-Bold.ttf'), (16, 18, 22), (0, -1, -1)),
+    'el' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), (1, 1, 1)),
+    'ru' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), (1, 1, 1)),
+    'hy' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), (1, 1, 1)),
+    'rtl_he' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), (1, 1, 1)),
+    'rtl_ar' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), (1, 1, 1)),
+    'zh' : ('wqy-microhei_filtered.ttf', (16, 18, 22), (-1, -1, -1)),
+    'ja' : ('TakaoPGothic_filtered.ttf', (16, 18, 22), (-1, -1, -1)),
+    'ko' : ('UnDotum.ttf', (16, 18, 22), (-2, -2, -2)),
+    'th' : ('Waree.ttf', (16, 18, 22), (-1, -1, -1)),
+    'ta' : ('TAMu_Kalyani.ttf', (16, 18, 22), (-2, -2, -2)),
+    'hi' : ('lohit_hi.ttf', (16, 18, 22), (0, 0, 0)),
     }
 
 # This list is duplicated in html/rosewright_X_configure.js, and the
@@ -320,23 +320,57 @@ def makeLang():
       "targetPlatforms" : [
         "chalk"
       ]
+    },
+    {
+      "type": "font",
+      "characterRegex": "[%(regex)s]",
+      "name": "DAY_FONT_%(upperKey)s_%(size_emery)s",
+      "file": "%(filename_emery)s",
+      "targetPlatforms" : [
+        "emery"
+      ]
     },"""
 
     for fontKey in fontChoices:
-        filenames, (size_rect, size_round) = fontNames[fontKey]
+        filenames, (size_rect, size_round, size_emery), (vshift_rect, vshift_round, vshift_emery) = fontNames[fontKey]
         if isinstance(filenames, type(())):
-            filename_rect, filename_round = filenames
+            filename_rect, filename_round, filename_emery = filenames
         else:
             filename_rect = filenames
             filename_round = filenames
+            filename_emery = filenames
         print >> generatedJson, fontEntry % {
             'regex' : makeCharacterRegex(neededChars[fontKey]),
             'upperKey' : fontKey.upper(),
             'size_rect' : size_rect,
             'size_round' : size_round,
+            'size_emery' : size_emery,
             'filename_rect' : filename_rect,
             'filename_round' : filename_round,
+            'filename_emery' : filename_emery,
             }
+
+    print >> generatedTable, "#define NUM_DATE_LANG_FONTS %s" % (len(fontChoices))
+    print >> generatedTable, "struct FontPlacement date_lang_font_placement[NUM_DATE_LANG_FONTS] = {"
+
+    # rect
+    #print >> generatedTable, "#if defined(PBL_PLATFORM_APLITE) || defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE)"
+
+    # round
+    #print >> generatedTable, "#if defined(PBL_PLATFORM_CHALK)"
+
+    # emery
+    print >> generatedTable, "#if defined(PBL_PLATFORM_EMERY)"
+
+    for fontKey in fontChoices:
+        filenames, (size_rect, size_round, size_emery), (vshift_rect, vshift_round, vshift_emery) = fontNames[fontKey]
+        print >> generatedTable, "{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), size_emery, vshift_emery)
+
+    print >> generatedTable, "#endif"
+
+    print >> generatedTable, "};"
+
+
 
 # Main.
 try:

@@ -116,6 +116,13 @@ struct __attribute__((__packed__)) IndicatorTable {
   bool invert;
 };
 
+// This structure specifies how to load, and how to shift each
+// different font to appear properly within the date window.
+struct FontPlacement {
+  unsigned char resource_id;
+  signed char vshift;  // Value determined empirically for each font.
+};
+
 // A handy symbol for wrapping resource ID's that only exist on Aplite.
 #ifdef PBL_PLATFORM_APLITE
 #define APLITE_RESOURCE(resource_id) (resource_id)
@@ -124,4 +131,3 @@ struct __attribute__((__packed__)) IndicatorTable {
 #endif  // PBL_PLATFORM_APLITE
 
 #endif
-

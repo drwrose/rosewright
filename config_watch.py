@@ -257,14 +257,14 @@ faces = {
         'date_window_b_round': (134, 79, 'b'),
         'date_window_c_round': (46, 116, 'b'),
         'date_window_d_round': (92, 116, 'b'),
-        'date_window_a_emery': (3, 102, 'b'),
-        'date_window_b_emery': (147, 102, 'b'),
-        'date_window_c_emery': (49, 137, 'b'),
-        'date_window_d_emery': (194, 137, 'b'),
+        'date_window_a_emery' : (2, 102, 'b'),
+        'date_window_b_emery' : (149, 102, 'b'),
+        'date_window_c_emery' : (49, 137, 'b'),
+        'date_window_d_emery' : (105, 137, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : (32, 32, 'b'),
         'top_subdial_round' : (50, 32, 'b'),
-        'top_subdial_emery' : (44, 43, 'b'),
+        'top_subdial_emery' : (50, 43, 'b'),
         'bluetooth_rect' : [ (37, 47, 'b'), (17, 29, 'b'),
                              (37, 47, 'b'), (17, 29, 'b'),
                              (37, 47, 'b'), (17, 29, 'b'),
@@ -441,6 +441,54 @@ faces = {
         'defaults' : [ 'date:c', 'moon_dark', 'limit_cache_aplite', 'limit_cache_basalt', 'limit_cache_chalk' ],
         },
     }
+
+def scaleIndicatorCoord(v, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize):
+    if v + oldIndicatorSize / 2 < oldScreenSize / 3:
+        # Close to the left (top) wall.
+        pass
+    elif v + oldIndicatorSize / 2 > oldScreenSize * 2 / 3:
+        # Close to the right (bottom) wall.
+        v = newScreenSize - (oldScreenSize - (v + oldIndicatorSize)) - newIndicatorSize
+    else:
+        # Somewhere centered.
+        v = (v + oldIndicatorSize / 2.0) * float(newScreenSize) / float(oldScreenSize) - newIndicatorSize / 2.0
+        v = int(v + 0.5)
+    return v
+
+
+def scaleIndicatorRect(list_shape, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize):
+    x, y, c = list_shape
+    x = scaleIndicatorCoord(x, oldIndicatorSize[0], oldScreenSize[0], newIndicatorSize[0], newScreenSize[0])
+    y = scaleIndicatorCoord(y, oldIndicatorSize[1], oldScreenSize[1], newIndicatorSize[1], newScreenSize[1])
+    return (x, y, c)
+
+def scaleIndicator(key, list_shape, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize):
+    if not isinstance(list_shape, type([])):
+        list_shape = scaleIndicatorRect(list_shape, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
+        print "  '%s' : %s," % (key, list_shape)
+    else:
+        result = []
+        for indicator in list_shape:
+            result.append(scaleIndicatorRect(indicator, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize))
+        print "  '%s' : %s," % (key, result)
+
+
+def scaleIndicators():
+    oldScreenSize = (144, 168)
+    newScreenSize = (200, 228)
+
+    for faceStyle in ['a', 'b', 'c', 'c2', 'd', 'e']:
+        print "%s_hands" % (faceStyle)
+        fd = faces[faceStyle]
+
+        # Date windows
+        oldIndicatorSize = (37, 19)
+        newIndicatorSize = (50, 26)
+        for key in 'abcd':
+            dw = fd.get('date_window_%s_rect' % (key), None)
+            if dw:
+                scaleIndicator('date_window_%s_emery' % (key), dw, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
+
 
 enableSecondHand = False
 enableChronoMinuteHand = False
@@ -1433,6 +1481,7 @@ def makeMoonWheel(platform):
                 p = PIL.Image.composite(p, black, subdialMask)
 
             else:
+                p = p.convert('RGB')
                 r, g, b = p.split()
                 r = r.point(threshold2Bit).convert('L')
                 g = g.point(threshold2Bit).convert('L')
@@ -1570,8 +1619,11 @@ def configWatch():
     config = open('%s/generated_config.h' % (resourcesDir), 'w')
 
     for platform in targetPlatforms:
+        shape = getPlatformShape(platform)
         print >> config, configPerPlatformIn % {
             'platformUpper' : platform.upper(),
+            'screenWidth' : screenSizes[shape][0],
+            'screenHeight' : screenSizes[shape][1],
             'numStepsHour' : getNumSteps('hour', platform),
             'numStepsMinute' : getNumSteps('minute', platform),
             'numStepsSecond' : getNumSteps('second', platform),
@@ -1762,3 +1814,4 @@ if 'moon_dark' in defaults:
     defaultLunarBackground = 1
 
 configWatch()
+#scaleIndicators()

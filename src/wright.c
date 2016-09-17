@@ -72,44 +72,6 @@ typedef struct __attribute__((__packed__)) {
 } DateWindowData;
 
 
-// This structure specifies how to load, and how to shift each
-// different font to appear properly within the date window.
-struct FontPlacement {
-  unsigned char resource_id;
-  signed char vshift;  // Value determined empirically for each font.
-};
-
-#define NUM_DATE_LANG_FONTS 12
-struct FontPlacement date_lang_font_placement[NUM_DATE_LANG_FONTS] = {
-#ifdef PBL_ROUND
-  { RESOURCE_ID_DAY_FONT_LATIN_18, 0 },
-  { RESOURCE_ID_DAY_FONT_EL_16, 1 },
-  { RESOURCE_ID_DAY_FONT_RU_16, 1 },
-  { RESOURCE_ID_DAY_FONT_HY_16, 1 },
-  { RESOURCE_ID_DAY_FONT_RTL_HE_16, 1 },
-  { RESOURCE_ID_DAY_FONT_RTL_AR_16, 1 },
-  { RESOURCE_ID_DAY_FONT_ZH_18, -1 },  // Chinese
-  { RESOURCE_ID_DAY_FONT_JA_18, -1 },  // Japanese
-  { RESOURCE_ID_DAY_FONT_KO_18, -2 },  // Korean
-  { RESOURCE_ID_DAY_FONT_TH_18, -1 },  // Thai
-  { RESOURCE_ID_DAY_FONT_TA_18, -2 },  // Tamil
-  { RESOURCE_ID_DAY_FONT_HI_18, 0 },  // Hindi
-#else  // PBL_ROUND
-  { RESOURCE_ID_DAY_FONT_LATIN_16, -1 },
-  { RESOURCE_ID_DAY_FONT_EL_14, 1 },
-  { RESOURCE_ID_DAY_FONT_RU_14, 1 },
-  { RESOURCE_ID_DAY_FONT_HY_14, 1 },
-  { RESOURCE_ID_DAY_FONT_RTL_HE_14, 1 },
-  { RESOURCE_ID_DAY_FONT_RTL_AR_14, 1 },
-  { RESOURCE_ID_DAY_FONT_ZH_16, -1 },  // Chinese
-  { RESOURCE_ID_DAY_FONT_JA_16, -1 },  // Japanese
-  { RESOURCE_ID_DAY_FONT_KO_16, -2 },  // Korean
-  { RESOURCE_ID_DAY_FONT_TH_16, -1 },  // Thai
-  { RESOURCE_ID_DAY_FONT_TA_16, -2 },  // Tamil
-  { RESOURCE_ID_DAY_FONT_HI_16, 0 },  // Hindi
-#endif  // PBL_ROUND
-};
-
 // These structures are filled in from the appropriate resource file
 // to reflect the names we are displaying in the weekday/month window
 // based on configuration settings.

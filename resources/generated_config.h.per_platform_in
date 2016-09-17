@@ -1,5 +1,8 @@
 #ifdef PBL_PLATFORM_%(platformUpper)s
 
+#define SCREEN_WIDTH %(screenWidth)s
+#define SCREEN_HEIGHT %(screenHeight)s
+
 // The number of subdivisions around the face for each kind of hand.
 #define NUM_STEPS_HOUR %(numStepsHour)s
 #define NUM_STEPS_MINUTE %(numStepsMinute)s
