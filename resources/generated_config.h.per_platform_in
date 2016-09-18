@@ -3,6 +3,20 @@
 #define SCREEN_WIDTH %(screenWidth)s
 #define SCREEN_HEIGHT %(screenHeight)s
 
+#define BATTERY_GAUGE_FILL_W %(batteryGaugeFillW)s
+#define BATTERY_GAUGE_FILL_H %(batteryGaugeFillH)s
+#define BATTERY_GAUGE_FILL_X %(batteryGaugeFillX)s
+#define BATTERY_GAUGE_FILL_Y %(batteryGaugeFillY)s
+#define BATTERY_GAUGE_BAR_W %(batteryGaugeBarW)s
+#define BATTERY_GAUGE_BAR_H %(batteryGaugeBarH)s
+#define BATTERY_GAUGE_BAR_X %(batteryGaugeBarX)s
+#define BATTERY_GAUGE_BAR_Y %(batteryGaugeBarY)s
+#define BATTERY_GAUGE_SYSTEM_FONT FONT_KEY_%(batteryGaugeFont)s
+#define BATTERY_GAUGE_FONT_VSHIFT %(batteryGaugeVshift)s
+
+#define BLUETOOTH_SIZE_X %(bluetoothSizeX)s
+#define BLUETOOTH_SIZE_Y %(bluetoothSizeY)s
+
 // The number of subdivisions around the face for each kind of hand.
 #define NUM_STEPS_HOUR %(numStepsHour)s
 #define NUM_STEPS_MINUTE %(numStepsMinute)s

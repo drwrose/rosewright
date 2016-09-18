@@ -73,6 +73,13 @@ screenSizes = {
     'emery' : (200, 228),
     }
 
+# [fill_rect, bar_rect, (font, vshift)] where rect is (x, y, w, h)
+batteryGaugeSizes = {
+    'rect' : [(6, 0, 18, 10), (10, 3, 10, 4), ('GOTHIC_14', -4)],
+    'round' : [(6, 0, 18, 10), (10, 3, 10, 4), ('GOTHIC_14', -4)],
+    'emery' : [(8, 0, 25, 14), (13, 3, 15, 8), ('GOTHIC_18', -5)],
+    }
+
 # Table of watch styles.  A watch style is a combination of a hand
 # style and face style, and a unique identifier.  For each style,
 # specify the following:
@@ -257,7 +264,7 @@ faces = {
         'date_window_b_round': (134, 79, 'b'),
         'date_window_c_round': (46, 116, 'b'),
         'date_window_d_round': (92, 116, 'b'),
-        'date_window_a_emery' : (2, 102, 'b'),
+        'date_window_a_emery' : (3, 102, 'b'),
         'date_window_b_emery' : (149, 102, 'b'),
         'date_window_c_emery' : (49, 137, 'b'),
         'date_window_d_emery' : (105, 137, 'b'),
@@ -269,25 +276,25 @@ faces = {
                              (37, 47, 'b'), (17, 29, 'b'),
                              (37, 47, 'b'), (17, 29, 'b'),
                              ],
-        'battery_rect' : [ (92, 51, 'b'), (110, 32, 'b'),
-                           (92, 51, 'b'), (110, 32, 'b'),
-                           (92, 51, 'b'), (110, 32, 'b'),
+        'battery_rect' : [ (86, 51, 'b'), (104, 32, 'b'),
+                           (86, 51, 'b'), (104, 32, 'b'),
+                           (86, 51, 'b'), (104, 32, 'b'),
                            ],
         'bluetooth_round' : [ (55, 53, 'b'), (30, 30, 'b'),
                               (55, 53, 'b'), (30, 30, 'b'),
                               (55, 53, 'b'), (30, 30, 'b'),
                               ],
-        'battery_round' : [ (110, 57, 'b'), (132, 33, 'b'),
-                            (110, 57, 'b'), (132, 33, 'b'),
-                            (110, 57, 'b'), (132, 33, 'b'),
+        'battery_round' : [ (104, 57, 'b'), (126, 33, 'b'),
+                            (104, 57, 'b'), (126, 33, 'b'),
+                            (104, 57, 'b'), (126, 33, 'b'),
                             ],
         'bluetooth_emery' : [ (51, 64, 'b'), (24, 39, 'b'),
                               (51, 64, 'b'), (24, 39, 'b'),
                               (51, 64, 'b'), (24, 39, 'b'),
-                             ],
-        'battery_emery' : [ (128, 69, 'b'), (153, 43, 'b'),
-                            (128, 69, 'b'), (153, 43, 'b'),
-                            (128, 69, 'b'), (153, 43, 'b'),
+                              ],
+        'battery_emery' : [ (120, 69, 'b'), (145, 43, 'b'),
+                            (120, 69, 'b'), (145, 43, 'b'),
+                            (120, 69, 'b'), (145, 43, 'b'),
                             ],
         'defaults' : [ 'date:b', 'moon_phase', 'pebble_label', 'moon_dark', 'second', 'hour_minute_overlap', 'sweep' ],
         },
@@ -315,12 +322,12 @@ faces = {
         'top_subdial_round' : (50, 34, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth_rect' : (14, 18, 'b'),
-        'battery_rect' : (116, 22, 'b'),
+        'battery_rect' : (110, 22, 'b'),
         'bluetooth_round' : [ (55, 53, 'b'), (30, 30, 'b'),
                               (55, 53, 'b'), (30, 30, 'b'),
                               ],
-        'battery_round' : [ (110, 57, 'b'), (132, 33, 'b'),
-                            (110, 57, 'b'), (132, 33, 'b'),
+        'battery_round' : [ (104, 57, 'b'), (126, 33, 'b'),
+                            (104, 57, 'b'), (126, 33, 'b'),
                             ],
         'defaults' : [ 'day:c', 'date:d', 'second', 'hour_minute_overlap', 'pebble_label', 'sweep' ],
         },
@@ -346,9 +353,9 @@ faces = {
         'top_subdial_rect' : (32, 16, 'b'),
         'top_subdial_round' : (50, 20, 'b'),
         'bluetooth_rect' : (16, 18, 'b'),
-        'battery_rect' : (109, 25, 'b'),
+        'battery_rect' : (103, 25, 'b'),
         'bluetooth_round' : (33, 41, 'b'),
-        'battery_round' : (127, 49, 'b'),
+        'battery_round' : (121, 49, 'b'),
         'defaults' : [ 'second' ],
         },
     'c2' : {
@@ -373,9 +380,9 @@ faces = {
         'top_subdial_rect' : (32, 16, 'b'),
         'top_subdial_round' : (50, 20, 'b'),
         'bluetooth_rect' : (16, 18, 'b'),
-        'battery_rect' : (109, 21, 'b'),
+        'battery_rect' : (103, 21, 'b'),
         'bluetooth_round' : (33, 41, 'b'),
-        'battery_round' : (127, 49, 'b'),
+        'battery_round' : (121, 49, 'b'),
         'defaults' : [ 'second', 'limit_cache_aplite', 'prebake_label' ],
         },
     'd' : {
@@ -400,17 +407,17 @@ faces = {
                              (43, 34, 'b'), (36, 29, 'b'),
                              (43, 34, 'b'), (36, 29, 'b'),
                              ],
-        'battery_rect' : [ (83, 39, 'b'), (95, 33, 'b'),
-                           (83, 39, 'b'), (95, 33, 'b'),
-                           (83, 39, 'b'), (95, 33, 'b'),
+        'battery_rect' : [ (77, 39, 'b'), (89, 33, 'b'),
+                           (77, 39, 'b'), (89, 33, 'b'),
+                           (77, 39, 'b'), (89, 33, 'b'),
                            ],
         'bluetooth_round' : [ (60, 48, 'b'), (46, 43, 'b'),
                               (60, 48, 'b'), (46, 43, 'b'),
                               (60, 48, 'b'), (46, 43, 'b'),
                               ],
-        'battery_round' : [ (103, 52, 'b'), (121, 47, 'b'),
-                            (103, 52, 'b'), (121, 47, 'b'),
-                            (103, 52, 'b'), (121, 47, 'b'),
+        'battery_round' : [ (97, 52, 'b'), (115, 47, 'b'),
+                            (97, 52, 'b'), (115, 47, 'b'),
+                            (97, 52, 'b'), (115, 47, 'b'),
                             ],
         'defaults' : [ 'day:c', 'date:d', 'bluetooth', 'battery', 'sweep' ],
         },
@@ -435,9 +442,9 @@ faces = {
         'top_subdial_rect' : (32, 32, 'b'),
         'top_subdial_round' : (50, 32, 'b'),
         'bluetooth_rect' : [ (11, 12, 'b'), (11, 12, 'w'), (11, 12, 'b'), ],
-        'battery_rect' : [ (115, 16, 'b'), (115, 16, 'w'), (115, 16, 'b'), ],
+        'battery_rect' : [ (109, 16, 'b'), (109, 16, 'w'), (109, 16, 'b'), ],
         'bluetooth_round' : [ (26, 26, 'b'), (26, 26, 'w'), (26, 26, 'b'), ],
-        'battery_round' : [ (139, 30, 'b'), (139, 30, 'w'), (139, 30, 'b'), ],
+        'battery_round' : [ (133, 30, 'b'), (133, 30, 'w'), (133, 30, 'b'), ],
         'defaults' : [ 'date:c', 'moon_dark', 'limit_cache_aplite', 'limit_cache_basalt', 'limit_cache_chalk' ],
         },
     }
@@ -445,14 +452,17 @@ faces = {
 def scaleIndicatorCoord(v, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize):
     if v + oldIndicatorSize / 2 < oldScreenSize / 3:
         # Close to the left (top) wall.
-        pass
+        v = v * newScreenSize / float(oldScreenSize)
     elif v + oldIndicatorSize / 2 > oldScreenSize * 2 / 3:
         # Close to the right (bottom) wall.
-        v = newScreenSize - (oldScreenSize - (v + oldIndicatorSize)) - newIndicatorSize
+        v = (oldScreenSize - (v + oldIndicatorSize))
+        v = v * newScreenSize / float(oldScreenSize)
+        v = (newScreenSize - (v + newIndicatorSize))
     else:
         # Somewhere centered.
-        v = (v + oldIndicatorSize / 2.0) * float(newScreenSize) / float(oldScreenSize) - newIndicatorSize / 2.0
-        v = int(v + 0.5)
+        v = (v + oldIndicatorSize / 2.0) * newScreenSize / float(oldScreenSize) - newIndicatorSize / 2.0
+
+    v = int(v + 0.5)
     return v
 
 
@@ -488,6 +498,18 @@ def scaleIndicators():
             dw = fd.get('date_window_%s_rect' % (key), None)
             if dw:
                 scaleIndicator('date_window_%s_emery' % (key), dw, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
+
+        # Battery gauge
+        oldIndicatorSize = (24, 10)
+        newIndicatorSize = (33, 14)
+        battery = fd.get('battery_rect')
+        scaleIndicator('battery_emery', battery, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
+
+        # Bluetooth indicator
+        oldIndicatorSize = (18, 18)
+        newIndicatorSize = (24, 24)
+        bluetooth = fd.get('bluetooth_rect')
+        scaleIndicator('bluetooth_emery', bluetooth, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
 
 
 enableSecondHand = False
@@ -669,6 +691,10 @@ def makeFaces(generatedTable, generatedDefs):
         labelFilename = getPlatformFilename('resources/clock_faces/pebble_label.png', platform)
         im = PIL.Image.open(labelFilename)
         pebbleLabelSizes[platform] = im.size
+
+        bluetoothFilename = getPlatformFilename('resources/bluetooth_connected.png', platform)
+        im = PIL.Image.open(bluetoothFilename)
+        bluetoothSizes[platform] = im.size
 
     print >> generatedTable, "struct FaceDef clock_face_table[NUM_FACES] = {"
     for i in range(len(faceFilenames)):
@@ -1501,7 +1527,7 @@ def makeMoonWheel(platform):
             p.save('%s/%s' % (resourcesDir, targetBasename))
             resourceStr += make_rle(targetBasename, name = 'MOON_WHEEL_%s_%s' % (cat.upper(), i), useRle = supportRle, platforms = [platform], compress = True)
 
-    # Let's also throw in the other subdial decorations here.
+    # Let's also throw in the other subdial and clock-face decorations here.
     if not prebakeLabel:
         resourceStr += make_rle('clock_faces/pebble_label.png', name = 'PEBBLE_LABEL', useRle = supportRle, platforms = [platform], compress = True)
         if platform in bwPlatforms:
@@ -1511,6 +1537,20 @@ def makeMoonWheel(platform):
     if platform in bwPlatforms:
         resourceStr += make_rle('clock_faces/top_subdial_mask.png', name = 'TOP_SUBDIAL_MASK', useRle = supportRle, platforms = [platform], compress = True)
         resourceStr += make_rle('clock_faces/top_subdial_frame_mask.png', name = 'TOP_SUBDIAL_FRAME_MASK', useRle = supportRle, platforms = [platform], compress = True)
+
+    resourceStr += make_rle('bluetooth_connected.png', name = 'BLUETOOTH_CONNECTED', useRle = supportRle, platforms = [platform], compress = True)
+    resourceStr += make_rle('bluetooth_disconnected.png', name = 'BLUETOOTH_DISCONNECTED', useRle = supportRle, platforms = [platform], compress = True)
+    if platform in bwPlatforms:
+        resourceStr += make_rle('bluetooth_mask.png', name = 'BLUETOOTH_MASK', useRle = supportRle, platforms = [platform], compress = True)
+
+    resourceStr += make_rle('battery_gauge_empty.png', name = 'BATTERY_GAUGE_EMPTY', useRle = supportRle, platforms = [platform], compress = True)
+    resourceStr += make_rle('battery_gauge_charged.png', name = 'BATTERY_GAUGE_CHARGED', useRle = supportRle, platforms = [platform], compress = True)
+    resourceStr += make_rle('charging.png', name = 'CHARGING', useRle = supportRle, platforms = [platform], compress = True)
+    if platform in bwPlatforms:
+        resourceStr += make_rle('battery_gauge_mask.png', name = 'BATTERY_GAUGE_MASK', useRle = supportRle, platforms = [platform], compress = True)
+    if platform in bwPlatforms:
+        resourceStr += make_rle('charging_mask.png', name = 'CHARGING_MASK', useRle = supportRle, platforms = [platform], compress = True)
+
 
     return resourceStr
 
@@ -1624,6 +1664,18 @@ def configWatch():
             'platformUpper' : platform.upper(),
             'screenWidth' : screenSizes[shape][0],
             'screenHeight' : screenSizes[shape][1],
+            'batteryGaugeFillX' : batteryGaugeSizes[shape][0][0],
+            'batteryGaugeFillY' : batteryGaugeSizes[shape][0][1],
+            'batteryGaugeFillW' : batteryGaugeSizes[shape][0][2],
+            'batteryGaugeFillH' : batteryGaugeSizes[shape][0][3],
+            'batteryGaugeBarX' : batteryGaugeSizes[shape][1][0],
+            'batteryGaugeBarY' : batteryGaugeSizes[shape][1][1],
+            'batteryGaugeBarW' : batteryGaugeSizes[shape][1][2],
+            'batteryGaugeBarH' : batteryGaugeSizes[shape][1][3],
+            'batteryGaugeFont' : batteryGaugeSizes[shape][2][0],
+            'batteryGaugeVshift' : batteryGaugeSizes[shape][2][1],
+            'bluetoothSizeX' : bluetoothSizes[platform][0],
+            'bluetoothSizeY' : bluetoothSizes[platform][1],
             'numStepsHour' : getNumSteps('hour', platform),
             'numStepsMinute' : getNumSteps('minute', platform),
             'numStepsSecond' : getNumSteps('second', platform),
@@ -1789,6 +1841,7 @@ centers = fd.get('centers', [])
 subdialSizes = {}  # filled in by makeMoonWheel()
 dateWindowSizes = {} # filled in by makeFaces()
 pebbleLabelSizes = {} # filled in by makeFaces()
+bluetoothSizes = {} # filled in by makeFaces()
 
 
 # Look for 'day' and 'date' prefixes in the defaults.

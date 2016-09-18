@@ -42,10 +42,10 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
   }
 
   GRect box;
-  box.origin.x = x - 6;
+  box.origin.x = x;
   box.origin.y = y;
-  box.size.w = 24;
-  box.size.h = 10;
+  box.size.w = BATTERY_GAUGE_FILL_X + BATTERY_GAUGE_FILL_W;
+  box.size.h = BATTERY_GAUGE_FILL_Y + BATTERY_GAUGE_FILL_H;
 
   GCompOp fg_mode;
   GColor fg_color, bg_color;
@@ -103,7 +103,7 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
   } else {
     // Erase a rectangle for text.
     graphics_context_set_fill_color(ctx, bg_color);
-    graphics_fill_rect(ctx, GRect(x, y, 18, 10), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(x + BATTERY_GAUGE_FILL_X, y + BATTERY_GAUGE_FILL_Y, BATTERY_GAUGE_FILL_W, BATTERY_GAUGE_FILL_H), 0, GCornerNone);
   }
 
   if (charge_state.is_charging) {
@@ -134,16 +134,16 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
     graphics_context_set_compositing_mode(ctx, fg_mode);
     graphics_context_set_fill_color(ctx, fg_color);
     graphics_draw_bitmap_in_rect(ctx, battery_gauge_empty.bitmap, box);
-    int bar_width = charge_state.charge_percent / 10;
-    graphics_fill_rect(ctx, GRect(x + 4, y + 3, bar_width, 4), 0, GCornerNone);
+    int bar_width = charge_state.charge_percent * BATTERY_GAUGE_BAR_W / 100;
+    graphics_fill_rect(ctx, GRect(x + BATTERY_GAUGE_BAR_X, y + BATTERY_GAUGE_BAR_Y, bar_width, BATTERY_GAUGE_BAR_H), 0, GCornerNone);
 
   } else {
     // Draw the digital text percentage.
     char text_buffer[4];
     snprintf(text_buffer, 4, "%d", charge_state.charge_percent);
-    GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+    GFont font = fonts_get_system_font(BATTERY_GAUGE_SYSTEM_FONT);
     graphics_context_set_text_color(ctx, fg_color);
-    graphics_draw_text(ctx, text_buffer, font, GRect(x, y - 4, 18, 10),
+    graphics_draw_text(ctx, text_buffer, font, GRect(x + BATTERY_GAUGE_FILL_X, y + BATTERY_GAUGE_FILL_Y + BATTERY_GAUGE_FONT_VSHIFT, BATTERY_GAUGE_FILL_W, BATTERY_GAUGE_FILL_H),
                        GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter,
                        NULL);
   }

@@ -26,8 +26,8 @@ void draw_bluetooth_indicator(GContext *ctx, int x, int y, bool invert) {
   GRect box;
   box.origin.x = x;
   box.origin.y = y;
-  box.size.w = 18;
-  box.size.h = 18;
+  box.size.w = BLUETOOTH_SIZE_X;
+  box.size.h = BLUETOOTH_SIZE_Y;
 
   GCompOp fg_mode;
 

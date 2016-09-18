@@ -23,7 +23,7 @@ fontChoices = [ 'latin', 'el', 'ru', 'hy', 'rtl_he', 'rtl_ar', 'zh', 'ja', 'ko',
 # Font (rect, round, emery) filenames and (rect, round, emery) pixel
 # sizes and (rect, round, emery) vshift values.
 fontNames = {
-    'latin' : (('ArchivoNarrow-Bold-16.bdf', 'ArchivoNarrow-Bold-18.bdf', 'ArchivoNarrow-Bold.ttf'), (16, 18, 22), (0, -1, -1)),
+    'latin' : (('ArchivoNarrow-Bold-16.bdf', 'ArchivoNarrow-Bold-18.bdf', 'ArchivoNarrow-Bold.ttf'), (16, 18, 22), (-1, -1, -1)),
     'el' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), (1, 1, 1)),
     'ru' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), (1, 1, 1)),
     'hy' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), (1, 1, 1)),
@@ -354,13 +354,21 @@ def makeLang():
     print >> generatedTable, "struct FontPlacement date_lang_font_placement[NUM_DATE_LANG_FONTS] = {"
 
     # rect
-    #print >> generatedTable, "#if defined(PBL_PLATFORM_APLITE) || defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE)"
+    print >> generatedTable, "#if defined(PBL_PLATFORM_APLITE) || defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE)"
+
+    for fontKey in fontChoices:
+        filenames, (size_rect, size_round, size_emery), (vshift_rect, vshift_round, vshift_emery) = fontNames[fontKey]
+        print >> generatedTable, "{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), size_rect, vshift_rect)
 
     # round
-    #print >> generatedTable, "#if defined(PBL_PLATFORM_CHALK)"
+    print >> generatedTable, "#elif defined(PBL_PLATFORM_CHALK)"
+
+    for fontKey in fontChoices:
+        filenames, (size_rect, size_round, size_emery), (vshift_rect, vshift_round, vshift_emery) = fontNames[fontKey]
+        print >> generatedTable, "{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), size_round, vshift_round)
 
     # emery
-    print >> generatedTable, "#if defined(PBL_PLATFORM_EMERY)"
+    print >> generatedTable, "#elif defined(PBL_PLATFORM_EMERY)"
 
     for fontKey in fontChoices:
         filenames, (size_rect, size_round, size_emery), (vshift_rect, vshift_round, vshift_emery) = fontNames[fontKey]

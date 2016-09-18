@@ -309,7 +309,6 @@ void compute_hands(struct tm *stime, struct HandPlacement *placement) {
       use_ms = (use_ms / 1000) * 1000;
     }
     placement->second_hand_index = ((NUM_STEPS_SECOND * use_ms) / (60 * 1000));
-    //placement->second_hand_index = (placement->second_hand_index & 3) + 9;    // hack.
   }
 
   // Record data for date windows.
@@ -2158,6 +2157,13 @@ void adjust_unobstructed_area() {
 
   GRect face_layer_shifted = { { cx - SCREEN_WIDTH / 2, cy - SCREEN_HEIGHT / 2 },
                                { SCREEN_WIDTH, SCREEN_HEIGHT } };
+
+  /*
+  // hack
+  GRect face_layer_shifted = { { bounds.size.w - SCREEN_WIDTH, 0 },
+                               { SCREEN_WIDTH, SCREEN_HEIGHT } };
+  */
+
   layer_set_frame(clock_face_layer, face_layer_shifted);
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "unobstructed area changed");
   invalidate_clock_face();
