@@ -23,18 +23,18 @@ fontChoices = [ 'latin', 'el', 'ru', 'hy', 'rtl_he', 'rtl_ar', 'zh', 'ja', 'ko',
 # Font (rect, round, emery) filenames and (rect, round, emery) pixel
 # sizes and (rect, round, emery) vshift values.
 fontNames = {
-    'latin' : (('ArchivoNarrow-Bold-16.bdf', 'ArchivoNarrow-Bold-18.bdf', 'ArchivoNarrow-Bold.ttf'), (16, 18, 22), (-1, -1, -1)),
-    'el' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), (1, 1, 1)),
-    'ru' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), (1, 1, 1)),
-    'hy' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), (1, 1, 1)),
-    'rtl_he' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), (1, 1, 1)),
-    'rtl_ar' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), (1, 1, 1)),
-    'zh' : ('wqy-microhei_filtered.ttf', (16, 18, 22), (-1, -1, -1)),
-    'ja' : ('TakaoPGothic_filtered.ttf', (16, 18, 22), (-1, -1, -1)),
-    'ko' : ('UnDotum.ttf', (16, 18, 22), (-2, -2, -2)),
-    'th' : ('Waree.ttf', (16, 18, 22), (-1, -1, -1)),
-    'ta' : ('TAMu_Kalyani.ttf', (16, 18, 22), (-2, -2, -2)),
-    'hi' : ('lohit_hi.ttf', (16, 18, 22), (0, 0, 0)),
+    'latin' : (('ArchivoNarrow-Bold-16.bdf', 'ArchivoNarrow-Bold-18.bdf', 'ArchivoNarrow-Bold.ttf'), (16, 18, 22), -1),
+    'el' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), 1),
+    'ru' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), 1),
+    'hy' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), 1),
+    'rtl_he' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), 1),
+    'rtl_ar' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), 1),
+    'zh' : ('wqy-microhei_filtered.ttf', (16, 18, 22), -1),
+    'ja' : ('TakaoPGothic_filtered.ttf', (16, 18, 22), -1),
+    'ko' : ('UnDotum.ttf', (16, 18, 22), -2),
+    'th' : ('Waree.ttf', (16, 18, 22), -1),
+    'ta' : ('TAMu_Kalyani.ttf', (16, 18, 22), -2),
+    'hi' : ('lohit_hi.ttf', (16, 18, 22), 0),
     }
 
 # This list is duplicated in html/rosewright_X_configure.js, and the
@@ -332,13 +332,12 @@ def makeLang():
     },"""
 
     for fontKey in fontChoices:
-        filenames, (size_rect, size_round, size_emery), (vshift_rect, vshift_round, vshift_emery) = fontNames[fontKey]
+        filenames, sizes, vshifts = fontNames[fontKey]
         if isinstance(filenames, type(())):
             filename_rect, filename_round, filename_emery = filenames
         else:
-            filename_rect = filenames
-            filename_round = filenames
-            filename_emery = filenames
+            filename_rect, filename_round, filename_emery = filenames, filenames, filenames
+        size_rect, size_round, size_emery = sizes
         print >> generatedJson, fontEntry % {
             'regex' : makeCharacterRegex(neededChars[fontKey]),
             'upperKey' : fontKey.upper(),
@@ -357,22 +356,28 @@ def makeLang():
     print >> generatedTable, "#if defined(PBL_PLATFORM_APLITE) || defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE)"
 
     for fontKey in fontChoices:
-        filenames, (size_rect, size_round, size_emery), (vshift_rect, vshift_round, vshift_emery) = fontNames[fontKey]
-        print >> generatedTable, "{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), size_rect, vshift_rect)
+        filenames, sizes, vshifts = fontNames[fontKey]
+        if not isinstance(vshifts, type(())):
+            vshifts = [vshifts, vshifts, vshifts]
+        print >> generatedTable, "{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), sizes[0], vshifts[0])
 
     # round
     print >> generatedTable, "#elif defined(PBL_PLATFORM_CHALK)"
 
     for fontKey in fontChoices:
-        filenames, (size_rect, size_round, size_emery), (vshift_rect, vshift_round, vshift_emery) = fontNames[fontKey]
-        print >> generatedTable, "{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), size_round, vshift_round)
+        filenames, sizes, vshifts = fontNames[fontKey]
+        if not isinstance(vshifts, type(())):
+            vshifts = [vshifts, vshifts, vshifts]
+        print >> generatedTable, "{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), sizes[1], vshifts[1])
 
     # emery
     print >> generatedTable, "#elif defined(PBL_PLATFORM_EMERY)"
 
     for fontKey in fontChoices:
-        filenames, (size_rect, size_round, size_emery), (vshift_rect, vshift_round, vshift_emery) = fontNames[fontKey]
-        print >> generatedTable, "{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), size_emery, vshift_emery)
+        filenames, sizes, vshifts = fontNames[fontKey]
+        if not isinstance(vshifts, type(())):
+            vshifts = [vshifts, vshifts, vshifts]
+        print >> generatedTable, "{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), sizes[2], vshifts[2])
 
     print >> generatedTable, "#endif"
 
