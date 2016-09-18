@@ -266,8 +266,8 @@ faces = {
         'date_window_d_round': (92, 116, 'b'),
         'date_window_a_emery' : (3, 102, 'b'),
         'date_window_b_emery' : (149, 102, 'b'),
-        'date_window_c_emery' : (49, 137, 'b'),
-        'date_window_d_emery' : (105, 137, 'b'),
+        'date_window_c_emery' : (50, 137, 'b'),
+        'date_window_d_emery' : (104, 137, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : (32, 32, 'b'),
         'top_subdial_round' : (50, 32, 'b'),
@@ -288,13 +288,13 @@ faces = {
                             (104, 57, 'b'), (126, 33, 'b'),
                             (104, 57, 'b'), (126, 33, 'b'),
                             ],
-        'bluetooth_emery' : [ (51, 64, 'b'), (24, 39, 'b'),
-                              (51, 64, 'b'), (24, 39, 'b'),
-                              (51, 64, 'b'), (24, 39, 'b'),
+        'bluetooth_emery' : [ (50, 64, 'b'), (23, 39, 'b'),
+                              (50, 64, 'b'), (23, 39, 'b'),
+                              (50, 64, 'b'), (23, 39, 'b'),
                               ],
-        'battery_emery' : [ (120, 69, 'b'), (145, 43, 'b'),
-                            (120, 69, 'b'), (145, 43, 'b'),
-                            (120, 69, 'b'), (145, 43, 'b'),
+        'battery_emery' : [ (121, 69, 'b'), (145, 43, 'b'),
+                            (121, 69, 'b'), (145, 43, 'b'),
+                            (121, 69, 'b'), (145, 43, 'b'),
                             ],
         'defaults' : [ 'date:b', 'moon_phase', 'pebble_label', 'moon_dark', 'second', 'hour_minute_overlap', 'sweep' ],
         },
@@ -449,18 +449,20 @@ faces = {
         },
     }
 
-def scaleIndicatorCoord(v, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize):
+def scaleIndicatorCoord(v, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize, scale):
     if v + oldIndicatorSize / 2 < oldScreenSize / 3:
         # Close to the left (top) wall.
-        v = v * newScreenSize / float(oldScreenSize)
+        v *= scale
     elif v + oldIndicatorSize / 2 > oldScreenSize * 2 / 3:
         # Close to the right (bottom) wall.
         v = (oldScreenSize - (v + oldIndicatorSize))
-        v = v * newScreenSize / float(oldScreenSize)
+        v *= scale
         v = (newScreenSize - (v + newIndicatorSize))
     else:
         # Somewhere centered.
-        v = (v + oldIndicatorSize / 2.0) * newScreenSize / float(oldScreenSize) - newIndicatorSize / 2.0
+        v += (oldIndicatorSize / 2.0 - oldScreenSize / 2.0)
+        v *= scale
+        v -= (newIndicatorSize / 2.0 - newScreenSize / 2.0)
 
     v = int(v + 0.5)
     return v
@@ -468,8 +470,9 @@ def scaleIndicatorCoord(v, oldIndicatorSize, oldScreenSize, newIndicatorSize, ne
 
 def scaleIndicatorRect(list_shape, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize):
     x, y, c = list_shape
-    x = scaleIndicatorCoord(x, oldIndicatorSize[0], oldScreenSize[0], newIndicatorSize[0], newScreenSize[0])
-    y = scaleIndicatorCoord(y, oldIndicatorSize[1], oldScreenSize[1], newIndicatorSize[1], newScreenSize[1])
+    scale = newScreenSize[1] / float(oldScreenSize[1])
+    x = scaleIndicatorCoord(x, oldIndicatorSize[0], oldScreenSize[0], newIndicatorSize[0], newScreenSize[0], scale)
+    y = scaleIndicatorCoord(y, oldIndicatorSize[1], oldScreenSize[1], newIndicatorSize[1], newScreenSize[1], scale)
     return (x, y, c)
 
 def scaleIndicator(key, list_shape, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize):
@@ -499,17 +502,23 @@ def scaleIndicators():
             if dw:
                 scaleIndicator('date_window_%s_emery' % (key), dw, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
 
-        # Battery gauge
-        oldIndicatorSize = (24, 10)
-        newIndicatorSize = (33, 14)
-        battery = fd.get('battery_rect')
-        scaleIndicator('battery_emery', battery, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
+        # Top subdial
+        oldIndicatorSize = (80, 41)
+        newIndicatorSize = (100, 53)
+        top_subdial = fd.get('top_subdial_rect')
+        scaleIndicator('top_subdial_emery', top_subdial, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
 
         # Bluetooth indicator
         oldIndicatorSize = (18, 18)
         newIndicatorSize = (24, 24)
         bluetooth = fd.get('bluetooth_rect')
         scaleIndicator('bluetooth_emery', bluetooth, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
+
+        # Battery gauge
+        oldIndicatorSize = (24, 10)
+        newIndicatorSize = (33, 14)
+        battery = fd.get('battery_rect')
+        scaleIndicator('battery_emery', battery, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
 
 
 enableSecondHand = False

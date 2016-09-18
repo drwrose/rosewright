@@ -352,8 +352,17 @@ def makeLang():
     print >> generatedTable, "#define NUM_DATE_LANG_FONTS %s" % (len(fontChoices))
     print >> generatedTable, "struct FontPlacement date_lang_font_placement[NUM_DATE_LANG_FONTS] = {"
 
+    # emery
+    print >> generatedTable, "#if defined(PBL_PLATFORM_EMERY)"
+
+    for fontKey in fontChoices:
+        filenames, sizes, vshifts = fontNames[fontKey]
+        if not isinstance(vshifts, type(())):
+            vshifts = [vshifts, vshifts, vshifts]
+        print >> generatedTable, "{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), sizes[2], vshifts[2])
+
     # rect
-    print >> generatedTable, "#if defined(PBL_PLATFORM_APLITE) || defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE)"
+    print >> generatedTable, "#elif defined(PBL_PLATFORM_APLITE) || defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE)"
 
     for fontKey in fontChoices:
         filenames, sizes, vshifts = fontNames[fontKey]
@@ -369,15 +378,6 @@ def makeLang():
         if not isinstance(vshifts, type(())):
             vshifts = [vshifts, vshifts, vshifts]
         print >> generatedTable, "{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), sizes[1], vshifts[1])
-
-    # emery
-    print >> generatedTable, "#elif defined(PBL_PLATFORM_EMERY)"
-
-    for fontKey in fontChoices:
-        filenames, sizes, vshifts = fontNames[fontKey]
-        if not isinstance(vshifts, type(())):
-            vshifts = [vshifts, vshifts, vshifts]
-        print >> generatedTable, "{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), sizes[2], vshifts[2])
 
     print >> generatedTable, "#endif"
 
