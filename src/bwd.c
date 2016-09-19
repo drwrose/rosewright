@@ -47,6 +47,10 @@ BitmapWithData bwd_copy_bitmap(GBitmap *source) {
 
   GBitmapFormat format = gbitmap_get_format(source);
   dest.bitmap = gbitmap_create_blank(size, format);
+  if (dest.bitmap == NULL) {
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "memory allocation failure on %dx%d %d image", size.w, size.h, format);
+    return bwd_create(NULL, NULL);
+  }
 
   bwd_copy_into_from_bitmap(&dest, source);
   return dest;
@@ -129,6 +133,9 @@ BitmapWithData png_bwd_create(int resource_id) {
   app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "png_bwd_create(%d)", resource_id);
   ++bwd_resource_reads;
   GBitmap *image = gbitmap_create_with_resource(resource_id);
+  if (image == NULL) {
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "failed to read image %d", resource_id);
+  }
   return bwd_create(image, NULL);
 }
 
@@ -707,6 +714,7 @@ rle_bwd_create_rb(RBuffer *rb) {
 
   GBitmap *image = gbitmap_create_blank(GSize(width, height), GBitmapFormat1Bit);
   if (image == NULL) {
+    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "memory allocation failure on %dx%d 1-bit image", width, height);
     return bwd_create(NULL, NULL);
   }
   int stride = gbitmap_get_bytes_per_row(image);
