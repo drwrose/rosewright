@@ -355,20 +355,26 @@ faces = {
                       'round' : { 'chrono_minute' : (135, 90),
                                   'chrono_tenth' : (90, 135),
                                   'second' : (45, 90), },
+                      'emery' : { 'chrono_minute' : (158, 114),
+                                  'chrono_tenth' : (100, 171),
+                                  'second' : (42, 114), },
                       },
         'date_window_a_rect' : [ (35, 37, 'b'), (5, 128, 'b') ],
         'date_window_b_rect' : [ (75, 37, 'b'), (102, 128, 'b') ],
         'date_window_a_round' : [ (45, 36, 'b'), (19, 120, 'b') ],
         'date_window_b_round' : [ (94, 36, 'b'), (119, 120, 'b') ],
-        'date_window_a_emery' : [(50, 50, 'b'), (7, 174, 'b')],
-        'date_window_b_emery' : [(104, 50, 'b'), (143, 174, 'b')],
+        'date_window_a_emery' : [ (50, 50, 'b'), (7, 174, 'b') ],
+        'date_window_b_emery' : [ (104, 50, 'b'), (143, 174, 'b') ],
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : (32, 16, 'b'),
         'top_subdial_round' : (50, 20, 'b'),
+        'top_subdial_emery' : (50, 22, 'b'),
         'bluetooth_rect' : (16, 18, 'b'),
-        'battery_rect' : (103, 25, 'b'),
+        'battery_rect' : (103, 21, 'b'),
         'bluetooth_round' : (33, 41, 'b'),
         'battery_round' : (121, 49, 'b'),
+        'bluetooth_emery' : (22, 24, 'b'),
+        'battery_emery' : (144, 29, 'b'),
         'defaults' : [ 'second' ],
         },
     'c2' : {
@@ -384,18 +390,26 @@ faces = {
                       'round' : { 'chrono_minute' : (135, 90),
                                   'chrono_tenth' : (90, 135),
                                   'second' : (45, 90), },
+                      'emery' : { 'chrono_minute' : (158, 114),
+                                  'chrono_tenth' : (100, 171),
+                                  'second' : (42, 114), },
                       },
         'date_window_a_rect' : [ (35, 37, 'b'), (5, 128, 'b') ],
         'date_window_b_rect' : [ (75, 37, 'b'), (102, 128, 'b') ],
         'date_window_a_round' : [ (45, 36, 'b'), (19, 120, 'b') ],
         'date_window_b_round' : [ (94, 36, 'b'), (119, 120, 'b') ],
+        'date_window_a_emery' : [ (50, 50, 'b'), (7, 174, 'b') ],
+        'date_window_b_emery' : [ (104, 50, 'b'), (143, 174, 'b') ],
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : (32, 16, 'b'),
         'top_subdial_round' : (50, 20, 'b'),
+        'top_subdial_emery' : (50, 22, 'b'),
         'bluetooth_rect' : (16, 18, 'b'),
         'battery_rect' : (103, 21, 'b'),
         'bluetooth_round' : (33, 41, 'b'),
         'battery_round' : (121, 49, 'b'),
+        'bluetooth_emery' : (22, 24, 'b'),
+        'battery_emery' : (144, 29, 'b'),
         'defaults' : [ 'second', 'limit_cache_aplite', 'prebake_label' ],
         },
     'd' : {
@@ -413,9 +427,14 @@ faces = {
         'date_window_b_round': [ (100, 92, 'w'), (100, 92, 'b'), (100, 92, 'w'),],
         'date_window_c_round' : [ (46, 115, 'w'), (46, 115, 'b'), (46, 115, 'w'),],
         'date_window_d_round' : [ (92, 115, 'w'), (92, 115, 'b'), (92, 115, 'w'),],
+        'date_window_a_emery' : [ (46, 127, 'w'), (46, 127, 'b'), (46, 127, 'w') ],
+        'date_window_b_emery' : [ (108, 127, 'w'), (108, 127, 'b'), (108, 127, 'w') ],
+        'date_window_c_emery' : [ (46, 159, 'w'), (46, 159, 'b'), (46, 159, 'w') ],
+        'date_window_d_emery' : [ (108, 159, 'w'), (108, 159, 'b'), (108, 159, 'w') ],
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : [ (32, 34, 'w'), (32, 34, 'b'), (32, 34, 'w') ],
         'top_subdial_round' : [ (50, 34, 'w'), (50, 34, 'b'), (50, 34, 'w') ],
+        'top_subdial_emery' : [ (50, 46, 'w'), (50, 46, 'b'), (50, 46, 'w') ],
         'bluetooth_rect' : [ (43, 34, 'b'), (36, 29, 'b'),
                              (43, 34, 'b'), (36, 29, 'b'),
                              (43, 34, 'b'), (36, 29, 'b'),
@@ -431,6 +450,14 @@ faces = {
         'battery_round' : [ (97, 52, 'b'), (115, 47, 'b'),
                             (97, 52, 'b'), (115, 47, 'b'),
                             (97, 52, 'b'), (115, 47, 'b'),
+                            ],
+        'bluetooth_emery' : [ (61, 46, 'b'), (49, 39, 'b'),
+                              (61, 46, 'b'), (49, 39, 'b'),
+                              (61, 46, 'b'), (49, 39, 'b'),
+                              ],
+        'battery_emery' : [ (107, 53, 'b'), (125, 45, 'b'),
+                            (107, 53, 'b'), (125, 45, 'b'),
+                            (107, 53, 'b'), (125, 45, 'b'),
                             ],
         'defaults' : [ 'day:c', 'date:d', 'bluetooth', 'battery', 'sweep' ],
         },
@@ -451,13 +478,20 @@ faces = {
         'date_window_b_round' : (11, 78, 'w'),
         'date_window_c_round' : (128, 78, 'w'),
         'date_window_d_round' : (69, 144, 'w'),
+        'date_window_a_emery' : (77, 18, 'w'),
+        'date_window_b_emery' : (5, 100, 'w'),
+        'date_window_c_emery' : (149, 100, 'w'),
+        'date_window_d_emery' : (77, 187, 'w'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : (32, 32, 'b'),
         'top_subdial_round' : (50, 32, 'b'),
+        'top_subdial_emery' : (50, 43, 'b'),
         'bluetooth_rect' : [ (11, 12, 'b'), (11, 12, 'w'), (11, 12, 'b'), ],
         'battery_rect' : [ (109, 16, 'b'), (109, 16, 'w'), (109, 16, 'b'), ],
         'bluetooth_round' : [ (26, 26, 'b'), (26, 26, 'w'), (26, 26, 'b'), ],
         'battery_round' : [ (133, 30, 'b'), (133, 30, 'w'), (133, 30, 'b'), ],
+        'bluetooth_emery' : [ (15, 16, 'b'), (15, 16, 'w'), (15, 16, 'b'), ],
+        'battery_emery' : [ (152, 22, 'b'), (152, 22, 'w'), (152, 22, 'b'), ],
         'defaults' : [ 'date:c', 'moon_dark', 'limit_cache_aplite', 'limit_cache_basalt', 'limit_cache_chalk' ],
         },
     }
@@ -718,6 +752,10 @@ def makeFaces(generatedTable, generatedDefs):
     if targetChronoTenths:
         resourceStr += make_rle_trans('clock_faces/' + targetChronoTenths, name = 'CHRONO_DIAL_TENTHS', useRle = supportRle, platforms = targetPlatforms, compress = True)
         resourceStr += make_rle_trans('clock_faces/' + targetChronoHours, name = 'CHRONO_DIAL_HOURS', useRle = supportRle, platforms = targetPlatforms, compress = True)
+
+        chronoDialFilename = getPlatformFilename('resources/clock_faces/' + targetChronoTenths, platform)
+        im = PIL.Image.open(chronoDialFilename)
+        chronoDialSizes[platform] = im.size
 
     for platform in targetPlatforms:
         labelFilename = getPlatformFilename('resources/clock_faces/pebble_label.png', platform)
@@ -1706,6 +1744,8 @@ def configWatch():
             'batteryGaugeBarH' : batteryGaugeSizes[shape][1][3],
             'batteryGaugeFont' : batteryGaugeSizes[shape][2][0],
             'batteryGaugeVshift' : batteryGaugeSizes[shape][2][1],
+            'chronoDialSizeX' : chronoDialSizes.get(platform, (0, 0))[0],
+            'chronoDialSizeY' : chronoDialSizes.get(platform, (0, 0))[1],
             'bluetoothSizeX' : bluetoothSizes[platform][0],
             'bluetoothSizeY' : bluetoothSizes[platform][1],
             'numStepsHour' : getNumSteps('hour', platform),
@@ -1873,6 +1913,7 @@ centers = fd.get('centers', [])
 subdialSizes = {}  # filled in by makeMoonWheel()
 dateWindowSizes = {} # filled in by makeFaces()
 pebbleLabelSizes = {} # filled in by makeFaces()
+chronoDialSizes = {} # filled in by makeFaces()
 bluetoothSizes = {} # filled in by makeFaces()
 
 
@@ -1900,54 +1941,3 @@ if 'moon_dark' in defaults:
 
 configWatch()
 #scaleIndicators()
-
-"""
-a
-  'date_window_a_emery' : (3, 102, 'b'),
-  'date_window_b_emery' : (149, 102, 'b'),
-  'date_window_c_emery' : (50, 137, 'b'),
-  'date_window_d_emery' : (104, 137, 'b'),
-  'top_subdial_emery' : (50, 43, 'b'),
-  'bluetooth_emery' : [(50, 64, 'b'), (23, 39, 'b'), (50, 64, 'b'), (23, 39, 'b'), (50, 64, 'b'), (23, 39, 'b')],
-  'battery_emery' : [(121, 69, 'b'), (145, 43, 'b'), (121, 69, 'b'), (145, 43, 'b'), (121, 69, 'b'), (145, 43, 'b')],
-b
-  'date_window_a_emery' : (3, 102, 'b'),
-  'date_window_b_emery' : (149, 102, 'b'),
-  'date_window_c_emery' : [(50, 137, 'b'), (50, 137, 'b'), (50, 148, 'b'), (50, 148, 'b')],
-  'date_window_d_emery' : [(104, 137, 'b'), (104, 137, 'b'), (104, 148, 'b'), (104, 148, 'b')],
-  'top_subdial_emery' : [(50, 45, 'b'), (50, 34, 'b')],
-  'bluetooth_emery' : (19, 24, 'b'),
-  'battery_emery' : (153, 30, 'b'),
-c
-  'date_window_a_emery' : [(50, 50, 'b'), (7, 174, 'b')],
-  'date_window_b_emery' : [(104, 50, 'b'), (143, 174, 'b')],
-  'top_subdial_emery' : (50, 22, 'b'),
-  'bluetooth_emery' : (22, 24, 'b'),
-  'battery_emery' : (144, 34, 'b'),
-c2
-  'date_window_a_emery' : [(50, 50, 'b'), (7, 174, 'b')],
-  'date_window_b_emery' : [(104, 50, 'b'), (143, 174, 'b')],
-  'top_subdial_emery' : (50, 22, 'b'),
-  'bluetooth_emery' : (22, 24, 'b'),
-  'battery_emery' : (144, 29, 'b'),
-d
-  'date_window_a_emery' : [(46, 127, 'w'), (46, 127, 'b'), (46, 127, 'w')],
-  'date_window_b_emery' : [(108, 127, 'w'), (108, 127, 'b'), (108, 127, 'w')],
-  'date_window_c_emery' : [(46, 159, 'w'), (46, 159, 'b'), (46, 159, 'w')],
-  'date_window_d_emery' : [(108, 159, 'w'), (108, 159, 'b'), (108, 159, 'w')],
-  'top_subdial_emery' : [(50, 46, 'w'), (50, 46, 'b'), (50, 46, 'w')],
-  'bluetooth_emery' : [(61, 46, 'b'), (49, 39, 'b'), (61, 46, 'b'), (49, 39, 'b'), (61, 46, 'b'), (49, 39, 'b')],
-  'battery_emery' : [(107, 53, 'b'), (125, 45, 'b'), (107, 53, 'b'), (125, 45, 'b'), (107, 53, 'b'), (125, 45, 'b')],
-e
-  'date_window_a_emery' : (77, 18, 'w'),
-  'date_window_b_emery' : (5, 100, 'w'),
-  'date_window_c_emery' : (149, 100, 'w'),
-  'date_window_d_emery' : (77, 187, 'w'),
-  'top_subdial_emery' : (50, 43, 'b'),
-  'bluetooth_emery' : [(15, 16, 'b'), (15, 16, 'w'), (15, 16, 'b')],
-  'battery_emery' : [(152, 22, 'b'), (152, 22, 'w'), (152, 22, 'b')],
-c2_chrono_hands
-  'chrono_minute' : (161, 114, 'b'),
-  'chrono_tenth' : (100, 171, 'b'),
-  'second' : (39, 114, 'b'),
-"""

@@ -14,6 +14,8 @@
 #define BATTERY_GAUGE_SYSTEM_FONT FONT_KEY_%(batteryGaugeFont)s
 #define BATTERY_GAUGE_FONT_VSHIFT %(batteryGaugeVshift)s
 
+#define CHRONO_DIAL_SIZE_X %(chronoDialSizeX)s
+#define CHRONO_DIAL_SIZE_Y %(chronoDialSizeY)s
 #define BLUETOOTH_SIZE_X %(bluetoothSizeX)s
 #define BLUETOOTH_SIZE_Y %(bluetoothSizeY)s
 

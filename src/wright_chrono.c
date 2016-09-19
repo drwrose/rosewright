@@ -5,7 +5,8 @@
 // features, including start/stop and lap buttons on the chrono dials.
 // Specifically, this code is used only for Rosewright Chronograph.
 
-// The screen width of the chrono_digital_layer.  Always 144, even on Chalk.
+// The screen width of the chrono_digital_layer.  Always 144, even on
+// Chalk and Emery.
 #define DIGITAL_LAYER_WIDTH 144
 
 // The height of each row of the text.
@@ -19,7 +20,6 @@
 struct HandCache chrono_minute_cache;
 struct HandCache chrono_tenth_cache;
 
-const GSize chrono_dial_size = { 56, 56 };
 BitmapWithData chrono_dial_white;
 
 // True if we're currently showing tenths, false if we're currently
@@ -134,10 +134,10 @@ void draw_chrono_dial(GContext *ctx) {
       remap_colors_clock(&chrono_dial_white);
     }
 
-    int x = chrono_tenth_hand_def.place_x - chrono_dial_size.w / 2;
-    int y = chrono_tenth_hand_def.place_y - chrono_dial_size.h / 2;
+    int x = chrono_tenth_hand_def.place_x - CHRONO_DIAL_SIZE_X / 2;
+    int y = chrono_tenth_hand_def.place_y - CHRONO_DIAL_SIZE_Y / 2;
 
-    GRect destination = GRect(x, y, chrono_dial_size.w, chrono_dial_size.h);
+    GRect destination = GRect(x, y, CHRONO_DIAL_SIZE_X, CHRONO_DIAL_SIZE_Y);
 
 #ifdef PBL_BW
     graphics_context_set_compositing_mode(ctx, draw_mode_table[config.draw_mode ^ BW_INVERT].paint_fg);

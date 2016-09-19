@@ -84,7 +84,7 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
   if (charge_state.is_charging) {
     // Erase the charging icon shape.
     if (charging_mask.bitmap == NULL) {
-      charging_mask = png_bwd_create(RESOURCE_ID_CHARGING_MASK);
+      charging_mask = rle_bwd_create(RESOURCE_ID_CHARGING_MASK);
     }
     graphics_context_set_compositing_mode(ctx, mask_mode);
     graphics_draw_bitmap_in_rect(ctx, charging_mask.bitmap, box);
@@ -95,7 +95,7 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
 #ifdef PBL_BW
     // Erase the battery gauge shape.
     if (battery_gauge_mask.bitmap == NULL) {
-      battery_gauge_mask = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_MASK);
+      battery_gauge_mask = rle_bwd_create(RESOURCE_ID_BATTERY_GAUGE_MASK);
     }
     graphics_context_set_compositing_mode(ctx, mask_mode);
     graphics_draw_bitmap_in_rect(ctx, battery_gauge_mask.bitmap, box);
@@ -109,7 +109,7 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
   if (charge_state.is_charging) {
     // Actively charging.  Draw the charging icon.
     if (charging.bitmap == NULL) {
-      charging = png_bwd_create(RESOURCE_ID_CHARGING);
+      charging = rle_bwd_create(RESOURCE_ID_CHARGING);
       remap_colors_date(&charging);
     }
     graphics_context_set_compositing_mode(ctx, fg_mode);
@@ -119,7 +119,7 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
   if (fully_charged) {
     // Plugged in but not charging.  Draw the charged icon.
     if (battery_gauge_charged.bitmap == NULL) {
-      battery_gauge_charged = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_CHARGED);
+      battery_gauge_charged = rle_bwd_create(RESOURCE_ID_BATTERY_GAUGE_CHARGED);
       remap_colors_date(&battery_gauge_charged);
     }
     graphics_context_set_compositing_mode(ctx, fg_mode);
@@ -128,7 +128,7 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
   } else if (config.battery_gauge != IM_digital) {
     // Not plugged in.  Draw the analog battery icon.
     if (battery_gauge_empty.bitmap == NULL) {
-      battery_gauge_empty = png_bwd_create(RESOURCE_ID_BATTERY_GAUGE_EMPTY);
+      battery_gauge_empty = rle_bwd_create(RESOURCE_ID_BATTERY_GAUGE_EMPTY);
       remap_colors_date(&battery_gauge_empty);
     }
     graphics_context_set_compositing_mode(ctx, fg_mode);
