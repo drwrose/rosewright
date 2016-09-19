@@ -318,8 +318,17 @@ faces = {
         'date_window_b_round': (134, 79, 'b'),
         'date_window_c_round': (46, 116, 'b'),
         'date_window_d_round': (92, 116, 'b'),
+        'date_window_a_emery' : (3, 102, 'b'),
+        'date_window_b_emery' : (149, 102, 'b'),
+        'date_window_c_emery' : [ (50, 137, 'b'), (50, 137, 'b'),
+                                  (50, 148, 'b'), (50, 148, 'b'),
+                                  ],
+        'date_window_d_emery' : [ (104, 137, 'b'), (104, 137, 'b'),
+                                  (104, 148, 'b'), (104, 148, 'b'),
+                                  ],
         'top_subdial_rect' : [ (32, 33, 'b'), (32, 25, 'b') ],
         'top_subdial_round' : (50, 34, 'b'),
+        'top_subdial_emery' : [(50, 45, 'b'), (50, 34, 'b')],
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth_rect' : (14, 18, 'b'),
         'battery_rect' : (110, 22, 'b'),
@@ -329,6 +338,8 @@ faces = {
         'battery_round' : [ (104, 57, 'b'), (126, 33, 'b'),
                             (104, 57, 'b'), (126, 33, 'b'),
                             ],
+        'bluetooth_emery' : (19, 24, 'b'),
+        'battery_emery' : (153, 30, 'b'),
         'defaults' : [ 'day:c', 'date:d', 'second', 'hour_minute_overlap', 'pebble_label', 'sweep' ],
         },
     'c' : {
@@ -349,6 +360,8 @@ faces = {
         'date_window_b_rect' : [ (75, 37, 'b'), (102, 128, 'b') ],
         'date_window_a_round' : [ (45, 36, 'b'), (19, 120, 'b') ],
         'date_window_b_round' : [ (94, 36, 'b'), (119, 120, 'b') ],
+        'date_window_a_emery' : [(50, 50, 'b'), (7, 174, 'b')],
+        'date_window_b_emery' : [(104, 50, 'b'), (143, 174, 'b')],
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : (32, 16, 'b'),
         'top_subdial_round' : (50, 20, 'b'),
@@ -449,6 +462,8 @@ faces = {
         },
     }
 
+
+"""
 def scaleIndicatorCoord(v, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize, scale):
     if v + oldIndicatorSize / 2 < oldScreenSize / 3:
         # Close to the left (top) wall.
@@ -491,7 +506,7 @@ def scaleIndicators():
     newScreenSize = (200, 228)
 
     for faceStyle in ['a', 'b', 'c', 'c2', 'd', 'e']:
-        print "%s_hands" % (faceStyle)
+        print faceStyle
         fd = faces[faceStyle]
 
         # Date windows
@@ -520,6 +535,14 @@ def scaleIndicators():
         battery = fd.get('battery_rect')
         scaleIndicator('battery_emery', battery, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
 
+    print "c2_chrono_hands"
+    oldIndicatorSize = (1, 1)
+    newIndicatorSize = (1, 1)
+    for hand in ['chrono_minute', 'chrono_tenth', 'second']:
+        x, y = faces['c2']['centers']['rect'][hand]
+        tuple = (x, y, 'b')
+        scaleIndicator(hand, tuple, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
+"""
 
 enableSecondHand = False
 enableChronoMinuteHand = False
@@ -1877,3 +1900,54 @@ if 'moon_dark' in defaults:
 
 configWatch()
 #scaleIndicators()
+
+"""
+a
+  'date_window_a_emery' : (3, 102, 'b'),
+  'date_window_b_emery' : (149, 102, 'b'),
+  'date_window_c_emery' : (50, 137, 'b'),
+  'date_window_d_emery' : (104, 137, 'b'),
+  'top_subdial_emery' : (50, 43, 'b'),
+  'bluetooth_emery' : [(50, 64, 'b'), (23, 39, 'b'), (50, 64, 'b'), (23, 39, 'b'), (50, 64, 'b'), (23, 39, 'b')],
+  'battery_emery' : [(121, 69, 'b'), (145, 43, 'b'), (121, 69, 'b'), (145, 43, 'b'), (121, 69, 'b'), (145, 43, 'b')],
+b
+  'date_window_a_emery' : (3, 102, 'b'),
+  'date_window_b_emery' : (149, 102, 'b'),
+  'date_window_c_emery' : [(50, 137, 'b'), (50, 137, 'b'), (50, 148, 'b'), (50, 148, 'b')],
+  'date_window_d_emery' : [(104, 137, 'b'), (104, 137, 'b'), (104, 148, 'b'), (104, 148, 'b')],
+  'top_subdial_emery' : [(50, 45, 'b'), (50, 34, 'b')],
+  'bluetooth_emery' : (19, 24, 'b'),
+  'battery_emery' : (153, 30, 'b'),
+c
+  'date_window_a_emery' : [(50, 50, 'b'), (7, 174, 'b')],
+  'date_window_b_emery' : [(104, 50, 'b'), (143, 174, 'b')],
+  'top_subdial_emery' : (50, 22, 'b'),
+  'bluetooth_emery' : (22, 24, 'b'),
+  'battery_emery' : (144, 34, 'b'),
+c2
+  'date_window_a_emery' : [(50, 50, 'b'), (7, 174, 'b')],
+  'date_window_b_emery' : [(104, 50, 'b'), (143, 174, 'b')],
+  'top_subdial_emery' : (50, 22, 'b'),
+  'bluetooth_emery' : (22, 24, 'b'),
+  'battery_emery' : (144, 29, 'b'),
+d
+  'date_window_a_emery' : [(46, 127, 'w'), (46, 127, 'b'), (46, 127, 'w')],
+  'date_window_b_emery' : [(108, 127, 'w'), (108, 127, 'b'), (108, 127, 'w')],
+  'date_window_c_emery' : [(46, 159, 'w'), (46, 159, 'b'), (46, 159, 'w')],
+  'date_window_d_emery' : [(108, 159, 'w'), (108, 159, 'b'), (108, 159, 'w')],
+  'top_subdial_emery' : [(50, 46, 'w'), (50, 46, 'b'), (50, 46, 'w')],
+  'bluetooth_emery' : [(61, 46, 'b'), (49, 39, 'b'), (61, 46, 'b'), (49, 39, 'b'), (61, 46, 'b'), (49, 39, 'b')],
+  'battery_emery' : [(107, 53, 'b'), (125, 45, 'b'), (107, 53, 'b'), (125, 45, 'b'), (107, 53, 'b'), (125, 45, 'b')],
+e
+  'date_window_a_emery' : (77, 18, 'w'),
+  'date_window_b_emery' : (5, 100, 'w'),
+  'date_window_c_emery' : (149, 100, 'w'),
+  'date_window_d_emery' : (77, 187, 'w'),
+  'top_subdial_emery' : (50, 43, 'b'),
+  'bluetooth_emery' : [(15, 16, 'b'), (15, 16, 'w'), (15, 16, 'b')],
+  'battery_emery' : [(152, 22, 'b'), (152, 22, 'w'), (152, 22, 'b')],
+c2_chrono_hands
+  'chrono_minute' : (161, 114, 'b'),
+  'chrono_tenth' : (100, 171, 'b'),
+  'second' : (39, 114, 'b'),
+"""
