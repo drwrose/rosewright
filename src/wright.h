@@ -3,7 +3,7 @@
 
 #include <pebble.h>
 
-#define PBL_PLATFORM_EMERY  // hack
+//#define PBL_PLATFORM_EMERY  // hack
 
 #include "pebble_compat.h"
 #include "hand_table.h"
