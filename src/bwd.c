@@ -230,7 +230,7 @@ static void rbuffer_split(RBuffer *rb_front, RBuffer *rb_back, size_t point) {
 
     if (rb_front->_bytes_read > point) {
       size_t bytes_over = rb_front->_bytes_read - point;
-      if (rb_front->_filled_size > bytes_over) {
+      if (rb_front->_filled_size >= bytes_over) {
         rb_front->_filled_size -= bytes_over;
       } else {
         // Whoops, we've already overrun the new point.
@@ -646,7 +646,7 @@ rle_bwd_create_rb(RBuffer *rb) {
     }
   }
 
-  //app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "wrote %d bytes", dp - bitmap_data);
+  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "wrote %d bytes", dp - bitmap_data);
   assert(dp == dp_stop && b == 0);
 
   if (do_unscreen) {

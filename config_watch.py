@@ -662,6 +662,19 @@ def getPlatformColor(platform):
         raise StandardError
     return color
 
+def getVariantsForPlatforms(platforms):
+    variants = set()
+    if 'aplite' in platforms or 'diorite' in platforms:
+        variants.add('~bw')
+    if 'basalt' in platforms:
+        variants.add('~color')
+        variants.add('~color~rect')
+    if 'chalk' in platforms:
+        variants.add('~color')
+        variants.add('~color~round')
+    if 'emery' in platforms:
+        variants.add('~emery')
+    return list(variants)
 
 def getPlatformFilenameAndVariant(filename, platform):
     """ Returns the (filename, variant) pair, after finding the
@@ -1506,20 +1519,6 @@ def makeIndicatorTable(generatedTable, generatedDefs, name, indicator, numFaces,
         print >> generatedTable, "  },";
     else:
         print >> generatedTable, "};\n";
-
-def getVariantsForPlatforms(platforms):
-    variants = set()
-    if 'aplite' in platforms or 'diorite' in platforms:
-        variants.add('~bw')
-    if 'basalt' in platforms:
-        variants.add('~color')
-        variants.add('~color~rect')
-    if 'chalk' in platforms:
-        variants.add('~color')
-        variants.add('~color~round')
-    if 'emery' in platforms:
-        variants.add('~emery')
-    return list(variants)
 
 def makeMoonWheel(platform):
     """ Returns the resource strings needed to include the moon wheel

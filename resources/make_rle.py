@@ -11,12 +11,15 @@ make_rle.py
 Converts an image from a standard format (for instance, a png) into an
 .rle file for loading pre-compressed into a Pebble watch app.
 
-make_rle.py [opts]
+make_rle.py [opts] file1 [file2...]
 
 Options:
 
    -t
       Generate png-trans type entries (white/black pairs) for transparent PNG's.
+
+   -u
+      Unpack an rle file to a png.
 
    -p [aplite|basalt|auto]
       Specify the explicit platform type to generate.  The default is
@@ -518,19 +521,39 @@ def make_rle_image(rleFilename, image, platform = 'auto'):
     else:
         return make_rle_image_basalt(rleFilename, image)
 
-def get_variants_for_platforms(platforms):
+def getVariantsForPlatforms(platforms):
     variants = set()
-    if "aplite" in platforms or "diorite" in platforms:
-        variants.add("~bw")
-    if "basalt" in platforms:
-        variants.add("~color")
-        variants.add("~color~rect")
-    if "chalk" in platforms:
-        variants.add("~color")
-        variants.add("~color~round")
+    if 'aplite' in platforms or 'diorite' in platforms:
+        variants.add('~bw')
+    if 'basalt' in platforms:
+        variants.add('~color')
+        variants.add('~color~rect')
+    if 'chalk' in platforms:
+        variants.add('~color')
+        variants.add('~color~round')
     if 'emery' in platforms:
         variants.add('~emery')
     return list(variants)
+
+def getPlatformFilenameAndVariant(filename, platform, prefix = ''):
+    """ Returns the (filename, variant) pair, after finding the
+    appropriate filename modified with the ~variant for the
+    platform. """
+
+    basename, ext = os.path.splitext(filename)
+
+    for variant in getVariantsForPlatforms([platform]) + ['']:
+        if os.path.exists(prefix + basename + variant + ext):
+            return basename + variant + ext, variant
+
+    raise StandardError, 'No filename for %s, platform %s' % (filename, platform)
+
+
+def getPlatformFilename(filename, platform, prefix = ''):
+    """ Returns the filename modified with the ~variant for the
+    platform. """
+
+    return getPlatformFilenameAndVariant(filename, platform, prefix = prefix)[0]
 
 rawResourceEntry = """
     {
@@ -567,17 +590,16 @@ def make_rle(filename, name = None, prefix = 'resources/', useRle = True, platfo
     resourceStr = ''
 
     for platform in platforms:
-        basename, ext = os.path.splitext(filename)
-        for variant in get_variants_for_platforms([platform]) + ['']:
-            # Handle the specialized variant files.
-            if os.path.exists(prefix + basename + variant + ext):
-                resourceStr += make_rle_file(basename, variant, ext, name = name, prefix = prefix, useRle = useRle, platform = platform, compress = compress)
-                break
+        filename, variant = getPlatformFilenameAndVariant(filename, platform, prefix = prefix)
+        resourceStr += make_rle_file(filename, variant, name = name, prefix = prefix, useRle = useRle, platform = platform, compress = compress)
 
     return resourceStr
 
-def make_rle_file(basename, variant, ext, name = None, prefix = 'resources/', useRle = True, platform = None, compress = True):
-    filename = basename + variant + ext
+def make_rle_file(filename, variant, name = None, prefix = 'resources/', useRle = True, platform = None, compress = True):
+    basename, ext = os.path.splitext(filename)
+    if variant:
+        assert basename.endswith(variant)
+        basename = basename[:-len(variant)]
     targetFilename = basename + variant
     needsCopy = False
 
@@ -630,24 +652,23 @@ def make_rle_trans(filename, name = None, prefix = 'resources/', useRle = True, 
     resourceStr = ''
 
     for platform in platforms:
-        basename, ext = os.path.splitext(filename)
-        for variant in get_variants_for_platforms([platform]) + ['']:
-            # Handle the specialized variant files.
-            if os.path.exists(prefix + basename + variant + ext):
-                resourceStr += make_rle_trans_file(basename, variant, ext, name = name, prefix = prefix, useRle = useRle, platform = platform, compress = compress)
-                break
+        filename, variant = getPlatformFilenameAndVariant(filename, platform, prefix = prefix)
+        resourceStr += make_rle_trans_file(filename, variant, name = name, prefix = prefix, useRle = useRle, platform = platform, compress = compress)
 
     return resourceStr
 
 
-def make_rle_trans_file(basename, variant, ext, name = None, prefix = 'resources/', useRle = True, platform = None, compress = True):
-    filename = basename + variant + ext
+def make_rle_trans_file(filename, variant, name = None, prefix = 'resources/', useRle = True, platform = None, compress = True):
     if platform not in ['aplite', 'diorite']:
         # In the color case, this is almost the same as make_rle_file(),
         # but we append '_WHITE' to the name (and we don't create a
         # _BLACK version).
-        return make_rle_file(basename, variant, ext, name = name + '_WHITE', prefix = prefix, useRle = useRle, platform = platform, compress = compress)
+        return make_rle_file(filename, variant, name = name + '_WHITE', prefix = prefix, useRle = useRle, platform = platform, compress = compress)
 
+    basename, ext = os.path.splitext(filename)
+    if variant:
+        assert basename.endswith(variant)
+        basename = basename[:-len(variant)]
     spaceOptimization = 'memory'
     if platform != 'aplite' and compress:
         spaceOptimization = 'storage'
