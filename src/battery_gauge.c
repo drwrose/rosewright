@@ -3,6 +3,7 @@
 #include "battery_gauge.h"
 #include "config_options.h"
 #include "bwd.h"
+#include "qapp_log.h"
 
 BitmapWithData battery_gauge_empty;
 BitmapWithData battery_gauge_charged;
@@ -157,13 +158,13 @@ void draw_battery_gauge(GContext *ctx, int x, int y, bool invert) {
 void handle_battery(BatteryChargeState new_charge_state) {
   if (got_charge_state && memcmp(&charge_state, &new_charge_state, sizeof(charge_state)) == 0) {
     // No change; ignore the update.
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "battery update received, no change to battery");
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "battery update received, no change to battery");
     return;
   }
 
   charge_state = new_charge_state;
   got_charge_state = true;
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "battery changed to %d%%, %d %d", charge_state.charge_percent, charge_state.is_charging, charge_state.is_plugged);
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "battery changed to %d%%, %d %d", charge_state.charge_percent, charge_state.is_charging, charge_state.is_plugged);
 
   if (config.battery_gauge != IM_off) {
     invalidate_clock_face();

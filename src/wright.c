@@ -1,6 +1,7 @@
 #include "wright.h"
 #include "wright_chrono.h"
 #include "hand_table.h"
+#include "qapp_log.h"
 #include <ctype.h>
 
 #include "../resources/generated_table.c"
@@ -147,7 +148,7 @@ void health_event_handler(HealthEventType event, void *context);
 // panic alert.
 GFont safe_load_custom_font(int resource_id) {
   ResHandle resource = resource_get_handle(resource_id);
-  app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "loading font %d, heap_bytes_free = %d", resource_id, heap_bytes_free());
+  qapp_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "loading font %d, heap_bytes_free = %d", resource_id, heap_bytes_free());
 
   if (fallback_font == NULL) {
     // Record the fallback font pointer so we can identify if this one
@@ -157,11 +158,11 @@ GFont safe_load_custom_font(int resource_id) {
 
   GFont font = fonts_load_custom_font(resource);
   if (font == fallback_font) {
-    app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "font %d failed to load", resource_id);
+    qapp_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "font %d failed to load", resource_id);
     //trigger_memory_panic(__LINE__);
     return font;
   }
-  app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "loaded font %d as %p, heap_bytes_free = %d", resource_id, font, heap_bytes_free());
+  qapp_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "loaded font %d as %p, heap_bytes_free = %d", resource_id, font, heap_bytes_free());
   return font;
 }
 
@@ -173,7 +174,7 @@ void safe_unload_custom_font(GFont *font) {
   // actual custom font, and since fonts_unload_custom_font() will
   // *crash* if we try to pass in the fallback font, we have to detect
   // that case and avoid it.)
-  app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "unloaded font %p", *font);
+  qapp_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "unloaded font %p", *font);
   if ((*font) != fallback_font) {
     fonts_unload_custom_font(*font);
   }
@@ -424,7 +425,7 @@ void flip_bitmap_x(GBitmap *image, short *cx) {
   int stride = gbitmap_get_bytes_per_row(image);
   assert(stride >= width_bytes);
 
-  app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "flip_bitmap_x, width_bytes = %d, stride=%d", width_bytes, stride);
+  qapp_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "flip_bitmap_x, width_bytes = %d, stride=%d", width_bytes, stride);
 
   uint8_t *data = gbitmap_get_data(image);
 
@@ -973,7 +974,7 @@ int get_indicator_face_index() {
 }
 
 void draw_clock_face(Layer *me, GContext *ctx) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_clock_face");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_clock_face");
   ++draw_face_count;
 
   // Reload the face bitmap from the resource file, if we don't
@@ -1190,7 +1191,7 @@ void check_memory_usage() {
 
 #if !defined(PBL_PLATFORM_APLITE) && PBL_API_EXISTS(layer_get_unobstructed_bounds)
 void root_layer_update_callback(Layer *me, GContext *ctx) {
-  //app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "root_layer");
+  //qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "root_layer");
 
   // Only bother filling in the root layer if part of the window is
   // obstructed.  We do this to ensure the entire window is cleared in
@@ -1208,7 +1209,7 @@ void clock_face_layer_update_callback(Layer *me, GContext *ctx) {
   check_memory_usage();
 
   do {
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_face_layer, memory_panic_count = %d, heap_bytes_free = %d", memory_panic_count, heap_bytes_free());
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "clock_face_layer, memory_panic_count = %d, heap_bytes_free = %d", memory_panic_count, heap_bytes_free());
 
     // In case we're in extreme memory panic mode--too little
     // available memory to even keep the clock face resident--we don't
@@ -1356,7 +1357,7 @@ void draw_date_window_background(GContext *ctx, int date_window_index, unsigned 
 // Draws a date window with the specified text contents.  Usually this is
 // something like a numeric date or the weekday name.
 void draw_date_window_text(GContext *ctx, int date_window_index, const char *text, struct FontPlacement *font_placement, GFont font) {
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_date_window_text %c, %s, %p", date_window_index + 'a', text, font);
+  //  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_date_window_text %c, %s, %p", date_window_index + 'a', text, font);
   if (font == NULL) {
     return;
   }
@@ -1543,7 +1544,7 @@ void compute_and_format_week_number(char buffer[DATE_WINDOW_BUFFER_SIZE], int da
 
 // Draws the background and contents of the specified date window.
 void draw_full_date_window(GContext *ctx, int date_window_index) {
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_full_date_window %c", date_window_index + 'a');
+  //  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_full_date_window %c", date_window_index + 'a');
 
   DateWindowMode dwm = config.date_windows[date_window_index];
   if (dwm == DWM_off) {
@@ -1661,7 +1662,7 @@ void draw_full_date_window(GContext *ctx, int date_window_index) {
 // (This is re-rendered per frame and doesn't get baked into the
 // clock_face bitmap.)
 void draw_date_window_dynamic_text(GContext *ctx, int date_window_index) {
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_date_window_dynamic_text %c", date_window_index + 'a');
+  //  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_date_window_dynamic_text %c", date_window_index + 'a');
 
   DateWindowMode dwm = config.date_windows[date_window_index];
 
@@ -1743,7 +1744,7 @@ void update_hands(struct tm *time) {
     if (SEPARATE_PHASE_HANDS) {
       // If the hour and minute hands are baked into the clock face
       // cache, it must be redrawn now.
-      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "hour hand changed with SEPARATE_PHASE_HANDS");
+      qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "hour hand changed with SEPARATE_PHASE_HANDS");
       invalidate_clock_face();
     }
   }
@@ -1755,7 +1756,7 @@ void update_hands(struct tm *time) {
     if (SEPARATE_PHASE_HANDS) {
       // If the hour and minute hands are baked into the clock face
       // cache, it must be redrawn now.
-      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "minute hand changed with SEPARATE_PHASE_HANDS");
+      qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "minute hand changed with SEPARATE_PHASE_HANDS");
       invalidate_clock_face();
     }
   }
@@ -1799,7 +1800,7 @@ void update_hands(struct tm *time) {
     current_placement.ampm_value = new_placement.ampm_value;
     current_placement.ordinal_date_index = new_placement.ordinal_date_index;
 
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "date changed");
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "date changed");
     invalidate_clock_face();
   }
 
@@ -1808,7 +1809,7 @@ void update_hands(struct tm *time) {
   if (new_placement.lunar_index != current_placement.lunar_index) {
     current_placement.lunar_index = new_placement.lunar_index;
     bwd_destroy(&moon_wheel_bitmap);
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "moon changed");
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "moon changed");
     invalidate_clock_face();
   }
 #endif  // TOP_SUBDIAL
@@ -1857,7 +1858,7 @@ void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 
 #ifndef PBL_PLATFORM_APLITE
 void health_event_handler(HealthEventType event, void *context) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "health event");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "health event");
 
   switch (event) {
   case HealthEventSignificantUpdate:
@@ -1940,9 +1941,9 @@ void health_event_handler(HealthEventType event, void *context) {
 #endif  // PBL_PLATFORM_APLITE
 
 void did_focus_handler(bool new_in_focus) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "did_focus: %d", (int)new_in_focus);
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "did_focus: %d", (int)new_in_focus);
   if (new_in_focus == app_in_focus) {
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "no change to focus");
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "no change to focus");
     return;
   }
 
@@ -1950,19 +1951,19 @@ void did_focus_handler(bool new_in_focus) {
   if (app_in_focus) {
     // We have just regained focus from a notification or something.
     // Ensure the window is completely redrawn.
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "regained focus");
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "regained focus");
     invalidate_clock_face();
   }
 }
 
 
 void window_load_handler(struct Window *window) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "main window loads");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "main window loads");
   check_memory_usage();
 }
 
 void window_appear_handler(struct Window *window) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "main window appears");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "main window appears");
 
 #ifdef SCREENSHOT_BUILD
   config_set_click_config(window);
@@ -1973,12 +1974,12 @@ void window_appear_handler(struct Window *window) {
 }
 
 void window_disappear_handler(struct Window *window) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "main window disappears");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "main window disappears");
   check_memory_usage();
 }
 
 void window_unload_handler(struct Window *window) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "main window unloads");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "main window unloads");
   check_memory_usage();
 }
 
@@ -2066,7 +2067,7 @@ void reset_memory_panic_count() {
 
 // Updates any runtime settings as needed when the config changes.
 void apply_config() {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "apply_config");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "apply_config");
 
   // Reset the memory panic count when we get a new config setting.
   // Maybe the user knows what he's doing.
@@ -2094,7 +2095,7 @@ void apply_config() {
 // redrawn next frame (e.g. if something on the face needs to be
 // updated).
 void invalidate_clock_face() {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "invalidate_clock_face");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "invalidate_clock_face");
   redraw_clock_face = true;
   bwd_destroy(&clock_face);
   if (clock_face_layer != NULL) {
@@ -2149,7 +2150,7 @@ void adjust_unobstructed_area() {
   GRect orig_bounds = layer_get_bounds(window_layer);
   any_obstructed_area = (memcmp(&bounds, &orig_bounds, sizeof(bounds)) != 0);
 
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "unobstructed_area: %d %d %d %d, any_obstructed_area = %d", bounds.origin.x, bounds.origin.y, bounds.size.w, bounds.size.h, any_obstructed_area);
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "unobstructed_area: %d %d %d %d, any_obstructed_area = %d", bounds.origin.x, bounds.origin.y, bounds.size.w, bounds.size.h, any_obstructed_area);
 
   // Shift the face layer to center the face within the new region.
   int cx = bounds.origin.x + bounds.size.w / 2;
@@ -2165,7 +2166,7 @@ void adjust_unobstructed_area() {
   */
 
   layer_set_frame(clock_face_layer, face_layer_shifted);
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "unobstructed area changed");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "unobstructed area changed");
   invalidate_clock_face();
 }
 
@@ -2225,7 +2226,7 @@ void destroy_permanent_objects() {
 // called by handle_init(), and might also be invoked midstream when
 // we need to reshuffle memory.
 void create_temporal_objects() {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "create_temporal_objects");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "create_temporal_objects");
 
   hand_cache_init(&hour_cache);
   hand_cache_init(&minute_cache);
@@ -2243,7 +2244,7 @@ void create_temporal_objects() {
 
 // Destroys the objects created by create_temporal_objects().
 void destroy_temporal_objects() {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "destroy_temporal_objects");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "destroy_temporal_objects");
 
   bwd_destroy(&date_window);
   bwd_destroy(&date_window_mask);
@@ -2279,7 +2280,7 @@ void recreate_all_objects() {
   destroy_temporal_objects();
   create_temporal_objects();
   load_date_fonts();
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "recreate_all_objects");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "recreate_all_objects");
   invalidate_clock_face();
 }
 
@@ -2297,7 +2298,7 @@ void handle_deinit() {
 
 // Called at program start to bootstrap everything.
 void handle_init() {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "handle_init");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "handle_init");
 
   load_config();
 
@@ -2314,16 +2315,16 @@ void handle_init() {
 #ifndef NDEBUG
   uint32_t inbox_max = app_message_inbox_size_maximum();
   uint32_t outbox_max = app_message_outbox_size_maximum();
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "available message space %u, %u", (unsigned int)inbox_max, (unsigned int)outbox_max);
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "available message space %u, %u", (unsigned int)inbox_max, (unsigned int)outbox_max);
   if (inbox_max > INBOX_MESSAGE_SIZE) {
     inbox_max = INBOX_MESSAGE_SIZE;
   }
   if (outbox_max > OUTBOX_MESSAGE_SIZE) {
     outbox_max = OUTBOX_MESSAGE_SIZE;
   }
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "app_message_open(%u, %u)", (unsigned int)inbox_max, (unsigned int)outbox_max);
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "app_message_open(%u, %u)", (unsigned int)inbox_max, (unsigned int)outbox_max);
   AppMessageResult open_result = app_message_open(inbox_max, outbox_max);
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "open_result = %d", open_result);
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "open_result = %d", open_result);
 
 #else  // NDEBUG
   app_message_open(INBOX_MESSAGE_SIZE, OUTBOX_MESSAGE_SIZE);
@@ -2353,7 +2354,7 @@ void handle_init() {
 void trigger_memory_panic(int line_number) {
   // Something failed to allocate properly, so we'll set a flag so we
   // can try to clean up unneeded memory.
-  app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "memory_panic at line %d, heap_bytes_free = %d!", line_number, heap_bytes_free());
+  qapp_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "memory_panic at line %d, heap_bytes_free = %d!", line_number, heap_bytes_free());
   memory_panic_flag = true;
 
   invalidate_clock_face();
@@ -2368,7 +2369,7 @@ void reset_memory_panic() {
   memory_panic_flag = false;
   ++memory_panic_count;
 
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "reset_memory_panic begin, count = %d", memory_panic_count);
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "reset_memory_panic begin, count = %d", memory_panic_count);
 
   recreate_all_objects();
 
@@ -2420,7 +2421,7 @@ void reset_memory_panic() {
     hide_clock_face = true;
   }
 
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "reset_memory_panic done, count = %d", memory_panic_count);
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "reset_memory_panic done, count = %d", memory_panic_count);
 }
 
 int main(void) {

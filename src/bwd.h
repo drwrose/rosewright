@@ -27,11 +27,9 @@ extern int bwd_resource_reads;
 BitmapWithData bwd_create(GBitmap *bitmap, unsigned char *data);
 void bwd_destroy(BitmapWithData *bwd);
 
-#ifdef SUPPORT_BWD_COPY
 BitmapWithData bwd_copy(BitmapWithData *source);
 BitmapWithData bwd_copy_bitmap(GBitmap *bitmap);
 void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source);
-#endif  // SUPPORT_BWD_COPY
 
 BitmapWithData png_bwd_create(int resource_id);
 BitmapWithData rle_bwd_create(int resource_id);

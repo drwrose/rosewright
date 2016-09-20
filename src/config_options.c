@@ -1,5 +1,6 @@
 #include "wright.h"
 #include "config_options.h"
+#include "qapp_log.h"
 
 ConfigOptions config;
 
@@ -33,9 +34,9 @@ void sanitize_config() {
 void save_config() {
   int wrote = persist_write_data(PERSIST_KEY, &config, sizeof(config));
   if (wrote == sizeof(config)) {
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Saved config (%d, %d)", PERSIST_KEY, sizeof(config));
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Saved config (%d, %d)", PERSIST_KEY, sizeof(config));
   } else {
-    app_log(APP_LOG_LEVEL_ERROR, __FILE__, __LINE__, "Error saving config (%d, %d): %d", PERSIST_KEY, sizeof(config), wrote);
+    qapp_log(APP_LOG_LEVEL_ERROR, __FILE__, __LINE__, "Error saving config (%d, %d): %d", PERSIST_KEY, sizeof(config), wrote);
   }
 }
 
@@ -46,9 +47,9 @@ void load_config() {
   int read_size = persist_read_data(PERSIST_KEY, &local_config, sizeof(local_config));
   if (read_size == sizeof(local_config)) {
     config = local_config;
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Loaded config (%d, %d)", PERSIST_KEY, sizeof(config));
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Loaded config (%d, %d)", PERSIST_KEY, sizeof(config));
   } else {
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "No previous config (%d, %d): %d", PERSIST_KEY, sizeof(config), read_size);
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "No previous config (%d, %d): %d", PERSIST_KEY, sizeof(config), read_size);
   }
 
   sanitize_config();
@@ -56,11 +57,11 @@ void load_config() {
 
 
 void dropped_config_handler(AppMessageResult reason, void *context) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "dropped message: 0x%04x", reason);
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "dropped message: 0x%04x", reason);
 }
 
 void receive_config_handler(DictionaryIterator *received, void *context) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "receive_config_handler, memory_panic_count = %d", memory_panic_count);
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "receive_config_handler, memory_panic_count = %d", memory_panic_count);
   ConfigOptions orig_config = config;
 
   Tuple *battery_gauge = dict_find(received, CK_battery_gauge);
@@ -153,9 +154,9 @@ void receive_config_handler(DictionaryIterator *received, void *context) {
 
   sanitize_config();
 
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "New config");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "New config");
   if (memcmp(&orig_config, &config, sizeof(config)) == 0) {
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Config is unchanged.");
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Config is unchanged.");
   } else {
     save_config();
     apply_config();

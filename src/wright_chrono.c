@@ -1,5 +1,6 @@
 #include "wright.h"
 #include "wright_chrono.h"
+#include "qapp_log.h"
 
 // The code in this file is used only when enabling Chronograph
 // features, including start/stop and lap buttons on the chrono dials.
@@ -90,13 +91,13 @@ void update_chrono_dial_mode(int chrono_ms) {
     // The dial has changed states; reload and redraw it.
     chrono_dial_shows_tenths = chrono_dial_wants_tenths;
     bwd_destroy(&chrono_dial_white);
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono dial changed mode");
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono dial changed mode");
     invalidate_clock_face();
   }
 }
 
 void draw_chrono_dial(GContext *ctx) {
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_chrono_dial");
+  //  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "draw_chrono_dial");
 
   if (config.chrono_dial != CDM_off) {
 #ifndef MAKE_CHRONOGRAPH
@@ -159,7 +160,7 @@ void draw_chrono_dial(GContext *ctx) {
 }
 
 void create_chrono_objects() {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "create_chrono_objects");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "create_chrono_objects");
   hand_cache_init(&chrono_minute_cache);
   hand_cache_init(&chrono_tenth_cache);
 
@@ -171,7 +172,7 @@ void create_chrono_objects() {
 
 
 void destroy_chrono_objects() {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "destroy_chrono_objects");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "destroy_chrono_objects");
 
   hand_cache_destroy(&chrono_minute_cache);
   hand_cache_destroy(&chrono_tenth_cache);
@@ -287,7 +288,7 @@ void update_chrono_hands(struct HandPlacement *new_placement) {
     if (SEPARATE_PHASE_HANDS) {
       // If the second hand is enabled, the hour and minute hands are
       // baked into the clock face cache, which must be redrawn now.
-      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono minute hand changed with SEPARATE_PHASE_HANDS");
+      qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono minute hand changed with SEPARATE_PHASE_HANDS");
       invalidate_clock_face();
     }
   }
@@ -308,7 +309,7 @@ void update_chrono_hands(struct HandPlacement *new_placement) {
     if (SEPARATE_PHASE_HANDS) {
       // If the second hand is enabled, the hour and minute hands are
       // baked into the clock face cache, which must be redrawn now.
-      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono tenth hand changed with SEPARATE_PHASE_HANDS");
+      qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono tenth hand changed with SEPARATE_PHASE_HANDS");
       invalidate_clock_face();
     }
   }
@@ -447,7 +448,7 @@ void chrono_digital_line_layer_update_callback(Layer *me, GContext *ctx) {
 }
 
 void chrono_digital_window_load_handler(struct Window *window) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono digital loads");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono digital loads");
 
   GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
 
@@ -505,7 +506,7 @@ void chrono_digital_window_load_handler(struct Window *window) {
 }
 
 void chrono_digital_window_appear_handler(struct Window *window) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono digital appears");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono digital appears");
   chrono_digital_window_showing = true;
 
   // We never have the lap timer paused while the digital window is visible.
@@ -521,13 +522,13 @@ void chrono_digital_window_appear_handler(struct Window *window) {
 }
 
 void chrono_digital_window_disappear_handler(struct Window *window) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono digital disappears");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono digital disappears");
   chrono_digital_window_showing = false;
   reset_chrono_digital_timer();
 }
 
 void chrono_digital_window_unload_handler(struct Window *window) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono digital unloads");
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono digital unloads");
 
   if (chrono_digital_line_layer != NULL) {
     layer_destroy(chrono_digital_line_layer);
@@ -557,7 +558,7 @@ void chrono_digital_window_unload_handler(struct Window *window) {
 }
 
 void push_chrono_digital_handler(ClickRecognizerRef recognizer, void *context) {
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "push chrono digital");
+  //  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "push chrono digital");
   if (!chrono_digital_window_showing) {
 
     // Release some caches and repack our memory allocations before we
@@ -707,30 +708,30 @@ load_chrono_data() {
     // As long as you launch the Chronograph at least once every 49
     // days, we'll keep an accurate time measurement (but we only ever
     // show modulo 24 hours).
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Loaded chrono_data");
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Loaded chrono_data");
     if (chrono_data.running) {
       unsigned int ms = get_time_ms();
       unsigned int chrono_ms = (ms - chrono_data.start_ms + MS_PER_DAY) % MS_PER_DAY;
-      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Modulated start_ms from %u to %u", chrono_data.start_ms, ms - chrono_ms);
+      qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Modulated start_ms from %u to %u", chrono_data.start_ms, ms - chrono_ms);
       chrono_data.start_ms = ms - chrono_ms;
     }
 
     update_chrono_laps_time();
   } else {
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Wrong previous chrono_data size or no previous data.");
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Wrong previous chrono_data size or no previous data.");
   }
 }
 
 void save_chrono_data() {
   if (memcmp(&chrono_data, &saved_chrono_data, sizeof(chrono_data)) == 0) {
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_data unchanged.");
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "chrono_data unchanged.");
   } else {
     int wrote = persist_write_data(PERSIST_KEY + 0x100, &chrono_data, sizeof(chrono_data));
     if (wrote == sizeof(chrono_data)) {
-      app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Saved chrono_data (%d, %d)", PERSIST_KEY + 0x100, sizeof(chrono_data));
+      qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "Saved chrono_data (%d, %d)", PERSIST_KEY + 0x100, sizeof(chrono_data));
       saved_chrono_data = chrono_data;
     } else {
-      app_log(APP_LOG_LEVEL_ERROR, __FILE__, __LINE__, "Error saving chrono_data (%d, %d): %d", PERSIST_KEY + 0x100, sizeof(chrono_data), wrote);
+      qapp_log(APP_LOG_LEVEL_ERROR, __FILE__, __LINE__, "Error saving chrono_data (%d, %d): %d", PERSIST_KEY + 0x100, sizeof(chrono_data), wrote);
     }
   }
 }

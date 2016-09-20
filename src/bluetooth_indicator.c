@@ -3,6 +3,7 @@
 #include "bluetooth_indicator.h"
 #include "config_options.h"
 #include "bwd.h"
+#include "qapp_log.h"
 
 BitmapWithData bluetooth_disconnected;
 BitmapWithData bluetooth_connected;
@@ -101,13 +102,13 @@ void draw_bluetooth_indicator(GContext *ctx, int x, int y, bool invert) {
 void handle_bluetooth(bool new_bluetooth_state) {
   if (got_bluetooth_state && bluetooth_state == new_bluetooth_state) {
     // No change; ignore the update.
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "bluetooth update received, no change to bluetooth");
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "bluetooth update received, no change to bluetooth");
     return;
   }
 
   bluetooth_state = new_bluetooth_state;
   got_bluetooth_state = true;
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "bluetooth changed to %d", bluetooth_state);
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "bluetooth changed to %d", bluetooth_state);
 
   if (config.bluetooth_indicator != IM_off) {
     invalidate_clock_face();

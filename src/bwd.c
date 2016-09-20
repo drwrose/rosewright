@@ -1,5 +1,5 @@
-#include "wright.h"  // for app_log() macro
 #include "bwd.h"
+#include "qapp_log.h"
 #include "assert.h"
 #include "pebble_compat.h"
 #include "../resources/generated_config.h"
@@ -51,7 +51,7 @@ BitmapWithData bwd_copy_bitmap(GBitmap *source) {
   GBitmapFormat format = gbitmap_get_format(source);
   dest.bitmap = gbitmap_create_blank(size, format);
   if (dest.bitmap == NULL) {
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "memory allocation failure on %dx%d %d image", size.w, size.h, format);
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "memory allocation failure on %dx%d %d image", size.w, size.h, format);
     return bwd_create(NULL, NULL);
   }
 
@@ -136,11 +136,11 @@ void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source) {
 // BitmapWithData interface to be consistent with rle_bwd_create().
 // The returned bitmap must be released with bwd_destroy().
 BitmapWithData png_bwd_create(int resource_id) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "png_bwd_create(%d)", resource_id);
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "png_bwd_create(%d)", resource_id);
   ++bwd_resource_reads;
   GBitmap *image = gbitmap_create_with_resource(resource_id);
   if (image == NULL) {
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "failed to read image %d", resource_id);
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "failed to read image %d", resource_id);
   }
   return bwd_create(image, NULL);
 }
@@ -659,7 +659,7 @@ rle_bwd_create_rb(RBuffer *rb) {
     }
   }
 
-  //  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "wrote %d bytes", dp - bitmap_data);
+  //  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "wrote %d bytes", dp - bitmap_data);
   assert(dp == dp_stop && b == 0);
 
   if (do_unscreen) {
@@ -704,7 +704,7 @@ rle_bwd_create_rb(RBuffer *rb) {
   int n = rbuffer_getc(rb);
   int format = rbuffer_getc(rb);
   if (format != 0) {
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "cannot support format %d", format);
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "cannot support format %d", format);
     return bwd_create(NULL, NULL);
   }
 
@@ -716,18 +716,18 @@ rle_bwd_create_rb(RBuffer *rb) {
   int do_unscreen = (n & 0x80);
   n = n & 0x7f;
 
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "reading bitmap %d x %d, n = %d, format = %d", width, height, n, format);
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "reading bitmap %d x %d, n = %d, format = %d", width, height, n, format);
 
   GBitmap *image = gbitmap_create_blank(GSize(width, height), GBitmapFormat1Bit);
   if (image == NULL) {
-    app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "memory allocation failure on %dx%d 1-bit image", width, height);
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "memory allocation failure on %dx%d 1-bit image", width, height);
     return bwd_create(NULL, NULL);
   }
   int stride = gbitmap_get_bytes_per_row(image);
   uint8_t *bitmap_data = gbitmap_get_data(image);
   assert(bitmap_data != NULL);
   size_t data_size = height * stride;
-  //app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "stride = %d, data_size = %d", stride, data_size);
+  //qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "stride = %d, data_size = %d", stride, data_size);
 
   Rl2Unpacker rl2;
   rl2unpacker_init(&rl2, rb, n, true);
@@ -752,7 +752,7 @@ rle_bwd_create_rb(RBuffer *rb) {
     count = rl2unpacker_getc(&rl2);
   }
 
-  //app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "wrote %d bytes", dp - bitmap_data);
+  //qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "wrote %d bytes", dp - bitmap_data);
   assert(dp == dp_stop && b == 0);
 
   if (do_unscreen) {
@@ -766,7 +766,7 @@ rle_bwd_create_rb(RBuffer *rb) {
 
 BitmapWithData
 rle_bwd_create(int resource_id) {
-  app_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "rle_bwd_create(%d)", resource_id);
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "rle_bwd_create(%d)", resource_id);
   ++bwd_resource_reads;
 
   RBuffer rb;
@@ -822,7 +822,7 @@ void bwd_remap_colors(BitmapWithData *bwd, GColor cb, GColor c1, GColor c2, GCol
     // (by walking through all of the pixels), but instead we'll flag
     // it as an error, to help catch accidental mistakes in image
     // preparation.
-    app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "bwd_remap_colors cannot adjust non-palette format %d", format);
+    qapp_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "bwd_remap_colors cannot adjust non-palette format %d", format);
     return;
   }
 
@@ -853,7 +853,7 @@ void bwd_remap_colors(BitmapWithData *bwd, GColor cb, GColor c1, GColor c2, GCol
     palette[pi].g = (g < 0x3) ? g : 0x3;
     palette[pi].b = (b < 0x3) ? b : 0x3;
 
-    //    GColor q = palette[pi]; app_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "cb = %02x, c1 = %02x, c2 = %02x, c3 = %02x.  %d: %02x/%02x/%02x/%02x becomes %02x/%02x/%02x/%02x (%d, %d, %d)", cb.argb, c1.argb, c2.argb, c3.argb, pi, p.argb & 0xc0, p.argb & 0x30, p.argb & 0x0c, p.argb & 0x03, q.argb & 0xc0, q.argb & 0x30, q.argb & 0x0c, q.argb & 0x03, r, g, b);
+    //    GColor q = palette[pi]; qapp_log(APP_LOG_LEVEL_WARNING, __FILE__, __LINE__, "cb = %02x, c1 = %02x, c2 = %02x, c3 = %02x.  %d: %02x/%02x/%02x/%02x becomes %02x/%02x/%02x/%02x (%d, %d, %d)", cb.argb, c1.argb, c2.argb, c3.argb, pi, p.argb & 0xc0, p.argb & 0x30, p.argb & 0x0c, p.argb & 0x03, q.argb & 0xc0, q.argb & 0x30, q.argb & 0x0c, q.argb & 0x03, r, g, b);
 
     if (invert_colors) {
       palette[pi].argb ^= 0x3f;

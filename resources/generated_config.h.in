@@ -1,6 +1,9 @@
 // This key is used to record the persistent storage.
 #define PERSIST_KEY %(persistKey)s
 
+// Always enabled in Rosewright.
+#define SUPPORT_BWD_COPY 1
+
 // Defined if we are compiling in support for RLE-encoded images.  If
 // not, all resource images must be unencoded.
 #if %(supportRle)s

@@ -590,8 +590,8 @@ def make_rle(filename, name = None, prefix = 'resources/', useRle = True, platfo
     resourceStr = ''
 
     for platform in platforms:
-        filename, variant = getPlatformFilenameAndVariant(filename, platform, prefix = prefix)
-        resourceStr += make_rle_file(filename, variant, name = name, prefix = prefix, useRle = useRle, platform = platform, compress = compress)
+        pfilename, variant = getPlatformFilenameAndVariant(filename, platform, prefix = prefix)
+        resourceStr += make_rle_file(pfilename, variant, name = name, prefix = prefix, useRle = useRle, platform = platform, compress = compress)
 
     return resourceStr
 
@@ -602,6 +602,7 @@ def make_rle_file(filename, variant, name = None, prefix = 'resources/', useRle 
         basename = basename[:-len(variant)]
     targetFilename = basename + variant
     needsCopy = False
+    print targetFilename
 
     spaceOptimization = 'memory'
     if platform != 'aplite' and compress:
@@ -613,6 +614,8 @@ def make_rle_file(filename, variant, name = None, prefix = 'resources/', useRle 
         # Copy it to the build directory.
         targetFilename = 'build/%s_%s' % (basename, platform)
         needsCopy = True
+
+    print targetFilename
 
     if useRle:
         print filename, targetFilename + '.rle'
@@ -652,8 +655,8 @@ def make_rle_trans(filename, name = None, prefix = 'resources/', useRle = True, 
     resourceStr = ''
 
     for platform in platforms:
-        filename, variant = getPlatformFilenameAndVariant(filename, platform, prefix = prefix)
-        resourceStr += make_rle_trans_file(filename, variant, name = name, prefix = prefix, useRle = useRle, platform = platform, compress = compress)
+        pfilename, variant = getPlatformFilenameAndVariant(filename, platform, prefix = prefix)
+        resourceStr += make_rle_trans_file(pfilename, variant, name = name, prefix = prefix, useRle = useRle, platform = platform, compress = compress)
 
     return resourceStr
 
