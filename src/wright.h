@@ -14,6 +14,8 @@
 #include "battery_gauge.h"
 #include "config_options.h"
 #include "assert.h"
+
+//#define SUPPORT_BWD_COPY 1
 #include "bwd.h"
 
 #ifdef NDEBUG

@@ -34,10 +34,13 @@ void bwd_destroy(BitmapWithData *bwd) {
   }
 }
 
+#ifdef SUPPORT_BWD_COPY
 BitmapWithData bwd_copy(BitmapWithData *source) {
   return bwd_copy_bitmap(source->bitmap);
 }
+#endif  // SUPPORT_BWD_COPY
 
+#ifdef SUPPORT_BWD_COPY
 BitmapWithData bwd_copy_bitmap(GBitmap *source) {
   BitmapWithData dest;
   dest.bitmap = NULL;
@@ -55,7 +58,9 @@ BitmapWithData bwd_copy_bitmap(GBitmap *source) {
   bwd_copy_into_from_bitmap(&dest, source);
   return dest;
 }
+#endif  // SUPPORT_BWD_COPY
 
+#ifdef SUPPORT_BWD_COPY
 void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source) {
   int pixels_per_byte = 8;
 #ifndef PBL_BW
@@ -123,6 +128,7 @@ void bwd_copy_into_from_bitmap(BitmapWithData *dest, GBitmap *source) {
     memcpy(dest_row, source_row, width_bytes);
   }
 }
+#endif  // SUPPORT_BWD_COPY
 
 // Initialize a bitmap from a regular unencoded resource (i.e. as
 // loaded from a png file).  This is the same as
