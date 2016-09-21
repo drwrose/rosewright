@@ -456,7 +456,7 @@ void pack_2bit(int value, int count, int *b, uint8_t **dp, uint8_t *dp_stop) {
       ++(*dp);
       (*b) = 0;
     }
-    assert((*b) == 0);
+    assert((*b) == 0 || count == 0);
     uint8_t byte = (value << 6) | (value << 4) | (value << 2) | value;
     while (count >= 4) {
       // Now pack a full byte's worth at a time.
@@ -598,13 +598,17 @@ rle_bwd_create_rb(RBuffer *rb) {
   assert(packer_func != NULL);
 
   GColor *palette = NULL;
+  GBitmap *image = NULL;
   if (palette_count != 0) {
     palette = (GColor *)malloc(palette_count * sizeof(GColor));
+    image = gbitmap_create_blank_with_palette(GSize(width, height), format, palette, true);
+  } else {
+    image = gbitmap_create_blank(GSize(width, height), format);
   }
 
-  GBitmap *image = gbitmap_create_blank_with_palette(GSize(width, height), format, palette, true);
   if (image == NULL) {
     free(palette);
+    qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "could not create image of size %dx%d and format %d with palette %p", width, height, format, palette);
     return bwd_create(NULL, NULL);
   }
   int stride = gbitmap_get_bytes_per_row(image);

@@ -6,6 +6,7 @@ import sys
 import os
 import getopt
 from resources.make_rle import make_rle, make_rle_trans
+from resources.peb_platform import getPlatformShape, getPlatformColor, getPlatformFilename, getPlatformFilenameAndVariant, screenSizes
 
 help = """
 config_watch.py
@@ -66,12 +67,6 @@ def usage(code, msg = ''):
         }
     print >> sys.stderr, msg
     sys.exit(code)
-
-screenSizes = {
-    'rect' : (144, 168),
-    'round' : (180, 180),
-    'emery' : (200, 228),
-    }
 
 # [fill_rect, bar_rect, (font, vshift)] where rect is (x, y, w, h)
 batteryGaugeSizes = {
@@ -641,60 +636,6 @@ def parseColorMode(colorMode):
             dither = True
 
     return paintChannel, useTransparency, dither
-
-def getPlatformShape(platform):
-    if platform in ['aplite', 'basalt', 'diorite']:
-        shape = 'rect'
-    elif platform in ['chalk']:
-        shape = 'round'
-    elif platform in ['emery']:
-        shape = 'emery'
-    else:
-        raise StandardError
-    return shape
-
-def getPlatformColor(platform):
-    if platform in ['aplite', 'diorite']:
-        color = 'bw'
-    elif platform in ['chalk', 'basalt', 'emery']:
-        color = 'color'
-    else:
-        raise StandardError
-    return color
-
-def getVariantsForPlatforms(platforms):
-    variants = set()
-    if 'aplite' in platforms or 'diorite' in platforms:
-        variants.add('~bw')
-    if 'basalt' in platforms:
-        variants.add('~color')
-        variants.add('~color~rect')
-    if 'chalk' in platforms:
-        variants.add('~color')
-        variants.add('~color~round')
-    if 'emery' in platforms:
-        variants.add('~emery')
-    return list(variants)
-
-def getPlatformFilenameAndVariant(filename, platform):
-    """ Returns the (filename, variant) pair, after finding the
-    appropriate filename modified with the ~variant for the
-    platform. """
-
-    basename, ext = os.path.splitext(filename)
-
-    for variant in getVariantsForPlatforms([platform]) + ['']:
-        if os.path.exists(basename + variant + ext):
-            return basename + variant + ext, variant
-
-    raise StandardError, 'No filename for %s, platform %s' % (filename, platform)
-
-
-def getPlatformFilename(filename, platform):
-    """ Returns the filename modified with the ~variant for the
-    platform. """
-
-    return getPlatformFilenameAndVariant(filename, platform)[0]
 
 def applyLabel(outputFilename, faceIndex, platforms = None):
     """ Applies the "Pebble" label to the clock face image.  Reads

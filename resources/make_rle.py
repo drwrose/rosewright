@@ -4,6 +4,7 @@ import PIL.Image, PIL.ImageOps
 import sys
 import os
 import shutil
+from peb_platform import getPlatformShape, getPlatformColor, getPlatformFilenameAndVariant
 
 help = """
 make_rle.py
@@ -512,48 +513,11 @@ def make_rle_image_basalt(rleFilename, image):
 
     print '%s: %s, %s vs. %s' % (rleFilename, format, 8 + len(result) + len(values), fullSize)
 
-def make_rle_image(rleFilename, image, platform = 'auto'):
-    if platform == 'auto' and rleFilename.find('~bw') != -1:
-        platform = 'aplite'
-
-    if platform == 'aplite':
+def make_rle_image(rleFilename, image, color = 'color'):
+    if color == 'bw':
         return make_rle_image_1bit(rleFilename, image)
     else:
         return make_rle_image_basalt(rleFilename, image)
-
-def getVariantsForPlatforms(platforms):
-    variants = set()
-    if 'aplite' in platforms or 'diorite' in platforms:
-        variants.add('~bw')
-    if 'basalt' in platforms:
-        variants.add('~color')
-        variants.add('~color~rect')
-    if 'chalk' in platforms:
-        variants.add('~color')
-        variants.add('~color~round')
-    if 'emery' in platforms:
-        variants.add('~emery')
-    return list(variants)
-
-def getPlatformFilenameAndVariant(filename, platform, prefix = ''):
-    """ Returns the (filename, variant) pair, after finding the
-    appropriate filename modified with the ~variant for the
-    platform. """
-
-    basename, ext = os.path.splitext(filename)
-
-    for variant in getVariantsForPlatforms([platform]) + ['']:
-        if os.path.exists(prefix + basename + variant + ext):
-            return basename + variant + ext, variant
-
-    raise StandardError, 'No filename for %s, platform %s' % (filename, platform)
-
-
-def getPlatformFilename(filename, platform, prefix = ''):
-    """ Returns the filename modified with the ~variant for the
-    platform. """
-
-    return getPlatformFilenameAndVariant(filename, platform, prefix = prefix)[0]
 
 rawResourceEntry = """
     {
@@ -578,7 +542,7 @@ colorResourceEntry = """
       "name": "%(name)s",
       "file": "%(file)s",
       "type": "bitmap",
-      "memoryFormat" : "SmallestPalette",
+      "memoryFormat" : "%(memoryFormat)s",
       "spaceOptimization" : "%(spaceOptimization)s",
       "targetPlatforms": [ %(targetPlatforms)s ]
     },"""
@@ -586,16 +550,16 @@ colorResourceEntry = """
 def format_platforms(platforms):
     return ', '.join(map(lambda platform: '"%s"' % (platform), list(platforms)))
 
-def make_rle(filename, name = None, prefix = 'resources/', useRle = True, platforms = None, compress = True):
+def make_rle(filename, name = None, prefix = 'resources/', useRle = True, platforms = None, compress = True, requirePalette = True, color = None):
     resourceStr = ''
 
     for platform in platforms:
         pfilename, variant = getPlatformFilenameAndVariant(filename, platform, prefix = prefix)
-        resourceStr += make_rle_file(pfilename, variant, name = name, prefix = prefix, useRle = useRle, platform = platform, compress = compress)
+        resourceStr += make_rle_file(pfilename, variant, name = name, prefix = prefix, useRle = useRle, platform = platform, compress = compress, requirePalette = requirePalette, color = color)
 
     return resourceStr
 
-def make_rle_file(filename, variant, name = None, prefix = 'resources/', useRle = True, platform = None, compress = True):
+def make_rle_file(filename, variant, name = None, prefix = 'resources/', useRle = True, platform = None, compress = True, requirePalette = True, color = None):
     basename, ext = os.path.splitext(filename)
     if variant:
         assert basename.endswith(variant)
@@ -603,6 +567,17 @@ def make_rle_file(filename, variant, name = None, prefix = 'resources/', useRle 
     targetFilename = basename + variant
     needsCopy = False
     print targetFilename
+
+    if color is None:
+        color = getPlatformColor(platform)
+
+    memoryFormat = 'Smallest'
+    if requirePalette:
+        memoryFormat = 'SmallestPalette'
+    elif not compress:
+        # If we don't require a palette, and we don't want
+        # compression, store it full 8-bit.
+        memoryFormat = '8Bit'
 
     spaceOptimization = 'memory'
     if platform != 'aplite' and compress:
@@ -620,7 +595,7 @@ def make_rle_file(filename, variant, name = None, prefix = 'resources/', useRle 
     if useRle:
         print filename, targetFilename + '.rle'
         image = PIL.Image.open(prefix + filename)
-        make_rle_image(prefix + targetFilename + '.rle', image)
+        make_rle_image(prefix + targetFilename + '.rle', image, color = color)
 
         resourceStr += rawResourceEntry % {
             'name' : name,
@@ -634,7 +609,7 @@ def make_rle_file(filename, variant, name = None, prefix = 'resources/', useRle 
             image = PIL.Image.open(prefix + filename)
             image.save(prefix + targetFilename + '.png')
 
-        if platform in ['aplite', 'diorite']:
+        if color == 'bw':
             resourceStr += bwResourceEntry % {
                 'name' : name,
                 'file' : targetFilename + '.png',
@@ -645,28 +620,31 @@ def make_rle_file(filename, variant, name = None, prefix = 'resources/', useRle 
             resourceStr += colorResourceEntry % {
                 'name' : name,
                 'file' : targetFilename + '.png',
+                'memoryFormat' : memoryFormat,
                 'spaceOptimization' : spaceOptimization,
                 'targetPlatforms' : format_platforms([platform])
                 }
 
     return resourceStr
 
-def make_rle_trans(filename, name = None, prefix = 'resources/', useRle = True, platforms = None, compress = True):
+def make_rle_trans(filename, name = None, prefix = 'resources/', useRle = True, platforms = None, compress = True, requirePalette = True, color = None):
     resourceStr = ''
 
     for platform in platforms:
         pfilename, variant = getPlatformFilenameAndVariant(filename, platform, prefix = prefix)
-        resourceStr += make_rle_trans_file(pfilename, variant, name = name, prefix = prefix, useRle = useRle, platform = platform, compress = compress)
+        resourceStr += make_rle_trans_file(pfilename, variant, name = name, prefix = prefix, useRle = useRle, platform = platform, compress = compress, requirePalette = requirePalette, color = color)
 
     return resourceStr
 
 
-def make_rle_trans_file(filename, variant, name = None, prefix = 'resources/', useRle = True, platform = None, compress = True):
-    if platform not in ['aplite', 'diorite']:
+def make_rle_trans_file(filename, variant, name = None, prefix = 'resources/', useRle = True, platform = None, compress = True, requirePalette = True, color = None):
+    if color is None:
+        color = getPlatformColor(platform)
+    if color != 'bw':
         # In the color case, this is almost the same as make_rle_file(),
         # but we append '_WHITE' to the name (and we don't create a
         # _BLACK version).
-        return make_rle_file(filename, variant, name = name + '_WHITE', prefix = prefix, useRle = useRle, platform = platform, compress = compress)
+        return make_rle_file(filename, variant, name = name + '_WHITE', prefix = prefix, useRle = useRle, platform = platform, compress = compress, requirePalette = requirePalette, color = color)
 
     basename, ext = os.path.splitext(filename)
     if variant:
@@ -698,8 +676,8 @@ def make_rle_trans_file(filename, variant, name = None, prefix = 'resources/', u
     blackFilename = '%s/%s_black_%s' % (dirname, basename, platform)
 
     if useRle:
-        make_rle_image(prefix + whiteFilename + '.rle', white)
-        make_rle_image(prefix + blackFilename + '.rle', black)
+        make_rle_image(prefix + whiteFilename + '.rle', white, color = color)
+        make_rle_image(prefix + blackFilename + '.rle', black, color = color)
 
         resourceStr += rawResourceEntry % {
             'name' : name + '_WHITE',
@@ -746,7 +724,7 @@ def unpack_rle_file(rleFilename):
     do_unscreen = ((n & 0x80) != 0)
     n = n & 0x7f
 
-    #print "n = %s, format = %s, vo = %s, po = %s" % (n, format, vo, po)
+    print "n = %s, format = %s, vo = %s, po = %s" % (n, format, vo, po)
 
     if (format == GBitmapFormat1Bit or format == GBitmapFormat1BitPalette):
         pixels_per_byte = 8
@@ -762,6 +740,8 @@ def unpack_rle_file(rleFilename):
         vn = 8
     else:
         assert False
+
+    print "vn = %s, pixels_per_byte = %s" % (vn, pixels_per_byte)
 
     stride = (width + pixels_per_byte - 1) / pixels_per_byte
 
@@ -788,7 +768,7 @@ def unpack_rle_file(rleFilename):
     unpacker = Rl2Unpacker(rle_data, n, zero_expands = True)
     rle = unpacker.getList()
 
-    #print "rle = %s, values = %s, palette = %s" % (len(rle), len(values), len(palette))
+    print "rle = %s, values = %s, palette = %s" % (len(rle), len(values), len(palette))
 
     if vn == 1:
         # Unpack a 1-bit file.
