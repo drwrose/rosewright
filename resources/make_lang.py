@@ -23,7 +23,7 @@ fontChoices = [ 'latin', 'el', 'ru', 'hy', 'rtl_he', 'rtl_ar', 'zh', 'ja', 'ko',
 # Font (rect, round, emery) filenames and (rect, round, emery) pixel
 # sizes and (rect, round, emery) vshift values.
 fontNames = {
-    'latin' : (('ArchivoNarrow-Bold-16.bdf', 'ArchivoNarrow-Bold-18.bdf', 'ArchivoNarrow-Bold.ttf'), (16, 18, 22), -1),
+    'latin' : (('ArchivoNarrow-Bold-16.bdf', 'ArchivoNarrow-Bold-18.bdf', 'ArchivoNarrow-Bold-22.bdf'), (16, 18, 22), -1),
     'el' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), 1),
     'ru' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), 1),
     'hy' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), 1),

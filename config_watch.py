@@ -473,7 +473,7 @@ faces = {
         'date_window_b_round' : (11, 78, 'w'),
         'date_window_c_round' : (128, 78, 'w'),
         'date_window_d_round' : (69, 144, 'w'),
-        'date_window_a_emery' : (77, 18, 'w'),
+        'date_window_a_emery' : (77, 16, 'w'),
         'date_window_b_emery' : (5, 100, 'w'),
         'date_window_c_emery' : (149, 100, 'w'),
         'date_window_d_emery' : (77, 187, 'w'),
@@ -486,7 +486,7 @@ faces = {
         'bluetooth_round' : [ (26, 26, 'b'), (26, 26, 'w'), (26, 26, 'b'), ],
         'battery_round' : [ (133, 30, 'b'), (133, 30, 'w'), (133, 30, 'b'), ],
         'bluetooth_emery' : [ (15, 16, 'b'), (15, 16, 'w'), (15, 16, 'b'), ],
-        'battery_emery' : [ (152, 22, 'b'), (152, 22, 'w'), (152, 22, 'b'), ],
+        'battery_emery' : [ (150, 22, 'b'), (150, 22, 'w'), (150, 22, 'b'), ],
         'defaults' : [ 'date:c', 'moon_dark', 'limit_cache_aplite', 'limit_cache_basalt', 'limit_cache_chalk' ],
         },
     }
@@ -1804,7 +1804,7 @@ if not watchStyle:
     sys.exit(1)
 
 if not targetPlatforms:
-    targetPlatforms = [ 'aplite', 'basalt', 'chalk', 'diorite' ]
+    targetPlatforms = [ 'aplite', 'basalt', 'chalk', 'diorite', 'emery' ]
 
 bwPlatforms = set(targetPlatforms) & set(['aplite', 'diorite'])
 
