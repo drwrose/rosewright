@@ -80,6 +80,7 @@ def getPlatformFilenameAndVariant(filename, platform, prefix = ''):
         if os.path.exists(prefix + basename + variant + ext):
             return basename + variant + ext, variant
 
+    import pdb; pdb.set_trace()
     raise StandardError, 'No filename for %s, platform %s' % (filename, platform)
 
 

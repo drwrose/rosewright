@@ -642,14 +642,14 @@ def applyLabel(outputFilename, faceIndex, platforms = None):
     faceFilename and applies pebble_label.png onto it, writing the
     result to outputFilename. """
 
-    faceFilename = 'clock_faces/' + faceFilenames[faceIndex]
+    sourceFaceFilename = 'clock_faces/' + faceFilenames[faceIndex]
     outputBasename, outputExt = os.path.splitext(outputFilename)
 
     prefix = resourcesDir + '/'
 
     for platform in platforms:
         color = getPlatformColor(platform)
-        faceFilename, faceVariant = getPlatformFilenameAndVariant(prefix + faceFilename, platform)
+        faceFilename, faceVariant = getPlatformFilenameAndVariant(prefix + sourceFaceFilename, platform)
         face = PIL.Image.open(faceFilename)
 
         labelFilename = getPlatformFilename(prefix + 'clock_faces/pebble_label.png', platform)
