@@ -707,9 +707,10 @@ def makeFaces(generatedTable, generatedDefs):
         resourceStr += make_rle_trans('clock_faces/' + targetChronoTenths, name = 'CHRONO_DIAL_TENTHS', useRle = supportRle, platforms = targetPlatforms, compress = True)
         resourceStr += make_rle_trans('clock_faces/' + targetChronoHours, name = 'CHRONO_DIAL_HOURS', useRle = supportRle, platforms = targetPlatforms, compress = True)
 
-        chronoDialFilename = getPlatformFilename('resources/clock_faces/' + targetChronoTenths, platform)
-        im = PIL.Image.open(chronoDialFilename)
-        chronoDialSizes[platform] = im.size
+        for platform in targetPlatforms:
+            chronoDialFilename = getPlatformFilename('resources/clock_faces/' + targetChronoTenths, platform)
+            im = PIL.Image.open(chronoDialFilename)
+            chronoDialSizes[platform] = im.size
 
     for platform in targetPlatforms:
         labelFilename = getPlatformFilename('resources/clock_faces/pebble_label.png', platform)
