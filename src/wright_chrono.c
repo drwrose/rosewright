@@ -6,15 +6,28 @@
 // features, including start/stop and lap buttons on the chrono dials.
 // Specifically, this code is used only for Rosewright Chronograph.
 
-// The screen width of the chrono_digital_layer.  Always 144, even on
-// Chalk and Emery.
+// The width of the chrono_digital_layer.  The same as SCREEN_WIDTH,
+// except on Chalk.
+#ifdef PBL_ROUND
 #define DIGITAL_LAYER_WIDTH 144
+#else
+#define DIGITAL_LAYER_WIDTH SCREEN_WIDTH
+#endif
 
 // The height of each row of the text.
 #ifdef PBL_ROUND
 #define LAP_HEIGHT 28
+#elif defined(PBL_PLATFORM_EMERY)
+#define LAP_HEIGHT 39
 #else
 #define LAP_HEIGHT 30
+#endif
+
+// The number of white pixels to the left and right of the text.
+#ifdef PBL_PLATFORM_EMERY
+#define TEXT_HORZ_MARGIN 50
+#else
+#define TEXT_HORZ_MARGIN 25
 #endif
 
 #ifdef ENABLE_CHRONO_DIAL
@@ -452,7 +465,6 @@ void chrono_digital_window_load_handler(struct Window *window) {
 
   GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
 
-
   Layer *chrono_digital_window_layer = window_get_root_layer(chrono_digital_window);
   chrono_status_bar_layer = status_bar_layer_create();
   if (chrono_status_bar_layer == NULL) {
@@ -468,14 +480,14 @@ void chrono_digital_window_load_handler(struct Window *window) {
   }
   layer_add_child(chrono_digital_window_layer, chrono_digital_contents_layer);
 
-  chrono_digital_current_layer = text_layer_create(GRect(25, LAP_HEIGHT * CHRONO_MAX_LAPS, 94, LAP_HEIGHT));
+  chrono_digital_current_layer = text_layer_create(GRect(TEXT_HORZ_MARGIN, LAP_HEIGHT * CHRONO_MAX_LAPS, DIGITAL_LAYER_WIDTH - TEXT_HORZ_MARGIN * 2, LAP_HEIGHT));
   if (chrono_digital_current_layer == NULL) {
     trigger_memory_panic(__LINE__);
     return;
   }
   int i;
   for (i = 0; i < CHRONO_MAX_LAPS; ++i) {
-    chrono_digital_laps_layer[i] = text_layer_create(GRect(25, LAP_HEIGHT * i, 94, LAP_HEIGHT));
+    chrono_digital_laps_layer[i] = text_layer_create(GRect(TEXT_HORZ_MARGIN, LAP_HEIGHT * i, DIGITAL_LAYER_WIDTH - TEXT_HORZ_MARGIN * 2, LAP_HEIGHT));
     if (chrono_digital_laps_layer[i] == NULL) {
       trigger_memory_panic(__LINE__);
       return;
