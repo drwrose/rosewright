@@ -1551,8 +1551,12 @@ def makeMoonWheel(platform):
 
     resourceStr += make_rle('bluetooth_connected.png', name = 'BLUETOOTH_CONNECTED', useRle = supportRle, platforms = [platform], compress = True)
     resourceStr += make_rle('bluetooth_disconnected.png', name = 'BLUETOOTH_DISCONNECTED', useRle = supportRle, platforms = [platform], compress = True)
+    if platform != 'aplite':
+        resourceStr += make_rle('quiet_time.png', name = 'QUIET_TIME', useRle = supportRle, platforms = [platform], compress = True)
     if platform in bwPlatforms:
         resourceStr += make_rle('bluetooth_mask.png', name = 'BLUETOOTH_MASK', useRle = supportRle, platforms = [platform], compress = True)
+        if platform != 'aplite':
+            resourceStr += make_rle('quiet_time_mask.png', name = 'QUIET_TIME_MASK', useRle = supportRle, platforms = [platform], compress = True)
 
     resourceStr += make_rle('battery_gauge_empty.png', name = 'BATTERY_GAUGE_EMPTY', useRle = supportRle, platforms = [platform], compress = True)
     resourceStr += make_rle('battery_gauge_charged.png', name = 'BATTERY_GAUGE_CHARGED', useRle = supportRle, platforms = [platform], compress = True)
