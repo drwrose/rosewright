@@ -178,7 +178,7 @@ void poll_quiet_time_state() {
   }
 
   quiet_time_state = new_quiet_time_state;
-  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "quiet_time changed to %d", qiet_time_state);
+  qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "quiet_time changed to %d", quiet_time_state);
 
   if (config.bluetooth_indicator != IM_off) {
     invalidate_clock_face();
