@@ -1734,7 +1734,7 @@ void draw_date_window_dynamic_text(GContext *ctx, int date_window_index) {
 // the appropriate layers dirty, to eventually redraw the hands that
 // have moved since the last call.
 void update_hands(struct tm *time) {
-  poll_quiet_time_state();
+  (void)poll_quiet_time_state();
   struct HandPlacement new_placement = current_placement;
 
   compute_hands(time, &new_placement);
@@ -1771,7 +1771,9 @@ void update_hands(struct tm *time) {
     current_placement.buzzed_hour = new_placement.buzzed_hour;
     if (config.hour_buzzer) {
       // The hour has changed; ring the buzzer if it's enabled.
-      vibes_enqueue_custom_pattern(tap);
+      if (!poll_quiet_time_state()) {
+        vibes_enqueue_custom_pattern(tap);
+      }
     }
   }
 

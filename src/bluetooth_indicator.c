@@ -64,7 +64,7 @@ void draw_bluetooth_indicator(GContext *ctx, int x, int y, bool invert) {
   fg_mode = GCompOpSet;
 #endif  // PBL_BW
 
-  poll_quiet_time_state();  // Just in case it's recently changed.
+  (void)poll_quiet_time_state();  // Just in case it's recently changed.
   if (!got_bluetooth_state) {
     bluetooth_state = bluetooth_connection_service_peek();
     got_bluetooth_state = true;
@@ -167,14 +167,14 @@ void deinit_bluetooth_indicator() {
   destroy_bluetooth_bitmaps();
 }
 
+#ifndef PBL_PLATFORM_APLITE
 // We have to poll the quiet_time_is_active() state from time to
 // time because Pebble doesn't provide a callback handler for this.
-void poll_quiet_time_state() {
-#ifndef PBL_PLATFORM_APLITE
+bool poll_quiet_time_state() {
   bool new_quiet_time_state = quiet_time_is_active();
   if (quiet_time_state == new_quiet_time_state) {
     // No change.
-    return;
+    return quiet_time_state;
   }
 
   quiet_time_state = new_quiet_time_state;
@@ -183,5 +183,6 @@ void poll_quiet_time_state() {
   if (config.bluetooth_indicator != IM_off) {
     invalidate_clock_face();
   }
-#endif  // PBL_PLATFORM_APLITE
+  return quiet_time_state;
 }
+#endif  // PBL_PLATFORM_APLITE
