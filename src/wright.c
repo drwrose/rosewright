@@ -2262,6 +2262,10 @@ void destroy_temporal_objects() {
   bwd_destroy(&top_subdial_bitmap);
   bwd_destroy(&moon_wheel_bitmap);
 
+#ifndef PREBAKE_LABEL
+  bwd_destroy(&pebble_label);
+#endif  // PREBAKE_LABEL
+
   bwd_destroy(&clock_face);
   face_index = -1;
 
