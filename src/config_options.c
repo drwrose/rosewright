@@ -249,7 +249,7 @@ static void int_to_config() {
       WNM_mon_4, false
     },
 
-#elif PERSIST_KEY == 0x5151 + 0xc7 ||  PERSIST_KEY == 0x5151 + 0xca   // Rosewright Chronograph
+#elif PERSIST_KEY == 0x5151 + 0xc7 ||  PERSIST_KEY == 0x5151 + 0xca   // Rosewright C & Rosewright Chronograph
     { IM_always, IM_always, true, false,
       true, 0, CDM_off, false,
       0, 0,
@@ -271,6 +271,14 @@ static void int_to_config() {
       0, 0,
       { DWM_off, DWM_off },
       true, false, 3, TSM_pebble_label,
+      WNM_mon_4, false
+    },
+
+    { IM_off, IM_off, true, false,
+      true, 0, CDM_off, false,
+      0, 0,
+      { DWM_off, DWM_off },
+      true, false, 0, TSM_off,
       WNM_mon_4, false
     },
 
