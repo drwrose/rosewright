@@ -291,7 +291,7 @@ faces = {
                             (121, 69, 'b'), (145, 43, 'b'),
                             (121, 69, 'b'), (145, 43, 'b'),
                             ],
-        'defaults' : [ 'date:b', 'moon_phase', 'pebble_label', 'moon_dark', 'second', 'hour_minute_overlap', 'sweep' ],
+        'defaults' : [ 'date:b', 'moon_phase', 'moon_dark', 'second', 'hour_minute_overlap', 'sweep' ],
         },
     'b' : {
         'filename' : ['b_face.png', 'b_face_clean.png'],
@@ -370,7 +370,7 @@ faces = {
         'battery_round' : (121, 49, 'b'),
         'bluetooth_emery' : (22, 24, 'b'),
         'battery_emery' : (144, 29, 'b'),
-        'defaults' : [ 'second' ],
+        'defaults' : [ 'second', 'pebble_label' ],
         },
     'c2' : {
         'filename' : ['c_face.png'],
@@ -405,7 +405,7 @@ faces = {
         'battery_round' : (121, 49, 'b'),
         'bluetooth_emery' : (22, 24, 'b'),
         'battery_emery' : (144, 29, 'b'),
-        'defaults' : [ 'second', 'limit_cache_aplite', 'prebake_label' ],
+        'defaults' : [ 'second', 'limit_cache_aplite', 'prebake_label', 'pebble_label' ],
         },
     'd' : {
         'filename' : ['d_face.png', 'd_face_white.png', 'd_face_clean.png'],
