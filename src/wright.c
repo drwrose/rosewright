@@ -768,7 +768,13 @@ void draw_hand(struct HandCache *hand_cache RESOURCE_CACHE_FORMAL_PARAMS, struct
 void remap_colors_clock(BitmapWithData *bwd) {
 #ifndef PBL_BW
   struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
-  bwd_remap_colors(bwd, (GColor8){.argb=cd->cb_argb8}, (GColor8){.argb=cd->c1_argb8}, (GColor8){.argb=cd->c2_argb8}, (GColor8){.argb=cd->c3_argb8}, config.draw_mode);
+  GColor cb, c1, c2, c3;
+  cb.argb = cd->cb_argb8;
+  c1.argb = cd->c1_argb8;
+  c2.argb = cd->c2_argb8;
+  c3.argb = cd->c3_argb8;
+
+  bwd_remap_colors(bwd, cb, c1, c2, c3, config.draw_mode);
 #endif  // PBL_BW
 }
 
@@ -777,13 +783,14 @@ void remap_colors_clock(BitmapWithData *bwd) {
 void remap_colors_date(BitmapWithData *bwd) {
 #ifndef PBL_BW
   struct FaceColorDef *cd = &clock_face_color_table[config.color_mode];
-  GColor db, d1, cb, c2;
+  GColor db, d1;
   db.argb = cd->db_argb8;
   d1.argb = cd->d1_argb8;
-  cb.argb = cd->cb_argb8;
-  c2.argb = cd->c2_argb8;
 
-  bwd_remap_colors(bwd, db, d1, c2, cb, config.draw_mode);
+  // I've experimented with using the blue channel for something
+  // interesting, but couldn't really make it work.  So now only the
+  // red channel is used in the date window (and battery gauge).
+  bwd_remap_colors(bwd, db, d1, db, db, config.draw_mode);
 #endif  // PBL_BW
 }
 
