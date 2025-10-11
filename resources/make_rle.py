@@ -188,7 +188,7 @@ def chop_rle(source, n):
     result = ''
     for v in source:
         # Count the minimum number of chunks we need to represent v.
-        numChunks = (count_bits(v) + n - 1) / n
+        numChunks = (count_bits(v) + n - 1) // n
 
         # We write out a number of zeroes to indicate this.
         zeroCount = numChunks - 1
@@ -237,7 +237,7 @@ class Rl2Unpacker:
 
     def __init__(self, str, n, zero_expands = True):
         # assumption: n is an integer divisor of 8.
-        assert n * (8 / n) == 8
+        assert n * (8 // n) == 8
 
         self.str = str
         self.n = n
@@ -317,13 +317,13 @@ class Rl2Unpacker:
 def make_rle_image_1bit(rleFilename, image):
     image = image.convert('1')
     w, h = image.size
-    stride = ((w + 31) / 32) * 4
+    stride = ((w + 31) // 32) * 4
     fullSize = h * stride
     pixels_per_byte = 8
 
     ## if w % 8 != 0:
     ##     # Must be a multiple of 8 pixels wide.  If not, expand it.
-    ##     w = ((w + 7) / 8) * 8
+    ##     w = ((w + 7) // 8) * 8
     w_orig = w
     if w != stride * pixels_per_byte:
         # Must be stride bytes wide.  If not, expand it.
@@ -337,7 +337,7 @@ def make_rle_image_1bit(rleFilename, image):
 
     # The number of bytes in a row.  Must be a multiple of 4, per
     # Pebble conventions.
-    stride = ((w + 31) / 32) * 4
+    stride = ((w + 31) // 32) * 4
     assert stride <= 0xff
 
     rle_normal = list(generate_rle_1bit(generate_pixels_1bit(image, stride)))
@@ -432,11 +432,11 @@ def make_rle_image_basalt(rleFilename, image):
             format = GBitmapFormat4BitPalette
             vn = 4
 
-    pixels_per_byte = 8 / vn
-    stride = (w + pixels_per_byte - 1) / pixels_per_byte
+    pixels_per_byte = 8 // vn
+    stride = (w + pixels_per_byte - 1) // pixels_per_byte
 
     # Apparently Basalt does not word-align the rows for these advanced format types.
-    #stride = ((stride + 3) / 4) * 4
+    #stride = ((stride + 3) // 4) * 4
 
     fullSize = h * stride
 
@@ -743,10 +743,10 @@ def unpack_rle_file(rleFilename):
 
     print("vn = %s, pixels_per_byte = %s" % (vn, pixels_per_byte))
 
-    stride = (width + pixels_per_byte - 1) / pixels_per_byte
+    stride = (width + pixels_per_byte - 1) // pixels_per_byte
 
     if format == GBitmapFormat1Bit:
-        stride = ((stride + 3) / 4) * 4
+        stride = ((stride + 3) // 4) * 4
 
     # Expand the width as needed to include the extra padding pixels.
     width2 = (stride * pixels_per_byte)
