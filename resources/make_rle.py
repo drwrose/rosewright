@@ -4,7 +4,7 @@ import PIL.Image, PIL.ImageOps
 import sys
 import os
 import shutil
-from peb_platform import getPlatformShape, getPlatformColor, getPlatformFilenameAndVariant
+from .peb_platform import getPlatformShape, getPlatformColor, getPlatformFilenameAndVariant
 
 help = """
 make_rle.py
@@ -51,8 +51,8 @@ threshold2Bit = [0] * 64 + [85] * 64 + [170] * 64 + [255] * 64
 
 
 def usage(code, msg = ''):
-    print >> sys.stderr, help
-    print >> sys.stderr, msg
+    print(help, file=sys.stderr)
+    print(msg, file=sys.stderr)
     sys.exit(code)
 
 def unscreen(image):
@@ -146,7 +146,7 @@ def generate_rle_1bit(source):
         while current == next:
             count += 1
             try:
-                next = source.next()
+                next = next(source)
             except StopIteration:
                 yield count
                 raise StopIteration
@@ -159,14 +159,14 @@ def generate_rle_pairs(source):
     input--the input is a sequence of numeric values, so the rle is a
     sequence of (value, count) pairs. """
 
-    current = source.next()
+    current = next(source)
     count = 0
     next = current
     while True:
         while current == next:
             count += 1
             try:
-                next = source.next()
+                next = next(source)
             except StopIteration:
                 yield (current, count)
                 raise StopIteration
@@ -380,7 +380,7 @@ def make_rle_image_1bit(rleFilename, image):
     rle.write(result)
     rle.close()
 
-    print '%s: %s, %s vs. %s' % (rleFilename, format, 8 + len(result), fullSize)
+    print('%s: %s, %s vs. %s' % (rleFilename, format, 8 + len(result), fullSize))
 
 def make_rle_image_basalt(rleFilename, image):
     image = image.convert('RGBA')
@@ -463,7 +463,7 @@ def make_rle_image_basalt(rleFilename, image):
         # With an n-bit image, the values list can't be inferred and
         # must be explicitly stored.
         values_rle = generate_rle_pairs(pixels)
-        values, rle = zip(*list(values_rle))
+        values, rle = list(zip(*list(values_rle)))
 
     rle = list(rle)
 
@@ -511,7 +511,7 @@ def make_rle_image_basalt(rleFilename, image):
 
     rle.close()
 
-    print '%s: %s, %s vs. %s' % (rleFilename, format, 8 + len(result) + len(values), fullSize)
+    print('%s: %s, %s vs. %s' % (rleFilename, format, 8 + len(result) + len(values), fullSize))
 
 def make_rle_image(rleFilename, image, color = 'color'):
     if color == 'bw':
@@ -548,7 +548,7 @@ colorResourceEntry = """
     },"""
 
 def format_platforms(platforms):
-    return ', '.join(map(lambda platform: '"%s"' % (platform), list(platforms)))
+    return ', '.join(['"%s"' % (platform) for platform in list(platforms)])
 
 def make_rle(filename, name = None, prefix = 'resources/', useRle = True, platforms = None, compress = True, requirePalette = True, color = None):
     resourceStr = ''
@@ -566,7 +566,7 @@ def make_rle_file(filename, variant, name = None, prefix = 'resources/', useRle 
         basename = basename[:-len(variant)]
     targetFilename = basename + variant
     needsCopy = False
-    print targetFilename
+    print(targetFilename)
 
     if color is None:
         color = getPlatformColor(platform)
@@ -590,10 +590,10 @@ def make_rle_file(filename, variant, name = None, prefix = 'resources/', useRle 
         targetFilename = 'build/%s_%s' % (basename, platform)
         needsCopy = True
 
-    print targetFilename
+    print(targetFilename)
 
     if useRle:
-        print filename, targetFilename + '.rle'
+        print(filename, targetFilename + '.rle')
         image = PIL.Image.open(prefix + filename)
         make_rle_image(prefix + targetFilename + '.rle', image, color = color)
 
@@ -604,7 +604,7 @@ def make_rle_file(filename, variant, name = None, prefix = 'resources/', useRle 
             }
 
     else:
-        print filename, targetFilename + '.png'
+        print(filename, targetFilename + '.png')
         if needsCopy:
             image = PIL.Image.open(prefix + filename)
             image.save(prefix + targetFilename + '.png')
@@ -724,7 +724,7 @@ def unpack_rle_file(rleFilename):
     do_unscreen = ((n & 0x80) != 0)
     n = n & 0x7f
 
-    print "n = %s, format = %s, vo = %s, po = %s" % (n, format, vo, po)
+    print("n = %s, format = %s, vo = %s, po = %s" % (n, format, vo, po))
 
     if (format == GBitmapFormat1Bit or format == GBitmapFormat1BitPalette):
         pixels_per_byte = 8
@@ -741,7 +741,7 @@ def unpack_rle_file(rleFilename):
     else:
         assert False
 
-    print "vn = %s, pixels_per_byte = %s" % (vn, pixels_per_byte)
+    print("vn = %s, pixels_per_byte = %s" % (vn, pixels_per_byte))
 
     stride = (width + pixels_per_byte - 1) / pixels_per_byte
 
@@ -758,7 +758,7 @@ def unpack_rle_file(rleFilename):
 
     values_data = rb.read(po - vo)
     assert(po == rb.tell())
-    palette = map(ord, rb.read())
+    palette = list(map(ord, rb.read()))
 
     # Unpack values_data into the list of values.
     unpacker = Rl2Unpacker(values_data, vn, zero_expands = False)
@@ -768,7 +768,7 @@ def unpack_rle_file(rleFilename):
     unpacker = Rl2Unpacker(rle_data, n, zero_expands = True)
     rle = unpacker.getList()
 
-    print "rle = %s, values = %s, palette = %s" % (len(rle), len(values), len(palette))
+    print("rle = %s, values = %s, palette = %s" % (len(rle), len(values), len(palette)))
 
     if vn == 1:
         # Unpack a 1-bit file.
@@ -801,7 +801,7 @@ def unpack_rle_file(rleFilename):
     else:
         image = PIL.Image.new('RGBA', (width2, height), 0)
         if palette:
-            palette = map(unpack_argb8, palette)
+            palette = list(map(unpack_argb8, palette))
 
     if palette:
         # Apply the palette.
@@ -834,7 +834,7 @@ def unpack_rle(filename, prefix = 'resources/'):
     pngFilename = basename + '_unpacked.png'
     image = unpack_rle_file(prefix + filename)
 
-    print pngFilename
+    print(pngFilename)
     image.save(pngFilename)
 
 
@@ -844,7 +844,7 @@ if __name__ == '__main__':
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'tp:uh')
-    except getopt.error, msg:
+    except getopt.error as msg:
         usage(1, msg)
 
     makeTrans = False
@@ -860,7 +860,7 @@ if __name__ == '__main__':
         elif opt == '-h':
             usage(0)
 
-    print args
+    print(args)
     for filename in args:
         if doUnpack:
             unpack_rle(filename, prefix = '')

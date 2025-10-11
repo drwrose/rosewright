@@ -20,7 +20,7 @@ def getPlatformShape(platform):
     elif platform in ['emery']:
         shape = 'emery'
     else:
-        raise StandardError
+        raise Exception
     return shape
 
 def getPlatformColor(platform):
@@ -31,7 +31,7 @@ def getPlatformColor(platform):
     elif platform in ['chalk', 'basalt', 'emery']:
         color = 'color'
     else:
-        raise StandardError
+        raise Exception
     return color
 
 def getVariantsForPlatform(platform):
@@ -81,7 +81,7 @@ def getPlatformFilenameAndVariant(filename, platform, prefix = ''):
             return basename + variant + ext, variant
 
     import pdb; pdb.set_trace()
-    raise StandardError, 'No filename for %s, platform %s' % (filename, platform)
+    raise Exception('No filename for %s, platform %s' % (filename, platform))
 
 
 def getPlatformFilename(filename, platform, prefix = ''):

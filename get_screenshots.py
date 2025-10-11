@@ -30,8 +30,8 @@ Options:
 """
 
 def usage(code, msg = ''):
-    print >> sys.stderr, help
-    print >> sys.stderr, msg
+    print(help, file=sys.stderr)
+    print(msg, file=sys.stderr)
     sys.exit(code)
 
 watches = {
@@ -48,11 +48,11 @@ def send_pebble_command(*args):
     status = subprocess.call(args)
     if status == 0:
         return True
-    print "Command failed: %s" % (args,)
+    print("Command failed: %s" % (args,))
     return False
 
 def get_screenshots_for_platform(pbw, id, platform):
-    print pbw, id, platform
+    print(pbw, id, platform)
     if not send_pebble_command('wipe'):
         return False
 
@@ -61,16 +61,16 @@ def get_screenshots_for_platform(pbw, id, platform):
 
     for i in range(5):
         filename = '%s_%s_%s.png' % (id, platform, i + 1)
-        print filename
+        print(filename)
         if os.path.exists(filename):
             os.unlink(filename)
         if not send_pebble_command('screenshot', '--emulator', platform, filename):
             return False
         if not os.path.exists(filename):
-            print "Screenshot file not created: %s" % (filename)
+            print("Screenshot file not created: %s" % (filename))
             return False
         targetFilename = 'resources/clock_faces/%s_screenshots/%s' % (id, filename)
-        print targetFilename
+        print(targetFilename)
         if os.path.exists(targetFilename):
             os.unlink(targetFilename)
         shutil.move(filename, targetFilename)
@@ -87,12 +87,12 @@ def get_screenshots(pbw, platforms):
     try:
         zip = zipfile.ZipFile(pbw, 'r')
     except IOError:
-        print "Could not open %s" % (pbw)
+        print("Could not open %s" % (pbw))
         return False
     try:
         appinfoData = zip.read('appinfo.json')
     except KeyError:
-        print "Could not find appinfo.json in %s" % (pbw)
+        print("Could not find appinfo.json in %s" % (pbw))
         return False
 
     zip = None
@@ -100,14 +100,14 @@ def get_screenshots(pbw, platforms):
     targetPlatforms = appinfo['targetPlatforms']
     name = appinfo['name']
     if name not in watches:
-        print "Unknown watch name '%s' in %s" % (name, pbw)
+        print("Unknown watch name '%s' in %s" % (name, pbw))
         return False
     id = watches[name]
 
     if platforms:
         unsupported = set(platforms) - set(targetPlatforms)
         if unsupported:
-            print "Platform %s not supported by %s" % (','.join(sorted(unsupported)), pbw)
+            print("Platform %s not supported by %s" % (','.join(sorted(unsupported)), pbw))
             return False
     else:
         platforms = targetPlatforms
@@ -122,7 +122,7 @@ def get_screenshots(pbw, platforms):
 # Main.
 try:
     opts, args = getopt.getopt(sys.argv[1:], 'b:p:h')
-except getopt.error, msg:
+except getopt.error as msg:
     usage(1, msg)
 
 pbws = []
@@ -140,7 +140,7 @@ if not pbws:
     pbws.sort()
 
 if not pbws:
-    print >> sys.stderr, "No pbw's found."
+    print("No pbw's found.", file=sys.stderr)
     sys.exit(1)
 
 for pbw in pbws:

@@ -92,13 +92,13 @@ specialCases = {
     ('es_ES', 'ampm') : ['am', 'pm'],    # Removed silly space
     ('he_IL', 'ampm') : ['ma', 'mp'],    # Reversed for rtl re-reversal
     ('de_DE', 'ampm') : ['vorm', 'nach'],
-    ('ru_RU', 'month') : [u'\u042f\u043d\u0432', u'\u0424\u0435\u0432', u'\u041c\u0430\u0440', u'\u0410\u043f\u0440', u'\u041c\u0430\u0439', u'\u0418\u044e\u043d', u'\u0418\u044e\u043b', u'\u0410\u0432\u0433', u'\u0421\u0435\u043d', u'\u041e\u043a\u0442', u'\u041d\u043e\u044f', u'\u0414\u0435\u043a'],
-    ('ru_RU', 'ampm') : [u'\u0434\u043e', u'\u043f\u043e\u0441\u043b'],
-    ('hy_AM', 'ampm') : [u'\u0561\u057c\u0561\u057b', u'\u0570\u0565\u057f\u0578'],
-    ('fa_IR', 'ampm') : [u'\u0635', u'\u0645'],  # copied from Arabic, does that work?
-    ('ta_IN', 'ampm') : [u'\u0bae\u0bc1', u'\u0baa\u0bbf'], # Shortened to unique prefix
-    ('th_TH', 'ampm') : [u'\u0e01\u0e48\u0e2d\u0e19', u'\u0e2b\u0e25\u0e31\u0e07'], # Shortened to unique prefix
-    ('hi_IN', 'ampm') : [u'\u092a\u0942\u0930\u094d\u0935', u'\u0905\u092a\u0930'],
+    ('ru_RU', 'month') : ['\u042f\u043d\u0432', '\u0424\u0435\u0432', '\u041c\u0430\u0440', '\u0410\u043f\u0440', '\u041c\u0430\u0439', '\u0418\u044e\u043d', '\u0418\u044e\u043b', '\u0410\u0432\u0433', '\u0421\u0435\u043d', '\u041e\u043a\u0442', '\u041d\u043e\u044f', '\u0414\u0435\u043a'],
+    ('ru_RU', 'ampm') : ['\u0434\u043e', '\u043f\u043e\u0441\u043b'],
+    ('hy_AM', 'ampm') : ['\u0561\u057c\u0561\u057b', '\u0570\u0565\u057f\u0578'],
+    ('fa_IR', 'ampm') : ['\u0635', '\u0645'],  # copied from Arabic, does that work?
+    ('ta_IN', 'ampm') : ['\u0bae\u0bc1', '\u0baa\u0bbf'], # Shortened to unique prefix
+    ('th_TH', 'ampm') : ['\u0e01\u0e48\u0e2d\u0e19', '\u0e2b\u0e25\u0e31\u0e07'], # Shortened to unique prefix
+    ('hi_IN', 'ampm') : ['\u092a\u0942\u0930\u094d\u0935', '\u0905\u092a\u0930'],
     }
 
 # Attempt to determine the directory in which we're operating.
@@ -128,10 +128,10 @@ def writeResourceFile(generatedJson, localeName, nameList):
       "name": "%(id)s",
       "file": "%(filename)s"
     },"""
-    print >> generatedJson, nameEntry % {
+    print(nameEntry % {
         'id' : resourceId,
         'filename' : filename,
-        }
+        }, file=generatedJson)
 
     return 'RESOURCE_ID_%s' % (resourceId)
 
@@ -158,7 +158,7 @@ def getDfsNames(dfs, localeName, nameType, *funcs):
             # If the resulting names are short enough (we arbitrarily
             # declare 4 letters or less is short enough) then return
             # them.
-            if max(map(len, names)) <= 4:
+            if max(list(map(len, names))) <= 4:
                 return names
 
             # Otherwise, carry on to the next function attempt.
@@ -175,7 +175,7 @@ def makeDates(generatedTable, generatedJson, langRow, li):
     fontIndex = fontChoices.index(fontKey)
 
     locale = icu.Locale(localeName)
-    print '%s/%s/%s' % (localeName, langName, locale.getDisplayName())
+    print('%s/%s/%s' % (localeName, langName, locale.getDisplayName()))
     dfs = icu.DateFormatSymbols(locale)
 
     names = {
@@ -222,10 +222,10 @@ def makeDates(generatedTable, generatedJson, langRow, li):
 
     nameIds = writeResourceFile(generatedJson, localeName, showNames)
 
-    print >> generatedTable, """ // %s""" % (localeName)
-    print >> generatedTable, """  { %s, %s }, // %s = %s""" % (fontIndex, nameIds, li, langName)
-    print >> generatedTable, """ // %s""" % (repr(showNamesUnicode))
-    print >> generatedTable, ""
+    print(""" // %s""" % (localeName), file=generatedTable)
+    print("""  { %s, %s }, // %s = %s""" % (fontIndex, nameIds, li, langName), file=generatedTable)
+    print(""" // %s""" % (repr(showNamesUnicode)), file=generatedTable)
+    print("", file=generatedTable)
 
 def makeHex(ch):
     return '\\u%04x' % (ch)
@@ -261,29 +261,29 @@ def makeCharacterRegex(chars):
 def makeLang():
     # Generate the displayLangLookup table for pebble-js-app.js.
     displayLangLookup = open('%s/displayLangLookup.txt' % (resourcesDir), 'w')
-    print >> displayLangLookup, "var display_lang_lookup = {"
+    print("var display_lang_lookup = {", file=displayLangLookup)
     for localeName, langName, fontKey, index in langs:
-        print >> displayLangLookup, "  '%s' : %s," % (localeName, index)
+        print("  '%s' : %s," % (localeName, index), file=displayLangLookup)
         if '_' in localeName:
             prefix = localeName.split('_')[0]
-            print >> displayLangLookup, "  '%s' : %s," % (prefix, index)
+            print("  '%s' : %s," % (prefix, index), file=displayLangLookup)
             hyphened = localeName.replace('_', '-')
-            print >> displayLangLookup, "  '%s' : %s," % (hyphened, index)
+            print("  '%s' : %s," % (hyphened, index), file=displayLangLookup)
 
-    print >> displayLangLookup, "};"
-    print >> displayLangLookup, "var display_lang_reverse = {"
+    print("};", file=displayLangLookup)
+    print("var display_lang_reverse = {", file=displayLangLookup)
     for localeName, langName, fontKey, index in langs:
-        print >> displayLangLookup, "  %s : '%s'," % (index, localeName)
-    print >> displayLangLookup, "};"
+        print("  %s : '%s'," % (index, localeName), file=displayLangLookup)
+    print("};", file=displayLangLookup)
     displayLangLookup.close()
 
     # Generate lang_table.c.
     generatedTable = open('%s/lang_table.c' % (resourcesDir), 'w')
-    print >> generatedTable, '// Generated by make_lang.py\n'
+    print('// Generated by make_lang.py\n', file=generatedTable)
     generatedJson = open('%s/lang_data.json' % (resourcesDir), 'w')
 
     numLangs = len(langs)
-    print >> generatedTable, "LangDef lang_table[%s] = {" % (numLangs)
+    print("LangDef lang_table[%s] = {" % (numLangs), file=generatedTable)
 
     # Reorder the langs table and write it out in order by index.
     langDict = {}
@@ -292,11 +292,11 @@ def makeLang():
     for li in range(numLangs):
         makeDates(generatedTable, generatedJson, langDict[li], li)
 
-    print >> generatedTable, "};\n"
+    print("};\n", file=generatedTable)
 
-    print >> generatedTable, "int num_langs = %s;" % (numLangs)
-    print >> generatedTable, "// maximum characters: %s" % (maxNumChars)
-    print >> generatedTable, "#define DATE_NAMES_MAX_BUFFER %s\n" % (maxTotalLen)
+    print("int num_langs = %s;" % (numLangs), file=generatedTable)
+    print("// maximum characters: %s" % (maxNumChars), file=generatedTable)
+    print("#define DATE_NAMES_MAX_BUFFER %s\n" % (maxTotalLen), file=generatedTable)
 
     # Ensure the latin font includes the digits, plus whatever other
     # characters we might need there.
@@ -338,7 +338,7 @@ def makeLang():
         else:
             filename_rect, filename_round, filename_emery = filenames, filenames, filenames
         size_rect, size_round, size_emery = sizes
-        print >> generatedJson, fontEntry % {
+        print(fontEntry % {
             'regex' : makeCharacterRegex(neededChars[fontKey]),
             'upperKey' : fontKey.upper(),
             'size_rect' : size_rect,
@@ -347,48 +347,48 @@ def makeLang():
             'filename_rect' : filename_rect,
             'filename_round' : filename_round,
             'filename_emery' : filename_emery,
-            }
+            }, file=generatedJson)
 
-    print >> generatedTable, "#define NUM_DATE_LANG_FONTS %s" % (len(fontChoices))
-    print >> generatedTable, "struct FontPlacement date_lang_font_placement[NUM_DATE_LANG_FONTS] = {"
+    print("#define NUM_DATE_LANG_FONTS %s" % (len(fontChoices)), file=generatedTable)
+    print("struct FontPlacement date_lang_font_placement[NUM_DATE_LANG_FONTS] = {", file=generatedTable)
 
     # emery
-    print >> generatedTable, "#if defined(PBL_PLATFORM_EMERY)"
+    print("#if defined(PBL_PLATFORM_EMERY)", file=generatedTable)
 
     for fontKey in fontChoices:
         filenames, sizes, vshifts = fontNames[fontKey]
         if not isinstance(vshifts, type(())):
             vshifts = [vshifts, vshifts, vshifts]
-        print >> generatedTable, "{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), sizes[2], vshifts[2])
+        print("{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), sizes[2], vshifts[2]), file=generatedTable)
 
     # rect
-    print >> generatedTable, "#elif defined(PBL_PLATFORM_APLITE) || defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE)"
+    print("#elif defined(PBL_PLATFORM_APLITE) || defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE)", file=generatedTable)
 
     for fontKey in fontChoices:
         filenames, sizes, vshifts = fontNames[fontKey]
         if not isinstance(vshifts, type(())):
             vshifts = [vshifts, vshifts, vshifts]
-        print >> generatedTable, "{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), sizes[0], vshifts[0])
+        print("{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), sizes[0], vshifts[0]), file=generatedTable)
 
     # round
-    print >> generatedTable, "#elif defined(PBL_PLATFORM_CHALK)"
+    print("#elif defined(PBL_PLATFORM_CHALK)", file=generatedTable)
 
     for fontKey in fontChoices:
         filenames, sizes, vshifts = fontNames[fontKey]
         if not isinstance(vshifts, type(())):
             vshifts = [vshifts, vshifts, vshifts]
-        print >> generatedTable, "{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), sizes[1], vshifts[1])
+        print("{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), sizes[1], vshifts[1]), file=generatedTable)
 
-    print >> generatedTable, "#endif"
+    print("#endif", file=generatedTable)
 
-    print >> generatedTable, "};"
+    print("};", file=generatedTable)
 
 
 
 # Main.
 try:
     opts, args = getopt.getopt(sys.argv[1:], 'h')
-except getopt.error, msg:
+except getopt.error as msg:
     usage(1, msg)
 
 for opt, arg in opts:

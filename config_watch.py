@@ -51,21 +51,21 @@ Options:
 """
 
 def usage(code, msg = ''):
-    watchStyles = watches.keys()
+    watchStyles = list(watches.keys())
     watchStyles.sort()
     watchStyles = ' '.join(watchStyles)
-    handStyles = hands.keys()
+    handStyles = list(hands.keys())
     handStyles.sort()
     handStyles = ' '.join(handStyles)
-    faceStyles = faces.keys()
+    faceStyles = list(faces.keys())
     faceStyles.sort()
     faceStyles = ' '.join(faceStyles)
-    print >> sys.stderr, help % {
+    print(help % {
         'watchStyles' : watchStyles,
         'handStyles' : handStyles,
         'faceStyles' : faceStyles,
-        }
-    print >> sys.stderr, msg
+        }, file=sys.stderr)
+    print(msg, file=sys.stderr)
     sys.exit(code)
 
 # [fill_rect, bar_rect, (font, vshift)] where rect is (x, y, w, h)
@@ -494,10 +494,10 @@ faces = {
 
 """
 def scaleIndicatorCoord(v, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize, scale):
-    if v + oldIndicatorSize / 2 < oldScreenSize / 3:
+    if v + oldIndicatorSize // 2 < oldScreenSize // 3:
         # Close to the left (top) wall.
         v *= scale
-    elif v + oldIndicatorSize / 2 > oldScreenSize * 2 / 3:
+    elif v + oldIndicatorSize // 2 > oldScreenSize * 2 // 3:
         # Close to the right (bottom) wall.
         v = (oldScreenSize - (v + oldIndicatorSize))
         v *= scale
@@ -656,8 +656,8 @@ def applyLabel(outputFilename, faceIndex, platforms = None):
         label = PIL.Image.open(labelFilename)
 
         top_subdial_placement = expandIndicatorList(top_subdial[platform], numIndicatorFaces)[faceIndex]
-        pebble_label_offset_x = ((subdialSizes[platform][0] - pebbleLabelSizes[platform][0]) / 2)
-        pebble_label_offset_y = ((subdialSizes[platform][1] - pebbleLabelSizes[platform][1]) / 2)
+        pebble_label_offset_x = ((subdialSizes[platform][0] - pebbleLabelSizes[platform][0]) // 2)
+        pebble_label_offset_y = ((subdialSizes[platform][1] - pebbleLabelSizes[platform][1]) // 2)
 
         x = top_subdial_placement[0] + pebble_label_offset_x
         y = top_subdial_placement[1] + pebble_label_offset_y
@@ -721,9 +721,9 @@ def makeFaces(generatedTable, generatedDefs):
         im = PIL.Image.open(bluetoothFilename)
         bluetoothSizes[platform] = im.size
 
-    print >> generatedTable, "struct FaceDef clock_face_table[NUM_FACES] = {"
+    print("struct FaceDef clock_face_table[NUM_FACES] = {", file=generatedTable)
     for i in range(len(faceFilenames)):
-        print >> generatedTable, "  { RESOURCE_ID_CLOCK_FACE_%s }," % (i)
+        print("  { RESOURCE_ID_CLOCK_FACE_%s }," % (i), file=generatedTable)
 
         faceFilename = 'clock_faces/' + faceFilenames[i]
         resourceStr += make_rle(faceFilename, name = 'CLOCK_FACE_%s' % (i), useRle = supportRle, platforms = targetPlatforms, compress = True)
@@ -737,16 +737,16 @@ def makeFaces(generatedTable, generatedDefs):
             resourceStr += make_rle(outputFilename, name = 'CLOCK_FACE_%s_LABEL' % (i), useRle = supportRle, platforms = targetPlatforms, compress = True)
 
 
-    print >> generatedTable, "};\n"
+    print("};\n", file=generatedTable)
 
     faceColors = fd.get('colors')
-    print >> generatedTable, "#ifndef PBL_BW"
-    print >> generatedTable, "struct FaceColorDef clock_face_color_table[NUM_FACE_COLORS] = {"
+    print("#ifndef PBL_BW", file=generatedTable)
+    print("struct FaceColorDef clock_face_color_table[NUM_FACE_COLORS] = {", file=generatedTable)
     for i in range(len(faceColors)):
         cb, db = faceColors[i]
-        print >> generatedTable, "  { GColor%sARGB8, GColor%sARGB8, GColor%sARGB8, GColor%sARGB8, GColor%sARGB8, GColor%sARGB8 }," % (cb[0], cb[1], cb[2], cb[3], db[0], db[1])
-    print >> generatedTable, "};"
-    print >> generatedTable, "#endif  // PBL_BW\n"
+        print("  { GColor%sARGB8, GColor%sARGB8, GColor%sARGB8, GColor%sARGB8, GColor%sARGB8, GColor%sARGB8 }," % (cb[0], cb[1], cb[2], cb[3], db[0], db[1]), file=generatedTable)
+    print("};", file=generatedTable)
+    print("#endif  // PBL_BW\n", file=generatedTable)
 
     return resourceStr
 
@@ -759,24 +759,24 @@ def makeVectorHands(generatedTable, paintChannel, generatedDefs, hand, scaleFact
         '' : '0',
         }
 
-    print >> generatedTable, "struct VectorHand %s_hand_vector_table = {" % (hand)
-    print >> generatedTable, "  %s," % (paintChannel)
-    print >> generatedTable, "  %s, (struct VectorHandGroup[]){" % (len(groupList))
+    print("struct VectorHand %s_hand_vector_table = {" % (hand), file=generatedTable)
+    print("  %s," % (paintChannel), file=generatedTable)
+    print("  %s, (struct VectorHandGroup[]){" % (len(groupList)), file=generatedTable)
     for platform in targetPlatforms:
         shape = getPlatformShape(platform)
         scaleFactor = scaleFactors.get(shape, 1.0)
 
-        print >> generatedTable, "#ifdef PBL_PLATFORM_%s" % (platform.upper())
+        print("#ifdef PBL_PLATFORM_%s" % (platform.upper()), file=generatedTable)
         for fillType, points, scale in groupList:
             scale *= scaleFactor
-            print >> generatedTable, "  { { %s, (GPoint[]){" % (len(points))
+            print("  { { %s, (GPoint[]){" % (len(points)), file=generatedTable)
             for px, py in points:
-                print >> generatedTable, "    { %d, %d }," % (px * scale, py * scale)
-            print >> generatedTable, "  } } },"
-        print >> generatedTable, "#endif  // PBL_PLATFORM_%s" % (platform.upper())
+                print("    { %d, %d }," % (px * scale, py * scale), file=generatedTable)
+            print("  } } },", file=generatedTable)
+        print("#endif  // PBL_PLATFORM_%s" % (platform.upper()), file=generatedTable)
 
-    print >> generatedTable, "  }"
-    print >> generatedTable, "};\n"
+    print("  }", file=generatedTable)
+    print("};\n", file=generatedTable)
 
     return resourceStr
 
@@ -820,14 +820,14 @@ def makeBitmapHands(generatedTable, generatedDefs, useRle, hand, scaleFactors, s
         color = getPlatformColor(platform)
         scaleFactor = scaleFactors.get(shape, 1.0)
 
-        print >> generatedTable, "#ifdef PBL_PLATFORM_%s" % (platform.upper())
+        print("#ifdef PBL_PLATFORM_%s" % (platform.upper()), file=generatedTable)
 
         if color == 'bw':
             resourceStr += makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale * scaleFactor, platform)
         else:
             resourceStr += makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode, asymmetric, pivot, scale * scaleFactor, platform)
 
-        print >> generatedTable, "#endif  // PBL_PLATFORM_%s" % (platform.upper())
+        print("#endif  // PBL_PLATFORM_%s" % (platform.upper()), file=generatedTable)
 
     return resourceStr
 
@@ -879,7 +879,7 @@ def makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, a
     # Center the source image on its pivot, and pad it with black.
     border = (pivot[0], pivot[1], source1.size[0] - pivot[0], source1.size[1] - pivot[1])
     size = (max(border[0], border[2]) * 2, max(border[1], border[3]) * 2)
-    center = (size[0] / 2, size[1] / 2)
+    center = (size[0] // 2, size[1] // 2)
     large1 = PIL.Image.new('RGB', size, 0)
     large1.paste(source1, (center[0] - pivot[0], center[1] - pivot[1]))
 
@@ -917,7 +917,7 @@ def makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, a
                 if angle > 90 and angle < 270:
                     # If we're in the bottom half of the circle, flip
                     # over from the top.
-                    i = (numStepsHand / 2 - i) % numStepsHand
+                    i = (numStepsHand // 2 - i) % numStepsHand
                     flip_y = True
                     angle = i * 360.0 / numStepsHand
         else:
@@ -927,7 +927,7 @@ def makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, a
             # 180-degree rotation), and this means we only need to
             # generate the right half, and rotate into the left.
             if angle >= 180:
-                i -= (numStepsHand / 2)
+                i -= (numStepsHand // 2)
                 flip_x = True
                 flip_y = True
                 angle = i * 360.0 / numStepsHand
@@ -950,7 +950,7 @@ def makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, a
 
             p1 = large1.rotate(-angle, PIL.Image.BICUBIC, True)
             scaledSize = (int(p1.size[0] * scale + 0.5), int(p1.size[1] * scale + 0.5))
-            p1 = p1.resize(scaledSize, PIL.Image.ANTIALIAS)
+            p1 = p1.resize(scaledSize, PIL.Image.LANCZOS)
 
             # Now make the 1-bit version for B&W platforms.
             r, g, b = p1.split()
@@ -959,12 +959,12 @@ def makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, a
             else:
                 p1 = b.convert('1')
 
-            cx, cy = p1.size[0] / 2, p1.size[1] / 2
+            cx, cy = p1.size[0] // 2, p1.size[1] // 2
             cropbox = p1.getbbox()
 
             # Mask.
             pm1 = large1Mask.rotate(-angle, PIL.Image.BICUBIC, True)
-            pm1 = pm1.resize(scaledSize, PIL.Image.ANTIALIAS)
+            pm1 = pm1.resize(scaledSize, PIL.Image.LANCZOS)
 
             # And the 1-bit version of the mask.
             if not dither or useTransparency:
@@ -988,7 +988,7 @@ def makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, a
             # horizontally.  (Actually we only need it to be an even
             # multiple of bytes, but the B&W build is the lowest
             # common denominator with 8 pixels per byte.)
-            w = 8 * ((p1.size[0] + 7) / 8)
+            w = 8 * ((p1.size[0] + 7) // 8)
             if w != p1.size[0]:
                 pt = PIL.Image.new('1', (w, p1.size[1]), 0)
                 pt.paste(p1, (0, 0))
@@ -1038,16 +1038,16 @@ def makeBitmapHandsBW(generatedTable, useRle, hand, sourceBasename, colorMode, a
         numMaskBitmaps = 0
     resourceCacheSize[hand, platform] = numBitmaps, numMaskBitmaps
 
-    print >> generatedTable, "struct BitmapHandCenterRow %s_hand_bitmap_lookup[] = {" % (hand)
+    print("struct BitmapHandCenterRow %s_hand_bitmap_lookup[] = {" % (hand), file=generatedTable)
     for i in range(numBitmaps):
         line = handLookupLines.get(i, "  {},");
-        print >> generatedTable, line
-    print >> generatedTable, "};\n"
+        print(line, file=generatedTable)
+    print("};\n", file=generatedTable)
 
-    print >> generatedTable, "struct BitmapHandTableRow %s_hand_bitmap_table[NUM_STEPS_%s] = {" % (hand, hand.upper())
+    print("struct BitmapHandTableRow %s_hand_bitmap_table[NUM_STEPS_%s] = {" % (hand, hand.upper()), file=generatedTable)
     for line in handTableLines:
-        print >> generatedTable, line
-    print >> generatedTable, "};\n"
+        print(line, file=generatedTable)
+    print("};\n", file=generatedTable)
 
     return resourceStr + maskResourceStr
 
@@ -1093,7 +1093,7 @@ def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode
     # Center the source image on its pivot, and pad it with black.
     border = (pivot[0], pivot[1], source.size[0] - pivot[0], source.size[1] - pivot[1])
     size = (max(border[0], border[2]) * 2, max(border[1], border[3]) * 2)
-    center = (size[0] / 2, size[1] / 2)
+    center = (size[0] // 2, size[1] // 2)
     large = PIL.Image.new('RGB', size, 0)
     large.paste(source, (center[0] - pivot[0], center[1] - pivot[1]))
 
@@ -1135,7 +1135,7 @@ def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode
                 if angle > 90 and angle < 270:
                     # If we're in the bottom half of the circle, flip
                     # over from the top.
-                    i = (numStepsHand / 2 - i) % numStepsHand
+                    i = (numStepsHand // 2 - i) % numStepsHand
                     flip_y = True
                     angle = i * 360.0 / numStepsHand
         else:
@@ -1145,7 +1145,7 @@ def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode
             # 180-degree rotation), and this means we only need to
             # generate the right half, and rotate into the left.
             if angle >= 180:
-                i -= (numStepsHand / 2)
+                i -= (numStepsHand // 2)
                 flip_x = True
                 flip_y = True
                 angle = i * 360.0 / numStepsHand
@@ -1168,7 +1168,7 @@ def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode
 
             p = large.rotate(-angle, PIL.Image.BICUBIC, True)
             scaledSize = (int(p.size[0] * scale + 0.5), int(p.size[1] * scale + 0.5))
-            p = p.resize(scaledSize, PIL.Image.ANTIALIAS)
+            p = p.resize(scaledSize, PIL.Image.LANCZOS)
 
             # Now make the 2-bit version for Basalt and Chalk.
             r, g, b = p.split()
@@ -1177,12 +1177,12 @@ def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode
             b = b.point(threshold2Bit).convert('L')
             p2 = PIL.Image.merge('RGB', [r, g, b])
 
-            cx, cy = p2.size[0] / 2, p2.size[1] / 2
+            cx, cy = p2.size[0] // 2, p2.size[1] // 2
             cropbox = p2.getbbox()
 
             # Mask.
             pm = largeMask.rotate(-angle, PIL.Image.BICUBIC, True)
-            pm = pm.resize(scaledSize, PIL.Image.ANTIALIAS)
+            pm = pm.resize(scaledSize, PIL.Image.LANCZOS)
 
             # And the 2-bit version of the mask.
             pm2 = pm.point(threshold2Bit).convert('L')
@@ -1195,7 +1195,7 @@ def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode
 
             if sourceMaskExplicit:
                 pme = largeMaskExplicit.rotate(-angle, PIL.Image.BICUBIC, True)
-                pme = pme.resize(scaledSize, PIL.Image.ANTIALIAS)
+                pme = pme.resize(scaledSize, PIL.Image.LANCZOS)
                 r, g, b, a = pme.split()
                 r = r.point(threshold2Bit).convert('L')
                 g = g.point(threshold2Bit).convert('L')
@@ -1223,7 +1223,7 @@ def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode
             # horizontally.  (Actually we only need it to be an even
             # multiple of bytes, but the B&W build is the lowest
             # common denominator with 8 pixels per byte.)
-            w = 8 * ((p2.size[0] + 7) / 8)
+            w = 8 * ((p2.size[0] + 7) // 8)
             if w != p2.size[0]:
                 pt = PIL.Image.new('RGB', (w, p2.size[1]), 0)
                 pt.paste(p2, (0, 0))
@@ -1287,16 +1287,16 @@ def makeBitmapHandsColor(generatedTable, useRle, hand, sourceBasename, colorMode
         numMaskBitmaps = 0
     resourceCacheSize[hand, platform] = numBitmaps, numMaskBitmaps
 
-    print >> generatedTable, "struct BitmapHandCenterRow %s_hand_bitmap_lookup[] = {" % (hand)
+    print("struct BitmapHandCenterRow %s_hand_bitmap_lookup[] = {" % (hand), file=generatedTable)
     for i in range(numBitmaps):
         line = handLookupLines.get(i, "  {},");
-        print >> generatedTable, line
-    print >> generatedTable, "};\n"
+        print(line, file=generatedTable)
+    print("};\n", file=generatedTable)
 
-    print >> generatedTable, "struct BitmapHandTableRow %s_hand_bitmap_table[NUM_STEPS_%s] = {" % (hand, hand.upper())
+    print("struct BitmapHandTableRow %s_hand_bitmap_table[NUM_STEPS_%s] = {" % (hand, hand.upper()), file=generatedTable)
     for line in handTableLines:
-        print >> generatedTable, line
-    print >> generatedTable, "};\n"
+        print(line, file=generatedTable)
+    print("};\n", file=generatedTable)
 
     return resourceStr + maskResourceStr
 
@@ -1364,8 +1364,8 @@ struct HandDef %(hand)s_hand_def = {
             hourMinuteOverlap = ('hour_minute_overlap' in defaults)
 
             screenSize = screenSizes[shape]
-            placeX = screenSize[0] / 2
-            placeY = screenSize[1] / 2
+            placeX = screenSize[0] // 2
+            placeY = screenSize[1] // 2
 
             if centers and shape in centers and hand in centers[shape]:
                 placeX, placeY = centers[shape][hand]
@@ -1388,9 +1388,9 @@ struct HandDef %(hand)s_hand_def = {
                 'vectorTable' : vectorTable,
                 'platformUpper' : platform.upper(),
             }
-            print >> generatedTable, handDef
+            print(handDef, file=generatedTable)
 
-        print >> generatedDefs, 'extern struct HandDef %s_hand_def;' % (hand)
+        print('extern struct HandDef %s_hand_def;' % (hand), file=generatedDefs)
 
     return resourceStr
 
@@ -1416,7 +1416,7 @@ def expandIndicatorList(list_shape, numFaces):
 
     if len(list_shape) == 1 and numFaces != 1:
         list_shape = [list_shape[0]] * numFaces
-    if len(list_shape) == numFaces / 2:
+    if len(list_shape) == numFaces // 2:
       # Implicitly expand it by doubling each face.
       i2 = list_shape
       list_shape = []
@@ -1434,33 +1434,33 @@ def makeIndicatorTable(generatedTable, generatedDefs, name, indicator, numFaces,
     day/date window) is meant to be rendered for each of the alternate
     faces. """
 
-    if not indicator.values()[0][0]:
+    if not list(indicator.values())[0][0]:
         return
 
     if anonymous:
         # Anonymous structure within a table
-        print >> generatedTable, "  { // %s" % (name)
+        print("  { // %s" % (name), file=generatedTable)
     else:
         # Standalone named structure
-        print >> generatedDefs, "extern struct IndicatorTable %s[%s];" % (name, numFaces)
-        print >> generatedTable, "struct IndicatorTable %s[%s] = {" % (name, numFaces)
+        print("extern struct IndicatorTable %s[%s];" % (name, numFaces), file=generatedDefs)
+        print("struct IndicatorTable %s[%s] = {" % (name, numFaces), file=generatedTable)
 
     def writeTable(generatedTable, list_shape, numFaces):
         list_shape = expandIndicatorList(list_shape, numFaces)
         for x, y, c in list_shape:
-            print >> generatedTable, "   { %s, %s, %s }," % (
-                x, y, int(c[0] == 'b'))
+            print("   { %s, %s, %s }," % (
+                x, y, int(c[0] == 'b')), file=generatedTable)
 
     for platform in targetPlatforms:
-        print >> generatedTable, "#ifdef PBL_PLATFORM_%s" % (platform.upper())
+        print("#ifdef PBL_PLATFORM_%s" % (platform.upper()), file=generatedTable)
         writeTable(generatedTable, indicator[platform], numFaces)
-        print >> generatedTable, "#endif  // PBL_PLATFORM_%s" % (platform.upper())
+        print("#endif  // PBL_PLATFORM_%s" % (platform.upper()), file=generatedTable)
 
     if anonymous:
         # Anonymous structure within a table
-        print >> generatedTable, "  },";
+        print("  },", file=generatedTable);
     else:
-        print >> generatedTable, "};\n";
+        print("};\n", file=generatedTable);
 
 def makeMoonWheel(platform):
     """ Returns the resource strings needed to include the moon wheel
@@ -1501,8 +1501,8 @@ def makeMoonWheel(platform):
             # Rotate the moon wheel to the appropriate angle.
             p = wheelSource.rotate(-angle, PIL.Image.BICUBIC, True)
 
-            cx, cy = p.size[0] / 2, p.size[1] / 2
-            px, py = cx - wheelSize[0] / 2, cy - wheelSize[1] / 2
+            cx, cy = p.size[0] // 2, p.size[1] // 2
+            px, py = cx - wheelSize[0] // 2, cy - wheelSize[1] // 2
             cropbox = (px, py, px + subdialSize[0], py + subdialSize[1])
             p = p.crop(cropbox)
 
@@ -1580,28 +1580,28 @@ def enquoteStrings(strings):
 def configWatch():
     import version
     versionStr = version.version
-    versionMajor, versionMinor = map(int, versionStr.split('.')[:2])
+    versionMajor, versionMinor = list(map(int, versionStr.split('.')[:2]))
     configVersionStr = version.configVersion
-    configVersionMajor, configVersionMinor = map(int, configVersionStr.split('.')[:2])
+    configVersionMajor, configVersionMinor = list(map(int, configVersionStr.split('.')[:2]))
 
     generatedTable = open('%s/generated_table.c' % (resourcesDir), 'w')
     generatedDefs = open('%s/generated_defs.h' % (resourcesDir), 'w')
 
     resourceStr = ''
 
-    if top_subdial.values()[0][0]:
+    if list(top_subdial.values())[0][0]:
         for platform in targetPlatforms:
             resourceStr += makeMoonWheel(platform)
 
     resourceStr += makeFaces(generatedTable, generatedDefs)
     resourceStr += makeHands(generatedTable, generatedDefs)
 
-    print >> generatedDefs, "extern struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_INDICATOR_FACES];"
-    print >> generatedTable, "struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_INDICATOR_FACES] = {"
+    print("extern struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_INDICATOR_FACES];", file=generatedDefs)
+    print("struct IndicatorTable date_windows[NUM_DATE_WINDOWS][NUM_INDICATOR_FACES] = {", file=generatedTable)
     for i in range(len(date_window_keys)):
         ch = chr(97 + i)
         makeIndicatorTable(generatedTable, generatedDefs, ch, date_windows[i], numIndicatorFaces, anonymous = True)
-    print >> generatedTable, "};\n"
+    print("};\n", file=generatedTable)
 
     makeIndicatorTable(generatedTable, generatedDefs, 'battery_table', battery, numIndicatorFaces)
     makeIndicatorTable(generatedTable, generatedDefs, 'bluetooth_table', bluetooth, numIndicatorFaces)
@@ -1619,7 +1619,7 @@ def configWatch():
     langData = open('%s/lang_data.json' % (resourcesDir), 'r').read()
     generatedMedia = resourceStr[:-1]
 
-    print >> resource, resourceIn % {
+    print(resourceIn % {
         'versionMajor' : versionMajor,
         'versionMinor' : versionMinor,
         'uuId' : formatUuId(uuId),
@@ -1628,7 +1628,7 @@ def configWatch():
         'langData' : langData,
         'targetPlatforms' : ', '.join(enquoteStrings(targetPlatforms)),
         'generatedMedia' : generatedMedia,
-        }
+        }, file=resource)
 
     displayLangLookup = open('%s/displayLangLookup.txt' % (resourcesDir), 'r').read()
 
@@ -1644,7 +1644,7 @@ def configWatch():
     else:
         defaultBluetooth = 1
 
-    print >> js, jsIn % {
+    print(jsIn % {
         'watchName' : watchName,
         'versionStr' : versionStr,
         'configVersionMajor' : configVersionMajor,
@@ -1662,12 +1662,12 @@ def configWatch():
         'enableSweepSeconds' : int('sweep' in defaults),
         'defaultDateWindows' : repr(defaultDateWindows),
         'displayLangLookup' : displayLangLookup,
-        'enableTopSubdial' : int(bool(top_subdial.values()[0][0])),
+        'enableTopSubdial' : int(bool(list(top_subdial.values())[0][0])),
         'enableDebug' : int(compileDebugging),
         'defaultTopSubdial' : defaultTopSubdial,
         'defaultLunarBackground' : defaultLunarBackground,
         'pebbleLabel' : int('pebble_label' in defaults),
-        }
+        }, file=js)
 
     configPerPlatformIn = open('%s/generated_config.h.per_platform_in' % (resourcesDir), 'r').read()
     configIn = open('%s/generated_config.h.in' % (resourcesDir), 'r').read()
@@ -1675,7 +1675,7 @@ def configWatch():
 
     for platform in targetPlatforms:
         shape = getPlatformShape(platform)
-        print >> config, configPerPlatformIn % {
+        print(configPerPlatformIn % {
             'platformUpper' : platform.upper(),
             'screenWidth' : screenSizes[shape][0],
             'screenHeight' : screenSizes[shape][1],
@@ -1711,9 +1711,9 @@ def configWatch():
             'chronoSecondResourceCacheSize' : getResourceCacheSize('chrono_second', platform),
             'secondMaskResourceCacheSize' : getMaskResourceCacheSize('second', platform),
             'chronoSecondMaskResourceCacheSize' : getMaskResourceCacheSize('chrono_second', platform),
-            }
+            }, file=config)
 
-    print >> config, configIn % {
+    print(configIn % {
         'persistKey' : 0x5151 + uuId[-1],
         'supportRle' : int(bool(supportRle)),
         'bwInvert' : int(bool(bwInvert)),
@@ -1727,23 +1727,23 @@ def configWatch():
         'compileDebugging' : int(compileDebugging),
         'screenshotBuild' : int(screenshotBuild),
         'defaultDateWindows' : repr(defaultDateWindows)[1:-1],
-        'enableBluetooth' : int(bool(bluetooth.values()[0][0])),
+        'enableBluetooth' : int(bool(list(bluetooth.values())[0][0])),
         'defaultBluetooth' : defaultBluetooth,
-        'enableBatteryGauge' : int(bool(battery.values()[0][0])),
+        'enableBatteryGauge' : int(bool(list(battery.values())[0][0])),
         'defaultBattery' : defaultBattery,
         'defaultSecondHand' : int('second' in defaults),
         'defaultHourBuzzer' : int('buzzer' in defaults),
         'enableSweepSeconds' : int('sweep' in defaults),
         'makeChronograph' : int(enableChronoSecondHand),
         'enableChronoDial' : int('chrono' in fd),
-        'enableTopSubdial' : int(bool(top_subdial.values()[0][0])),
+        'enableTopSubdial' : int(bool(list(top_subdial.values())[0][0])),
         'defaultTopSubdial' : defaultTopSubdial,
         'defaultLunarBackground' : defaultLunarBackground,
         'enableChronoMinuteHand' : int(enableChronoMinuteHand),
         'enableChronoSecondHand' : int(enableChronoSecondHand),
         'enableChronoTenthHand' : int(enableChronoTenthHand),
         'hourMinuteOverlap' : int('hour_minute_overlap' in defaults),
-        }
+        }, file=config)
 
     # Also generate the html pages for this version, if needed.
 
@@ -1757,14 +1757,14 @@ def configWatch():
             }
 
         filename = '%(rootDir)s/html/rosewright_%(configVersionMajor)s_%(configVersionMinor)s_configure.%(lang)s.html' % dict
-        print filename
+        print(filename)
         open(filename, 'w').write(source % dict)
 
 
 # Main.
 try:
     opts, args = getopt.getopt(sys.argv[1:], 's:H:F:iwm:xp:dDh')
-except getopt.error, msg:
+except getopt.error as msg:
     usage(1, msg)
 
 # The set of languages supported by our config pages.
@@ -1781,17 +1781,17 @@ for opt, arg in opts:
     if opt == '-s':
         watchStyle = arg
         if watchStyle not in watches:
-            print >> sys.stderr, "Unknown watch style '%s'." % (arg)
+            print("Unknown watch style '%s'." % (arg), file=sys.stderr)
             sys.exit(1)
     elif opt == '-H':
         handStyle = arg
         if handStyle not in hands:
-            print >> sys.stderr, "Unknown hand style '%s'." % (arg)
+            print("Unknown hand style '%s'." % (arg), file=sys.stderr)
             sys.exit(1)
     elif opt == '-F':
         faceStyle = arg
         if faceStyle not in faces:
-            print >> sys.stderr, "Unknown face style '%s'." % (arg)
+            print("Unknown face style '%s'." % (arg), file=sys.stderr)
             sys.exit(1)
     elif opt == '-x':
         supportRle = True
@@ -1805,7 +1805,7 @@ for opt, arg in opts:
         usage(0)
 
 if not watchStyle:
-    print >> sys.stderr, "You must specify a desired watch style."
+    print("You must specify a desired watch style.", file=sys.stderr)
     sys.exit(1)
 
 if not targetPlatforms:
@@ -1835,7 +1835,7 @@ numFaceColors = len(faceColors)
 defaultFaceIndex = fd.get('default_face', 0)
 
 top_subdial = getIndicator(fd, 'top_subdial')
-if top_subdial.values()[0][0]:
+if list(top_subdial.values())[0][0]:
     numIndicatorFaces = numFaces * 2
 else:
     numIndicatorFaces = numFaces
@@ -1845,7 +1845,7 @@ date_windows = []
 date_window_keys = ''
 for key in 'abcd':
     dw = getIndicator(fd, 'date_window_%s' % (key))
-    if dw.values()[0][0]:
+    if list(dw.values())[0][0]:
         date_windows.append(dw)
         date_window_keys += key
 
