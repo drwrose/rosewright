@@ -47,7 +47,7 @@
 
 // This structure keeps track of the things that change on the visible
 // watch face and their current state.
-struct __attribute__((__packed__)) HandPlacement {
+struct HandPlacement {
   unsigned char hour_hand_index;
   unsigned char minute_hand_index;
   unsigned char second_hand_index;
@@ -79,7 +79,7 @@ struct __attribute__((__packed__)) HandPlacement {
 // hand, so we don't need to do as much work if we're redrawing a hand
 // in the same position as last time.
 #define HAND_CACHE_MAX_GROUPS 2
-struct __attribute__((__packed__)) HandCache {
+struct HandCache {
   unsigned char bitmap_hand_index;
   BitmapWithData image;
   BitmapWithData mask;
@@ -99,7 +99,7 @@ typedef struct {
   GCompOp paint_assign; // paint the black pixels in the fg color and the white pixels in the bg color
 
   GColor colors[3];     //  { clear, fg color, bg color }
-} __attribute__((__packed__)) DrawModeTable;
+} DrawModeTable;
 
 extern bool memory_panic_flag;
 extern int memory_panic_count;

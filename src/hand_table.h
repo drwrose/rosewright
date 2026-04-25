@@ -6,11 +6,11 @@
 // clock hands and their various bitmap permutations.
 
 
-struct __attribute__((__packed__)) FaceDef {
+struct FaceDef {
   uint8_t resource_id;
 };
 
-struct __attribute__((__packed__)) FaceColorDef {
+struct FaceColorDef {
   // Clock face background, c1, c2, c3
   uint8_t cb_argb8, c1_argb8, c2_argb8, c3_argb8;
 
@@ -23,7 +23,7 @@ struct __attribute__((__packed__)) FaceColorDef {
 // the bitmap, and indicates the point that corresponds to the hinge
 // of the hand.  This point is placed at the place_x, place_y point of
 // the hand when it is drawn.
-struct __attribute__((__packed__)) BitmapHandCenterRow {
+struct BitmapHandCenterRow {
   int8_t cx;
   int8_t cy;
 };
@@ -32,7 +32,7 @@ struct __attribute__((__packed__)) BitmapHandCenterRow {
 // for each hand (as stored in HandDef.num_steps; see NUM_STEPS_HOUR,
 // NUM_STEPS_MINUTE, etc.).  Each hand position defines a bitmap index
 // and a flip x/flip y flag.
-struct __attribute__((__packed__)) BitmapHandTableRow {
+struct BitmapHandTableRow {
   // bitmap_index is an index into the bitmap_centers table, and also
   // references a particular bitmap and/or mask from the resource
   // file.
@@ -46,14 +46,14 @@ struct __attribute__((__packed__)) BitmapHandTableRow {
 
 // A vector definition is an array of groups, where each group is a
 // contiguous path.
-struct __attribute__((__packed__)) VectorHandGroup {
+struct VectorHandGroup {
   // The Pebble path for the hand at 12:00.  This will be rotated to
   // the appropriate angle at runtime.
   GPathInfo path_info;
 };
 
 // The array of groups that makes up a vector definition.
-struct __attribute__((__packed__)) VectorHand {
+struct VectorHand {
   // This is the color channel to be used when drawing vector hands,
   // on Basalt only.
   uint8_t paint_channel;
@@ -62,7 +62,7 @@ struct __attribute__((__packed__)) VectorHand {
   struct VectorHandGroup *group;
 };
 
-struct __attribute__((__packed__)) HandDef {
+struct HandDef {
   // The number of steps around the circle for this particular hand.
   // This is also stored in the symbol NUM_STEPS_HOUR,
   // NUM_STEPS_MINUTE, and so on.
@@ -111,7 +111,7 @@ struct __attribute__((__packed__)) HandDef {
 #define STACKING_ORDER_DONE 0
 
 // A table for bluetooth and battery icons, as well as date windows.
-struct __attribute__((__packed__)) IndicatorTable {
+struct IndicatorTable {
   uint8_t x, y;
   bool invert;
 };

@@ -421,13 +421,13 @@ void flip_bitmap_x(GBitmap *image, short *cx) {
   int pixels_per_byte = get_pixels_per_byte(image);
 
   assert(width % pixels_per_byte == 0);  // This must be an even divisor, by our convention.
-  int width_bytes = width / pixels_per_byte;
-  int stride = gbitmap_get_bytes_per_row(image);
+  [[maybe_unused]] int width_bytes = width / pixels_per_byte;
+  [[maybe_unused]] int stride = gbitmap_get_bytes_per_row(image);
   assert(stride >= width_bytes);
 
   qapp_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "flip_bitmap_x, width_bytes = %d, stride=%d", width_bytes, stride);
 
-  uint8_t *data = gbitmap_get_data(image);
+  [[maybe_unused]] uint8_t *data = gbitmap_get_data(image);
 
   for (int y = 0; y < height; ++y) {
     // Get the min and max x values for this row
@@ -488,9 +488,9 @@ void flip_bitmap_y(GBitmap *image, short *cy) {
   int height = gbitmap_get_bounds(image).size.h;
   int width = gbitmap_get_bounds(image).size.w;
   int pixels_per_byte = get_pixels_per_byte(image);
-  int stride = gbitmap_get_bytes_per_row(image); // multiple of 4.
+  [[maybe_unused]] int stride = gbitmap_get_bytes_per_row(image); // multiple of 4.
   int width_bytes = width / pixels_per_byte;
-  uint8_t *data = gbitmap_get_data(image);
+  [[maybe_unused]] uint8_t *data = gbitmap_get_data(image);
 
   uint8_t buffer[width_bytes]; // gcc lets us do this.
   for (int y1 = (height - 1) / 2; y1 >= 0; --y1) {
@@ -500,7 +500,7 @@ void flip_bitmap_y(GBitmap *image, short *cy) {
     GBitmapDataRowInfo info1 = gbitmap_get_data_row_info(image, y1);
     GBitmapDataRowInfo info2 = gbitmap_get_data_row_info(image, y2);
     int width1 = info1.max_x - info1.min_x + 1;
-    int width2 = info2.max_x - info2.min_x + 1;
+    [[maybe_unused]] int width2 = info2.max_x - info2.min_x + 1;
     assert(width1 == width2);  // We hope the bitmap is vertically symmetric
     uint8_t *row1 = &info1.data[info1.min_x];
     uint8_t *row2 = &info2.data[info2.min_x];
