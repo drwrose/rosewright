@@ -8,7 +8,8 @@ screenSizes = {
     'rect' : (144, 168),
     'round' : (180, 180),
     'emery' : (200, 228),
-    }
+    'gabbro' : (260, 260),
+}
 
 def getPlatformShape(platform):
     """ Returns the shape token for a particular platform. """
@@ -19,6 +20,8 @@ def getPlatformShape(platform):
         shape = 'round'
     elif platform in ['emery']:
         shape = 'emery'
+    elif platform in ['gabbro']:
+        shape = 'gabbro'
     else:
         raise Exception
     return shape
@@ -28,7 +31,7 @@ def getPlatformColor(platform):
 
     if platform in ['aplite', 'diorite']:
         color = 'bw'
-    elif platform in ['chalk', 'basalt', 'emery']:
+    elif platform in ['chalk', 'basalt', 'emery', 'gabbro']:
         color = 'color'
     else:
         raise Exception
@@ -57,6 +60,9 @@ def getVariantsForPlatform(platform):
         shapeVariants.append('~round')
     elif shape == 'emery':
         shapeVariants.append('~emery')
+    elif shape == 'gabbro':
+        shapeVariants.append('~gabbro')
+        shapeVariants.append('~emery')  # same dpi as gabbro
 
     for sv in shapeVariants:
         for cv in colorVariants:

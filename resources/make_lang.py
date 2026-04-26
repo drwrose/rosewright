@@ -20,21 +20,21 @@ make_lang.py [opts]
 
 fontChoices = [ 'latin', 'el', 'ru', 'hy', 'rtl_he', 'rtl_ar', 'zh', 'ja', 'ko', 'th', 'ta', 'hi' ]
 
-# Font (rect, round, emery) filenames and (rect, round, emery) pixel
-# sizes and (rect, round, emery) vshift values.
+# Font (rect, round, emery, gabbro) filenames and (rect, round, emery,
+# gabbro) pixel sizes and (rect, round, emery, gabbro) vshift values.
 fontNames = {
-    'latin' : (('ArchivoNarrow-Bold-16.bdf', 'ArchivoNarrow-Bold-18.bdf', 'ArchivoNarrow-Bold-22.bdf'), (16, 18, 22), -1),
-    'el' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), 1),
-    'ru' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), 1),
-    'hy' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), 1),
-    'rtl_he' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), 1),
-    'rtl_ar' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19), 1),
-    'zh' : ('wqy-microhei_filtered.ttf', (16, 18, 22), -1),
-    'ja' : ('TakaoPGothic_filtered.ttf', (16, 18, 22), -1),
-    'ko' : ('UnDotum.ttf', (16, 18, 22), -2),
-    'th' : ('Waree.ttf', (16, 18, 22), -1),
-    'ta' : ('TAMu_Kalyani.ttf', (16, 18, 22), -2),
-    'hi' : ('lohit_hi.ttf', (16, 18, 22), 0),
+    'latin' : (('ArchivoNarrow-Bold-16.bdf', 'ArchivoNarrow-Bold-18.bdf', 'ArchivoNarrow-Bold-22.bdf', 'ArchivoNarrow-Bold-26.bdf'), (16, 18, 22, 26), -1),
+    'el' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19, 23), 1),
+    'ru' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19, 23), 1),
+    'hy' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19, 23), 1),
+    'rtl_he' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19, 23), 1),
+    'rtl_ar' : ('DejaVuSansCondensed-Bold_filtered.ttf', (14, 16, 19, 23), 1),
+    'zh' : ('wqy-microhei_filtered.ttf', (16, 18, 22, 26), -1),
+    'ja' : ('TakaoPGothic_filtered.ttf', (16, 18, 22, 26), -1),
+    'ko' : ('UnDotum.ttf', (16, 18, 22, 26), -2),
+    'th' : ('Waree.ttf', (16, 18, 22, 26), -1),
+    'ta' : ('TAMu_Kalyani.ttf', (16, 18, 22, 26), -2),
+    'hi' : ('lohit_hi.ttf', (16, 18, 22, 26), 0),
     }
 
 # This list is duplicated in html/rosewright_X_configure.js, and the
@@ -118,10 +118,10 @@ def writeResourceFile(generatedJson, localeName, nameList):
     filename = '%s.raw' % (localeName)
     resourceId = '%s_NAMES' % (localeName.upper())
 
-    data = '\0'.join(nameList)
+    data = b'\0'.join(nameList)
     maxTotalLen = max(maxTotalLen, len(data))
 
-    open('%s/%s' % (resourcesDir, filename), 'w').write(data)
+    open('%s/%s' % (resourcesDir, filename), 'w').write(data.decode('utf-8'))
 
     nameEntry = """    {
       "type": "raw",
@@ -329,36 +329,56 @@ def makeLang():
       "targetPlatforms" : [
         "emery"
       ]
+    },
+    {
+      "type": "font",
+      "characterRegex": "[%(regex)s]",
+      "name": "DAY_FONT_%(upperKey)s_%(size_gabbro)s",
+      "file": "%(filename_gabbro)s",
+      "targetPlatforms" : [
+        "gabbro"
+      ]
     },"""
 
     for fontKey in fontChoices:
         filenames, sizes, vshifts = fontNames[fontKey]
         if isinstance(filenames, type(())):
-            filename_rect, filename_round, filename_emery = filenames
+            filename_rect, filename_round, filename_emery, filename_gabbro = filenames
         else:
-            filename_rect, filename_round, filename_emery = filenames, filenames, filenames
-        size_rect, size_round, size_emery = sizes
+            filename_rect, filename_round, filename_emery, filename_gabbro = filenames, filenames, filenames, filenames
+        size_rect, size_round, size_emery, size_gabbro = sizes
         print(fontEntry % {
             'regex' : makeCharacterRegex(neededChars[fontKey]),
             'upperKey' : fontKey.upper(),
             'size_rect' : size_rect,
             'size_round' : size_round,
             'size_emery' : size_emery,
+            'size_gabbro' : size_gabbro,
             'filename_rect' : filename_rect,
             'filename_round' : filename_round,
             'filename_emery' : filename_emery,
+            'filename_gabbro' : filename_gabbro,
             }, file=generatedJson)
 
     print("#define NUM_DATE_LANG_FONTS %s" % (len(fontChoices)), file=generatedTable)
     print("struct FontPlacement date_lang_font_placement[NUM_DATE_LANG_FONTS] = {", file=generatedTable)
 
-    # emery
-    print("#if defined(PBL_PLATFORM_EMERY)", file=generatedTable)
+    # gabbro
+    print("#if defined(PBL_PLATFORM_GABBRO)", file=generatedTable)
 
     for fontKey in fontChoices:
         filenames, sizes, vshifts = fontNames[fontKey]
         if not isinstance(vshifts, type(())):
-            vshifts = [vshifts, vshifts, vshifts]
+            vshifts = [vshifts, vshifts, vshifts, vshifts]
+        print("{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), sizes[3], vshifts[3]), file=generatedTable)
+
+    # emery
+    print("#elif defined(PBL_PLATFORM_EMERY)", file=generatedTable)
+
+    for fontKey in fontChoices:
+        filenames, sizes, vshifts = fontNames[fontKey]
+        if not isinstance(vshifts, type(())):
+            vshifts = [vshifts, vshifts, vshifts, vshifts]
         print("{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), sizes[2], vshifts[2]), file=generatedTable)
 
     # rect
@@ -367,7 +387,7 @@ def makeLang():
     for fontKey in fontChoices:
         filenames, sizes, vshifts = fontNames[fontKey]
         if not isinstance(vshifts, type(())):
-            vshifts = [vshifts, vshifts, vshifts]
+            vshifts = [vshifts, vshifts, vshifts, vshifts]
         print("{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), sizes[0], vshifts[0]), file=generatedTable)
 
     # round
@@ -376,7 +396,7 @@ def makeLang():
     for fontKey in fontChoices:
         filenames, sizes, vshifts = fontNames[fontKey]
         if not isinstance(vshifts, type(())):
-            vshifts = [vshifts, vshifts, vshifts]
+            vshifts = [vshifts, vshifts, vshifts, vshifts]
         print("{ RESOURCE_ID_DAY_FONT_%s_%s, %s }," % (fontKey.upper(), sizes[1], vshifts[1]), file=generatedTable)
 
     print("#endif", file=generatedTable)

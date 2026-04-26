@@ -35,7 +35,7 @@ Options:
         Perform RLE compression of images.
 
     -p platform[,platform...]
-        Specifies the build platform (aplite, basalt, chalk, diorite, emery).
+        Specifies the build platform (aplite, basalt, chalk, diorite, emery, gabbro).
 
     -d
         Compile for debugging.  Specifically this enables "fast time",
@@ -73,6 +73,7 @@ batteryGaugeSizes = {
     'rect' : [(6, 0, 18, 10), (10, 3, 10, 4), ('GOTHIC_14', -4)],
     'round' : [(6, 0, 18, 10), (10, 3, 10, 4), ('GOTHIC_14', -4)],
     'emery' : [(8, 0, 25, 14), (13, 3, 15, 8), ('GOTHIC_18', -5)],
+    'gabbro' : [(8, 0, 25, 14), (13, 3, 15, 8), ('GOTHIC_18', -5)],
     }
 
 # Table of watch styles.  A watch style is a combination of a hand
@@ -143,6 +144,7 @@ hands = {
     'a_scale' : { 'rect' : 1.0,
                   'round' : 1.19,
                   'emery' : 1.36,
+                  'gabbro' : 1.36,
                   },
     'b_hands' : [('hour', ('b_hour_hand', 't', False, (33, 211), 0.27), None),
                  ('minute', ('b_minute_hand', 't', False, (24, 292), 0.27), None),
@@ -153,6 +155,7 @@ hands = {
     'b_scale' : { 'rect' : 1.0,
                   'round' : 1.11,
                   'emery' : 1.36,
+                  'gabbro' : 1.36,
                   },
     'c_hands' : [('hour', ('c_hour_hand', 't%', False, (59, 434), 0.14), None),
                  ('minute', ('c_minute_hand', 't%', False, (38, 584), 0.14), None),
@@ -165,6 +168,7 @@ hands = {
     'c_scale' : { 'rect' : 1.0,
                   'round' : 1.05,
                   'emery' : 1.36,
+                  'gabbro' : 1.36,
                   },
     'c2_hands' : [('hour', ('c_hour_hand', 't%', False, (59, 434), 0.14), None),
                   ('minute', ('c_minute_hand', 't%', False, (38, 584), 0.14), None),
@@ -180,6 +184,7 @@ hands = {
     'c2_scale' : { 'rect' : 1.0,
                    'round' : 1.05,
                    'emery' : 1.36,
+                   'gabbro' : 1.36,
                    },
     'd_hands' : [('hour', ('d_hour_hand', 't', False, (24, 193), 0.24), None),
                  ('minute', ('d_minute_hand', 't', False, (27, 267), 0.24), None),
@@ -190,6 +195,7 @@ hands = {
     'd_scale' : { 'rect' : 1.0,
                   'round' : 1.17,
                   'emery' : 1.36,
+                  'gabbro' : 1.36,
                   },
     'e_hands' : [('hour', ('e_hour_hand', 't%', False, (28, 99), 0.53), None),
                  ('minute', ('e_minute_hand', 't%', False, (22, 142), 0.53), None),
@@ -198,6 +204,7 @@ hands = {
     'e_scale' : { 'rect' : 1.0,
                   'round' : 1.13,
                   'emery' : 1.36,
+                  'gabbro' : 1.36,
                   },
     }
 
@@ -263,10 +270,15 @@ faces = {
         'date_window_b_emery' : (149, 102, 'b'),
         'date_window_c_emery' : (50, 137, 'b'),
         'date_window_d_emery' : (104, 137, 'b'),
+        'date_window_a_gabbro' : (6, 114, 'b'),
+        'date_window_b_gabbro' : (192, 114, 'b'),
+        'date_window_c_gabbro' : (66, 167, 'b'),
+        'date_window_d_gabbro' : (132, 167, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : (32, 32, 'b'),
         'top_subdial_round' : (50, 32, 'b'),
         'top_subdial_emery' : (50, 43, 'b'),
+        'top_subdial_gabbro' : (80, 46, 'b'),
         'bluetooth_rect' : [ (37, 47, 'b'), (17, 29, 'b'),
                              (37, 47, 'b'), (17, 29, 'b'),
                              (37, 47, 'b'), (17, 29, 'b'),
@@ -290,6 +302,14 @@ faces = {
         'battery_emery' : [ (121, 69, 'b'), (145, 43, 'b'),
                             (121, 69, 'b'), (145, 43, 'b'),
                             (121, 69, 'b'), (145, 43, 'b'),
+                            ],
+        'bluetooth_gabbro' : [ (80, 78, 'b'), (43, 43, 'b'),
+                               (80, 78, 'b'), (43, 43, 'b'),
+                               (80, 78, 'b'), (43, 43, 'b'),
+                              ],
+        'battery_gabbro' : [ (151, 83, 'b'), (184, 48, 'b'),
+                             (151, 83, 'b'), (184, 48, 'b'),
+                             (151, 83, 'b'), (184, 48, 'b'),
                             ],
         'defaults' : [ 'date:b', 'moon_phase', 'moon_dark', 'second', 'hour_minute_overlap', 'sweep' ],
         },
@@ -321,9 +341,14 @@ faces = {
         'date_window_d_emery' : [ (104, 137, 'b'), (104, 137, 'b'),
                                   (104, 148, 'b'), (104, 148, 'b'),
                                   ],
+        'date_window_a_gabbro': (4, 79, 'b'),
+        'date_window_b_gabbro': (134, 79, 'b'),
+        'date_window_c_gabbro': (46, 116, 'b'),
+        'date_window_d_gabbro': (92, 116, 'b'),
         'top_subdial_rect' : [ (32, 33, 'b'), (32, 25, 'b') ],
         'top_subdial_round' : (50, 34, 'b'),
         'top_subdial_emery' : [(50, 45, 'b'), (50, 34, 'b')],
+        'top_subdial_gabbro' : (50, 34, 'b'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'bluetooth_rect' : (14, 18, 'b'),
         'battery_rect' : (110, 22, 'b'),
@@ -335,6 +360,12 @@ faces = {
                             ],
         'bluetooth_emery' : (19, 24, 'b'),
         'battery_emery' : (153, 30, 'b'),
+        'bluetooth_gabbro' : [ (55, 53, 'b'), (30, 30, 'b'),
+                               (55, 53, 'b'), (30, 30, 'b'),
+                              ],
+        'battery_gabbro' : [ (104, 57, 'b'), (126, 33, 'b'),
+                             (104, 57, 'b'), (126, 33, 'b'),
+                            ],
         'defaults' : [ 'day:c', 'date:d', 'second', 'hour_minute_overlap', 'pebble_label', 'sweep' ],
         },
     'c' : {
@@ -353,6 +384,9 @@ faces = {
                       'emery' : { 'chrono_minute' : (158, 114),
                                   'chrono_tenth' : (100, 171),
                                   'second' : (42, 114), },
+                      'gabbro' : { 'chrono_minute' : (135, 90),
+                                   'chrono_tenth' : (90, 135),
+                                   'second' : (45, 90), },
                       },
         'date_window_a_rect' : [ (35, 37, 'b'), (5, 128, 'b') ],
         'date_window_b_rect' : [ (75, 37, 'b'), (102, 128, 'b') ],
@@ -360,16 +394,21 @@ faces = {
         'date_window_b_round' : [ (94, 36, 'b'), (119, 120, 'b') ],
         'date_window_a_emery' : [ (50, 50, 'b'), (7, 174, 'b') ],
         'date_window_b_emery' : [ (104, 50, 'b'), (143, 174, 'b') ],
+        'date_window_a_gabbro' : [ (45, 36, 'b'), (19, 120, 'b') ],
+        'date_window_b_gabbro' : [ (94, 36, 'b'), (119, 120, 'b') ],
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : (32, 16, 'b'),
         'top_subdial_round' : (50, 20, 'b'),
         'top_subdial_emery' : (50, 22, 'b'),
+        'top_subdial_gabbro' : (50, 20, 'b'),
         'bluetooth_rect' : (16, 18, 'b'),
         'battery_rect' : (103, 21, 'b'),
         'bluetooth_round' : (33, 41, 'b'),
         'battery_round' : (121, 49, 'b'),
         'bluetooth_emery' : (22, 24, 'b'),
         'battery_emery' : (144, 29, 'b'),
+        'bluetooth_gabbro' : (33, 41, 'b'),
+        'battery_gabbro' : (121, 49, 'b'),
         'defaults' : [ 'second', 'pebble_label' ],
         },
     'c2' : {
@@ -388,6 +427,9 @@ faces = {
                       'emery' : { 'chrono_minute' : (158, 114),
                                   'chrono_tenth' : (100, 171),
                                   'second' : (42, 114), },
+                      'gabbro' : { 'chrono_minute' : (135, 90),
+                                   'chrono_tenth' : (90, 135),
+                                   'second' : (45, 90), },
                       },
         'date_window_a_rect' : [ (35, 37, 'b'), (5, 128, 'b') ],
         'date_window_b_rect' : [ (75, 37, 'b'), (102, 128, 'b') ],
@@ -395,16 +437,21 @@ faces = {
         'date_window_b_round' : [ (94, 36, 'b'), (119, 120, 'b') ],
         'date_window_a_emery' : [ (50, 50, 'b'), (7, 174, 'b') ],
         'date_window_b_emery' : [ (104, 50, 'b'), (143, 174, 'b') ],
+        'date_window_a_gabbro' : [ (45, 36, 'b'), (19, 120, 'b') ],
+        'date_window_b_gabbro' : [ (94, 36, 'b'), (119, 120, 'b') ],
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : (32, 16, 'b'),
         'top_subdial_round' : (50, 20, 'b'),
         'top_subdial_emery' : (50, 22, 'b'),
+        'top_subdial_gabbro' : (50, 20, 'b'),
         'bluetooth_rect' : (16, 18, 'b'),
         'battery_rect' : (103, 21, 'b'),
         'bluetooth_round' : (33, 41, 'b'),
         'battery_round' : (121, 49, 'b'),
         'bluetooth_emery' : (22, 24, 'b'),
         'battery_emery' : (144, 29, 'b'),
+        'bluetooth_gabbro' : (33, 41, 'b'),
+        'battery_gabbro' : (121, 49, 'b'),
         'defaults' : [ 'second', 'limit_cache_aplite', 'prebake_label', 'pebble_label' ],
         },
     'd' : {
@@ -426,10 +473,15 @@ faces = {
         'date_window_b_emery' : [ (108, 127, 'w'), (108, 127, 'b'), (108, 127, 'w') ],
         'date_window_c_emery' : [ (46, 159, 'w'), (46, 159, 'b'), (46, 159, 'w') ],
         'date_window_d_emery' : [ (108, 159, 'w'), (108, 159, 'b'), (108, 159, 'w') ],
+        'date_window_a_gabbro': [ (38, 92, 'w'), (38, 92, 'b'), (38, 92, 'w'),],
+        'date_window_b_gabbro': [ (100, 92, 'w'), (100, 92, 'b'), (100, 92, 'w'),],
+        'date_window_c_gabbro' : [ (46, 115, 'w'), (46, 115, 'b'), (46, 115, 'w'),],
+        'date_window_d_gabbro' : [ (92, 115, 'w'), (92, 115, 'b'), (92, 115, 'w'),],
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : [ (32, 34, 'w'), (32, 34, 'b'), (32, 34, 'w') ],
         'top_subdial_round' : [ (50, 34, 'w'), (50, 34, 'b'), (50, 34, 'w') ],
         'top_subdial_emery' : [ (50, 46, 'w'), (50, 46, 'b'), (50, 46, 'w') ],
+        'top_subdial_gabbro' : [ (50, 34, 'w'), (50, 34, 'b'), (50, 34, 'w') ],
         'bluetooth_rect' : [ (43, 34, 'b'), (36, 29, 'b'),
                              (43, 34, 'b'), (36, 29, 'b'),
                              (43, 34, 'b'), (36, 29, 'b'),
@@ -454,6 +506,14 @@ faces = {
                             (107, 53, 'b'), (125, 45, 'b'),
                             (107, 53, 'b'), (125, 45, 'b'),
                             ],
+        'bluetooth_gabbro' : [ (60, 48, 'b'), (46, 43, 'b'),
+                               (60, 48, 'b'), (46, 43, 'b'),
+                               (60, 48, 'b'), (46, 43, 'b'),
+                              ],
+        'battery_gabbro' : [ (97, 52, 'b'), (115, 47, 'b'),
+                             (97, 52, 'b'), (115, 47, 'b'),
+                             (97, 52, 'b'), (115, 47, 'b'),
+                            ],
         'defaults' : [ 'day:c', 'date:d', 'bluetooth', 'battery', 'sweep' ],
         },
     'e' : {
@@ -477,22 +537,28 @@ faces = {
         'date_window_b_emery' : (5, 100, 'w'),
         'date_window_c_emery' : (149, 100, 'w'),
         'date_window_d_emery' : (77, 187, 'w'),
+        'date_window_a_gabbro' : (69, 11, 'w'),
+        'date_window_b_gabbro' : (11, 78, 'w'),
+        'date_window_c_gabbro' : (128, 78, 'w'),
+        'date_window_d_gabbro' : (69, 144, 'w'),
         'date_window_filename' : ('date_window.png', 'date_window_mask.png'),
         'top_subdial_rect' : (32, 32, 'b'),
         'top_subdial_round' : (50, 32, 'b'),
         'top_subdial_emery' : (50, 43, 'b'),
+        'top_subdial_gabbro' : (50, 32, 'b'),
         'bluetooth_rect' : [ (11, 12, 'b'), (11, 12, 'w'), (11, 12, 'b'), ],
         'battery_rect' : [ (109, 16, 'b'), (109, 16, 'w'), (109, 16, 'b'), ],
         'bluetooth_round' : [ (26, 26, 'b'), (26, 26, 'w'), (26, 26, 'b'), ],
         'battery_round' : [ (133, 30, 'b'), (133, 30, 'w'), (133, 30, 'b'), ],
         'bluetooth_emery' : [ (15, 16, 'b'), (15, 16, 'w'), (15, 16, 'b'), ],
         'battery_emery' : [ (150, 22, 'b'), (150, 22, 'w'), (150, 22, 'b'), ],
+        'bluetooth_gabbro' : [ (26, 26, 'b'), (26, 26, 'w'), (26, 26, 'b'), ],
+        'battery_gabbro' : [ (133, 30, 'b'), (133, 30, 'w'), (133, 30, 'b'), ],
         'defaults' : [ 'date:c', 'moon_dark', 'limit_cache_aplite', 'limit_cache_basalt', 'limit_cache_chalk' ],
         },
     }
 
 
-"""
 def scaleIndicatorCoord(v, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize, scale):
     if v + oldIndicatorSize // 2 < oldScreenSize // 3:
         # Close to the left (top) wall.
@@ -522,20 +588,20 @@ def scaleIndicatorRect(list_shape, oldIndicatorSize, oldScreenSize, newIndicator
 def scaleIndicator(key, list_shape, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize):
     if not isinstance(list_shape, type([])):
         list_shape = scaleIndicatorRect(list_shape, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
-        print "  '%s' : %s," % (key, list_shape)
+        print("  '%s' : %s," % (key, list_shape))
     else:
         result = []
         for indicator in list_shape:
             result.append(scaleIndicatorRect(indicator, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize))
-        print "  '%s' : %s," % (key, result)
+        print("  '%s' : %s," % (key, result))
 
 
-def scaleIndicators():
+def scaleIndicatorsEmery():
     oldScreenSize = (144, 168)
     newScreenSize = (200, 228)
 
     for faceStyle in ['a', 'b', 'c', 'c2', 'd', 'e']:
-        print faceStyle
+        print(faceStyle)
         fd = faces[faceStyle]
 
         # Date windows
@@ -564,14 +630,55 @@ def scaleIndicators():
         battery = fd.get('battery_rect')
         scaleIndicator('battery_emery', battery, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
 
-    print "c2_chrono_hands"
+    print("c2_chrono_hands")
     oldIndicatorSize = (1, 1)
     newIndicatorSize = (1, 1)
     for hand in ['chrono_minute', 'chrono_tenth', 'second']:
         x, y = faces['c2']['centers']['rect'][hand]
         tuple = (x, y, 'b')
         scaleIndicator(hand, tuple, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
-"""
+
+def scaleIndicatorsGabbro():
+    oldScreenSize = (180, 180)
+    newScreenSize = (260, 260)
+
+    for faceStyle in ['a', 'b', 'c', 'c2', 'd', 'e']:
+        print(faceStyle)
+        fd = faces[faceStyle]
+
+        # Date windows
+        oldIndicatorSize = (42, 22)
+        newIndicatorSize = (62, 32)
+        for key in 'abcd':
+            dw = fd.get('date_window_%s_round' % (key), None)
+            if dw:
+                scaleIndicator('date_window_%s_gabbro' % (key), dw, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
+
+        # Top subdial
+        oldIndicatorSize = (80, 41)
+        newIndicatorSize = (100, 53)
+        top_subdial = fd.get('top_subdial_round')
+        scaleIndicator('top_subdial_gabbro', top_subdial, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
+
+        # Bluetooth indicator
+        oldIndicatorSize = (18, 18)
+        newIndicatorSize = (24, 24)
+        bluetooth = fd.get('bluetooth_round')
+        scaleIndicator('bluetooth_gabbro', bluetooth, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
+
+        # Battery gauge
+        oldIndicatorSize = (24, 10)
+        newIndicatorSize = (33, 14)
+        battery = fd.get('battery_round')
+        scaleIndicator('battery_gabbro', battery, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
+
+    print("c2_chrono_hands")
+    oldIndicatorSize = (1, 1)
+    newIndicatorSize = (1, 1)
+    for hand in ['chrono_minute', 'chrono_tenth', 'second']:
+        x, y = faces['c2']['centers']['round'][hand]
+        tuple = (x, y, 'b')
+        scaleIndicator(hand, tuple, oldIndicatorSize, oldScreenSize, newIndicatorSize, newScreenSize)
 
 enableSecondHand = False
 enableChronoMinuteHand = False
@@ -1809,7 +1916,7 @@ if not watchStyle:
     sys.exit(1)
 
 if not targetPlatforms:
-    targetPlatforms = [ 'aplite', 'basalt', 'chalk', 'diorite', 'emery' ]
+    targetPlatforms = [ 'aplite', 'basalt', 'chalk', 'diorite', 'emery', 'gabbro' ]
 
 bwPlatforms = set(targetPlatforms) & set(['aplite', 'diorite'])
 
@@ -1885,4 +1992,4 @@ if 'moon_dark' in defaults:
     defaultLunarBackground = 1
 
 configWatch()
-#scaleIndicators()
+#scaleIndicatorsGabbro()
