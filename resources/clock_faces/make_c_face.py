@@ -8,13 +8,16 @@ import sys
 #platform = 'aplite'
 #platform = 'basalt'
 #platform = 'chalk'
-platform = 'emery'
+#platform = 'emery'
+platform = 'gabbro'
 
 #layer = 'ticks1'
+layer = 'ticks1_mask'
 #layer = 'ticks2'
-#layer = 'background'
+#layer = 'ticks2_mask'
+#layer = 'rings'
 #layer = 'chrono'
-layer = 'chrono_mask'
+#layer = 'chrono_mask'
 
 if platform in ['aplite', 'basalt']:
     face = FaceMaker.FaceMaker(zoom = 1.25, bg = 0, fg = 255, screenSize = (144, 168))
@@ -22,6 +25,8 @@ elif platform == 'chalk':
     face = FaceMaker.FaceMaker(zoom = 1.223, bg = 0, fg = 255, screenSize = (180, 180))
 elif platform == 'emery':
     face = FaceMaker.FaceMaker(zoom = 1.25, bg = 0, fg = 255, screenSize = (200, 228))
+elif platform == 'gabbro':
+    face = FaceMaker.FaceMaker(zoom = 1.223, bg = 0, fg = 255, screenSize = (260, 260))
 
 def drawChrono(c, smallTicks, bigTicks, labels, handFilename, handPivot):
     face.clearCircle(0.2720, center = c)
@@ -44,13 +49,27 @@ def drawChronoMask(c):
 if layer == 'ticks1':
     face.drawTicks(60, 0.2, 1.7, width = 0.004)
 
-elif layer == 'ticks2':
-    face.drawTicks(12, 0.2, 1.7, width = 0.01)
+elif layer == 'ticks1_mask':
+    rings = [0.6713, 0.8027]
+    face.fillCircle(rings[1])
+    face.clearCircle(rings[0])
 
-elif layer == 'background':
+elif layer == 'ticks2':
+    ticks = [t * 360.0 / 12.0 for t in [1, 2, 3, 4, 5, 7, 8, 9, 10, 11]]
+    face.drawTicks(ticks, 0.2, 1.7, width = 0.01)
+
+    font = face.loadFont('Multicolore.otf', 0.08)
+    face.drawCircularLabels([(0, '12'), (180, '6')], 0.5800, font)
+
+elif layer == 'ticks2_mask':
+    rings = [0.4920, 0.6500]
+    face.fillCircle(rings[1])
+    face.clearCircle(rings[0])
+
+elif layer == 'rings':
 
     rings = [0.2933, 0.3600, 0.4273, 0.4920]
-    if platform in ['chalk']:
+    if platform in ['chalk', 'gabbro']:
         rings += [0.6500, 0.6713, 0.7047, 0.7180, 0.8027, 0.8173]
 
     rings.reverse()
@@ -74,9 +93,6 @@ elif layer == 'background':
         face.drawTicks(240, 0.7907, rings[8], width = 0.002)
         face.drawTicks(200, rings[9], 0.8200, width = 0.002)
         face.drawTicks(20, rings[9], 0.8400, width = 0.002)
-
-    font = face.loadFont('Multicolore.otf', 0.08)
-    face.drawCircularLabels([(0, '12'), (180, '6')], 0.5800, font)
 
 elif layer == 'chrono':
     # Draw the little chonograph dials.
