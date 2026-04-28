@@ -7,7 +7,8 @@ import FaceMaker
 #platform = 'aplite'
 #platform = 'basalt'
 #platform = 'chalk'
-platform = 'emery'
+#platform = 'emery'
+platform = 'gabbro'
 #layer = 'ticks'
 #layer = 'axle'
 layer = 'numerals'
@@ -18,6 +19,8 @@ elif platform == 'chalk':
     face = FaceMaker.FaceMaker(zoom = 0.98, screenSize = (180, 180))
 elif platform == 'emery':
     face = FaceMaker.FaceMaker(zoom = 1.0, screenSize = (200, 228))
+elif platform == 'gabbro':
+    face = FaceMaker.FaceMaker(zoom = 0.98, screenSize = (260, 260))
 
 if layer == 'numerals':
     font = face.loadFont('Barkentina 1.otf', 0.15)

@@ -79,8 +79,8 @@ class FaceMaker:
         # Size of the target screen.
         self.targetSize = (round(screenSize[0] * self.upscale), round(screenSize[1] * self.upscale))
         self.maxTargetSize = max(self.targetSize)
-        self.cropOrigin = ((self.maxTargetSize - self.targetSize[0]) / 2,
-                           (self.maxTargetSize - self.targetSize[1]) / 2)
+        self.cropOrigin = ((self.maxTargetSize - self.targetSize[0]) // 2,
+                           (self.maxTargetSize - self.targetSize[1]) // 2)
 
         # Size of the internal buffer.  Square.
         self.maxSize = round(self.maxTargetSize * self.filter)
@@ -124,7 +124,7 @@ class FaceMaker:
         """ Copies the recently-drawn buffer to the target and clears
         the buffer for more drawing. """
 
-        b = self.buffer.resize((self.maxTargetSize, self.maxTargetSize), PIL.Image.ANTIALIAS)
+        b = self.buffer.resize((self.maxTargetSize, self.maxTargetSize), PIL.Image.LANCZOS)
         b = b.crop((self.cropOrigin[0],
                     self.cropOrigin[1],
                     self.cropOrigin[0] + self.targetSize[0],
@@ -248,7 +248,7 @@ class FaceMaker:
 
         if isinstance(ticks, type(0)):
             # If we're given a number of ticks, make it a list.
-            ticks = map(lambda t: t * 360.0 / ticks, range(ticks))
+            ticks = [t * 360.0 / ticks for t in range(ticks)]
 
         for angle in ticks:
             p1 = self.computePolar(angle, r1, center = center)
@@ -298,15 +298,16 @@ class FaceMaker:
             return
 
         sp = self.p2s(*p)
-        w, h = self.tdraw.textsize(text, font = font)
+        w = int(self.tdraw.textlength(text, font = font))
+        h = font.size
 
         if align[0] == 'c':
-            sp = (sp[0], sp[1] - h / 2)
+            sp = (sp[0], sp[1] - h // 2)
         elif align[0] == 'l':
             sp = (sp[0], sp[1] - h)
 
         if align[1] == 'c':
-            sp = (sp[0] - w / 2, sp[1])
+            sp = (sp[0] - w // 2, sp[1])
         elif align[1] == 'r':
             sp = (sp[0] - w, sp[1])
 
@@ -329,7 +330,8 @@ class FaceMaker:
             return
 
         for angle, text in labels:
-            w, h = self.tdraw.textsize(text, font = font)
+            w = int(self.tdraw.textlength(text, font = font))
+            h = font.size
             tr = max(w, h) / 2.0  # text radius
             if directDraw:
                 tr = self.s2d(tr)
@@ -346,7 +348,7 @@ class FaceMaker:
                 # Just paste the text directly into the buffer, for
                 # minimal aliasing.
                 sp = self.p2s(*p)
-                self.tdraw.text((sp[0] - w / 2, sp[1] - h / 2), text, fill = self.fg, font = font)
+                self.tdraw.text((sp[0] - w // 2, sp[1] - h // 2), text, fill = self.fg, font = font)
 
             elif directDraw and rotate:
                 # Support directDraw with rotate.
@@ -362,7 +364,7 @@ class FaceMaker:
                 # We need to expand it to full size to allow the
                 # indirect pasting via fullFg.
                 f = PIL.Image.new(self.format, self.targetSize, 0)
-                f.paste(b, (sp[0] - w / 2, sp[1] - h / 2))
+                f.paste(b, (sp[0] - w // 2, sp[1] - h // 2))
                 self.target.paste(self.fullFg, (0, 0), f)
 
             else:
@@ -376,17 +378,17 @@ class FaceMaker:
                 if scale:
                     w, h = b.size
                     ws, hs = (int(w * scale[0] + 0.5), int(h * scale[1] + 0.5))
-                    b = b.resize((ws, hs), PIL.Image.ANTIALIAS)
+                    b = b.resize((ws, hs), PIL.Image.LANCZOS)
                 if rotate:
                     b = self.__rotateImage(b, angle)
 
                 w, h = b.size
-                self.buffer.paste(b, (sp[0] - w / 2, sp[1] - h / 2))
+                self.buffer.paste(b, (sp[0] - w // 2, sp[1] - h // 2))
 
                 # We need to expand it to full size to allow the
                 # indirect pasting via fullFg.
                 ## f = PIL.Image.new(self.format, self.targetSize, 0)
-                ## f.paste(b, (sp[0] - w / 2, sp[1] - h / 2))
+                ## f.paste(b, (sp[0] - w // 2, sp[1] - h // 2))
                 ## self.target.paste(self.fullFg, (0, 0), f)
 
     def __rotateImage(self, im, angle):
@@ -422,11 +424,11 @@ class FaceMaker:
             # Center the source image on its pivot, and pad it with transparent.
             border = (pivot[0], pivot[1], im.size[0] - pivot[0], im.size[1] - pivot[1])
             size = (max(border[0], border[2]) * 2, max(border[1], border[3]) * 2)
-            center = (size[0] / 2, size[1] / 2)
+            center = (size[0] // 2, size[1] // 2)
             large = PIL.Image.new('LA', size, 0)
             large.paste(im, (center[0] - pivot[0], center[1] - pivot[1]))
             im = self.__rotateImage(large, rotate)
-            pivot = (im.size[0] / 2, im.size[1] / 2)
+            pivot = (im.size[0] // 2, im.size[1] // 2)
 
         if pixelScale is None:
             p = self.p2s(*p)
@@ -442,8 +444,8 @@ class FaceMaker:
             pivot = (self.d2b(pivot[0] / pixelScale),
                      self.d2b(pivot[1] / pixelScale))
             p = self.p2b(*p)
-            print size, p
-            im = im.resize(size, PIL.Image.ANTIALIAS)
+            print(size, p)
+            im = im.resize(size, PIL.Image.LANCZOS)
             color, mask = im.split()
             color.paste(255, (0, 0, color.size[0], color.size[1]))
             self.buffer.paste(color, (p[0] - pivot[0], p[1] - pivot[1]), mask)
