@@ -12,10 +12,10 @@ import sys
 #platform = 'emery'
 platform = 'gabbro'
 
-#layer = 'ticks'
+layer = 'ticks'
 #layer = 'foreground'
 #layer = 'background'
-layer = 'numerals'
+#layer = 'numerals'
 
 if platform in ['aplite', 'basalt']:
     screenSize = (144, 168); zoom = 0.92
@@ -31,7 +31,7 @@ face = FaceMaker.FaceMaker(zoom = zoom, screenSize = screenSize)
 # 1.0 = 634 ref pixels
 
 if layer == 'ticks':
-    face.drawTicks(60, 0.2, 1.7, width = 0.003)
+    face.drawTicks(60, 0.2, 1.7, width = 0.006)
 
 elif layer == 'foreground':
     #face.setFg(255)
