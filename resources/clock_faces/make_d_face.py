@@ -9,12 +9,13 @@ import sys
 #platform = 'aplite'
 #platform = 'basalt'
 #platform = 'chalk'
-platform = 'emery'
+#platform = 'emery'
+platform = 'gabbro'
 
 #layer = 'ticks'
 #layer = 'foreground'
-layer = 'background'
-#layer = 'numerals'
+#layer = 'background'
+layer = 'numerals'
 
 if platform in ['aplite', 'basalt']:
     screenSize = (144, 168); zoom = 0.92
@@ -22,6 +23,8 @@ elif platform == 'chalk':
     screenSize = (180, 180); zoom = 0.98
 elif platform == 'emery':
     screenSize = (200, 228); zoom = 0.92
+elif platform == 'gabbro':
+    screenSize = (260, 260); zoom = 0.98
 
 face = FaceMaker.FaceMaker(zoom = zoom, screenSize = screenSize)
 

@@ -266,7 +266,7 @@ class FaceMaker:
 
         if isinstance(ticks, type(0)):
             # If we're given a number of ticks, make it a list.
-            ticks = map(lambda t: t * 360.0 / ticks, range(ticks))
+            ticks = [t * 360.0 / ticks for t in range(ticks)]
 
         for angle in ticks:
             p = self.computePolar(angle, r, center = center)
