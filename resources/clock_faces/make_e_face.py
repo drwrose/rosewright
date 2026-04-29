@@ -8,7 +8,9 @@ import PIL.Image
 #platform = 'aplite'
 #platform = 'basalt'
 #platform = 'chalk'
-platform = 'emery'
+#platform = 'emery'
+platform = 'gabbro'
+
 layer = 'ticks'
 
 if platform in ['aplite', 'basalt']:
@@ -17,6 +19,8 @@ elif platform == 'chalk':
     face = FaceMaker.FaceMaker(zoom = 1.0, screenSize = (180, 180))
 elif platform == 'emery':
     face = FaceMaker.FaceMaker(zoom = 1.0, screenSize = (200, 228))
+elif platform == 'gabbro':
+    face = FaceMaker.FaceMaker(zoom = 1.0, screenSize = (260, 260))
 
 if layer == 'ticks':
     face.drawTicks(60, 0.2, 1.7, width = 0.003); face.drawTicks(12, 0.2, 1.7, width = 0.009)
