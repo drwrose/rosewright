@@ -81,7 +81,7 @@ def generate_pixels_1bit(image, stride):
             # Pad out the row with zeroes.
             yield 0
 
-    raise StopIteration
+    return
 
 def pack_argb8(pixel):
     """ Given an (r, g, b, a) tuple returned by PIL, return the Basalt
@@ -113,7 +113,7 @@ def generate_pixels_8bit(image):
             value = pack_argb8(image.getpixel((x, y)))
             yield value
 
-    raise StopIteration
+    return
 
 def generate_pixels_palette(image, palette):
     """ This generator yields a sequence of 0..n values for the pixels
@@ -127,7 +127,7 @@ def generate_pixels_palette(image, palette):
             assert value != -1
             yield value
 
-    raise StopIteration
+    return
 
 def generate_rle_1bit(source):
     """ This generator yields a sequence of run lengths of a binary
@@ -141,17 +141,17 @@ def generate_rle_1bit(source):
     # of the image.  The decoder must discard this pixel.  This
     # implicit black pixel ensures that there are no 0 counts anywhere
     # in the resulting data.
-    next = 0
+    n2 = 0
     while True:
-        while current == next:
+        while current == n2:
             count += 1
             try:
-                next = next(source)
+                n2 = next(source)
             except StopIteration:
                 yield count
-                raise StopIteration
+                return
         yield count
-        current = next
+        current = n2
         count = 0
 
 def generate_rle_pairs(source):
@@ -159,19 +159,22 @@ def generate_rle_pairs(source):
     input--the input is a sequence of numeric values, so the rle is a
     sequence of (value, count) pairs. """
 
-    current = next(source)
+    try:
+        current = next(source)
+    except StopIteration:
+        return
     count = 0
-    next = current
+    n2 = current
     while True:
-        while current == next:
+        while current == n2:
             count += 1
             try:
-                next = next(source)
+                n2 = next(source)
             except StopIteration:
                 yield (current, count)
-                raise StopIteration
+                return
         yield (current, count)
-        current = next
+        current = n2
         count = 0
 
 def count_bits(num):
@@ -202,27 +205,27 @@ def chop_rle(source, n):
             yield b
 
 def pack_rle(source, n):
-    """ Packs a sequence of n-bit chunks into a byte string. """
+    """ Packs a sequence of n-bit chunks into a byte object. """
     seq = list(source)
-    result = ''
+    result = b''
     if n == 1:
         seq += [0, 0, 0, 0, 0, 0, 0]
         for i in range(0, len(seq) - 7, 8):
             v = (seq[i + 0] << 7) | (seq[i + 1] << 6) | (seq[i + 2] << 5) | (seq[i +3] << 4) | (seq[i + 4] << 3) | (seq[i + 5] << 2) | (seq[i + 6] << 1) | (seq[i + 7])
-            result += (chr(v))
+            result += bytes([v])
     elif n == 2:
         seq += [0, 0, 0]
         for i in range(0, len(seq) - 3, 4):
             v = (seq[i + 0] << 6) | (seq[i + 1] << 4) | (seq[i + 2] << 2) | (seq[i + 3])
-            result += (chr(v))
+            result += bytes([v])
     elif n == 4:
         seq += [0]
         for i in range(0, len(seq) - 1, 2):
             v = (seq[i + 0] << 4) | (seq[i + 1])
-            result += (chr(v))
+            result += bytes([v])
     elif n == 8:
         for v in seq:
-            result += chr(v)
+            result += bytes([v])
     else:
         raise ValueError
 
@@ -239,6 +242,7 @@ class Rl2Unpacker:
         # assumption: n is an integer divisor of 8.
         assert n * (8 // n) == 8
 
+        assert(isinstance(str, type(b'')))
         self.str = str
         self.n = n
         self.si = 0
@@ -266,7 +270,7 @@ class Rl2Unpacker:
 
         # First, count the number of zero chunks until we come to a nonzero chunk.
         zeroCount = 0
-        b = ord(self.str[self.si])
+        b = self.str[self.si]
         if self.zero_expands:
             bmask = (1 << self.n) - 1
             bv = b & (bmask << (self.bi - self.n))
@@ -279,7 +283,7 @@ class Rl2Unpacker:
                     if self.si >= len(self.str):
                         return -1
 
-                    b = ord(self.str[self.si])
+                    b = self.str[self.si]
                 bv = b & (bmask << (self.bi - self.n))
 
         # Infer from that the number of chunks, and hence the number
@@ -301,7 +305,7 @@ class Rl2Unpacker:
                 b = 0
                 break
 
-            b = ord(self.str[self.si])
+            b = self.str[self.si]
 
         if bitCount > 0:
             # A partial word in the middle of the byte.
@@ -415,7 +419,7 @@ def make_rle_image_basalt(rleFilename, image):
         vn = 8
     else:
         # We have a palettized image.
-        palette = zip(*colors)[1]
+        palette = list(zip(*colors))[1]
         if len(palette) <= 2:
             pixel0 = pack_argb8(palette[0])
             pixel1 = pack_argb8(palette[-1])
@@ -500,14 +504,14 @@ def make_rle_image_basalt(rleFilename, image):
     #print "n = %s, format = %s, vo = %s, po = %s" % (n, format, vo, po)
 
     rle = open(rleFilename, 'wb')
-    rle.write('%c%c%c%c%c%c%c%c' % (w_orig, h, n, format, vo_lo, vo_hi, po_lo, po_hi))
+    rle.write(b'%c%c%c%c%c%c%c%c' % (w_orig, h, n, format, vo_lo, vo_hi, po_lo, po_hi))
     rle.write(result)
     assert rle.tell() == vo
     rle.write(values_result)
     if palette is not None:
         assert rle.tell() == po
         for pixel in palette:
-            rle.write(chr(pack_argb8(pixel)))
+            rle.write(bytes([pack_argb8(pixel)]))
 
     rle.close()
 
