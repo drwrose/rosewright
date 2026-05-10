@@ -537,15 +537,19 @@ void pack_8bit(int value, int count, int *b, uint8_t **dp, uint8_t *dp_stop) {
 BitmapWithData
 rle_bwd_create_rb(RBuffer *rb) {
   // RLE header (NB: All fields are little-endian)
-  //         (uint8_t)  width
-  //         (uint8_t)  height
+  //         (uint16_t)  width
+  //         (uint16_t)  height
   //         (uint8_t)  n (number of chunks of pixels to take at a time; unscreen if 0x80 set)
   //         (uint8_t)  format (see below)
   //         (uint16_t) offset to start of values, or 0 if format == 0
   //         (uint16_t) offset to start of palette, or 0 if format <= 1
 
-  int width = rbuffer_getc(rb);
-  int height = rbuffer_getc(rb);
+  uint8_t w_lo = rbuffer_getc(rb);
+  uint8_t w_hi = rbuffer_getc(rb);
+  unsigned int width = (w_hi << 8) | w_lo;
+  uint8_t h_lo = rbuffer_getc(rb);
+  uint8_t h_hi = rbuffer_getc(rb);
+  unsigned int height = (h_hi << 8) | h_lo;
   int n = rbuffer_getc(rb);
   GBitmapFormat format = (GBitmapFormat)rbuffer_getc(rb);
 
@@ -695,15 +699,19 @@ rle_bwd_create_rb(RBuffer *rb) {
 BitmapWithData
 rle_bwd_create_rb(RBuffer *rb) {
   // RLE header (NB: All fields are little-endian)
-  //         (uint8_t)  width
-  //         (uint8_t)  height
+  //         (uint16_t)  width
+  //         (uint16_t)  height
   //         (uint8_t)  n (number of chunks of pixels to take at a time; unscreen if 0x80 set)
   //         (uint8_t)  format (see below)
   //         (uint16_t) offset to start of values, or 0 if format == 0
   //         (uint16_t) offset to start of palette, or 0 if format <= 1
 
-  int width = rbuffer_getc(rb);
-  int height = rbuffer_getc(rb);
+  uint8_t w_lo = rbuffer_getc(rb);
+  uint8_t w_hi = rbuffer_getc(rb);
+  unsigned int width = (w_hi << 8) | w_lo;
+  uint8_t h_lo = rbuffer_getc(rb);
+  uint8_t h_hi = rbuffer_getc(rb);
+  unsigned int height = (h_hi << 8) | h_lo;
   assert(width > 0 && width <= SCREEN_WIDTH && height > 0 && height <= SCREEN_HEIGHT);
   int n = rbuffer_getc(rb);
   int format = rbuffer_getc(rb);

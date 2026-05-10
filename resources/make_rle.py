@@ -29,14 +29,14 @@ Options:
 """
 
 # RLE header (NB: All fields are little-endian)
-#         (uint8_t)  width
-#         (uint8_t)  height
+#         (uint16_t)  width
+#         (uint16_t)  height
 #         (uint8_t)  n (number of chunks of pixels to take at a time; unscreen if 0x80 set)
 #         (uint8_t)  format (see below)
 #         (uint16_t) offset to end of rle data (and start of values data if present)
 #         (uint16_t) offset to end of values data (and start of palette data if present)
 
-RLEHeaderSize = 8
+RLEHeaderSize = 10
 
 # Format codes (almost matches pebble.h):
 GBitmapFormat1Bit        = 0
@@ -360,6 +360,11 @@ def make_rle_image_1bit(rleFilename, image):
             result = result0
             n = n0
 
+    w_lo = w_orig & 0xff
+    w_hi = (w_orig >> 8) & 0xff
+    h_lo = h & 0xff
+    h_hi = (h >> 8) & 0xff
+            
     vo = RLEHeaderSize + len(result)
     assert(vo < 0x10000)
     vo_lo = vo & 0xff
@@ -380,7 +385,7 @@ def make_rle_image_1bit(rleFilename, image):
     #print "n = %s, format = %s, vo = %s, po = %s" % (n, format, vo, vo)
 
     rle = open(rleFilename, 'wb')
-    rle.write('%c%c%c%c%c%c%c%c' % (w_orig, h, n, format, vo_lo, vo_hi, vo_lo, vo_hi))
+    rle.write(b'%c%c%c%c%c%c%c%c%c%c' % (w_lo, w_hi, h_lo, h_hi, n, format, vo_lo, vo_hi, vo_lo, vo_hi))
     rle.write(result)
     rle.close()
 
@@ -487,6 +492,11 @@ def make_rle_image_basalt(rleFilename, image):
     verify = unpacker.getList()
     assert verify == rle
 
+    w_lo = w_orig & 0xff
+    w_hi = (w_orig >> 8) & 0xff
+    h_lo = h & 0xff
+    h_hi = (h >> 8) & 0xff
+
     # Get the offset into the file at which the values start.
     vo = RLEHeaderSize + len(result)
     assert(vo < 0x10000)
@@ -504,7 +514,7 @@ def make_rle_image_basalt(rleFilename, image):
     #print "n = %s, format = %s, vo = %s, po = %s" % (n, format, vo, po)
 
     rle = open(rleFilename, 'wb')
-    rle.write(b'%c%c%c%c%c%c%c%c' % (w_orig, h, n, format, vo_lo, vo_hi, po_lo, po_hi))
+    rle.write(b'%c%c%c%c%c%c%c%c%c%c' % (w_lo, w_hi, h_lo, h_hi, n, format, vo_lo, vo_hi, po_lo, po_hi))
     rle.write(result)
     assert rle.tell() == vo
     rle.write(values_result)
@@ -714,8 +724,12 @@ def make_rle_trans_file(filename, variant, name = None, prefix = 'resources/', u
 
 def unpack_rle_file(rleFilename):
     rb = open(rleFilename, 'rb')
-    width = ord(rb.read(1))
-    height = ord(rb.read(1))
+    w_lo = ord(rb.read(1))
+    w_hi = ord(rb.read(1))
+    width = (w_hi << 8) | w_lo
+    h_lo = ord(rb.read(1))
+    h_hi = ord(rb.read(1))
+    height = (h_hi << 8) | h_lo
     n = ord(rb.read(1))
     format = ord(rb.read(1))
     vo_lo = ord(rb.read(1))
