@@ -5,13 +5,20 @@
 import FaceMaker
 
 #platform = 'aplite'
-#platform = 'basalt'
+platform = 'basalt'
 #platform = 'chalk'
 #platform = 'emery'
-platform = 'gabbro'
+#platform = 'gabbro'
 layer = 'background'
 #layer = 'numerals'
 #layer = 'numerals_unrotated'
+
+# Instead of using the 'numerals' or 'numerals_unrotated' code here,
+# we nowadays just use hand-placed numerals in Gimp, which uses the
+# Bodoni MT Condensed font, at 142 pixels for a 1045-pixel clockface
+# (1024 at 0.98 zoom) (and the III, IIII, and VIII numerals are
+# manually squeezed further).  This is painted in the file
+# a_face_numerals.xcf.
 
 if platform in ['aplite', 'basalt']:
     face = FaceMaker.FaceMaker(zoom = 0.92, screenSize = (144, 168))
