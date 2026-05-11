@@ -611,8 +611,8 @@ rle_bwd_create_rb(RBuffer *rb) {
   }
 
   if (image == NULL) {
-    free(palette);
     qapp_log(APP_LOG_LEVEL_INFO, __FILE__, __LINE__, "could not create image of size %dx%d and format %d with palette %p", width, height, format, palette);
+    free(palette);
     return bwd_create(NULL, NULL);
   }
   int stride = gbitmap_get_bytes_per_row(image);
